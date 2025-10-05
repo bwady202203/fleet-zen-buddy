@@ -8,8 +8,8 @@ const Index = () => {
   const vehicles = [
     {
       id: "1",
-      name: "Truck A-101",
-      type: "Heavy Truck",
+      name: "شاحنة A-101",
+      type: "شاحنة ثقيلة",
       status: "active" as const,
       lastService: "2024-09-15",
       nextService: "2024-12-15",
@@ -17,8 +17,8 @@ const Index = () => {
     },
     {
       id: "2",
-      name: "Van B-205",
-      type: "Delivery Van",
+      name: "فان B-205",
+      type: "فان توصيل",
       status: "warning" as const,
       lastService: "2024-08-20",
       nextService: "2024-11-20",
@@ -26,8 +26,8 @@ const Index = () => {
     },
     {
       id: "3",
-      name: "Truck C-340",
-      type: "Medium Truck",
+      name: "شاحنة C-340",
+      type: "شاحنة متوسطة",
       status: "maintenance" as const,
       lastService: "2024-10-01",
       nextService: "2024-10-15",
@@ -35,8 +35,8 @@ const Index = () => {
     },
     {
       id: "4",
-      name: "Van D-412",
-      type: "Cargo Van",
+      name: "فان D-412",
+      type: "فان نقل",
       status: "active" as const,
       lastService: "2024-09-10",
       nextService: "2024-12-10",
@@ -45,7 +45,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -53,11 +53,11 @@ const Index = () => {
               <div className="p-2 rounded-lg bg-primary">
                 <Truck className="h-6 w-6 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold">Fleet Maintenance Tracker</h1>
+              <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
             <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Vehicle
+              <Plus className="h-4 w-4 ml-2" />
+              إضافة مركبة
             </Button>
           </div>
         </div>
@@ -65,45 +65,45 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <section className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Fleet Overview</h2>
-          <p className="text-muted-foreground mb-6">Monitor and manage your fleet maintenance schedule</p>
+          <h2 className="text-3xl font-bold mb-2">نظرة عامة على الأسطول</h2>
+          <p className="text-muted-foreground mb-6">راقب وأدر جدول صيانة أسطولك</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
-              title="Total Vehicles"
+              title="إجمالي المركبات"
               value={vehicles.length}
               icon={Truck}
-              description="Active fleet size"
+              description="حجم الأسطول النشط"
             />
             <StatsCard
-              title="Active"
+              title="نشطة"
               value={vehicles.filter(v => v.status === "active").length}
               icon={Calendar}
-              description="Vehicles in operation"
+              description="مركبات قيد التشغيل"
             />
             <StatsCard
-              title="In Maintenance"
+              title="قيد الصيانة"
               value={vehicles.filter(v => v.status === "maintenance").length}
               icon={Wrench}
-              description="Currently being serviced"
+              description="يتم صيانتها حالياً"
             />
             <StatsCard
-              title="Service Due"
+              title="تحتاج صيانة"
               value={vehicles.filter(v => v.status === "warning").length}
               icon={AlertCircle}
-              description="Requires attention"
+              description="تحتاج إلى اهتمام"
             />
           </div>
         </section>
 
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Your Fleet</h2>
+            <h2 className="text-2xl font-bold">أسطولك</h2>
             <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search vehicles..." 
-                className="pl-9"
+                placeholder="ابحث عن المركبات..." 
+                className="pr-9 text-right"
               />
             </div>
           </div>
@@ -120,3 +120,4 @@ const Index = () => {
 };
 
 export default Index;
+
