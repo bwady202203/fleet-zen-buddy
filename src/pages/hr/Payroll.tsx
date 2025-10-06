@@ -10,49 +10,65 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
-const mockPayroll = [
+// بيانات الموظفين الأساسية
+const baseEmployees = [
   {
-    id: 1,
+    id: "emp1",
     employeeName: "أحمد محمد علي",
     basicSalary: 15000,
-    allowances: 5000,
-    additions: 2000,
-    deductions: 0,
-    advances: 0,
-    netSalary: 22000
+    allowances: 5000
   },
   {
-    id: 2,
+    id: "emp2",
     employeeName: "فاطمة أحمد",
     basicSalary: 12000,
-    allowances: 4000,
-    additions: 1500,
-    deductions: 0,
-    advances: 3000,
-    netSalary: 14500
+    allowances: 4000
   },
   {
-    id: 3,
+    id: "emp3",
     employeeName: "محمد سالم",
     basicSalary: 8000,
-    allowances: 3000,
-    additions: 0,
-    deductions: 500,
-    advances: 0,
-    netSalary: 10500
+    allowances: 3000
   }
 ];
 
 const Payroll = () => {
   const [selectedMonth, setSelectedMonth] = useState("2025-01");
-  const [payroll] = useState(mockPayroll);
-  const { updateTransactionBalance } = useEmployeeTransactions();
+  const { getEmployeeTransactions, updateTransactionBalance } = useEmployeeTransactions();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [editedValues, setEditedValues] = useState({
     advances: 0,
     additions: 0,
     deductions: 0
+  });
+
+  // حساب كشف الرواتب من البيانات المسجلة
+  const payroll = baseEmployees.map(emp => {
+    const transactions = getEmployeeTransactions(emp.id);
+    
+    // حساب إجمالي الإضافيات
+    const additions = transactions.additions.reduce((sum, add) => sum + add.amount, 0);
+    
+    // حساب إجمالي الخصومات
+    const deductions = transactions.deductions.reduce((sum, ded) => sum + ded.amount, 0);
+    
+    // حساب إجمالي السلف (الرصيد المستحق)
+    const advances = transactions.advancesBalance;
+    
+    // حساب صافي الراتب
+    const netSalary = emp.basicSalary + emp.allowances + additions - deductions - advances;
+    
+    return {
+      id: emp.id,
+      employeeName: emp.employeeName,
+      basicSalary: emp.basicSalary,
+      allowances: emp.allowances,
+      additions,
+      deductions,
+      advances,
+      netSalary
+    };
   });
 
   const totalBasicSalary = payroll.reduce((sum, emp) => sum + emp.basicSalary, 0);
