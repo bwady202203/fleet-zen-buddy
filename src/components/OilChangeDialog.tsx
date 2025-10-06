@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,15 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [resetMileage, setResetMileage] = useState(false);
+
+  // Update mileage values when dialog opens or currentMileage changes
+  useEffect(() => {
+    if (open) {
+      setDate(new Date().toISOString().split('T')[0]);
+      setMileageAtChange(currentMileage.toString());
+      setNextOilChange((currentMileage + 5000).toString());
+    }
+  }, [open, currentMileage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
