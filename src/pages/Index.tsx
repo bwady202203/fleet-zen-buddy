@@ -2,7 +2,8 @@ import { VehicleCard } from "@/components/VehicleCard";
 import { StatsCard } from "@/components/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Plus, Search } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Plus, Search, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const vehicles = [
@@ -55,10 +56,18 @@ const Index = () => {
               </div>
               <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
-            <Button>
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة مركبة
-            </Button>
+            <div className="flex items-center gap-3">
+              <Link to="/reports">
+                <Button variant="outline">
+                  <FileText className="h-4 w-4 ml-2" />
+                  تقرير الصيانة
+                </Button>
+              </Link>
+              <Button>
+                <Plus className="h-4 w-4 ml-2" />
+                إضافة مركبة
+              </Button>
+            </div>
           </div>
         </div>
       </header>
