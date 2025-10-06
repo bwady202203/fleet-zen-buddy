@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Mock data - في التطبيق الحقيقي، سيتم جلب البيانات من قاعدة البيانات
 const mockEmployees = [
@@ -59,6 +61,7 @@ const mockEmployees = [
 const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [employees] = useState(mockEmployees);
+  const { getEmployeeTransactions } = useEmployeeTransactions();
 
   const filteredEmployees = employees.filter((emp) =>
     emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -128,9 +131,10 @@ const Employees = () => {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="personal" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="personal">البيانات الشخصية</TabsTrigger>
                     <TabsTrigger value="salary">الراتب والبدلات</TabsTrigger>
+                    <TabsTrigger value="transactions">السلف والخصومات</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="personal" className="space-y-3 mt-4">
@@ -183,6 +187,114 @@ const Employees = () => {
                         <span className="font-bold text-lg text-primary">{getTotalSalary(employee).toLocaleString()} ر.س</span>
                       </div>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="transactions" className="space-y-4">
+                    {(() => {
+                      const empTransactions = getEmployeeTransactions(`emp${employee.id}`);
+                      return (
+                        <>
+                          <div className="bg-muted/50 p-4 rounded-lg">
+                            <h4 className="font-semibold mb-2">رصيد السلف المستحق</h4>
+                            <p className="text-2xl font-bold text-destructive">
+                              {empTransactions.advancesBalance.toLocaleString()} ر.س
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-lg">السلف</h4>
+                            {empTransactions.advances.length > 0 ? (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-right">رقم السند</TableHead>
+                                    <TableHead className="text-right">التاريخ</TableHead>
+                                    <TableHead className="text-right">المبلغ الأصلي</TableHead>
+                                    <TableHead className="text-right">الرصيد المتبقي</TableHead>
+                                    <TableHead className="text-right">السبب</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {empTransactions.advances.map((adv) => (
+                                    <TableRow key={adv.id}>
+                                      <TableCell className="font-medium">{adv.voucherNumber}</TableCell>
+                                      <TableCell>{adv.date}</TableCell>
+                                      <TableCell>{adv.originalAmount.toLocaleString()} ر.س</TableCell>
+                                      <TableCell className="font-bold text-destructive">
+                                        {adv.remainingBalance.toLocaleString()} ر.س
+                                      </TableCell>
+                                      <TableCell>{adv.reason}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              <p className="text-muted-foreground text-center py-4">لا توجد سلف</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-lg">الإضافيات</h4>
+                            {empTransactions.additions.length > 0 ? (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-right">رقم السند</TableHead>
+                                    <TableHead className="text-right">التاريخ</TableHead>
+                                    <TableHead className="text-right">المبلغ</TableHead>
+                                    <TableHead className="text-right">السبب</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {empTransactions.additions.map((add) => (
+                                    <TableRow key={add.id}>
+                                      <TableCell className="font-medium">{add.voucherNumber}</TableCell>
+                                      <TableCell>{add.date}</TableCell>
+                                      <TableCell className="font-bold text-green-600">
+                                        +{add.amount.toLocaleString()} ر.س
+                                      </TableCell>
+                                      <TableCell>{add.reason}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              <p className="text-muted-foreground text-center py-4">لا توجد إضافيات</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-lg">الخصومات</h4>
+                            {empTransactions.deductions.length > 0 ? (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-right">رقم السند</TableHead>
+                                    <TableHead className="text-right">التاريخ</TableHead>
+                                    <TableHead className="text-right">المبلغ</TableHead>
+                                    <TableHead className="text-right">السبب</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {empTransactions.deductions.map((ded) => (
+                                    <TableRow key={ded.id}>
+                                      <TableCell className="font-medium">{ded.voucherNumber}</TableCell>
+                                      <TableCell>{ded.date}</TableCell>
+                                      <TableCell className="font-bold text-destructive">
+                                        -{ded.amount.toLocaleString()} ر.س
+                                      </TableCell>
+                                      <TableCell>{ded.reason}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              <p className="text-muted-foreground text-center py-4">لا توجد خصومات</p>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </TabsContent>
                 </Tabs>
 

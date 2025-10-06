@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Download, FileText } from "lucide-react";
+import { ArrowRight, Printer, Download, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 const mockPayroll = [
   {
@@ -42,6 +46,14 @@ const mockPayroll = [
 const Payroll = () => {
   const [selectedMonth, setSelectedMonth] = useState("2025-01");
   const [payroll] = useState(mockPayroll);
+  const { updateTransactionBalance } = useEmployeeTransactions();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [editedValues, setEditedValues] = useState({
+    advances: 0,
+    additions: 0,
+    deductions: 0
+  });
 
   const totalBasicSalary = payroll.reduce((sum, emp) => sum + emp.basicSalary, 0);
   const totalAllowances = payroll.reduce((sum, emp) => sum + emp.allowances, 0);
@@ -52,6 +64,28 @@ const Payroll = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleEdit = (employee: any) => {
+    setEditingEmployee(employee);
+    setEditedValues({
+      advances: employee.advances,
+      additions: employee.additions,
+      deductions: employee.deductions
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingEmployee) {
+      const advanceDiff = editedValues.advances - editingEmployee.advances;
+      
+      if (advanceDiff !== 0) {
+        updateTransactionBalance(editingEmployee.id, advanceDiff);
+      }
+      
+      setEditDialogOpen(false);
+    }
   };
 
   return (
@@ -123,6 +157,7 @@ const Payroll = () => {
                     <TableHead className="text-right">الخصومات</TableHead>
                     <TableHead className="text-right">السلف</TableHead>
                     <TableHead className="text-right font-bold">صافي الراتب</TableHead>
+                    <TableHead className="text-right no-print">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -141,6 +176,11 @@ const Payroll = () => {
                         {employee.advances > 0 ? `-${employee.advances.toLocaleString()} ر.س` : "-"}
                       </TableCell>
                       <TableCell className="font-bold text-primary">{employee.netSalary.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="no-print">
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(employee)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-bold">
@@ -197,6 +237,55 @@ const Payroll = () => {
           </Card>
         </div>
       </main>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل كشف الراتب - {editingEmployee?.employeeName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>الإضافي (ر.س)</Label>
+              <Input
+                type="number"
+                value={editedValues.additions}
+                onChange={(e) => setEditedValues(prev => ({ ...prev, additions: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الخصومات (ر.س)</Label>
+              <Input
+                type="number"
+                value={editedValues.deductions}
+                onChange={(e) => setEditedValues(prev => ({ ...prev, deductions: Number(e.target.value) }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>السلف المخصومة (ر.س)</Label>
+              <Input
+                type="number"
+                value={editedValues.advances}
+                onChange={(e) => setEditedValues(prev => ({ ...prev, advances: Number(e.target.value) }))}
+              />
+              <p className="text-sm text-muted-foreground">
+                القيمة الأصلية: {editingEmployee?.advances.toLocaleString()} ر.س
+              </p>
+            </div>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="text-sm font-semibold">ملاحظة:</p>
+              <p className="text-sm text-muted-foreground">
+                عند تعديل قيمة السلف، سيتم خصم القيمة الجديدة فقط من رصيد الموظف
+              </p>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button className="flex-1" onClick={handleSaveEdit}>حفظ التعديلات</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setEditDialogOpen(false)}>
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
