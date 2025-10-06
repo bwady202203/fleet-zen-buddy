@@ -8,37 +8,78 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { toast } from "@/hooks/use-toast";
 
-const mockDeductions = [
-  {
-    id: 1,
-    voucherNumber: "DED-001",
-    date: "2025-01-15",
-    employeeName: "محمد سالم",
-    amount: 500,
-    reason: "غياب بدون إذن",
-    type: "absence"
-  },
-  {
-    id: 2,
-    voucherNumber: "DED-002",
-    date: "2025-01-18",
-    employeeName: "أحمد محمد علي",
-    amount: 300,
-    reason: "قسط سلفة",
-    type: "advance_repayment"
-  }
+const mockEmployees = [
+  { id: "emp1", name: "أحمد محمد علي" },
+  { id: "emp2", name: "فاطمة أحمد" },
+  { id: "emp3", name: "محمد سالم" }
 ];
 
 const Deductions = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [deductions] = useState(mockDeductions);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { transactions, addTransaction } = useEmployeeTransactions();
+  const [formData, setFormData] = useState({
+    voucherNumber: "",
+    date: new Date().toISOString().split('T')[0],
+    employeeId: "",
+    employeeName: "",
+    amount: 0,
+    reason: "",
+    category: ""
+  });
+
+  const deductions = transactions.filter(t => t.type === "deduction");
 
   const filteredDeductions = deductions.filter((ded) =>
     ded.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ded.voucherNumber.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleSubmit = () => {
+    if (!formData.employeeId || !formData.amount || !formData.voucherNumber) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء ملء جميع الحقول المطلوبة",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const selectedEmployee = mockEmployees.find(e => e.id === formData.employeeId);
+    
+    addTransaction({
+      employeeId: formData.employeeId,
+      employeeName: selectedEmployee?.name || "",
+      type: "deduction",
+      amount: formData.amount,
+      originalAmount: formData.amount,
+      remainingBalance: 0,
+      date: formData.date,
+      reason: formData.reason,
+      voucherNumber: formData.voucherNumber,
+      category: formData.category
+    });
+
+    toast({
+      title: "تم بنجاح",
+      description: "تم إضافة سند الخصم بنجاح"
+    });
+
+    setFormData({
+      voucherNumber: "",
+      date: new Date().toISOString().split('T')[0],
+      employeeId: "",
+      employeeName: "",
+      amount: 0,
+      reason: "",
+      category: ""
+    });
+    
+    setIsDialogOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -70,28 +111,49 @@ const Deductions = () => {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label>رقم السند</Label>
-                    <Input placeholder="DED-003" />
+                    <Input 
+                      placeholder="DED-003"
+                      value={formData.voucherNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, voucherNumber: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>التاريخ</Label>
-                    <Input type="date" />
+                    <Input 
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>الموظف</Label>
-                    <Select>
+                    <Select
+                      value={formData.employeeId}
+                      onValueChange={(value) => {
+                        const employee = mockEmployees.find(e => e.id === value);
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          employeeId: value,
+                          employeeName: employee?.name || ""
+                        }));
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="اختر الموظف" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="emp1">أحمد محمد علي</SelectItem>
-                        <SelectItem value="emp2">فاطمة أحمد</SelectItem>
-                        <SelectItem value="emp3">محمد سالم</SelectItem>
+                        {mockEmployees.map(emp => (
+                          <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>نوع الخصم</Label>
-                    <Select>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="اختر نوع الخصم" />
                       </SelectTrigger>
@@ -106,14 +168,23 @@ const Deductions = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>المبلغ (ر.س)</Label>
-                    <Input type="number" placeholder="0.00" />
+                    <Input 
+                      type="number" 
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>السبب</Label>
-                    <Input placeholder="سبب الخصم" />
+                    <Input 
+                      placeholder="سبب الخصم"
+                      value={formData.reason}
+                      onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                    />
                   </div>
                   <div className="flex gap-2 pt-4">
-                    <Button className="flex-1">حفظ</Button>
+                    <Button className="flex-1" onClick={handleSubmit}>حفظ</Button>
                     <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
                       إلغاء
                     </Button>
@@ -162,7 +233,10 @@ const Deductions = () => {
                     <TableCell>{deduction.employeeName}</TableCell>
                     <TableCell className="text-red-600 font-semibold">-{deduction.amount.toLocaleString()} ر.س</TableCell>
                     <TableCell>
-                      {deduction.type === "absence" ? "غياب" : "قسط سلفة"}
+                      {deduction.category === "absence" ? "غياب" : 
+                       deduction.category === "advance_repayment" ? "قسط سلفة" :
+                       deduction.category === "penalty" ? "جزاء" :
+                       deduction.category === "insurance" ? "تأمينات" : "أخرى"}
                     </TableCell>
                     <TableCell>{deduction.reason}</TableCell>
                     <TableCell>
