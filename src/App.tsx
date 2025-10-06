@@ -19,6 +19,8 @@ import SalesInvoice from "./pages/accounting/SalesInvoice";
 import PurchaseInvoice from "./pages/accounting/PurchaseInvoice";
 import SalesReturn from "./pages/accounting/SalesReturn";
 import PurchaseReturn from "./pages/accounting/PurchaseReturn";
+import BalanceSheet from "./pages/accounting/BalanceSheet";
+import IncomeStatement from "./pages/accounting/IncomeStatement";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import Employees from "./pages/hr/Employees";
@@ -65,6 +67,8 @@ const App = () => {
                   <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
                   <Route path="/accounting/sales-return" element={<SalesReturn />} />
                   <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
+                  <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
+                  <Route path="/accounting/income-statement" element={<IncomeStatement />} />
                   <Route path="/hr" element={<HR />} />
                   <Route path="/hr/employees" element={<Employees />} />
                   <Route path="/hr/payroll" element={<Payroll />} />
