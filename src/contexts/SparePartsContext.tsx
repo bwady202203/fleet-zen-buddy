@@ -18,14 +18,26 @@ export interface Purchase {
   notes: string;
 }
 
+export interface StockTransaction {
+  id: string;
+  date: string;
+  sparePartId: string;
+  type: "purchase" | "maintenance";
+  quantity: number;
+  balanceAfter: number;
+  reference: string; // reference to purchase or maintenance ID
+  notes: string;
+}
+
 interface SparePartsContextType {
   spareParts: SparePart[];
   purchases: Purchase[];
+  stockTransactions: StockTransaction[];
   addSparePart: (part: Omit<SparePart, "id">) => void;
   updateSparePart: (id: string, part: Partial<SparePart>) => void;
   deleteSparePart: (id: string) => void;
   addPurchase: (purchase: Omit<Purchase, "id">) => void;
-  deductQuantity: (sparePartId: string, quantity: number) => boolean;
+  deductQuantity: (sparePartId: string, quantity: number, reference: string, notes: string) => boolean;
 }
 
 const SparePartsContext = createContext<SparePartsContextType | undefined>(undefined);
@@ -50,6 +62,11 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [stockTransactions, setStockTransactions] = useState<StockTransaction[]>(() => {
+    const saved = localStorage.getItem("stockTransactions");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem("spareParts", JSON.stringify(spareParts));
   }, [spareParts]);
@@ -57,6 +74,10 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem("purchases", JSON.stringify(purchases));
   }, [purchases]);
+
+  useEffect(() => {
+    localStorage.setItem("stockTransactions", JSON.stringify(stockTransactions));
+  }, [stockTransactions]);
 
   const addSparePart = (part: Omit<SparePart, "id">) => {
     const newPart: SparePart = {
@@ -83,27 +104,63 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
     };
     setPurchases((prev) => [...prev, newPurchase]);
 
-    // إضافة الكميات المشتراة إلى المخزون
+    // إضافة الكميات المشتراة إلى المخزون وتسجيل الحركة
     purchase.spareParts.forEach((item) => {
-      setSpareParts((prev) =>
-        prev.map((part) =>
-          part.id === item.sparePartId
-            ? { ...part, quantity: part.quantity + item.quantity }
-            : part
-        )
-      );
+      setSpareParts((prev) => {
+        const updatedParts = prev.map((part) => {
+          if (part.id === item.sparePartId) {
+            const newQuantity = part.quantity + item.quantity;
+            
+            // تسجيل حركة الشراء
+            setStockTransactions((trans) => [
+              ...trans,
+              {
+                id: `${Date.now()}-${part.id}`,
+                date: purchase.date,
+                sparePartId: part.id,
+                type: "purchase",
+                quantity: item.quantity,
+                balanceAfter: newQuantity,
+                reference: newPurchase.id,
+                notes: `شراء من ${purchase.supplier}`,
+              },
+            ]);
+            
+            return { ...part, quantity: newQuantity };
+          }
+          return part;
+        });
+        return updatedParts;
+      });
     });
   };
 
-  const deductQuantity = (sparePartId: string, quantity: number): boolean => {
+  const deductQuantity = (sparePartId: string, quantity: number, reference: string, notes: string): boolean => {
     const part = spareParts.find((p) => p.id === sparePartId);
     if (!part || part.quantity < quantity) {
       return false;
     }
 
+    const newQuantity = part.quantity - quantity;
+
+    // تسجيل حركة الصيانة
+    setStockTransactions((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${sparePartId}`,
+        date: new Date().toISOString().split('T')[0],
+        sparePartId,
+        type: "maintenance",
+        quantity: -quantity,
+        balanceAfter: newQuantity,
+        reference,
+        notes,
+      },
+    ]);
+
     setSpareParts((prev) =>
       prev.map((p) =>
-        p.id === sparePartId ? { ...p, quantity: p.quantity - quantity } : p
+        p.id === sparePartId ? { ...p, quantity: newQuantity } : p
       )
     );
     return true;
@@ -114,6 +171,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
       value={{
         spareParts,
         purchases,
+        stockTransactions,
         addSparePart,
         updateSparePart,
         deleteSparePart,

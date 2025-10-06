@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
 import Purchases from "./pages/Purchases";
+import StockMovement from "./pages/StockMovement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/reports" element={<MaintenanceReports />} />
             <Route path="/spare-parts" element={<SpareParts />} />
             <Route path="/purchases" element={<Purchases />} />
+            <Route path="/stock-movement" element={<StockMovement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

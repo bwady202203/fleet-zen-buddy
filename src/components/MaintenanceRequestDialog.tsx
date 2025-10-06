@@ -85,8 +85,15 @@ export const MaintenanceRequestDialog = ({
     }
 
     // خصم الكميات من المخزون
+    const maintenanceId = `M-${Date.now()}`;
     for (const [partId, quantity] of Object.entries(selectedParts)) {
-      deductQuantity(partId, quantity);
+      const part = spareParts.find(p => p.id === partId);
+      deductQuantity(
+        partId, 
+        quantity, 
+        maintenanceId,
+        `صيانة ${vehicleName} - ${part?.name}`
+      );
     }
 
     toast({

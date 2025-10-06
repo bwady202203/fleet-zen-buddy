@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
@@ -109,12 +109,20 @@ const SpareParts = () => {
               <Package className="h-6 w-6 text-primary" />
               <h1 className="text-2xl font-bold">إدارة قطع الغيار</h1>
             </div>
-            <Link to="/">
-              <Button variant="outline">
-                العودة للرئيسية
-                <ArrowRight className="h-4 w-4 mr-2" />
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/stock-movement">
+                <Button variant="outline">
+                  <Activity className="h-4 w-4 ml-2" />
+                  حركة المخزون
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button variant="outline">
+                  العودة للرئيسية
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
