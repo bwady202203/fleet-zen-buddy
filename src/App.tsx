@@ -16,6 +16,7 @@ import Payroll from "./pages/hr/Payroll";
 import Advances from "./pages/hr/Advances";
 import Additions from "./pages/hr/Additions";
 import Deductions from "./pages/hr/Deductions";
+import Leaves from "./pages/hr/Leaves";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
 import Purchases from "./pages/Purchases";
@@ -49,6 +50,7 @@ const App = () => {
                   <Route path="/hr/advances" element={<Advances />} />
                   <Route path="/hr/additions" element={<Additions />} />
                   <Route path="/hr/deductions" element={<Deductions />} />
+                  <Route path="/hr/leaves" element={<Leaves />} />
                   <Route path="/loads" element={<Loads />} />
                   <Route path="/reports" element={<MaintenanceReports />} />
                   <Route path="/spare-parts" element={<SpareParts />} />
