@@ -6,9 +6,28 @@ import { Input } from "@/components/ui/input";
 import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
+import { useState, useMemo } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Index = () => {
   const { vehicles } = useVehicles();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter((vehicle) => {
+      const matchesSearch = vehicle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           vehicle.type.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || vehicle.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [vehicles, searchQuery, statusFilter]);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -92,21 +111,47 @@ const Index = () => {
         </section>
 
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">أسطولك</h2>
-            <div className="relative w-64">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="ابحث عن المركبات..." 
-                className="pr-9 text-right"
-              />
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">أسطولك</h2>
+            </div>
+            
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="ابحث عن المركبات..." 
+                  className="pr-9 text-right"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="فلتر حسب الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل المركبات</SelectItem>
+                  <SelectItem value="active">نشطة</SelectItem>
+                  <SelectItem value="maintenance">قيد الصيانة</SelectItem>
+                  <SelectItem value="warning">تحتاج صيانة</SelectItem>
+                  <SelectItem value="inactive">غير نشطة</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {vehicles.map((vehicle) => (
-              <VehicleCard key={vehicle.id} {...vehicle} />
-            ))}
+            {filteredVehicles.length > 0 ? (
+              filteredVehicles.map((vehicle) => (
+                <VehicleCard key={vehicle.id} {...vehicle} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                لا توجد مركبات تطابق البحث أو الفلتر
+              </div>
+            )}
           </div>
         </section>
       </main>
