@@ -17,32 +17,36 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <VehiclesProvider>
-      <SparePartsProvider>
-        <VehicleMileageProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/reports" element={<MaintenanceReports />} />
-              <Route path="/spare-parts" element={<SpareParts />} />
-              <Route path="/purchases" element={<Purchases />} />
-              <Route path="/stock-movement" element={<StockMovement />} />
-              <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
-              <Route path="/price-history" element={<PurchasePriceHistory />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </VehicleMileageProvider>
-      </SparePartsProvider>
-    </VehiclesProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log('App component rendering...');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <VehiclesProvider>
+        <SparePartsProvider>
+          <VehicleMileageProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/reports" element={<MaintenanceReports />} />
+                  <Route path="/spare-parts" element={<SpareParts />} />
+                  <Route path="/purchases" element={<Purchases />} />
+                  <Route path="/stock-movement" element={<StockMovement />} />
+                  <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
+                  <Route path="/price-history" element={<PurchasePriceHistory />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </VehicleMileageProvider>
+        </SparePartsProvider>
+      </VehiclesProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

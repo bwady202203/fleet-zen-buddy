@@ -39,13 +39,17 @@ interface VehicleMileageContextType {
 const VehicleMileageContext = createContext<VehicleMileageContextType | undefined>(undefined);
 
 export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log('VehicleMileageProvider rendering...');
+  
   const [mileageRecords, setMileageRecords] = useState<MileageRecord[]>(() => {
     const saved = localStorage.getItem('mileageRecords');
+    console.log('Loading mileage records from localStorage:', saved);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [oilChangeRecords, setOilChangeRecords] = useState<OilChangeRecord[]>(() => {
     const saved = localStorage.getItem('oilChangeRecords');
+    console.log('Loading oil change records from localStorage:', saved);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -130,8 +134,11 @@ export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = (
 };
 
 export const useVehicleMileage = () => {
+  console.log('useVehicleMileage hook called');
   const context = useContext(VehicleMileageContext);
+  console.log('Context value:', context);
   if (!context) {
+    console.error('useVehicleMileage called outside of VehicleMileageProvider!');
     throw new Error('useVehicleMileage must be used within VehicleMileageProvider');
   }
   return context;
