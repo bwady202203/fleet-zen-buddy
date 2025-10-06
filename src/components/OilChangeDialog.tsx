@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVehicleMileage } from "@/contexts/VehicleMileageContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -20,6 +21,7 @@ interface OilChangeDialogProps {
 export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, vehicleType, currentMileage }: OilChangeDialogProps) => {
   const { addOilChangeRecord } = useVehicleMileage();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedVehicleType, setSelectedVehicleType] = useState(vehicleType);
   const [mileageAtChange, setMileageAtChange] = useState(currentMileage.toString());
   const [nextOilChange, setNextOilChange] = useState((currentMileage + 5000).toString());
   const [oilType, setOilType] = useState("");
@@ -27,14 +29,27 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
   const [notes, setNotes] = useState("");
   const [resetMileage, setResetMileage] = useState(false);
 
-  // Update mileage values when dialog opens or currentMileage changes
+  // قائمة أنواع المركبات
+  const vehicleTypes = [
+    "شاحنة ثقيلة",
+    "شاحنة متوسطة",
+    "شاحنة خفيفة",
+    "فان توصيل",
+    "فان نقل",
+    "سيارة صغيرة",
+    "حافلة",
+    "معدة ثقيلة",
+  ];
+
+  // Update values when dialog opens
   useEffect(() => {
     if (open) {
       setDate(new Date().toISOString().split('T')[0]);
+      setSelectedVehicleType(vehicleType);
       setMileageAtChange(currentMileage.toString());
       setNextOilChange((currentMileage + 5000).toString());
     }
-  }, [open, currentMileage]);
+  }, [open, currentMileage, vehicleType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +80,7 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
       addOilChangeRecord({
         vehicleId,
         vehicleName,
-        vehicleType,
+        vehicleType: selectedVehicleType,
         date,
         mileageAtChange: parseInt(mileageAtChange),
         nextOilChange: parseInt(nextOilChange),
@@ -104,7 +119,7 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle>تسجيل تغيير الزيت - {vehicleName} ({vehicleType})</DialogTitle>
+          <DialogTitle>تسجيل تغيير الزيت - {vehicleName}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -121,13 +136,18 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
             
             <div className="space-y-2">
               <Label htmlFor="vehicleType">نوع المركبة</Label>
-              <Input
-                id="vehicleType"
-                type="text"
-                value={vehicleType}
-                disabled
-                className="bg-muted"
-              />
+              <Select value={selectedVehicleType} onValueChange={setSelectedVehicleType}>
+                <SelectTrigger id="vehicleType">
+                  <SelectValue placeholder="اختر نوع المركبة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicleTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
