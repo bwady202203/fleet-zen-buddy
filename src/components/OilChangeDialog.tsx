@@ -39,15 +39,24 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
   useEffect(() => {
     if (open) {
       setDate(new Date().toISOString().split('T')[0]);
+      
+      // إذا كان هناك vehicleId محدد، استخدمه
       if (vehicleId) {
         setSelectedVehicleId(vehicleId);
-      }
-      if (currentMileage !== undefined) {
-        setMileageAtChange(currentMileage.toString());
-        setNextOilChange((currentMileage + 5000).toString());
+        const vehicle = vehicles.find(v => v.id === vehicleId);
+        if (vehicle) {
+          setMileageAtChange(vehicle.mileage.toString());
+          setNextOilChange((vehicle.mileage + 5000).toString());
+        }
+      } else if (vehicles.length > 0) {
+        // وإلا، اختر أول مركبة
+        const firstVehicle = vehicles[0];
+        setSelectedVehicleId(firstVehicle.id);
+        setMileageAtChange(firstVehicle.mileage.toString());
+        setNextOilChange((firstVehicle.mileage + 5000).toString());
       }
     }
-  }, [open, vehicleId, currentMileage]);
+  }, [open, vehicleId, vehicles]);
 
   // Update mileage when vehicle changes
   const handleVehicleChange = (newVehicleId: string) => {
@@ -63,16 +72,17 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
     e.preventDefault();
     
     console.log('Oil Change Form Data:', {
-      vehicleId,
-      vehicleName,
-      vehicleType,
+      vehicleId: selectedVehicleId,
+      vehicleName: selectedVehicle?.name,
+      vehicleType: selectedVehicle?.type,
       date,
       mileageAtChange,
       nextOilChange,
       oilType,
       cost,
       notes,
-      resetMileage
+      resetMileage,
+      actualVehicleMileage: selectedVehicle?.mileage
     });
     
     if (!oilType || !cost || !selectedVehicleId) {
