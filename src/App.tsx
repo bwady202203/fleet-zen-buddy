@@ -6,7 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SparePartsProvider } from "@/contexts/SparePartsContext";
 import { VehicleMileageProvider } from "@/contexts/VehicleMileageContext";
 import { VehiclesProvider } from "@/contexts/VehiclesContext";
+import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
+import Accounting from "./pages/Accounting";
+import HR from "./pages/HR";
+import Loads from "./pages/Loads";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
 import Purchases from "./pages/Purchases";
@@ -31,7 +35,11 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route path="/" element={<Index />} />
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/fleet" element={<Index />} />
+                  <Route path="/accounting" element={<Accounting />} />
+                  <Route path="/hr" element={<HR />} />
+                  <Route path="/loads" element={<Loads />} />
                   <Route path="/reports" element={<MaintenanceReports />} />
                   <Route path="/spare-parts" element={<SpareParts />} />
                   <Route path="/purchases" element={<Purchases />} />
