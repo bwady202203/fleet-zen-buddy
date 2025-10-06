@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw } from "lucide-react";
 
 const Accounting = () => {
   const sections = [
@@ -52,6 +52,34 @@ const Accounting = () => {
       icon: Wallet,
       link: "/accounting/vouchers",
       color: "from-orange-500 to-orange-600"
+    },
+    {
+      title: "فواتير المبيعات",
+      description: "إدارة فواتير المبيعات",
+      icon: ShoppingCart,
+      link: "/accounting/sales-invoice",
+      color: "from-cyan-500 to-cyan-600"
+    },
+    {
+      title: "فواتير المشتريات",
+      description: "إدارة فواتير المشتريات",
+      icon: Package,
+      link: "/accounting/purchase-invoice",
+      color: "from-amber-500 to-amber-600"
+    },
+    {
+      title: "مرتجعات المبيعات",
+      description: "إدارة مرتجعات المبيعات",
+      icon: RotateCcw,
+      link: "/accounting/sales-return",
+      color: "from-rose-500 to-rose-600"
+    },
+    {
+      title: "مرتجعات المشتريات",
+      description: "إدارة مرتجعات المشتريات",
+      icon: RotateCcw,
+      link: "/accounting/purchase-return",
+      color: "from-pink-500 to-pink-600"
     }
   ];
 

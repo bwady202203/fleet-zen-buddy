@@ -7,6 +7,7 @@ import { SparePartsProvider } from "@/contexts/SparePartsContext";
 import { VehicleMileageProvider } from "@/contexts/VehicleMileageContext";
 import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
+import { InvoicesProvider } from "@/contexts/InvoicesContext";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Accounting from "./pages/Accounting";
@@ -14,6 +15,10 @@ import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
 import Ledger from "./pages/accounting/Ledger";
 import TrialBalance from "./pages/accounting/TrialBalance";
+import SalesInvoice from "./pages/accounting/SalesInvoice";
+import PurchaseInvoice from "./pages/accounting/PurchaseInvoice";
+import SalesReturn from "./pages/accounting/SalesReturn";
+import PurchaseReturn from "./pages/accounting/PurchaseReturn";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import Employees from "./pages/hr/Employees";
@@ -40,7 +45,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AccountingProvider>
-        <VehiclesProvider>
+        <InvoicesProvider>
+          <VehiclesProvider>
           <SparePartsProvider>
             <VehicleMileageProvider>
               <TooltipProvider>
@@ -55,6 +61,10 @@ const App = () => {
                   <Route path="/accounting/journal-entries" element={<JournalEntries />} />
                   <Route path="/accounting/ledger" element={<Ledger />} />
                   <Route path="/accounting/trial-balance" element={<TrialBalance />} />
+                  <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
+                  <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
+                  <Route path="/accounting/sales-return" element={<SalesReturn />} />
+                  <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
                   <Route path="/hr" element={<HR />} />
                   <Route path="/hr/employees" element={<Employees />} />
                   <Route path="/hr/payroll" element={<Payroll />} />
@@ -79,6 +89,7 @@ const App = () => {
             </VehicleMileageProvider>
           </SparePartsProvider>
         </VehiclesProvider>
+        </InvoicesProvider>
       </AccountingProvider>
     </QueryClientProvider>
   );
