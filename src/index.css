@@ -43,6 +43,9 @@ All colors MUST be HSL.
     --chart-3: 45 93% 47%;
     --chart-4: 0 84% 60%;
     --chart-5: 280 65% 60%;
+    
+    --warning-mileage: 30 100% 50%;
+    --danger-mileage: 0 100% 70%;
 
     --sidebar-background: 0 0% 98%;
 

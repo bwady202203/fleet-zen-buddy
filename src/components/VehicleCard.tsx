@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, Calendar, Wrench, AlertTriangle, Gauge, Settings } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertTriangle, Gauge, Settings, RotateCcw } from "lucide-react";
 import { MaintenanceRequestDialog } from "./MaintenanceRequestDialog";
 import { AddMileageDialog } from "./AddMileageDialog";
 import { ChangeVehicleStatusDialog } from "./ChangeVehicleStatusDialog";
 import { VehicleStatus } from "@/contexts/VehiclesContext";
+import { useVehicleMileage } from "@/contexts/VehicleMileageContext";
+import { toast } from "@/hooks/use-toast";
 
 interface VehicleCardProps {
   id: string;
@@ -30,6 +32,56 @@ export const VehicleCard = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mileageDialogOpen, setMileageDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const { getMileageByVehicle, addMileageRecord } = useVehicleMileage();
+
+  // حساب الكيلومترات الفعلية من السجلات
+  const actualMileage = useMemo(() => {
+    const records = getMileageByVehicle(id);
+    if (records.length === 0) return 0;
+    
+    // إيجاد آخر نقطة تصفير
+    let lastResetIndex = -1;
+    for (let i = records.length - 1; i >= 0; i--) {
+      if (records[i].resetMileage) {
+        lastResetIndex = i;
+        break;
+      }
+    }
+    
+    // جمع الكيلومترات بعد آخر تصفير
+    const relevantRecords = lastResetIndex >= 0 
+      ? records.slice(lastResetIndex + 1) 
+      : records;
+    
+    return relevantRecords.reduce((total, record) => total + record.mileage, 0);
+  }, [getMileageByVehicle, id]);
+
+  // تحديد لون الكارت حسب الكيلومترات
+  const getCardColorClass = () => {
+    if (actualMileage >= 10000) {
+      return "border-[hsl(var(--danger-mileage))] bg-[hsl(var(--danger-mileage))]/5";
+    } else if (actualMileage >= 5000) {
+      return "border-[hsl(var(--warning-mileage))] bg-[hsl(var(--warning-mileage))]/5";
+    }
+    return "";
+  };
+
+  const handleResetMileage = () => {
+    addMileageRecord({
+      vehicleId: id,
+      vehicleName: name,
+      date: new Date().toISOString().split('T')[0],
+      mileage: 0,
+      driverName: "النظام",
+      notes: "تصفير عداد الكيلومترات",
+      resetMileage: true
+    });
+    
+    toast({
+      title: "تم تصفير الكيلومترات",
+      description: `تم تصفير عداد الكيلومترات للمركبة ${name}`,
+    });
+  };
 
   const getStatusColor = () => {
     switch(status) {
@@ -53,7 +105,7 @@ export const VehicleCard = ({
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-shadow">
+      <Card className={`hover:shadow-lg transition-shadow ${getCardColorClass()}`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -99,8 +151,17 @@ export const VehicleCard = ({
           </div>
           <div className="flex items-center justify-between pt-2 border-t">
             <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{mileage.toLocaleString()} كم</span>
+              <Gauge className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{actualMileage.toLocaleString()} كم</span>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6"
+                onClick={handleResetMileage}
+                title="تصفير الكيلومترات"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setMileageDialogOpen(true)}>

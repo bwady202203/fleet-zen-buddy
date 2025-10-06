@@ -30,7 +30,7 @@ const initialVehicles: Vehicle[] = [
     status: "active",
     lastService: "2024-09-15",
     nextService: "2024-12-15",
-    mileage: 45230
+    mileage: 0
   },
   {
     id: "2",
@@ -39,7 +39,7 @@ const initialVehicles: Vehicle[] = [
     status: "warning",
     lastService: "2024-08-20",
     nextService: "2024-11-20",
-    mileage: 32100
+    mileage: 0
   },
   {
     id: "3",
@@ -48,7 +48,7 @@ const initialVehicles: Vehicle[] = [
     status: "maintenance",
     lastService: "2024-10-01",
     nextService: "2024-10-15",
-    mileage: 58920
+    mileage: 0
   },
   {
     id: "4",
@@ -57,7 +57,7 @@ const initialVehicles: Vehicle[] = [
     status: "active",
     lastService: "2024-09-10",
     nextService: "2024-12-10",
-    mileage: 28450
+    mileage: 0
   }
 ];
 
