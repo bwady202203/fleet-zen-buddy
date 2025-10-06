@@ -120,6 +120,19 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
             </div>
             
             <div className="space-y-2">
+              <Label htmlFor="vehicleType">نوع المركبة</Label>
+              <Input
+                id="vehicleType"
+                type="text"
+                value={vehicleType}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="mileageAtChange">الكيلومترات الحالية</Label>
               <Input
                 id="mileageAtChange"
@@ -129,18 +142,18 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
                 required
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="nextOilChange">الكيلومترات للتغيير القادم</Label>
-            <Input
-              id="nextOilChange"
-              type="number"
-              placeholder="مثال: 50000"
-              value={nextOilChange}
-              onChange={(e) => setNextOilChange(e.target.value)}
-              required
-            />
+            <div className="space-y-2">
+              <Label htmlFor="nextOilChange">الكيلومترات للتغيير القادم</Label>
+              <Input
+                id="nextOilChange"
+                type="number"
+                placeholder="مثال: 50000"
+                value={nextOilChange}
+                onChange={(e) => setNextOilChange(e.target.value)}
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
