@@ -6,9 +6,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SparePartsProvider } from "@/contexts/SparePartsContext";
 import { VehicleMileageProvider } from "@/contexts/VehicleMileageContext";
 import { VehiclesProvider } from "@/contexts/VehiclesContext";
+import { AccountingProvider } from "@/contexts/AccountingContext";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Accounting from "./pages/Accounting";
+import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
+import JournalEntries from "./pages/accounting/JournalEntries";
+import Ledger from "./pages/accounting/Ledger";
+import TrialBalance from "./pages/accounting/TrialBalance";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import Employees from "./pages/hr/Employees";
@@ -34,10 +39,11 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <VehiclesProvider>
-        <SparePartsProvider>
-          <VehicleMileageProvider>
-            <TooltipProvider>
+      <AccountingProvider>
+        <VehiclesProvider>
+          <SparePartsProvider>
+            <VehicleMileageProvider>
+              <TooltipProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -45,6 +51,10 @@ const App = () => {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/fleet" element={<Index />} />
                   <Route path="/accounting" element={<Accounting />} />
+                  <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
+                  <Route path="/accounting/journal-entries" element={<JournalEntries />} />
+                  <Route path="/accounting/ledger" element={<Ledger />} />
+                  <Route path="/accounting/trial-balance" element={<TrialBalance />} />
                   <Route path="/hr" element={<HR />} />
                   <Route path="/hr/employees" element={<Employees />} />
                   <Route path="/hr/payroll" element={<Payroll />} />
@@ -65,10 +75,11 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
-            </TooltipProvider>
-          </VehicleMileageProvider>
-        </SparePartsProvider>
-      </VehiclesProvider>
+              </TooltipProvider>
+            </VehicleMileageProvider>
+          </SparePartsProvider>
+        </VehiclesProvider>
+      </AccountingProvider>
     </QueryClientProvider>
   );
 };

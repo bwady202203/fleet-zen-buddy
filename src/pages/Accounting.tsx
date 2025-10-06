@@ -5,23 +5,30 @@ import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet 
 const Accounting = () => {
   const sections = [
     {
+      title: "شجرة الحسابات",
+      description: "إدارة الدليل المحاسبي - 4 مستويات",
+      icon: BookOpen,
+      link: "/accounting/chart-of-accounts",
+      color: "from-emerald-500 to-emerald-600"
+    },
+    {
       title: "القيود اليومية",
       description: "تسجيل وعرض القيود اليومية",
-      icon: BookOpen,
+      icon: FileText,
       link: "/accounting/journal-entries",
       color: "from-blue-500 to-blue-600"
     },
     {
       title: "دفتر الأستاذ",
       description: "عرض دفتر الأستاذ لأي حساب",
-      icon: FileText,
+      icon: BarChart3,
       link: "/accounting/ledger",
       color: "from-indigo-500 to-indigo-600"
     },
     {
       title: "ميزان المراجعة",
       description: "عرض ميزان المراجعة",
-      icon: BarChart3,
+      icon: DollarSign,
       link: "/accounting/trial-balance",
       color: "from-purple-500 to-purple-600"
     },
