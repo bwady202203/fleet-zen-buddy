@@ -154,13 +154,13 @@ export const VehicleCard = ({
               <Gauge className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">{actualMileage.toLocaleString()} كم</span>
               <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-6 w-6"
+                size="sm" 
+                variant="outline" 
+                className="h-7 w-7 p-0"
                 onClick={handleResetMileage}
                 title="تصفير الكيلومترات"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
             <div className="flex gap-2">
