@@ -1,8 +1,9 @@
 import { VehicleCard } from "@/components/VehicleCard";
 import { StatsCard } from "@/components/StatsCard";
+import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Plus, Search, FileText, Package, ShoppingCart, Gauge } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
 
@@ -45,10 +46,13 @@ const Index = () => {
                   تقرير الكيلومترات
                 </Button>
               </Link>
-              <Button>
-                <Plus className="h-4 w-4 ml-2" />
-                إضافة مركبة
-              </Button>
+              <Link to="/bulk-vehicles">
+                <Button variant="outline">
+                  <List className="h-4 w-4 ml-2" />
+                  تسجيل عدة مركبات
+                </Button>
+              </Link>
+              <AddVehicleDialog />
             </div>
           </div>
         </div>

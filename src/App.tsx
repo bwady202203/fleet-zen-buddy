@@ -13,6 +13,7 @@ import Purchases from "./pages/Purchases";
 import StockMovement from "./pages/StockMovement";
 import VehicleMileageReport from "./pages/VehicleMileageReport";
 import PurchasePriceHistory from "./pages/PurchasePriceHistory";
+import BulkVehicles from "./pages/BulkVehicles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => {
                   <Route path="/stock-movement" element={<StockMovement />} />
                   <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
                   <Route path="/price-history" element={<PurchasePriceHistory />} />
+                  <Route path="/bulk-vehicles" element={<BulkVehicles />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
