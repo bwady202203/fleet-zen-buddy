@@ -7,49 +7,57 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVehicleMileage } from "@/contexts/VehicleMileageContext";
+import { useVehicles } from "@/contexts/VehiclesContext";
 import { toast } from "@/hooks/use-toast";
 
 interface OilChangeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicleId: string;
-  vehicleName: string;
-  vehicleType: string;
-  currentMileage: number;
+  vehicleId?: string;
+  vehicleName?: string;
+  vehicleType?: string;
+  currentMileage?: number;
 }
 
 export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, vehicleType, currentMileage }: OilChangeDialogProps) => {
   const { addOilChangeRecord } = useVehicleMileage();
+  const { vehicles } = useVehicles();
+  
+  const [selectedVehicleId, setSelectedVehicleId] = useState(vehicleId || "");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedVehicleType, setSelectedVehicleType] = useState(vehicleType);
-  const [mileageAtChange, setMileageAtChange] = useState(currentMileage.toString());
-  const [nextOilChange, setNextOilChange] = useState((currentMileage + 5000).toString());
+  const [mileageAtChange, setMileageAtChange] = useState(currentMileage?.toString() || "0");
+  const [nextOilChange, setNextOilChange] = useState(((currentMileage || 0) + 5000).toString());
   const [oilType, setOilType] = useState("");
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [resetMileage, setResetMileage] = useState(false);
 
-  // قائمة أنواع المركبات
-  const vehicleTypes = [
-    "شاحنة ثقيلة",
-    "شاحنة متوسطة",
-    "شاحنة خفيفة",
-    "فان توصيل",
-    "فان نقل",
-    "سيارة صغيرة",
-    "حافلة",
-    "معدة ثقيلة",
-  ];
+  // الحصول على بيانات المركبة المختارة
+  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
 
   // Update values when dialog opens
   useEffect(() => {
     if (open) {
       setDate(new Date().toISOString().split('T')[0]);
-      setSelectedVehicleType(vehicleType);
-      setMileageAtChange(currentMileage.toString());
-      setNextOilChange((currentMileage + 5000).toString());
+      if (vehicleId) {
+        setSelectedVehicleId(vehicleId);
+      }
+      if (currentMileage !== undefined) {
+        setMileageAtChange(currentMileage.toString());
+        setNextOilChange((currentMileage + 5000).toString());
+      }
     }
-  }, [open, currentMileage, vehicleType]);
+  }, [open, vehicleId, currentMileage]);
+
+  // Update mileage when vehicle changes
+  const handleVehicleChange = (newVehicleId: string) => {
+    setSelectedVehicleId(newVehicleId);
+    const vehicle = vehicles.find(v => v.id === newVehicleId);
+    if (vehicle) {
+      setMileageAtChange(vehicle.mileage.toString());
+      setNextOilChange((vehicle.mileage + 5000).toString());
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,10 +75,19 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
       resetMileage
     });
     
-    if (!oilType || !cost) {
+    if (!oilType || !cost || !selectedVehicleId) {
       toast({
         title: "خطأ",
-        description: "يرجى ملء جميع الحقول المطلوبة",
+        description: "يرجى ملء جميع الحقول المطلوبة واختيار المركبة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedVehicle) {
+      toast({
+        title: "خطأ",
+        description: "المركبة المختارة غير موجودة",
         variant: "destructive",
       });
       return;
@@ -78,9 +95,9 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
 
     try {
       addOilChangeRecord({
-        vehicleId,
-        vehicleName,
-        vehicleType: selectedVehicleType,
+        vehicleId: selectedVehicleId,
+        vehicleName: selectedVehicle.name,
+        vehicleType: selectedVehicle.type,
         date,
         mileageAtChange: parseInt(mileageAtChange),
         nextOilChange: parseInt(nextOilChange),
@@ -119,9 +136,25 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle>تسجيل تغيير الزيت - {vehicleName}</DialogTitle>
+          <DialogTitle>تسجيل تغيير الزيت</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="vehicle">المركبة</Label>
+            <Select value={selectedVehicleId} onValueChange={handleVehicleChange}>
+              <SelectTrigger id="vehicle">
+                <SelectValue placeholder="اختر المركبة" />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicles.map((vehicle) => (
+                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.name} - {vehicle.type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="date">التاريخ</Label>
@@ -136,18 +169,13 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
             
             <div className="space-y-2">
               <Label htmlFor="vehicleType">نوع المركبة</Label>
-              <Select value={selectedVehicleType} onValueChange={setSelectedVehicleType}>
-                <SelectTrigger id="vehicleType">
-                  <SelectValue placeholder="اختر نوع المركبة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicleTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="vehicleType"
+                type="text"
+                value={selectedVehicle?.type || ""}
+                disabled
+                className="bg-muted"
+              />
             </div>
           </div>
 

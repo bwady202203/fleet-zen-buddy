@@ -26,7 +26,6 @@ const VehicleMileageReport = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [oilChangeDialogOpen, setOilChangeDialogOpen] = useState(false);
-  const [selectedVehicleForOil, setSelectedVehicleForOil] = useState<{id: string; name: string; type: string; mileage: number} | null>(null);
 
   const vehicles = useMemo(() => {
     const uniqueVehicles = new Map();
@@ -181,35 +180,7 @@ const VehicleMileageReport = () => {
               <CardTitle>سجل حركة المركبات</CardTitle>
               <Dialog open={oilChangeDialogOpen} onOpenChange={setOilChangeDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      if (selectedVehicle === "all") {
-                        // Select first vehicle as default
-                        const firstVehicle = vehicles[0];
-                        const vehicleData = allVehicles.find(v => v.id === firstVehicle?.id);
-                        if (firstVehicle && vehicleData) {
-                          setSelectedVehicleForOil({
-                            id: firstVehicle.id,
-                            name: firstVehicle.name,
-                            type: vehicleData.type,
-                            mileage: filteredRecords.find(r => r.vehicleId === firstVehicle.id)?.mileage || 0
-                          });
-                        }
-                      } else {
-                        const vehicle = vehicles.find(v => v.id === selectedVehicle);
-                        const vehicleData = allVehicles.find(v => v.id === selectedVehicle);
-                        if (vehicle && vehicleData) {
-                          setSelectedVehicleForOil({
-                            id: vehicle.id,
-                            name: vehicle.name,
-                            type: vehicleData.type,
-                            mileage: filteredRecords.find(r => r.vehicleId === vehicle.id)?.mileage || 0
-                          });
-                        }
-                      }
-                    }}
-                  >
+                  <Button variant="outline">
                     <Droplet className="h-4 w-4 ml-2" />
                     تسجيل تغيير زيت
                   </Button>
@@ -261,16 +232,10 @@ const VehicleMileageReport = () => {
           </CardContent>
         </Card>
 
-        {selectedVehicleForOil && (
-          <OilChangeDialog
-            open={oilChangeDialogOpen}
-            onOpenChange={setOilChangeDialogOpen}
-            vehicleId={selectedVehicleForOil.id}
-            vehicleName={selectedVehicleForOil.name}
-            vehicleType={selectedVehicleForOil.type}
-            currentMileage={selectedVehicleForOil.mileage}
-          />
-        )}
+        <OilChangeDialog
+          open={oilChangeDialogOpen}
+          onOpenChange={setOilChangeDialogOpen}
+        />
       </main>
     </div>
   );
