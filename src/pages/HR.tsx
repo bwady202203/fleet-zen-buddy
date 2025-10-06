@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Users, DollarSign, Clock, Calendar } from "lucide-react";
+import { ArrowRight, Users, DollarSign, Clock, Calendar, PlusCircle, MinusCircle, FileText, Wallet } from "lucide-react";
 
 const HR = () => {
   const sections = [
@@ -12,18 +12,39 @@ const HR = () => {
       color: "from-blue-500 to-blue-600"
     },
     {
-      title: "الرواتب",
-      description: "إدارة رواتب الموظفين",
-      icon: DollarSign,
-      link: "/hr/salaries",
+      title: "كشف الرواتب",
+      description: "إصدار كشوف الرواتب",
+      icon: FileText,
+      link: "/hr/payroll",
       color: "from-green-500 to-green-600"
+    },
+    {
+      title: "سندات السلف",
+      description: "تسجيل سندات السلف",
+      icon: Wallet,
+      link: "/hr/advances",
+      color: "from-purple-500 to-purple-600"
+    },
+    {
+      title: "سندات الإضافي",
+      description: "تسجيل سندات الإضافي",
+      icon: PlusCircle,
+      link: "/hr/additions",
+      color: "from-teal-500 to-teal-600"
+    },
+    {
+      title: "سندات الخصم",
+      description: "تسجيل سندات الخصم",
+      icon: MinusCircle,
+      link: "/hr/deductions",
+      color: "from-red-500 to-red-600"
     },
     {
       title: "الحضور والانصراف",
       description: "تتبع أوقات الدوام",
       icon: Clock,
       link: "/hr/attendance",
-      color: "from-purple-500 to-purple-600"
+      color: "from-indigo-500 to-indigo-600"
     },
     {
       title: "الإجازات",
@@ -53,7 +74,7 @@ const HR = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sections.map((section) => (
             <Link key={section.title} to={section.link}>
               <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">

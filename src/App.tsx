@@ -11,6 +11,11 @@ import Index from "./pages/Index";
 import Accounting from "./pages/Accounting";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
+import Employees from "./pages/hr/Employees";
+import Payroll from "./pages/hr/Payroll";
+import Advances from "./pages/hr/Advances";
+import Additions from "./pages/hr/Additions";
+import Deductions from "./pages/hr/Deductions";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
 import Purchases from "./pages/Purchases";
@@ -39,6 +44,11 @@ const App = () => {
                   <Route path="/fleet" element={<Index />} />
                   <Route path="/accounting" element={<Accounting />} />
                   <Route path="/hr" element={<HR />} />
+                  <Route path="/hr/employees" element={<Employees />} />
+                  <Route path="/hr/payroll" element={<Payroll />} />
+                  <Route path="/hr/advances" element={<Advances />} />
+                  <Route path="/hr/additions" element={<Additions />} />
+                  <Route path="/hr/deductions" element={<Deductions />} />
                   <Route path="/loads" element={<Loads />} />
                   <Route path="/reports" element={<MaintenanceReports />} />
                   <Route path="/spare-parts" element={<SpareParts />} />
