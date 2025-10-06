@@ -12,6 +12,7 @@ import SpareParts from "./pages/SpareParts";
 import Purchases from "./pages/Purchases";
 import StockMovement from "./pages/StockMovement";
 import VehicleMileageReport from "./pages/VehicleMileageReport";
+import PurchasePriceHistory from "./pages/PurchasePriceHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,16 +26,17 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/reports" element={<MaintenanceReports />} />
-                <Route path="/spare-parts" element={<SpareParts />} />
-                <Route path="/purchases" element={<Purchases />} />
-                <Route path="/stock-movement" element={<StockMovement />} />
-                <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/reports" element={<MaintenanceReports />} />
+              <Route path="/spare-parts" element={<SpareParts />} />
+              <Route path="/purchases" element={<Purchases />} />
+              <Route path="/stock-movement" element={<StockMovement />} />
+              <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
+              <Route path="/price-history" element={<PurchasePriceHistory />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
             </BrowserRouter>
           </TooltipProvider>
         </VehicleMileageProvider>

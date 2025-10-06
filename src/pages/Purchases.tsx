@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, ArrowRight, Trash2 } from "lucide-react";
+import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
@@ -143,12 +143,20 @@ const Purchases = () => {
               <ShoppingCart className="h-6 w-6 text-primary" />
               <h1 className="text-2xl font-bold">إدارة المشتريات</h1>
             </div>
-            <Link to="/">
-              <Button variant="outline">
-                العودة للرئيسية
-                <ArrowRight className="h-4 w-4 mr-2" />
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link to="/price-history">
+                <Button variant="outline">
+                  <BarChart3 className="h-4 w-4 ml-2" />
+                  سجل الأسعار
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button variant="outline">
+                  العودة للرئيسية
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
