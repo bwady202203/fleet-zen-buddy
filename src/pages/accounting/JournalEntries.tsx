@@ -429,7 +429,6 @@ const JournalEntries = () => {
                     <SelectValue placeholder="جميع الحسابات" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع الحسابات</SelectItem>
                     {accounts.filter(acc => acc.level === 4).map(acc => (
                       <SelectItem key={acc.id} value={acc.id}>
                         {acc.code} - {acc.name}
@@ -437,6 +436,16 @@ const JournalEntries = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {filterAccount && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setFilterAccount("")}
+                    className="mt-1 text-xs"
+                  >
+                    إلغاء الفلتر
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
