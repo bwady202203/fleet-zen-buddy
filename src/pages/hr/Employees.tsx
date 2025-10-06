@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, User, Search, Plus } from "lucide-react";
+import { ArrowRight, User, Search, Plus, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AddEmployeeDialog } from "@/components/AddEmployeeDialog";
 
 // Mock data - في التطبيق الحقيقي، سيتم جلب البيانات من قاعدة البيانات
 const mockEmployees = [
@@ -60,8 +61,9 @@ const mockEmployees = [
 
 const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [employees] = useState(mockEmployees);
+  const [employees, setEmployees] = useState(mockEmployees);
   const { getEmployeeTransactions } = useEmployeeTransactions();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const filteredEmployees = employees.filter((emp) =>
     emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,6 +73,10 @@ const Employees = () => {
 
   const getTotalSalary = (emp: typeof mockEmployees[0]) => {
     return emp.basicSalary + emp.housingAllowance + emp.transportAllowance + emp.otherAllowances;
+  };
+
+  const handleAddEmployee = (newEmployee: any) => {
+    setEmployees(prev => [...prev, newEmployee]);
   };
 
   return (
@@ -89,10 +95,18 @@ const Employees = () => {
                 </p>
               </div>
             </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              إضافة موظف جديد
-            </Button>
+            <div className="flex gap-2">
+              <Button className="gap-2" onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4" />
+                إضافة موظف جديد
+              </Button>
+              <Button variant="outline" className="gap-2" asChild>
+                <Link to="/hr/bulk-employees">
+                  <Upload className="h-4 w-4" />
+                  استيراد من إكسل
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -317,6 +331,12 @@ const Employees = () => {
           </div>
         )}
       </main>
+
+      <AddEmployeeDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onAddEmployee={handleAddEmployee}
+      />
     </div>
   );
 };
