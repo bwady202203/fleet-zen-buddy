@@ -1,0 +1,344 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useSpareParts } from "@/contexts/SparePartsContext";
+import { toast } from "@/hooks/use-toast";
+
+const SpareParts = () => {
+  const { spareParts, addSparePart, updateSparePart, deleteSparePart } = useSpareParts();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPart, setEditingPart] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    price: "",
+    quantity: "",
+    minQuantity: "",
+    unit: "قطعة",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingPart) {
+      updateSparePart(editingPart, {
+        name: formData.name,
+        price: parseFloat(formData.price),
+        quantity: parseInt(formData.quantity),
+        minQuantity: parseInt(formData.minQuantity),
+        unit: formData.unit,
+      });
+      toast({
+        title: "تم التحديث بنجاح",
+        description: "تم تحديث قطعة الغيار",
+      });
+    } else {
+      addSparePart({
+        name: formData.name,
+        price: parseFloat(formData.price),
+        quantity: parseInt(formData.quantity),
+        minQuantity: parseInt(formData.minQuantity),
+        unit: formData.unit,
+      });
+      toast({
+        title: "تمت الإضافة بنجاح",
+        description: "تم إضافة قطعة الغيار الجديدة",
+      });
+    }
+    
+    setDialogOpen(false);
+    setEditingPart(null);
+    setFormData({
+      name: "",
+      price: "",
+      quantity: "",
+      minQuantity: "",
+      unit: "قطعة",
+    });
+  };
+
+  const handleEdit = (part: any) => {
+    setEditingPart(part.id);
+    setFormData({
+      name: part.name,
+      price: part.price.toString(),
+      quantity: part.quantity.toString(),
+      minQuantity: part.minQuantity.toString(),
+      unit: part.unit,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    if (confirm(`هل أنت متأكد من حذف ${name}؟`)) {
+      deleteSparePart(id);
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف قطعة الغيار",
+      });
+    }
+  };
+
+  const lowStockParts = spareParts.filter((part) => part.quantity <= part.minQuantity);
+
+  return (
+    <div className="min-h-screen bg-background" dir="rtl">
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Package className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">إدارة قطع الغيار</h1>
+            </div>
+            <Link to="/">
+              <Button variant="outline">
+                العودة للرئيسية
+                <ArrowRight className="h-4 w-4 mr-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {/* إحصائيات */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                إجمالي الأصناف
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{spareParts.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                أصناف منخفضة المخزون
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-500">{lowStockParts.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                القيمة الإجمالية
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {spareParts.reduce((sum, part) => sum + part.price * part.quantity, 0).toLocaleString()} ر.س
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* تنبيه المخزون المنخفض */}
+        {lowStockParts.length > 0 && (
+          <Card className="mb-6 border-yellow-500/50 bg-yellow-500/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-yellow-500 mb-2">تنبيه: مخزون منخفض</h3>
+                  <p className="text-sm text-muted-foreground">
+                    لديك {lowStockParts.length} من قطع الغيار تحتاج إلى إعادة طلب:
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {lowStockParts.map((part) => (
+                      <Badge key={part.id} variant="outline" className="border-yellow-500 text-yellow-500">
+                        {part.name} ({part.quantity} {part.unit})
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* قائمة قطع الغيار */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>قطع الغيار</CardTitle>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    setEditingPart(null);
+                    setFormData({
+                      name: "",
+                      price: "",
+                      quantity: "",
+                      minQuantity: "",
+                      unit: "قطعة",
+                    });
+                  }}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة قطعة غيار
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md" dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingPart ? "تعديل قطعة الغيار" : "إضافة قطعة غيار جديدة"}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">اسم القطعة</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                        className="text-right"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="price">السعر (ر.س)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          required
+                          className="text-right"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="unit">الوحدة</Label>
+                        <Input
+                          id="unit"
+                          value={formData.unit}
+                          onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                          required
+                          className="text-right"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="quantity">الكمية الحالية</Label>
+                        <Input
+                          id="quantity"
+                          type="number"
+                          value={formData.quantity}
+                          onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                          required
+                          className="text-right"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="minQuantity">الحد الأدنى</Label>
+                        <Input
+                          id="minQuantity"
+                          type="number"
+                          value={formData.minQuantity}
+                          onChange={(e) => setFormData({ ...formData, minQuantity: e.target.value })}
+                          required
+                          className="text-right"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full">
+                      {editingPart ? "تحديث" : "إضافة"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">القطعة</TableHead>
+                  <TableHead className="text-right">السعر</TableHead>
+                  <TableHead className="text-right">الكمية المتاحة</TableHead>
+                  <TableHead className="text-right">الحد الأدنى</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">القيمة الإجمالية</TableHead>
+                  <TableHead className="text-right">الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {spareParts.map((part) => (
+                  <TableRow key={part.id}>
+                    <TableCell className="font-medium">{part.name}</TableCell>
+                    <TableCell>{part.price.toLocaleString()} ر.س</TableCell>
+                    <TableCell>
+                      {part.quantity} {part.unit}
+                    </TableCell>
+                    <TableCell>
+                      {part.minQuantity} {part.unit}
+                    </TableCell>
+                    <TableCell>
+                      {part.quantity <= part.minQuantity ? (
+                        <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                          مخزون منخفض
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-green-500 text-green-500">
+                          متوفر
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {(part.price * part.quantity).toLocaleString()} ر.س
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(part)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(part.id, part.name)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export default SpareParts;

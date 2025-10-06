@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -18,6 +17,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSpareParts } from "@/contexts/SparePartsContext";
 
 interface MaintenanceRequestDialogProps {
   open: boolean;
@@ -25,39 +25,35 @@ interface MaintenanceRequestDialogProps {
   vehicleName: string;
 }
 
-const spareParts = [
-  { id: "oil", name: "زيت المحرك", price: 150 },
-  { id: "filter", name: "فلتر الهواء", price: 80 },
-  { id: "brake", name: "فحمات الفرامل", price: 300 },
-  { id: "tires", name: "إطارات", price: 800 },
-  { id: "battery", name: "بطارية", price: 500 },
-  { id: "lights", name: "مصابيح", price: 120 },
-  { id: "wipers", name: "مساحات الزجاج", price: 60 },
-  { id: "coolant", name: "سائل التبريد", price: 100 },
-];
-
 export const MaintenanceRequestDialog = ({
   open,
   onOpenChange,
   vehicleName,
 }: MaintenanceRequestDialogProps) => {
+  const { spareParts, deductQuantity } = useSpareParts();
   const [date, setDate] = useState<Date>();
-  const [selectedParts, setSelectedParts] = useState<string[]>([]);
+  const [selectedParts, setSelectedParts] = useState<Record<string, number>>({});
   const [description, setDescription] = useState("");
   const { toast } = useToast();
 
-  const handlePartToggle = (partId: string) => {
-    setSelectedParts((prev) =>
-      prev.includes(partId)
-        ? prev.filter((id) => id !== partId)
-        : [...prev, partId]
-    );
+  const handleQuantityChange = (partId: string, quantity: number) => {
+    if (quantity > 0) {
+      setSelectedParts((prev) => ({
+        ...prev,
+        [partId]: quantity,
+      }));
+    } else {
+      const newParts = { ...selectedParts };
+      delete newParts[partId];
+      setSelectedParts(newParts);
+    }
   };
 
   const calculateTotal = () => {
-    return spareParts
-      .filter((part) => selectedParts.includes(part.id))
-      .reduce((sum, part) => sum + part.price, 0);
+    return Object.entries(selectedParts).reduce((sum, [partId, quantity]) => {
+      const part = spareParts.find((p) => p.id === partId);
+      return sum + (part?.price || 0) * quantity;
+    }, 0);
   };
 
   const handleSubmit = () => {
@@ -70,14 +66,37 @@ export const MaintenanceRequestDialog = ({
       return;
     }
 
+    // التحقق من الكميات المتاحة
+    const insufficientParts: string[] = [];
+    for (const [partId, quantity] of Object.entries(selectedParts)) {
+      const part = spareParts.find((p) => p.id === partId);
+      if (part && part.quantity < quantity) {
+        insufficientParts.push(`${part.name} (متوفر: ${part.quantity} ${part.unit})`);
+      }
+    }
+
+    if (insufficientParts.length > 0) {
+      toast({
+        title: "كمية غير كافية",
+        description: `الأصناف التالية غير متوفرة بالكمية المطلوبة: ${insufficientParts.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // خصم الكميات من المخزون
+    for (const [partId, quantity] of Object.entries(selectedParts)) {
+      deductQuantity(partId, quantity);
+    }
+
     toast({
       title: "تم إنشاء طلب الصيانة",
-      description: `تم إنشاء طلب صيانة للمركبة ${vehicleName} بتاريخ ${format(date, "PPP", { locale: ar })}`,
+      description: `تم إنشاء طلب صيانة للمركبة ${vehicleName} بتاريخ ${format(date, "PPP", { locale: ar })} وخصم قطع الغيار من المخزون`,
     });
 
     // Reset form
     setDate(undefined);
-    setSelectedParts([]);
+    setSelectedParts({});
     setDescription("");
     onOpenChange(false);
   };
@@ -126,27 +145,36 @@ export const MaintenanceRequestDialog = ({
           {/* Spare Parts Selection */}
           <div className="space-y-3">
             <Label className="text-base font-semibold">قطع الغيار المطلوبة</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-lg p-4">
+            <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-4">
               {spareParts.map((part) => (
-                <div key={part.id} className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id={part.id}
-                    checked={selectedParts.includes(part.id)}
-                    onCheckedChange={() => handlePartToggle(part.id)}
-                  />
-                  <label
-                    htmlFor={part.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1 cursor-pointer"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span>{part.name}</span>
-                      <span className="text-muted-foreground">{part.price} ر.س</span>
+                <div
+                  key={part.id}
+                  className="flex items-center justify-between gap-3 p-3 border rounded-lg hover:bg-muted/50"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{part.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      متوفر: {part.quantity} {part.unit} | {part.price} ر.س / {part.unit}
                     </div>
-                  </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={part.quantity}
+                      value={selectedParts[part.id] || 0}
+                      onChange={(e) =>
+                        handleQuantityChange(part.id, parseInt(e.target.value) || 0)
+                      }
+                      className="w-20 text-right"
+                      placeholder="0"
+                    />
+                    <span className="text-sm text-muted-foreground w-12">{part.unit}</span>
+                  </div>
                 </div>
               ))}
             </div>
-            {selectedParts.length > 0 && (
+            {Object.keys(selectedParts).length > 0 && (
               <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg">
                 <span className="font-semibold">الإجمالي المتوقع:</span>
                 <span className="text-xl font-bold text-primary">

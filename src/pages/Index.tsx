@@ -2,7 +2,7 @@ import { VehicleCard } from "@/components/VehicleCard";
 import { StatsCard } from "@/components/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Plus, Search, FileText } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Plus, Search, FileText, Package, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -57,6 +57,18 @@ const Index = () => {
               <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
             <div className="flex items-center gap-3">
+              <Link to="/spare-parts">
+                <Button variant="outline">
+                  <Package className="h-4 w-4 ml-2" />
+                  قطع الغيار
+                </Button>
+              </Link>
+              <Link to="/purchases">
+                <Button variant="outline">
+                  <ShoppingCart className="h-4 w-4 ml-2" />
+                  المشتريات
+                </Button>
+              </Link>
               <Link to="/reports">
                 <Button variant="outline">
                   <FileText className="h-4 w-4 ml-2" />
