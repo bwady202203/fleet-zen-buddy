@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, Calendar, Wrench, AlertTriangle } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertTriangle, Gauge } from "lucide-react";
 import { MaintenanceRequestDialog } from "./MaintenanceRequestDialog";
+import { AddMileageDialog } from "./AddMileageDialog";
 
 interface VehicleCardProps {
   id: string;
@@ -16,6 +17,7 @@ interface VehicleCardProps {
 }
 
 export const VehicleCard = ({ 
+  id,
   name, 
   type, 
   status, 
@@ -24,6 +26,7 @@ export const VehicleCard = ({
   mileage 
 }: VehicleCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [mileageDialogOpen, setMileageDialogOpen] = useState(false);
 
   const getStatusColor = () => {
     switch(status) {
@@ -84,9 +87,15 @@ export const VehicleCard = ({
               <Wrench className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">{mileage.toLocaleString()} كم</span>
             </div>
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
-              طلب صيانة
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setMileageDialogOpen(true)}>
+                <Gauge className="h-4 w-4 ml-1" />
+                إضافة كم
+              </Button>
+              <Button size="sm" onClick={() => setDialogOpen(true)}>
+                طلب صيانة
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -94,6 +103,13 @@ export const VehicleCard = ({
       <MaintenanceRequestDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        vehicleName={name}
+      />
+
+      <AddMileageDialog
+        open={mileageDialogOpen}
+        onOpenChange={setMileageDialogOpen}
+        vehicleId={id}
         vehicleName={name}
       />
     </>
