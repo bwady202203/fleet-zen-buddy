@@ -6,14 +6,25 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Gauge, TrendingUp, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Gauge, TrendingUp, Calendar, Droplet, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { OilChangeDialog } from "@/components/OilChangeDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const VehicleMileageReport = () => {
-  const { mileageRecords } = useVehicleMileage();
+  const { mileageRecords, oilChangeRecords } = useVehicleMileage();
   const [selectedVehicle, setSelectedVehicle] = useState<string>("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [oilChangeDialogOpen, setOilChangeDialogOpen] = useState(false);
+  const [selectedVehicleForOil, setSelectedVehicleForOil] = useState<{id: string; name: string; mileage: number} | null>(null);
 
   const vehicles = useMemo(() => {
     const uniqueVehicles = new Map();
@@ -38,9 +49,14 @@ const VehicleMileageReport = () => {
     const totalRecords = filteredRecords.length;
     const totalMileage = filteredRecords.reduce((sum, record) => sum + record.mileage, 0);
     const avgMileage = totalRecords > 0 ? Math.round(totalMileage / totalRecords) : 0;
+    
+    const vehicleOilChanges = selectedVehicle !== "all" 
+      ? oilChangeRecords.filter(r => r.vehicleId === selectedVehicle)
+      : oilChangeRecords;
+    const totalOilChanges = vehicleOilChanges.length;
 
-    return { totalRecords, totalMileage, avgMileage };
-  }, [filteredRecords]);
+    return { totalRecords, totalMileage, avgMileage, totalOilChanges };
+  }, [filteredRecords, oilChangeRecords, selectedVehicle]);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -111,7 +127,7 @@ const VehicleMileageReport = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
@@ -144,11 +160,56 @@ const VehicleMileageReport = () => {
               <p className="text-xs text-muted-foreground">كم</p>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">تغييرات الزيت</CardTitle>
+              <Droplet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalOilChanges}</div>
+              <p className="text-xs text-muted-foreground">عملية تغيير</p>
+            </CardContent>
+          </Card>
         </div>
 
-        <Card>
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle>سجل حركة المركبات</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>سجل حركة المركبات</CardTitle>
+              <Dialog open={oilChangeDialogOpen} onOpenChange={setOilChangeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedVehicle === "all") {
+                        // Select first vehicle as default
+                        const firstVehicle = vehicles[0];
+                        if (firstVehicle) {
+                          setSelectedVehicleForOil({
+                            id: firstVehicle.id,
+                            name: firstVehicle.name,
+                            mileage: filteredRecords.find(r => r.vehicleId === firstVehicle.id)?.mileage || 0
+                          });
+                        }
+                      } else {
+                        const vehicle = vehicles.find(v => v.id === selectedVehicle);
+                        if (vehicle) {
+                          setSelectedVehicleForOil({
+                            id: vehicle.id,
+                            name: vehicle.name,
+                            mileage: filteredRecords.find(r => r.vehicleId === vehicle.id)?.mileage || 0
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <Droplet className="h-4 w-4 ml-2" />
+                    تسجيل تغيير زيت
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             {filteredRecords.length === 0 ? (
@@ -173,7 +234,17 @@ const VehicleMileageReport = () => {
                         <TableCell>{new Date(record.date).toLocaleDateString('ar-SA')}</TableCell>
                         <TableCell className="font-medium">{record.vehicleName}</TableCell>
                         <TableCell>{record.driverName}</TableCell>
-                        <TableCell>{record.mileage.toLocaleString()} كم</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {record.mileage.toLocaleString()} كم
+                            {record.type === 'oil-change' && (
+                              <Badge variant="outline" className="mr-2">
+                                <Droplet className="h-3 w-3 ml-1" />
+                                تغيير زيت
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">{record.notes || '-'}</TableCell>
                       </TableRow>
                     ))}
@@ -183,6 +254,16 @@ const VehicleMileageReport = () => {
             )}
           </CardContent>
         </Card>
+
+        {selectedVehicleForOil && (
+          <OilChangeDialog
+            open={oilChangeDialogOpen}
+            onOpenChange={setOilChangeDialogOpen}
+            vehicleId={selectedVehicleForOil.id}
+            vehicleName={selectedVehicleForOil.name}
+            currentMileage={selectedVehicleForOil.mileage}
+          />
+        )}
       </main>
     </div>
   );
