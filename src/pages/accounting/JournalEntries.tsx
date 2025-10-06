@@ -41,6 +41,7 @@ const JournalEntries = () => {
   const [filterAccount, setFilterAccount] = useState("");
   
   const [formData, setFormData] = useState({
+    entryNumber: getNextEntryNumber(),
     date: new Date().toISOString().split('T')[0],
     description: "",
     lines: [] as JournalEntryLine[],
@@ -58,7 +59,7 @@ const JournalEntries = () => {
   const [accountSearch, setAccountSearch] = useState("");
   const [showAccountSearch, setShowAccountSearch] = useState(false);
 
-  const filteredAccounts = accountSearch ? searchAccounts(accountSearch) : [];
+  const filteredAccounts = accountSearch.length > 0 ? searchAccounts(accountSearch) : [];
   const level4Accounts = filteredAccounts.filter(acc => acc.level === 4);
 
   const addLine = () => {
@@ -148,11 +149,12 @@ const JournalEntries = () => {
       totalDebit,
       totalCredit,
       createdBy: "النظام",
+      entryNumber: formData.entryNumber,
     });
 
     toast({
       title: "تم الحفظ بنجاح",
-      description: `تم حفظ القيد رقم ${getNextEntryNumber()}`,
+      description: `تم حفظ القيد رقم ${formData.entryNumber}`,
     });
 
     setDialogOpen(false);
@@ -161,10 +163,20 @@ const JournalEntries = () => {
 
   const resetForm = () => {
     setFormData({
+      entryNumber: getNextEntryNumber(),
       date: new Date().toISOString().split('T')[0],
       description: "",
       lines: [],
     });
+    setCurrentLine({
+      accountId: "",
+      description: "",
+      debit: 0,
+      credit: 0,
+      costCenter: "",
+      projectName: "",
+    });
+    setAccountSearch("");
   };
 
   const handlePrint = (entry: any) => {
@@ -214,7 +226,12 @@ const JournalEntries = () => {
                   <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
                     <div>
                       <Label className="text-sm">رقم القيد</Label>
-                      <Input value={getNextEntryNumber()} disabled className="bg-background" />
+                      <Input 
+                        value={formData.entryNumber} 
+                        onChange={(e) => setFormData({ ...formData, entryNumber: e.target.value })}
+                        className="bg-background" 
+                        placeholder="رقم القيد"
+                      />
                     </div>
                     <div>
                       <Label className="text-sm">التاريخ</Label>

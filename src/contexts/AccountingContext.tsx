@@ -44,7 +44,7 @@ interface AccountingContextType {
   addAccount: (account: Omit<Account, 'id' | 'balance' | 'debit' | 'credit'>) => void;
   updateAccount: (id: string, account: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
-  addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'entryNumber' | 'createdAt'>) => void;
+  addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'createdAt'> & { entryNumber?: string }) => void;
   updateJournalEntry: (id: string, entry: Partial<JournalEntry>) => void;
   deleteJournalEntry: (id: string) => void;
   getAccountsByLevel: (level: number) => Account[];
@@ -110,11 +110,11 @@ export const AccountingProvider = ({ children }: { children: ReactNode }) => {
     setAccounts(accounts.filter(acc => acc.id !== id));
   };
 
-  const addJournalEntry = (entry: Omit<JournalEntry, 'id' | 'entryNumber' | 'createdAt'>) => {
+  const addJournalEntry = (entry: Omit<JournalEntry, 'id' | 'createdAt'> & { entryNumber?: string }) => {
     const newEntry: JournalEntry = {
       ...entry,
       id: `je${Date.now()}`,
-      entryNumber: getNextEntryNumber(),
+      entryNumber: entry.entryNumber || getNextEntryNumber(),
       createdAt: new Date().toISOString(),
     };
     
