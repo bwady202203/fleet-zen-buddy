@@ -4,46 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Truck, Calendar, Wrench, AlertCircle, Plus, Search, FileText, Package, ShoppingCart, Gauge } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useVehicles } from "@/contexts/VehiclesContext";
 
 const Index = () => {
-  const vehicles = [
-    {
-      id: "1",
-      name: "شاحنة A-101",
-      type: "شاحنة ثقيلة",
-      status: "active" as const,
-      lastService: "2024-09-15",
-      nextService: "2024-12-15",
-      mileage: 45230
-    },
-    {
-      id: "2",
-      name: "فان B-205",
-      type: "فان توصيل",
-      status: "warning" as const,
-      lastService: "2024-08-20",
-      nextService: "2024-11-20",
-      mileage: 32100
-    },
-    {
-      id: "3",
-      name: "شاحنة C-340",
-      type: "شاحنة متوسطة",
-      status: "maintenance" as const,
-      lastService: "2024-10-01",
-      nextService: "2024-10-15",
-      mileage: 58920
-    },
-    {
-      id: "4",
-      name: "فان D-412",
-      type: "فان نقل",
-      status: "active" as const,
-      lastService: "2024-09-10",
-      nextService: "2024-12-10",
-      mileage: 28450
-    }
-  ];
+  const { vehicles } = useVehicles();
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">

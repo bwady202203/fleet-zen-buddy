@@ -2,15 +2,17 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, Calendar, Wrench, AlertTriangle, Gauge } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertTriangle, Gauge, Settings } from "lucide-react";
 import { MaintenanceRequestDialog } from "./MaintenanceRequestDialog";
 import { AddMileageDialog } from "./AddMileageDialog";
+import { ChangeVehicleStatusDialog } from "./ChangeVehicleStatusDialog";
+import { VehicleStatus } from "@/contexts/VehiclesContext";
 
 interface VehicleCardProps {
   id: string;
   name: string;
   type: string;
-  status: "active" | "maintenance" | "warning";
+  status: VehicleStatus;
   lastService: string;
   nextService: string;
   mileage: number;
@@ -27,21 +29,24 @@ export const VehicleCard = ({
 }: VehicleCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mileageDialogOpen, setMileageDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   const getStatusColor = () => {
     switch(status) {
       case "active": return "bg-accent";
       case "maintenance": return "bg-destructive";
       case "warning": return "bg-[hsl(var(--chart-3))]";
+      case "out-of-service": return "bg-muted";
       default: return "bg-muted";
     }
   };
 
   const getStatusText = () => {
     switch(status) {
-      case "active": return "نشطة";
+      case "active": return "سليمة";
       case "maintenance": return "قيد الصيانة";
       case "warning": return "تحتاج صيانة";
+      case "out-of-service": return "خارج الخدمة";
       default: return "غير معروف";
     }
   };
@@ -60,9 +65,19 @@ export const VehicleCard = ({
                 <p className="text-sm text-muted-foreground">{type}</p>
               </div>
             </div>
-            <Badge className={getStatusColor()}>
-              {getStatusText()}
-            </Badge>
+            <div className="flex gap-2 items-center">
+              <Badge className={getStatusColor()}>
+                {getStatusText()}
+              </Badge>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-8 w-8"
+                onClick={() => setStatusDialogOpen(true)}
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -111,6 +126,14 @@ export const VehicleCard = ({
         onOpenChange={setMileageDialogOpen}
         vehicleId={id}
         vehicleName={name}
+      />
+
+      <ChangeVehicleStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        vehicleId={id}
+        vehicleName={name}
+        currentStatus={status}
       />
     </>
   );
