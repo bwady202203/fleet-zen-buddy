@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useVehicleMileage } from "@/contexts/VehicleMileageContext";
+import { useVehicles } from "@/contexts/VehiclesContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,11 +21,12 @@ import {
 
 const VehicleMileageReport = () => {
   const { mileageRecords, oilChangeRecords } = useVehicleMileage();
+  const { vehicles: allVehicles } = useVehicles();
   const [selectedVehicle, setSelectedVehicle] = useState<string>("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [oilChangeDialogOpen, setOilChangeDialogOpen] = useState(false);
-  const [selectedVehicleForOil, setSelectedVehicleForOil] = useState<{id: string; name: string; mileage: number} | null>(null);
+  const [selectedVehicleForOil, setSelectedVehicleForOil] = useState<{id: string; name: string; type: string; mileage: number} | null>(null);
 
   const vehicles = useMemo(() => {
     const uniqueVehicles = new Map();
@@ -185,19 +187,23 @@ const VehicleMileageReport = () => {
                       if (selectedVehicle === "all") {
                         // Select first vehicle as default
                         const firstVehicle = vehicles[0];
-                        if (firstVehicle) {
+                        const vehicleData = allVehicles.find(v => v.id === firstVehicle?.id);
+                        if (firstVehicle && vehicleData) {
                           setSelectedVehicleForOil({
                             id: firstVehicle.id,
                             name: firstVehicle.name,
+                            type: vehicleData.type,
                             mileage: filteredRecords.find(r => r.vehicleId === firstVehicle.id)?.mileage || 0
                           });
                         }
                       } else {
                         const vehicle = vehicles.find(v => v.id === selectedVehicle);
-                        if (vehicle) {
+                        const vehicleData = allVehicles.find(v => v.id === selectedVehicle);
+                        if (vehicle && vehicleData) {
                           setSelectedVehicleForOil({
                             id: vehicle.id,
                             name: vehicle.name,
+                            type: vehicleData.type,
                             mileage: filteredRecords.find(r => r.vehicleId === vehicle.id)?.mileage || 0
                           });
                         }
@@ -261,6 +267,7 @@ const VehicleMileageReport = () => {
             onOpenChange={setOilChangeDialogOpen}
             vehicleId={selectedVehicleForOil.id}
             vehicleName={selectedVehicleForOil.name}
+            vehicleType={selectedVehicleForOil.type}
             currentMileage={selectedVehicleForOil.mileage}
           />
         )}

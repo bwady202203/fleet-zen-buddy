@@ -16,11 +16,11 @@ export interface OilChangeRecord {
   id: string;
   vehicleId: string;
   vehicleName: string;
+  vehicleType: string;
   date: string;
   mileageAtChange: number;
   nextOilChange: number;
   oilType: string;
-  mechanicName: string;
   cost: number;
   notes?: string;
   resetMileage: boolean;
@@ -81,7 +81,7 @@ export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = (
         vehicleName: record.vehicleName,
         date: record.date,
         mileage: 0,
-        driverName: record.mechanicName,
+        driverName: 'النظام',
         notes: `تم تصفير العداد - تغيير زيت`,
         type: 'oil-change',
         resetMileage: true,

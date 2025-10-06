@@ -13,16 +13,16 @@ interface OilChangeDialogProps {
   onOpenChange: (open: boolean) => void;
   vehicleId: string;
   vehicleName: string;
+  vehicleType: string;
   currentMileage: number;
 }
 
-export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, currentMileage }: OilChangeDialogProps) => {
+export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, vehicleType, currentMileage }: OilChangeDialogProps) => {
   const { addOilChangeRecord } = useVehicleMileage();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [mileageAtChange, setMileageAtChange] = useState(currentMileage.toString());
   const [nextOilChange, setNextOilChange] = useState((currentMileage + 5000).toString());
   const [oilType, setOilType] = useState("");
-  const [mechanicName, setMechanicName] = useState("");
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [resetMileage, setResetMileage] = useState(false);
@@ -30,7 +30,7 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, cu
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!oilType || !mechanicName || !cost) {
+    if (!oilType || !cost) {
       toast({
         title: "خطأ",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -42,11 +42,11 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, cu
     addOilChangeRecord({
       vehicleId,
       vehicleName,
+      vehicleType,
       date,
       mileageAtChange: parseInt(mileageAtChange),
       nextOilChange: parseInt(nextOilChange),
       oilType,
-      mechanicName,
       cost: parseFloat(cost),
       notes,
       resetMileage,
@@ -61,7 +61,6 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, cu
 
     // Reset form
     setOilType("");
-    setMechanicName("");
     setCost("");
     setNotes("");
     setResetMileage(false);
@@ -72,7 +71,7 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, cu
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle>تسجيل تغيير الزيت - {vehicleName}</DialogTitle>
+          <DialogTitle>تسجيل تغيير الزيت - {vehicleName} ({vehicleType})</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -119,18 +118,6 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, cu
               placeholder="مثال: 5W-30"
               value={oilType}
               onChange={(e) => setOilType(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="mechanicName">اسم الميكانيكي</Label>
-            <Input
-              id="mechanicName"
-              type="text"
-              placeholder="أدخل اسم الميكانيكي"
-              value={mechanicName}
-              onChange={(e) => setMechanicName(e.target.value)}
               required
             />
           </div>
