@@ -39,6 +39,19 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Oil Change Form Data:', {
+      vehicleId,
+      vehicleName,
+      vehicleType,
+      date,
+      mileageAtChange,
+      nextOilChange,
+      oilType,
+      cost,
+      notes,
+      resetMileage
+    });
+    
     if (!oilType || !cost) {
       toast({
         title: "خطأ",
@@ -48,32 +61,43 @@ export const OilChangeDialog = ({ open, onOpenChange, vehicleId, vehicleName, ve
       return;
     }
 
-    addOilChangeRecord({
-      vehicleId,
-      vehicleName,
-      vehicleType,
-      date,
-      mileageAtChange: parseInt(mileageAtChange),
-      nextOilChange: parseInt(nextOilChange),
-      oilType,
-      cost: parseFloat(cost),
-      notes,
-      resetMileage,
-    });
+    try {
+      addOilChangeRecord({
+        vehicleId,
+        vehicleName,
+        vehicleType,
+        date,
+        mileageAtChange: parseInt(mileageAtChange),
+        nextOilChange: parseInt(nextOilChange),
+        oilType,
+        cost: parseFloat(cost),
+        notes,
+        resetMileage,
+      });
 
-    toast({
-      title: "تم بنجاح",
-      description: resetMileage 
-        ? "تم تسجيل تغيير الزيت وتصفير عداد الكيلومترات" 
-        : "تم تسجيل تغيير الزيت بنجاح",
-    });
+      console.log('Oil change record added successfully');
 
-    // Reset form
-    setOilType("");
-    setCost("");
-    setNotes("");
-    setResetMileage(false);
-    onOpenChange(false);
+      toast({
+        title: "تم بنجاح",
+        description: resetMileage 
+          ? "تم تسجيل تغيير الزيت وتصفير عداد الكيلومترات" 
+          : "تم تسجيل تغيير الزيت بنجاح",
+      });
+
+      // Reset form
+      setOilType("");
+      setCost("");
+      setNotes("");
+      setResetMileage(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error adding oil change record:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حفظ السجل",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

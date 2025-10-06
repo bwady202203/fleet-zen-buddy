@@ -67,11 +67,19 @@ export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = (
   };
 
   const addOilChangeRecord = (record: Omit<OilChangeRecord, 'id'>) => {
+    console.log('Adding oil change record:', record);
+    
     const newRecord: OilChangeRecord = {
       ...record,
       id: Date.now().toString(),
     };
-    setOilChangeRecords(prev => [...prev, newRecord]);
+    
+    console.log('New oil change record:', newRecord);
+    setOilChangeRecords(prev => {
+      const updated = [...prev, newRecord];
+      console.log('Updated oil change records:', updated);
+      return updated;
+    });
 
     // إضافة سجل كيلومترات لتغيير الزيت
     if (record.resetMileage) {
@@ -86,6 +94,7 @@ export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = (
         type: 'oil-change',
         resetMileage: true,
       };
+      console.log('Adding reset mileage record:', mileageRecord);
       setMileageRecords(prev => [...prev, mileageRecord]);
     }
   };
