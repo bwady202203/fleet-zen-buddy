@@ -39,11 +39,11 @@ const CustodyFilter = () => {
   const [recipients, setRecipients] = useState<string[]>([]);
   
   const [filters, setFilters] = useState({
-    recipient: '',
+    recipient: 'all',
     date: undefined as Date | undefined,
     minAmount: '',
     maxAmount: '',
-    expenseType: ''
+    expenseType: 'all'
   });
 
   useEffect(() => {
@@ -87,7 +87,7 @@ const CustodyFilter = () => {
         .from('custody_transfers')
         .select('*');
 
-      if (filters.recipient) {
+      if (filters.recipient && filters.recipient !== 'all') {
         query = query.eq('recipient_name', filters.recipient);
       }
 
@@ -103,7 +103,7 @@ const CustodyFilter = () => {
         query = query.lte('amount', parseFloat(filters.maxAmount));
       }
 
-      if (filters.expenseType) {
+      if (filters.expenseType && filters.expenseType !== 'all') {
         query = query.eq('expense_type', filters.expenseType);
       }
 
@@ -120,11 +120,11 @@ const CustodyFilter = () => {
 
   const handleReset = () => {
     setFilters({
-      recipient: '',
+      recipient: 'all',
       date: undefined,
       minAmount: '',
       maxAmount: '',
-      expenseType: ''
+      expenseType: 'all'
     });
     fetchAllTransfers();
   };
@@ -161,7 +161,7 @@ const CustodyFilter = () => {
                     <SelectValue placeholder="اختر المستلم" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">الكل</SelectItem>
+                    <SelectItem value="all">الكل</SelectItem>
                     {recipients.map((recipient) => (
                       <SelectItem key={recipient} value={recipient}>
                         {recipient}
@@ -208,7 +208,7 @@ const CustodyFilter = () => {
                     <SelectValue placeholder="اختر نوع المصروف" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">الكل</SelectItem>
+                    <SelectItem value="all">الكل</SelectItem>
                     {EXPENSE_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
