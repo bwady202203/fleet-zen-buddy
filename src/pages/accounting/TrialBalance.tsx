@@ -104,7 +104,7 @@ const TrialBalance = () => {
       credit,
       balance,
     };
-  }).filter(account => account.debit > 0 || account.credit > 0);
+  });
 
   const totalDebit = trialBalanceData.reduce((sum, acc) => sum + acc.debit, 0);
   const totalCredit = trialBalanceData.reduce((sum, acc) => sum + acc.credit, 0);
