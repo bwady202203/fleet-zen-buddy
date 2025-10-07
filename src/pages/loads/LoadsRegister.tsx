@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,9 +32,9 @@ const LoadsRegister = () => {
   const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     loadData();
-  });
+  }, []);
 
   const loadData = async () => {
     const [companiesRes, loadTypesRes, driversRes] = await Promise.all([
