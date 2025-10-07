@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -61,14 +61,24 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => signOut()}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              تسجيل الخروج
-            </Button>
+            <div className="flex gap-2">
+              {userRole === 'admin' && (
+                <Link to="/users">
+                  <Button variant="outline" className="gap-2">
+                    <Shield className="h-4 w-4" />
+                    إدارة المستخدمين
+                  </Button>
+                </Link>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => signOut()}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                تسجيل الخروج
+              </Button>
+            </div>
           </div>
           <div className="hidden">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">

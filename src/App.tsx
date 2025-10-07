@@ -13,6 +13,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import UsersManagement from "./pages/UsersManagement";
 import Accounting from "./pages/Accounting";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
@@ -64,6 +65,7 @@ const App = () => {
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/users" element={<ProtectedRoute><UsersManagement /></ProtectedRoute>} />
                   <Route path="/fleet" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/accounting" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
                   <Route path="/accounting/chart-of-accounts" element={<ProtectedRoute><ChartOfAccounts /></ProtectedRoute>} />
