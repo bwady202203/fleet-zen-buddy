@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
@@ -15,12 +16,36 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import CustodyNavbar from '@/components/CustodyNavbar';
 
+interface Representative {
+  id: string;
+  name: string;
+}
+
 const CustodyTransfers = () => {
   const { user } = useAuth();
+  const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const [recipientName, setRecipientName] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    fetchRepresentatives();
+  }, []);
+
+  const fetchRepresentatives = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custody_representatives')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setRepresentatives(data || []);
+    } catch (error) {
+      console.error('Error fetching representatives:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,13 +148,27 @@ const CustodyTransfers = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="recipient">اسم المستلم *</Label>
-                <Input
-                  id="recipient"
+                <Select
                   value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="أدخل اسم المستلم (حساس لحالة الأحرف)"
-                  required
-                />
+                  onValueChange={setRecipientName}
+                >
+                  <SelectTrigger id="recipient">
+                    <SelectValue placeholder="اختر المستلم" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {representatives.length === 0 ? (
+                      <SelectItem value="no-data" disabled>
+                        لا يوجد مندوبين
+                      </SelectItem>
+                    ) : (
+                      representatives.map((rep) => (
+                        <SelectItem key={rep.id} value={rep.name}>
+                          {rep.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
