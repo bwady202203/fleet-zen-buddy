@@ -168,11 +168,10 @@ const JournalEntries = () => {
   };
 
   const calculateLevel = (account: Account): number => {
-    const codeLength = account.code.replace(/[^0-9]/g, '').length;
-    if (codeLength <= 1) return 1;
-    if (codeLength <= 2) return 2;
-    if (codeLength <= 4) return 3;
-    return 4;
+    if (!account.parent_id) return 1;
+    const parent = accounts.find(a => a.id === account.parent_id);
+    if (!parent) return 1;
+    return calculateLevel(parent) + 1;
   };
   
   const createInitialEmptyLines = () => {
