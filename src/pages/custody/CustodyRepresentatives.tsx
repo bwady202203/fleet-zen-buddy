@@ -93,6 +93,63 @@ const CustodyRepresentatives = () => {
     }
 
     try {
+      // First, find or create the parent account "العهد" under "الأصول المتداولة"
+      const { data: parentAccounts, error: parentError } = await supabase
+        .from('chart_of_accounts')
+        .select('id, parent_id')
+        .eq('name_ar', 'العهد')
+        .maybeSingle();
+
+      let custodyAccountId = parentAccounts?.id;
+
+      // If "العهد" account doesn't exist, we need to create it
+      if (!custodyAccountId) {
+        // Find "الأصول المتداولة"
+        const { data: currentAssets } = await supabase
+          .from('chart_of_accounts')
+          .select('id')
+          .eq('name_ar', 'الأصول المتداولة')
+          .maybeSingle();
+
+        if (currentAssets) {
+          // Create "العهد" account
+          const { data: custodyAccount, error: custodyError } = await supabase
+            .from('chart_of_accounts')
+            .insert([{
+              code: '1102',
+              name_ar: 'العهد',
+              name_en: 'Custody',
+              type: 'asset',
+              parent_id: currentAssets.id,
+              is_active: true
+            }])
+            .select()
+            .single();
+
+          if (custodyError) throw custodyError;
+          custodyAccountId = custodyAccount.id;
+        }
+      }
+
+      // Create account for the representative
+      if (custodyAccountId) {
+        const accountCode = `110201${Math.floor(Math.random() * 1000)}`;
+        
+        const { error: accountError } = await supabase
+          .from('chart_of_accounts')
+          .insert([{
+            code: accountCode,
+            name_ar: `عهدة ${newRep.name}`,
+            name_en: `Custody ${newRep.name}`,
+            type: 'asset',
+            parent_id: custodyAccountId,
+            is_active: true
+          }]);
+
+        if (accountError) throw accountError;
+      }
+
+      // Create the representative
       const { error } = await supabase
         .from('custody_representatives')
         .insert([{
@@ -104,7 +161,7 @@ const CustodyRepresentatives = () => {
 
       if (error) throw error;
 
-      toast.success('تم إضافة المندوب بنجاح');
+      toast.success('تم إضافة المندوب وحسابه في شجرة الحسابات بنجاح');
       setIsAddDialogOpen(false);
       setNewRep({ name: '', total_custody: 0 });
       fetchRepresentatives();

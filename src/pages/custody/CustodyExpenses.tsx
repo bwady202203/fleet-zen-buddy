@@ -131,7 +131,8 @@ const CustodyExpenses = () => {
     }
 
     try {
-      const { error } = await supabase
+      // Insert the expense
+      const { data: expenseData, error: expenseError } = await supabase
         .from('custody_expenses')
         .insert([{
           representative_id: selectedRepId,
@@ -140,11 +141,115 @@ const CustodyExpenses = () => {
           amount: parseFloat(amount),
           description: description,
           created_by: user?.id
-        }]);
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (expenseError) throw expenseError;
 
-      toast.success('تم إضافة المصروف بنجاح');
+      // Get the representative's account in chart of accounts
+      const repName = representatives.find(r => r.id === selectedRepId)?.name;
+      const { data: repAccount } = await supabase
+        .from('chart_of_accounts')
+        .select('id, code, name_ar')
+        .ilike('name_ar', `%عهدة ${repName}%`)
+        .maybeSingle();
+
+      // Get or create expense account
+      let expenseAccountId;
+      const { data: expenseAccount } = await supabase
+        .from('chart_of_accounts')
+        .select('id, code, name_ar')
+        .eq('name_ar', `مصروف ${expenseType}`)
+        .maybeSingle();
+
+      if (expenseAccount) {
+        expenseAccountId = expenseAccount.id;
+      } else {
+        // Create expense account under expenses
+        const { data: expensesParent } = await supabase
+          .from('chart_of_accounts')
+          .select('id')
+          .eq('name_ar', 'المصروفات')
+          .maybeSingle();
+
+        if (expensesParent) {
+          const newExpenseCode = `5${Math.floor(Math.random() * 1000)}`;
+          const { data: newExpenseAccount, error: newExpError } = await supabase
+            .from('chart_of_accounts')
+            .insert([{
+              code: newExpenseCode,
+              name_ar: `مصروف ${expenseType}`,
+              name_en: `${expenseType} Expense`,
+              type: 'expense',
+              parent_id: expensesParent.id,
+              is_active: true
+            }])
+            .select()
+            .single();
+
+          if (newExpError) throw newExpError;
+          expenseAccountId = newExpenseAccount.id;
+        }
+      }
+
+      // Create journal entry
+      if (repAccount && expenseAccountId) {
+        // Generate entry number
+        const { data: lastEntry } = await supabase
+          .from('journal_entries')
+          .select('entry_number')
+          .order('entry_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        let nextNumber = 1;
+        if (lastEntry?.entry_number) {
+          const match = lastEntry.entry_number.match(/\d+/);
+          if (match) {
+            nextNumber = parseInt(match[0]) + 1;
+          }
+        }
+        const entryNumber = `JE-${nextNumber.toString().padStart(6, '0')}`;
+
+        // Insert journal entry
+        const { data: journalEntry, error: journalError } = await supabase
+          .from('journal_entries')
+          .insert([{
+            entry_number: entryNumber,
+            date: format(date, 'yyyy-MM-dd'),
+            description: `مصروف ${expenseType} - ${repName}`,
+            created_by: user?.id
+          }])
+          .select()
+          .single();
+
+        if (journalError) throw journalError;
+
+        // Insert journal entry lines (debit expense, credit representative)
+        const { error: linesError } = await supabase
+          .from('journal_entry_lines')
+          .insert([
+            {
+              journal_entry_id: journalEntry.id,
+              account_id: expenseAccountId,
+              debit: parseFloat(amount),
+              credit: 0,
+              description: description || `مصروف ${expenseType}`
+            },
+            {
+              journal_entry_id: journalEntry.id,
+              account_id: repAccount.id,
+              debit: 0,
+              credit: parseFloat(amount),
+              description: description || `مصروف ${expenseType}`
+            }
+          ]);
+
+        if (linesError) throw linesError;
+      }
+
+      toast.success('تم إضافة المصروف والقيد اليومي بنجاح');
       
       // Reset form
       setExpenseType('');
