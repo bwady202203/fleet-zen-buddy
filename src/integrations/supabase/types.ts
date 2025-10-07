@@ -91,6 +91,41 @@ export type Database = {
         }
         Relationships: []
       }
+      company_driver_commissions: {
+        Row: {
+          amount: number
+          commission_type: Database["public"]["Enums"]["driver_commission_type"]
+          company_id: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          commission_type: Database["public"]["Enums"]["driver_commission_type"]
+          company_id: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          commission_type?: Database["public"]["Enums"]["driver_commission_type"]
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_driver_commissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_load_type_prices: {
         Row: {
           company_id: string
@@ -1382,6 +1417,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "employee" | "accountant"
+      driver_commission_type:
+        | "fixed"
+        | "weight_less_40"
+        | "weight_40_44"
+        | "weight_44_49"
+        | "weight_more_49"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1510,6 +1551,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "employee", "accountant"],
+      driver_commission_type: [
+        "fixed",
+        "weight_less_40",
+        "weight_40_44",
+        "weight_44_49",
+        "weight_more_49",
+      ],
     },
   },
 } as const

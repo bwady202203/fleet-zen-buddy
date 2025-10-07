@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
+import { CompanyDriverCommissionsDialog } from "@/components/CompanyDriverCommissionsDialog";
 
 const CompaniesManagement = () => {
   const { toast } = useToast();
@@ -22,6 +23,7 @@ const CompaniesManagement = () => {
     email: ''
   });
   const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
+  const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
 
   useEffect(() => {
@@ -239,6 +241,17 @@ const CompaniesManagement = () => {
                       <DollarSign className="h-4 w-4 ml-1" />
                       الأسعار
                     </Button>
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      onClick={() => {
+                        setSelectedCompany(company);
+                        setCommissionsDialogOpen(true);
+                      }}
+                    >
+                      <DollarSign className="h-4 w-4 ml-1" />
+                      عمولة النقل
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => handleEdit(company)}>
                       <Edit className="h-4 w-4 ml-1" />
                       تعديل
@@ -255,12 +268,20 @@ const CompaniesManagement = () => {
         </div>
 
         {selectedCompany && (
-          <CompanyPricesDialog
-            open={pricesDialogOpen}
-            onOpenChange={setPricesDialogOpen}
-            companyId={selectedCompany.id}
-            companyName={selectedCompany.name}
-          />
+          <>
+            <CompanyPricesDialog
+              open={pricesDialogOpen}
+              onOpenChange={setPricesDialogOpen}
+              companyId={selectedCompany.id}
+              companyName={selectedCompany.name}
+            />
+            <CompanyDriverCommissionsDialog
+              open={commissionsDialogOpen}
+              onOpenChange={setCommissionsDialogOpen}
+              companyId={selectedCompany.id}
+              companyName={selectedCompany.name}
+            />
+          </>
         )}
       </main>
     </div>
