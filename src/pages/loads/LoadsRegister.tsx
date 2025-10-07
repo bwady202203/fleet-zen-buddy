@@ -52,62 +52,61 @@ const LoadsRegister = () => {
     if (driversRes.data) setDrivers(driversRes.data);
   };
 
-  const loadCompanyPrice = async (companyId: string, loadTypeId: string) => {
+  const loadCompanyPrice = async (companyId: string, loadTypeId: string, quantity: number) => {
     if (!companyId || !loadTypeId) return;
 
-    const { data, error } = await supabase
-      .from('company_load_type_prices')
-      .select('unit_price')
-      .eq('company_id', companyId)
-      .eq('load_type_id', loadTypeId)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (!error && data) {
-      setFormData(prev => ({ ...prev, unitPrice: data.unit_price.toString() }));
-    }
-  };
-
-  const loadDriverCommission = async (companyId: string, quantity: number) => {
-    if (!companyId || isNaN(quantity) || quantity <= 0) return;
-
-    // تحديد نوع العمولة بناءً على الكمية (الوزن)
-    let commissionType = 'fixed';
+    // أولاً: نحاول جلب السعر من جدول عمولات السائق بناءً على الكمية
+    let commissionApplied = false;
     
-    if (quantity < 40) {
-      commissionType = 'weight_less_40';
-    } else if (quantity >= 40 && quantity <= 44) {
-      commissionType = 'weight_40_44';
-    } else if (quantity > 44 && quantity <= 49) {
-      commissionType = 'weight_44_49';
-    } else if (quantity > 49) {
-      commissionType = 'weight_more_49';
+    if (!isNaN(quantity) && quantity > 0) {
+      let commissionType = 'fixed';
+      
+      if (quantity < 40) {
+        commissionType = 'weight_less_40';
+      } else if (quantity >= 40 && quantity <= 44) {
+        commissionType = 'weight_40_44';
+      } else if (quantity > 44 && quantity <= 49) {
+        commissionType = 'weight_44_49';
+      } else if (quantity > 49) {
+        commissionType = 'weight_more_49';
+      }
+
+      const { data: commissionData, error: commissionError } = await supabase
+        .from('company_driver_commissions')
+        .select('amount')
+        .eq('company_id', companyId)
+        .eq('commission_type', commissionType as any)
+        .maybeSingle();
+
+      // نطبق عمولة السائق فقط إذا كانت القيمة أكبر من صفر
+      if (!commissionError && commissionData && commissionData.amount > 0) {
+        setFormData(prev => ({ ...prev, unitPrice: commissionData.amount.toString() }));
+        commissionApplied = true;
+      }
     }
 
-    const { data, error } = await supabase
-      .from('company_driver_commissions')
-      .select('amount')
-      .eq('company_id', companyId)
-      .eq('commission_type', commissionType as any)
-      .maybeSingle();
+    // ثانياً: إذا لم يتم تطبيق عمولة السائق، نجلب السعر من جدول أسعار الأصناف
+    if (!commissionApplied) {
+      const { data, error } = await supabase
+        .from('company_load_type_prices')
+        .select('unit_price')
+        .eq('company_id', companyId)
+        .eq('load_type_id', loadTypeId)
+        .eq('is_active', true)
+        .maybeSingle();
 
-    if (!error && data && data.amount > 0) {
-      setFormData(prev => ({ ...prev, unitPrice: data.amount.toString() }));
+      if (!error && data) {
+        setFormData(prev => ({ ...prev, unitPrice: data.unit_price.toString() }));
+      }
     }
   };
 
   useEffect(() => {
+    const quantity = parseFloat(formData.quantity) || 0;
     if (formData.companyId && formData.loadTypeId) {
-      loadCompanyPrice(formData.companyId, formData.loadTypeId);
+      loadCompanyPrice(formData.companyId, formData.loadTypeId, quantity);
     }
-  }, [formData.companyId, formData.loadTypeId]);
-
-  useEffect(() => {
-    const quantity = parseFloat(formData.quantity);
-    if (formData.companyId && !isNaN(quantity) && quantity > 0) {
-      loadDriverCommission(formData.companyId, quantity);
-    }
-  }, [formData.companyId, formData.quantity]);
+  }, [formData.companyId, formData.loadTypeId, formData.quantity]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
