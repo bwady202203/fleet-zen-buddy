@@ -50,11 +50,25 @@ const JournalEntries = () => {
   const [filterDate, setFilterDate] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
   
+  const createInitialEmptyLines = () => {
+    return Array.from({ length: 6 }, (_, i) => ({
+      id: `empty-line-${Date.now()}-${i}`,
+      accountId: "",
+      accountCode: "",
+      accountName: "",
+      description: "",
+      debit: 0,
+      credit: 0,
+      costCenter: "",
+      projectName: "",
+    }));
+  };
+
   const [formData, setFormData] = useState({
     entryNumber: getNextEntryNumber(),
     date: new Date().toISOString().split('T')[0],
     description: "",
-    lines: [] as JournalEntryLine[],
+    lines: createInitialEmptyLines() as JournalEntryLine[],
   });
 
   const [currentLine, setCurrentLine] = useState({
@@ -181,12 +195,26 @@ const JournalEntries = () => {
     resetForm();
   };
 
+  const createEmptyLines = () => {
+    return Array.from({ length: 6 }, (_, i) => ({
+      id: `empty-line-${Date.now()}-${i}`,
+      accountId: "",
+      accountCode: "",
+      accountName: "",
+      description: "",
+      debit: 0,
+      credit: 0,
+      costCenter: "",
+      projectName: "",
+    }));
+  };
+
   const resetForm = () => {
     setFormData({
       entryNumber: getNextEntryNumber(),
       date: new Date().toISOString().split('T')[0],
       description: "",
-      lines: [],
+      lines: createEmptyLines(),
     });
     setCurrentLine({
       accountId: "",
