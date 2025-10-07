@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Calculator, Users, Package } from "lucide-react";
+import { Calculator, Users, Package, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -21,6 +21,14 @@ const Dashboard = () => {
       features: ["بيانات الموظفين", "الرواتب", "الحضور والانصراف", "الإجازات"]
     },
     {
+      title: "إدارة الأسطول",
+      description: "إدارة المركبات والصيانة",
+      icon: Truck,
+      color: "from-purple-500 to-purple-600",
+      link: "/fleet",
+      features: ["بيانات المركبات", "الصيانة", "الكيلومترات", "قطع الغيار"]
+    },
+    {
       title: "إدارة الحمولات",
       description: "تتبع الشحنات والحمولات",
       icon: Package,
@@ -34,31 +42,19 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                نظام الإدارة المتكامل
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                إدارة شاملة لجميع عمليات المؤسسة
-              </p>
-            </div>
-            <Link to="/fleet">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
-                    <span className="font-semibold">إدارة الأسطول</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              نظام الإدارة المتكامل
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              إدارة شاملة لجميع عمليات المؤسسة
+            </p>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {modules.map((module) => (
             <Link key={module.title} to={module.link}>
               <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full border-2 hover:border-primary/50">
