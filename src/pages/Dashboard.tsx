@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Shield } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Shield, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -39,6 +39,14 @@ const Dashboard = () => {
       color: "from-orange-500 to-orange-600",
       link: "/loads",
       features: ["تسجيل الحمولات", "تتبع الشحنات", "التقارير", "الفواتير"]
+    },
+    {
+      title: "إدارة العهد",
+      description: "إدارة عهد المندوبين والسندات",
+      icon: Wallet,
+      color: "from-teal-500 to-teal-600",
+      link: "/custody",
+      features: ["المندوبين", "سندات التحويل", "العهد المستلمة", "القيود اليومية"]
     }
   ];
 

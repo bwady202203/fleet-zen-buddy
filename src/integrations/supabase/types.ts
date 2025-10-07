@@ -88,6 +88,116 @@ export type Database = {
         }
         Relationships: []
       }
+      custody_journal_entries: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          entry_date: string
+          from_account: string
+          id: string
+          to_account: string
+          transfer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          entry_date: string
+          from_account: string
+          id?: string
+          to_account: string
+          transfer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          entry_date?: string
+          from_account?: string
+          id?: string
+          to_account?: string
+          transfer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_journal_entries_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "custody_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_representatives: {
+        Row: {
+          created_at: string | null
+          current_custody: number | null
+          id: string
+          name: string
+          remaining_custody: number | null
+          total_custody: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_custody?: number | null
+          id?: string
+          name: string
+          remaining_custody?: number | null
+          total_custody?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_custody?: number | null
+          id?: string
+          name?: string
+          remaining_custody?: number | null
+          total_custody?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      custody_transfers: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          expense_type: string | null
+          id: string
+          recipient_name: string
+          transfer_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expense_type?: string | null
+          id?: string
+          recipient_name: string
+          transfer_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expense_type?: string | null
+          id?: string
+          recipient_name?: string
+          transfer_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       employee_transactions: {
         Row: {
           amount: number

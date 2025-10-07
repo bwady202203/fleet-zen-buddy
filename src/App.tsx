@@ -15,6 +15,12 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UsersManagement from "./pages/UsersManagement";
 import Accounting from "./pages/Accounting";
+import CustodyHome from "./pages/custody/CustodyHome";
+import CustodyRepresentatives from "./pages/custody/CustodyRepresentatives";
+import CustodyTransfers from "./pages/custody/CustodyTransfers";
+import CustodyRecords from "./pages/custody/CustodyRecords";
+import CustodyFilter from "./pages/custody/CustodyFilter";
+import CustodyJournalEntries from "./pages/custody/CustodyJournalEntries";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
 import Ledger from "./pages/accounting/Ledger";
@@ -96,6 +102,12 @@ const App = () => {
                   <Route path="/vehicle-mileage" element={<ProtectedRoute><VehicleMileageReport /></ProtectedRoute>} />
                   <Route path="/price-history" element={<ProtectedRoute><PurchasePriceHistory /></ProtectedRoute>} />
                   <Route path="/bulk-vehicles" element={<ProtectedRoute><BulkVehicles /></ProtectedRoute>} />
+                  <Route path="/custody" element={<ProtectedRoute><CustodyHome /></ProtectedRoute>} />
+                  <Route path="/custody/representatives" element={<ProtectedRoute><CustodyRepresentatives /></ProtectedRoute>} />
+                  <Route path="/custody/transfers" element={<ProtectedRoute><CustodyTransfers /></ProtectedRoute>} />
+                  <Route path="/custody/records" element={<ProtectedRoute><CustodyRecords /></ProtectedRoute>} />
+                  <Route path="/custody/filter" element={<ProtectedRoute><CustodyFilter /></ProtectedRoute>} />
+                  <Route path="/custody/journal" element={<ProtectedRoute><CustodyJournalEntries /></ProtectedRoute>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
