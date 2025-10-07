@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -19,16 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, Printer, Eye, Filter } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const JournalEntries = () => {
@@ -52,7 +44,7 @@ const JournalEntries = () => {
   
   const createInitialEmptyLines = () => {
     return Array.from({ length: 6 }, (_, i) => ({
-      id: `empty-line-${Date.now()}-${i}`,
+      id: `line-${Date.now()}-${i}`,
       accountId: "",
       accountCode: "",
       accountName: "",
@@ -71,94 +63,68 @@ const JournalEntries = () => {
     lines: createInitialEmptyLines() as JournalEntryLine[],
   });
 
-  const [currentLine, setCurrentLine] = useState({
-    accountId: "",
-    description: "",
-    debit: 0,
-    credit: 0,
-    costCenter: "",
-    projectName: "",
-  });
-
-  const [accountSearch, setAccountSearch] = useState("");
-  const [showAccountSearch, setShowAccountSearch] = useState(false);
-  const [costCenterSearch, setCostCenterSearch] = useState("");
-  const [showCostCenterSearch, setShowCostCenterSearch] = useState(false);
-  const [projectSearch, setProjectSearch] = useState("");
-  const [showProjectSearch, setShowProjectSearch] = useState(false);
-
-  const filteredAccounts = accountSearch.length > 0 ? searchAccounts(accountSearch) : [];
-  const level4Accounts = filteredAccounts.filter(acc => acc.level === 4);
-  const filteredCostCenters = searchCostCenters(costCenterSearch, true);
-  const activeCostCenters = filteredCostCenters.filter(cc => cc.isActive);
-  const filteredProjects = searchProjects(projectSearch, true);
-  const activeProjects = filteredProjects.filter(prj => prj.isActive);
-
-  const addLine = () => {
-    if (!currentLine.accountId) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار حساب",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (currentLine.debit === 0 && currentLine.credit === 0) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال مبلغ في المدين أو الدائن",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const account = accounts.find(acc => acc.id === currentLine.accountId);
-    if (!account) return;
-
-    const newLine: JournalEntryLine = {
-      id: `line${Date.now()}`,
-      accountId: currentLine.accountId,
-      accountCode: account.code,
-      accountName: account.name,
-      description: currentLine.description,
-      debit: currentLine.debit,
-      credit: currentLine.credit,
-      costCenter: currentLine.costCenter,
-      projectName: currentLine.projectName,
+  const [searchStates, setSearchStates] = useState<{
+    [key: string]: {
+      accountSearch: string;
+      showAccountSearch: boolean;
+      costCenterSearch: string;
+      showCostCenterSearch: boolean;
+      projectSearch: string;
+      showProjectSearch: boolean;
     };
+  }>({});
 
-    setFormData({
-      ...formData,
-      lines: [...formData.lines, newLine],
-    });
-
-    setCurrentLine({
-      accountId: "",
-      description: "",
-      debit: 0,
-      credit: 0,
-      costCenter: "",
-      projectName: "",
-    });
-    setAccountSearch("");
-    setCostCenterSearch("");
-    setProjectSearch("");
+  const getSearchState = (lineId: string) => {
+    return searchStates[lineId] || {
+      accountSearch: "",
+      showAccountSearch: false,
+      costCenterSearch: "",
+      showCostCenterSearch: false,
+      projectSearch: "",
+      showProjectSearch: false,
+    };
   };
 
-  const removeLine = (lineId: string) => {
-    setFormData({
-      ...formData,
-      lines: formData.lines.filter(line => line.id !== lineId),
-    });
+  const updateSearchState = (lineId: string, updates: Partial<typeof searchStates[string]>) => {
+    setSearchStates(prev => ({
+      ...prev,
+      [lineId]: {
+        ...getSearchState(lineId),
+        ...updates,
+      },
+    }));
   };
 
-  const totalDebit = formData.lines.reduce((sum, line) => sum + line.debit, 0);
-  const totalCredit = formData.lines.reduce((sum, line) => sum + line.credit, 0);
+  const updateLine = (lineId: string, updates: Partial<JournalEntryLine>) => {
+    setFormData(prev => ({
+      ...prev,
+      lines: prev.lines.map(line => 
+        line.id === lineId ? { ...line, ...updates } : line
+      ),
+    }));
+  };
+
+  const totalDebit = formData.lines.reduce((sum, line) => sum + (line.debit || 0), 0);
+  const totalCredit = formData.lines.reduce((sum, line) => sum + (line.credit || 0), 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
   const handleSubmit = () => {
-    if (!isBalanced) {
+    // Filter out empty lines
+    const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
+
+    if (validLines.length < 2) {
+      toast({
+        title: "خطأ",
+        description: "يجب إضافة سطرين على الأقل مع حسابات ومبالغ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const validTotalDebit = validLines.reduce((sum, line) => sum + (line.debit || 0), 0);
+    const validTotalCredit = validLines.reduce((sum, line) => sum + (line.credit || 0), 0);
+
+    if (validTotalDebit !== validTotalCredit || validTotalDebit === 0) {
       toast({
         title: "خطأ",
         description: "القيد غير متوازن. يجب أن يكون مجموع المدين مساوياً لمجموع الدائن",
@@ -167,21 +133,12 @@ const JournalEntries = () => {
       return;
     }
 
-    if (formData.lines.length < 2) {
-      toast({
-        title: "خطأ",
-        description: "يجب إضافة سطرين على الأقل",
-        variant: "destructive",
-      });
-      return;
-    }
-
     addJournalEntry({
       date: formData.date,
       description: formData.description,
-      lines: formData.lines,
-      totalDebit,
-      totalCredit,
+      lines: validLines,
+      totalDebit: validTotalDebit,
+      totalCredit: validTotalCredit,
       createdBy: "النظام",
       entryNumber: formData.entryNumber,
     });
@@ -197,7 +154,7 @@ const JournalEntries = () => {
 
   const createEmptyLines = () => {
     return Array.from({ length: 6 }, (_, i) => ({
-      id: `empty-line-${Date.now()}-${i}`,
+      id: `line-${Date.now()}-${i}`,
       accountId: "",
       accountCode: "",
       accountName: "",
@@ -216,17 +173,7 @@ const JournalEntries = () => {
       description: "",
       lines: createEmptyLines(),
     });
-    setCurrentLine({
-      accountId: "",
-      description: "",
-      debit: 0,
-      credit: 0,
-      costCenter: "",
-      projectName: "",
-    });
-    setAccountSearch("");
-    setCostCenterSearch("");
-    setProjectSearch("");
+    setSearchStates({});
   };
 
   const handlePrint = (entry: any) => {
@@ -267,7 +214,7 @@ const JournalEntries = () => {
                   قيد جديد
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>سند قيد يومية</DialogTitle>
                 </DialogHeader>
@@ -302,214 +249,214 @@ const JournalEntries = () => {
                   </div>
 
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">إضافة سطر جديد</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="relative">
-                          <Label>الحساب</Label>
-                          <Input
-                            value={accountSearch}
-                            onChange={(e) => {
-                              setAccountSearch(e.target.value);
-                              setShowAccountSearch(true);
-                            }}
-                            placeholder="ابحث بالرمز أو الاسم..."
-                            onFocus={() => setShowAccountSearch(true)}
-                          />
-                          {showAccountSearch && level4Accounts.length > 0 && (
-                            <Card className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto">
-                              <CardContent className="p-2">
-                                {level4Accounts.map(acc => (
-                                  <div
-                                    key={acc.id}
-                                    className="p-2 hover:bg-accent cursor-pointer rounded"
-                                    onClick={() => {
-                                      setCurrentLine({ ...currentLine, accountId: acc.id });
-                                      setAccountSearch(`${acc.code} - ${acc.name}`);
-                                      setShowAccountSearch(false);
-                                    }}
-                                  >
-                                    <div className="font-medium">{acc.code} - {acc.name}</div>
-                                    <div className="text-sm text-muted-foreground">{acc.nameEn}</div>
-                                  </div>
-                                ))}
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
-                        <div>
-                          <Label>البيان</Label>
-                          <Input
-                            value={currentLine.description}
-                            onChange={(e) => setCurrentLine({ ...currentLine, description: e.target.value })}
-                            placeholder="بيان العملية"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-4 gap-4">
-                        <div>
-                          <Label>المدين</Label>
-                          <Input
-                            type="number"
-                            value={currentLine.debit || ""}
-                            onChange={(e) => setCurrentLine({ ...currentLine, debit: parseFloat(e.target.value) || 0, credit: 0 })}
-                            placeholder="0.00"
-                          />
-                        </div>
-                        <div>
-                          <Label>الدائن</Label>
-                          <Input
-                            type="number"
-                            value={currentLine.credit || ""}
-                            onChange={(e) => setCurrentLine({ ...currentLine, credit: parseFloat(e.target.value) || 0, debit: 0 })}
-                            placeholder="0.00"
-                          />
-                        </div>
-                        <div className="relative">
-                          <Label>مركز التكلفة</Label>
-                          <Input
-                            value={costCenterSearch}
-                            onChange={(e) => {
-                              setCostCenterSearch(e.target.value);
-                              setShowCostCenterSearch(true);
-                            }}
-                            placeholder="ابحث بحساسية لحالة الأحرف..."
-                            onFocus={() => setShowCostCenterSearch(true)}
-                          />
-                          {showCostCenterSearch && activeCostCenters.length > 0 && (
-                            <Card className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto">
-                              <CardContent className="p-2">
-                                {activeCostCenters.map(cc => (
-                                  <div
-                                    key={cc.id}
-                                    className="p-2 hover:bg-accent cursor-pointer rounded"
-                                    onClick={() => {
-                                      setCurrentLine({ ...currentLine, costCenter: cc.code });
-                                      setCostCenterSearch(`${cc.code} - ${cc.name}`);
-                                      setShowCostCenterSearch(false);
-                                    }}
-                                  >
-                                    <div className="font-medium">{cc.code} - {cc.name}</div>
-                                    <div className="text-sm text-muted-foreground">{cc.nameEn}</div>
-                                  </div>
-                                ))}
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
-                        <div className="relative">
-                          <Label>اسم المشروع</Label>
-                          <Input
-                            value={projectSearch}
-                            onChange={(e) => {
-                              setProjectSearch(e.target.value);
-                              setShowProjectSearch(true);
-                            }}
-                            placeholder="ابحث بحساسية لحالة الأحرف..."
-                            onFocus={() => setShowProjectSearch(true)}
-                          />
-                          {showProjectSearch && activeProjects.length > 0 && (
-                            <Card className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto">
-                              <CardContent className="p-2">
-                                {activeProjects.map(prj => (
-                                  <div
-                                    key={prj.id}
-                                    className="p-2 hover:bg-accent cursor-pointer rounded"
-                                    onClick={() => {
-                                      setCurrentLine({ ...currentLine, projectName: prj.code });
-                                      setProjectSearch(`${prj.code} - ${prj.name}`);
-                                      setShowProjectSearch(false);
-                                    }}
-                                  >
-                                    <div className="font-medium">{prj.code} - {prj.name}</div>
-                                    <div className="text-sm text-muted-foreground">{prj.nameEn}</div>
-                                  </div>
-                                ))}
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <Button type="button" onClick={addLine} className="w-full">
-                        <Plus className="h-4 w-4 ml-2" />
-                        إضافة السطر
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {formData.lines.length > 0 && (
-                    <Card>
-                      <CardContent className="p-0">
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-right">الحساب</TableHead>
-                              <TableHead className="text-right">البيان</TableHead>
-                              <TableHead className="text-right">المدين</TableHead>
-                              <TableHead className="text-right">الدائن</TableHead>
-                              <TableHead className="text-right">مركز التكلفة</TableHead>
-                              <TableHead className="text-right">المشروع</TableHead>
-                              <TableHead className="text-center">حذف</TableHead>
+                              <TableHead className="text-right min-w-[250px]">الحساب</TableHead>
+                              <TableHead className="text-right min-w-[200px]">البيان</TableHead>
+                              <TableHead className="text-right min-w-[120px]">المدين</TableHead>
+                              <TableHead className="text-right min-w-[120px]">الدائن</TableHead>
+                              <TableHead className="text-right min-w-[180px]">مركز التكلفة</TableHead>
+                              <TableHead className="text-right min-w-[180px]">المشروع</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {formData.lines.map(line => (
-                              <TableRow key={line.id}>
-                                <TableCell className="font-medium">
-                                  {line.accountCode} - {line.accountName}
-                                </TableCell>
-                                <TableCell>{line.description}</TableCell>
-                                <TableCell className="text-left font-medium">
-                                  {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                                </TableCell>
-                                <TableCell className="text-left font-medium">
-                                  {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                                </TableCell>
-                                <TableCell>{line.costCenter || '-'}</TableCell>
-                                <TableCell>{line.projectName || '-'}</TableCell>
-                                <TableCell className="text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeLine(line.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                            <TableRow className="font-bold bg-accent/50">
-                              <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
-                              <TableCell className="text-left">
+                            {formData.lines.map((line) => {
+                              const searchState = getSearchState(line.id);
+                              const filteredAccounts = searchState.accountSearch.length > 0 ? searchAccounts(searchState.accountSearch) : [];
+                              const level4Accounts = filteredAccounts.filter(acc => acc.level === 4);
+                              const filteredCostCenters = searchCostCenters(searchState.costCenterSearch, true);
+                              const activeCostCenters = filteredCostCenters.filter(cc => cc.isActive);
+                              const filteredProjects = searchProjects(searchState.projectSearch, true);
+                              const activeProjects = filteredProjects.filter(prj => prj.isActive);
+
+                              return (
+                                <TableRow key={line.id}>
+                                  <TableCell>
+                                    <div className="relative">
+                                      <Input
+                                        value={searchState.accountSearch || (line.accountCode ? `${line.accountCode} - ${line.accountName}` : "")}
+                                        onChange={(e) => {
+                                          updateSearchState(line.id, {
+                                            accountSearch: e.target.value,
+                                            showAccountSearch: true,
+                                          });
+                                        }}
+                                        placeholder="ابحث بالرمز أو الاسم..."
+                                        onFocus={() => updateSearchState(line.id, { showAccountSearch: true })}
+                                        onBlur={() => setTimeout(() => updateSearchState(line.id, { showAccountSearch: false }), 200)}
+                                        className="text-sm"
+                                      />
+                                      {searchState.showAccountSearch && level4Accounts.length > 0 && (
+                                        <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto">
+                                          <CardContent className="p-2">
+                                            {level4Accounts.map(acc => (
+                                              <div
+                                                key={acc.id}
+                                                className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                                onClick={() => {
+                                                  updateLine(line.id, {
+                                                    accountId: acc.id,
+                                                    accountCode: acc.code,
+                                                    accountName: acc.name,
+                                                  });
+                                                  updateSearchState(line.id, {
+                                                    accountSearch: `${acc.code} - ${acc.name}`,
+                                                    showAccountSearch: false,
+                                                  });
+                                                }}
+                                              >
+                                                <div className="font-medium">{acc.code} - {acc.name}</div>
+                                              </div>
+                                            ))}
+                                          </CardContent>
+                                        </Card>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      value={line.description}
+                                      onChange={(e) => updateLine(line.id, { description: e.target.value })}
+                                      placeholder="البيان"
+                                      className="text-sm"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      value={line.debit || ""}
+                                      onChange={(e) => {
+                                        const debit = parseFloat(e.target.value) || 0;
+                                        updateLine(line.id, { debit, credit: 0 });
+                                      }}
+                                      placeholder="0.00"
+                                      className="text-sm"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      value={line.credit || ""}
+                                      onChange={(e) => {
+                                        const credit = parseFloat(e.target.value) || 0;
+                                        updateLine(line.id, { credit, debit: 0 });
+                                      }}
+                                      placeholder="0.00"
+                                      className="text-sm"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="relative">
+                                      <Input
+                                        value={searchState.costCenterSearch || line.costCenter}
+                                        onChange={(e) => {
+                                          updateSearchState(line.id, {
+                                            costCenterSearch: e.target.value,
+                                            showCostCenterSearch: true,
+                                          });
+                                        }}
+                                        placeholder="مركز التكلفة"
+                                        onFocus={() => updateSearchState(line.id, { showCostCenterSearch: true })}
+                                        onBlur={() => setTimeout(() => updateSearchState(line.id, { showCostCenterSearch: false }), 200)}
+                                        className="text-sm"
+                                      />
+                                      {searchState.showCostCenterSearch && activeCostCenters.length > 0 && (
+                                        <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto">
+                                          <CardContent className="p-2">
+                                            {activeCostCenters.map(cc => (
+                                              <div
+                                                key={cc.id}
+                                                className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                                onClick={() => {
+                                                  updateLine(line.id, { costCenter: cc.code });
+                                                  updateSearchState(line.id, {
+                                                    costCenterSearch: `${cc.code} - ${cc.name}`,
+                                                    showCostCenterSearch: false,
+                                                  });
+                                                }}
+                                              >
+                                                <div className="font-medium">{cc.code} - {cc.name}</div>
+                                              </div>
+                                            ))}
+                                          </CardContent>
+                                        </Card>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="relative">
+                                      <Input
+                                        value={searchState.projectSearch || line.projectName}
+                                        onChange={(e) => {
+                                          updateSearchState(line.id, {
+                                            projectSearch: e.target.value,
+                                            showProjectSearch: true,
+                                          });
+                                        }}
+                                        placeholder="المشروع"
+                                        onFocus={() => updateSearchState(line.id, { showProjectSearch: true })}
+                                        onBlur={() => setTimeout(() => updateSearchState(line.id, { showProjectSearch: false }), 200)}
+                                        className="text-sm"
+                                      />
+                                      {searchState.showProjectSearch && activeProjects.length > 0 && (
+                                        <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto">
+                                          <CardContent className="p-2">
+                                            {activeProjects.map(prj => (
+                                              <div
+                                                key={prj.id}
+                                                className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                                onClick={() => {
+                                                  updateLine(line.id, { projectName: prj.code });
+                                                  updateSearchState(line.id, {
+                                                    projectSearch: `${prj.code} - ${prj.name}`,
+                                                    showProjectSearch: false,
+                                                  });
+                                                }}
+                                              >
+                                                <div className="font-medium">{prj.code} - {prj.name}</div>
+                                              </div>
+                                            ))}
+                                          </CardContent>
+                                        </Card>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                            <TableRow className="bg-muted/50 font-bold">
+                              <TableCell colSpan={2} className="text-left">
+                                الإجمالي
+                              </TableCell>
+                              <TableCell className="text-red-600">
                                 {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                               </TableCell>
-                              <TableCell className="text-left">
+                              <TableCell className="text-green-600">
                                 {totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                               </TableCell>
-                              <TableCell colSpan={3}>
+                              <TableCell colSpan={2}>
                                 {isBalanced ? (
-                                  <span className="text-green-600">✓ القيد متوازن</span>
-                                ) : (
-                                  <span className="text-destructive">✗ القيد غير متوازن</span>
-                                )}
+                                  <span className="text-green-600">✓ متوازن</span>
+                                ) : totalDebit > 0 || totalCredit > 0 ? (
+                                  <span className="text-red-600">✗ غير متوازن</span>
+                                ) : null}
                               </TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
-                      </CardContent>
-                    </Card>
-                  )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      إلغاء
-                    </Button>
-                    <Button type="button" onClick={handleSubmit} disabled={!isBalanced}>
+                  <div className="flex gap-4">
+                    <Button onClick={handleSubmit} className="flex-1" disabled={!isBalanced}>
                       حفظ القيد
+                    </Button>
+                    <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1">
+                      إلغاء
                     </Button>
                   </div>
                 </div>
@@ -522,10 +469,12 @@ const JournalEntries = () => {
       <main className="container mx-auto px-4 py-8">
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              فلترة القيود
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                تصفية القيود
+              </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
@@ -539,103 +488,101 @@ const JournalEntries = () => {
               </div>
               <div>
                 <Label>الحساب</Label>
-                <Select value={filterAccount} onValueChange={setFilterAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="جميع الحسابات" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.filter(acc => acc.level === 4).map(acc => (
-                      <SelectItem key={acc.id} value={acc.id}>
-                        {acc.code} - {acc.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {filterAccount && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setFilterAccount("")}
-                    className="mt-1 text-xs"
-                  >
-                    إلغاء الفلتر
-                  </Button>
-                )}
+                <Input
+                  value={filterAccount}
+                  onChange={(e) => setFilterAccount(e.target.value)}
+                  placeholder="ابحث عن حساب..."
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">رقم القيد</TableHead>
-                  <TableHead className="text-right">التاريخ</TableHead>
-                  <TableHead className="text-right">البيان</TableHead>
-                  <TableHead className="text-right">المدين</TableHead>
-                  <TableHead className="text-right">الدائن</TableHead>
-                  <TableHead className="text-center">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEntries.map(entry => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-medium">{entry.entryNumber}</TableCell>
-                    <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
-                    <TableCell>{entry.description}</TableCell>
-                    <TableCell className="text-left font-medium">
-                      {entry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-left font-medium">
-                      {entry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePreview(entry)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePrint(entry)}
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          <CardHeader>
+            <CardTitle>سجل القيود اليومية</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredEntries.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg">
+                  لا توجد قيود حالياً
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">رقم القيد</TableHead>
+                    <TableHead className="text-right">التاريخ</TableHead>
+                    <TableHead className="text-right">البيان</TableHead>
+                    <TableHead className="text-right">المدين</TableHead>
+                    <TableHead className="text-right">الدائن</TableHead>
+                    <TableHead className="text-center">إجراءات</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredEntries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">{entry.entryNumber}</TableCell>
+                      <TableCell>{entry.date}</TableCell>
+                      <TableCell>{entry.description}</TableCell>
+                      <TableCell className="text-red-600">
+                        {entry.totalDebit.toLocaleString('ar-SA')} ريال
+                      </TableCell>
+                      <TableCell className="text-green-600">
+                        {entry.totalCredit.toLocaleString('ar-SA')} ريال
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePreview(entry)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePrint(entry)}
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>
 
+      {/* Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>معاينة القيد - {selectedEntry?.entryNumber}</DialogTitle>
+            <DialogTitle>معاينة القيد</DialogTitle>
           </DialogHeader>
           {selectedEntry && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-accent/50 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
                 <div>
-                  <span className="font-medium">رقم القيد:</span> {selectedEntry.entryNumber}
+                  <Label className="text-sm">رقم القيد</Label>
+                  <p className="font-medium">{selectedEntry.entryNumber}</p>
                 </div>
                 <div>
-                  <span className="font-medium">التاريخ:</span> {new Date(selectedEntry.date).toLocaleDateString('ar-SA')}
+                  <Label className="text-sm">التاريخ</Label>
+                  <p className="font-medium">{selectedEntry.date}</p>
                 </div>
-                <div className="col-span-2">
-                  <span className="font-medium">البيان:</span> {selectedEntry.description}
+                <div>
+                  <Label className="text-sm">البيان</Label>
+                  <p className="font-medium">{selectedEntry.description}</p>
                 </div>
               </div>
-              
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -643,29 +590,38 @@ const JournalEntries = () => {
                     <TableHead className="text-right">البيان</TableHead>
                     <TableHead className="text-right">المدين</TableHead>
                     <TableHead className="text-right">الدائن</TableHead>
+                    <TableHead className="text-right">مركز التكلفة</TableHead>
+                    <TableHead className="text-right">المشروع</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedEntry.lines.map((line: JournalEntryLine) => (
+                  {selectedEntry.lines.map((line: any) => (
                     <TableRow key={line.id}>
-                      <TableCell>{line.accountCode} - {line.accountName}</TableCell>
+                      <TableCell className="font-medium">
+                        {line.accountCode} - {line.accountName}
+                      </TableCell>
                       <TableCell>{line.description}</TableCell>
-                      <TableCell className="text-left">
-                        {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                      <TableCell className="text-red-600">
+                        {line.debit > 0 ? line.debit.toLocaleString('ar-SA') : '-'}
                       </TableCell>
-                      <TableCell className="text-left">
-                        {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                      <TableCell className="text-green-600">
+                        {line.credit > 0 ? line.credit.toLocaleString('ar-SA') : '-'}
                       </TableCell>
+                      <TableCell>{line.costCenter || '-'}</TableCell>
+                      <TableCell>{line.projectName || '-'}</TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="font-bold bg-accent/50">
-                    <TableCell colSpan={2}>الإجمالي</TableCell>
-                    <TableCell className="text-left">
-                      {selectedEntry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                  <TableRow className="bg-muted/50 font-bold">
+                    <TableCell colSpan={2} className="text-left">
+                      الإجمالي
                     </TableCell>
-                    <TableCell className="text-left">
-                      {selectedEntry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-red-600">
+                      {selectedEntry.totalDebit.toLocaleString('ar-SA')} ريال
                     </TableCell>
+                    <TableCell className="text-green-600">
+                      {selectedEntry.totalCredit.toLocaleString('ar-SA')} ريال
+                    </TableCell>
+                    <TableCell colSpan={2}></TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
