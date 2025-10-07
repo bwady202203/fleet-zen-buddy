@@ -6,10 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from 'sonner';
 import { UserPlus, Trash2, Shield, ArrowRight, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -43,34 +42,26 @@ const UsersManagement = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<string | null>(null);
+  const [userPermissions, setUserPermissions] = useState<ModulePermission[]>([]);
+  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
     fullName: '',
-    role: 'user'
+    role: 'user',
+    modules: MODULES.map(m => ({
+      module_name: m.id,
+      can_view: false,
+      can_create: false,
+      can_edit: false,
+      can_delete: false
+    }))
   });
-  const [selectedModules, setSelectedModules] = useState<Record<string, ModulePermission>>({});
-  const [editingPermissions, setEditingPermissions] = useState<string | null>(null);
-  const [userPermissions, setUserPermissions] = useState<Record<string, ModulePermission[]>>({});
 
   useEffect(() => {
     fetchUsers();
-    initializeModules();
   }, []);
-
-  const initializeModules = () => {
-    const initial: Record<string, ModulePermission> = {};
-    MODULES.forEach(module => {
-      initial[module.id] = {
-        module_name: module.id,
-        can_view: false,
-        can_create: false,
-        can_edit: false,
-        can_delete: false,
-      };
-    });
-    setSelectedModules(initial);
-  };
 
   const fetchUsers = async () => {
     try {
@@ -88,19 +79,6 @@ const UsersManagement = () => {
             .select('role')
             .eq('user_id', profile.id)
             .single();
-
-          // Fetch module permissions
-          const { data: permissions } = await supabase
-            .from('user_module_permissions')
-            .select('*')
-            .eq('user_id', profile.id);
-
-          if (permissions) {
-            setUserPermissions(prev => ({
-              ...prev,
-              [profile.id]: permissions as ModulePermission[]
-            }));
-          }
 
           return {
             id: profile.id,
@@ -135,7 +113,6 @@ const UsersManagement = () => {
     }
 
     try {
-      // Create user
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
@@ -149,7 +126,6 @@ const UsersManagement = () => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        // Add role
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert([{
@@ -159,23 +135,40 @@ const UsersManagement = () => {
 
         if (roleError) throw roleError;
 
-        // Add module permissions
-        const permissionsToInsert = Object.values(selectedModules).filter(p => p.can_view);
+        const permissionsToInsert = newUser.modules
+          .filter(m => m.can_view || m.can_create || m.can_edit || m.can_delete)
+          .map(m => ({
+            user_id: authData.user.id,
+            module_name: m.module_name,
+            can_view: m.can_view,
+            can_create: m.can_create,
+            can_edit: m.can_edit,
+            can_delete: m.can_delete
+          }));
+
         if (permissionsToInsert.length > 0) {
           const { error: permError } = await supabase
             .from('user_module_permissions')
-            .insert(permissionsToInsert.map(p => ({
-              user_id: authData.user.id,
-              ...p
-            })));
+            .insert(permissionsToInsert);
 
           if (permError) throw permError;
         }
 
         toast.success('تم إضافة المستخدم بنجاح');
         setIsAddDialogOpen(false);
-        setNewUser({ email: '', password: '', fullName: '', role: 'user' });
-        initializeModules();
+        setNewUser({ 
+          email: '', 
+          password: '', 
+          fullName: '', 
+          role: 'user',
+          modules: MODULES.map(m => ({
+            module_name: m.id,
+            can_view: false,
+            can_create: false,
+            can_edit: false,
+            can_delete: false
+          }))
+        });
         fetchUsers();
       }
     } catch (error: any) {
@@ -192,8 +185,6 @@ const UsersManagement = () => {
     if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
 
     try {
-      // Note: Deleting a user requires admin privileges
-      // This will only delete the user role, not the auth user
       const { error } = await supabase
         .from('user_roles')
         .delete()
@@ -226,73 +217,86 @@ const UsersManagement = () => {
     }
   };
 
-  const handleModulePermissionChange = (
-    moduleId: string,
-    permission: keyof ModulePermission,
-    value: boolean
-  ) => {
-    setSelectedModules(prev => ({
-      ...prev,
-      [moduleId]: {
-        ...prev[moduleId],
-        [permission]: value,
-        // If can_view is unchecked, uncheck all other permissions
-        ...(permission === 'can_view' && !value && {
-          can_create: false,
-          can_edit: false,
-          can_delete: false,
-        })
-      }
-    }));
-  };
-
-  const handleEditPermissions = async (userId: string) => {
-    const permissions = userPermissions[userId] || [];
-    const initial: Record<string, ModulePermission> = {};
-    
-    MODULES.forEach(module => {
-      const existing = permissions.find(p => p.module_name === module.id);
-      initial[module.id] = existing || {
-        module_name: module.id,
-        can_view: false,
-        can_create: false,
-        can_edit: false,
-        can_delete: false,
-      };
-    });
-    
-    setSelectedModules(initial);
-    setEditingPermissions(userId);
-  };
-
-  const handleSavePermissions = async (userId: string) => {
+  const loadUserPermissions = async (userId: string) => {
     try {
-      // Delete existing permissions
+      const { data, error } = await supabase
+        .from('user_module_permissions')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const permissions = MODULES.map(module => {
+        const existing = data?.find(p => p.module_name === module.id);
+        return {
+          module_name: module.id,
+          can_view: existing?.can_view || false,
+          can_create: existing?.can_create || false,
+          can_edit: existing?.can_edit || false,
+          can_delete: existing?.can_delete || false
+        };
+      });
+
+      setUserPermissions(permissions);
+    } catch (error) {
+      console.error('Error loading permissions:', error);
+      toast.error('حدث خطأ أثناء جلب الصلاحيات');
+    }
+  };
+
+  const handleOpenPermissions = async (userId: string) => {
+    setSelectedUserForPermissions(userId);
+    await loadUserPermissions(userId);
+    setIsPermissionsDialogOpen(true);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!selectedUserForPermissions) return;
+
+    try {
       await supabase
         .from('user_module_permissions')
         .delete()
-        .eq('user_id', userId);
+        .eq('user_id', selectedUserForPermissions);
 
-      // Insert new permissions
-      const permissionsToInsert = Object.values(selectedModules).filter(p => p.can_view);
+      const permissionsToInsert = userPermissions
+        .filter(p => p.can_view || p.can_create || p.can_edit || p.can_delete)
+        .map(p => ({
+          user_id: selectedUserForPermissions,
+          ...p
+        }));
+
       if (permissionsToInsert.length > 0) {
         const { error } = await supabase
           .from('user_module_permissions')
-          .insert(permissionsToInsert.map(p => ({
-            user_id: userId,
-            ...p
-          })));
+          .insert(permissionsToInsert);
 
         if (error) throw error;
       }
 
-      toast.success('تم تحديث الصلاحيات بنجاح');
-      setEditingPermissions(null);
-      fetchUsers();
+      toast.success('تم حفظ الصلاحيات بنجاح');
+      setIsPermissionsDialogOpen(false);
     } catch (error) {
-      console.error('Error updating permissions:', error);
-      toast.error('حدث خطأ أثناء تحديث الصلاحيات');
+      console.error('Error saving permissions:', error);
+      toast.error('حدث خطأ أثناء حفظ الصلاحيات');
     }
+  };
+
+  const updateModulePermission = (moduleName: string, field: keyof ModulePermission, value: boolean) => {
+    setNewUser(prev => ({
+      ...prev,
+      modules: prev.modules.map(m =>
+        m.module_name === moduleName ? { ...m, [field]: value } : m
+      )
+    }));
+  };
+
+  const updateUserPermission = (moduleName: string, field: keyof ModulePermission, value: boolean) => {
+    setUserPermissions(prev =>
+      prev.map(p =>
+        p.module_name === moduleName ? { ...p, [field]: value } : p
+      )
+    );
   };
 
   if (userRole !== 'admin') {
@@ -350,7 +354,7 @@ const UsersManagement = () => {
                     إضافة مستخدم جديد
                   </Button>
                 </DialogTrigger>
-                <DialogContent dir="rtl">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
                   <DialogHeader>
                     <DialogTitle>إضافة مستخدم جديد</DialogTitle>
                   </DialogHeader>
@@ -407,59 +411,63 @@ const UsersManagement = () => {
                       </Select>
                     </div>
 
-                    <div className="space-y-4 pt-4 border-t">
-                      <Label>الأقسام المتاحة</Label>
-                      <Accordion type="single" collapsible className="w-full">
-                        {MODULES.map((module) => (
-                          <AccordionItem key={module.id} value={module.id}>
-                            <AccordionTrigger className="text-sm">
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={selectedModules[module.id]?.can_view || false}
-                                  onCheckedChange={(checked) =>
-                                    handleModulePermissionChange(module.id, 'can_view', checked as boolean)
-                                  }
-                                />
-                                <span>{module.name}</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-2 pr-6">
-                                <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={selectedModules[module.id]?.can_create || false}
-                                    disabled={!selectedModules[module.id]?.can_view}
-                                    onCheckedChange={(checked) =>
-                                      handleModulePermissionChange(module.id, 'can_create', checked as boolean)
-                                    }
-                                  />
-                                  <Label className="text-sm font-normal">إضافة</Label>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={selectedModules[module.id]?.can_edit || false}
-                                    disabled={!selectedModules[module.id]?.can_view}
-                                    onCheckedChange={(checked) =>
-                                      handleModulePermissionChange(module.id, 'can_edit', checked as boolean)
-                                    }
-                                  />
-                                  <Label className="text-sm font-normal">تعديل</Label>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={selectedModules[module.id]?.can_delete || false}
-                                    disabled={!selectedModules[module.id]?.can_view}
-                                    onCheckedChange={(checked) =>
-                                      handleModulePermissionChange(module.id, 'can_delete', checked as boolean)
-                                    }
-                                  />
-                                  <Label className="text-sm font-normal">حذف</Label>
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
+                    <div className="space-y-4">
+                      <Label className="text-base font-semibold">صلاحيات الأقسام</Label>
+                      <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-right w-[200px]">القسم</TableHead>
+                              <TableHead className="text-center">عرض</TableHead>
+                              <TableHead className="text-center">إضافة</TableHead>
+                              <TableHead className="text-center">تعديل</TableHead>
+                              <TableHead className="text-center">حذف</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {MODULES.map((module) => {
+                              const modulePermission = newUser.modules.find(m => m.module_name === module.id);
+                              return (
+                                <TableRow key={module.id}>
+                                  <TableCell className="font-medium">{module.name}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Checkbox
+                                      checked={modulePermission?.can_view || false}
+                                      onCheckedChange={(checked) =>
+                                        updateModulePermission(module.id, 'can_view', checked as boolean)
+                                      }
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Checkbox
+                                      checked={modulePermission?.can_create || false}
+                                      onCheckedChange={(checked) =>
+                                        updateModulePermission(module.id, 'can_create', checked as boolean)
+                                      }
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Checkbox
+                                      checked={modulePermission?.can_edit || false}
+                                      onCheckedChange={(checked) =>
+                                        updateModulePermission(module.id, 'can_edit', checked as boolean)
+                                      }
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Checkbox
+                                      checked={modulePermission?.can_delete || false}
+                                      onCheckedChange={(checked) =>
+                                        updateModulePermission(module.id, 'can_delete', checked as boolean)
+                                      }
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
 
                     <Button type="submit" className="w-full">
@@ -482,7 +490,6 @@ const UsersManagement = () => {
                     <TableHead className="text-right">الاسم</TableHead>
                     <TableHead className="text-right">البريد الإلكتروني</TableHead>
                     <TableHead className="text-right">الصلاحية</TableHead>
-                    <TableHead className="text-right">الأقسام المتاحة</TableHead>
                     <TableHead className="text-right">تاريخ الإنشاء</TableHead>
                     <TableHead className="text-right">الإجراءات</TableHead>
                   </TableRow>
@@ -509,103 +516,18 @@ const UsersManagement = () => {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {userPermissions[user.id]?.map(perm => {
-                            const module = MODULES.find(m => m.id === perm.module_name);
-                            return module ? (
-                              <span key={perm.module_name} className="text-xs bg-secondary px-2 py-1 rounded">
-                                {module.name}
-                              </span>
-                            ) : null;
-                          })}
-                          {(!userPermissions[user.id] || userPermissions[user.id].length === 0) && (
-                            <span className="text-xs text-muted-foreground">لا توجد أقسام</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
                         {new Date(user.created_at).toLocaleDateString('ar-SA')}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Dialog 
-                            open={editingPermissions === user.id} 
-                            onOpenChange={(open) => !open && setEditingPermissions(null)}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenPermissions(user.id)}
                           >
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditPermissions(user.id)}
-                              >
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent dir="rtl" className="max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>تعديل صلاحيات الأقسام</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <Accordion type="single" collapsible className="w-full">
-                                  {MODULES.map((module) => (
-                                    <AccordionItem key={module.id} value={module.id}>
-                                      <AccordionTrigger className="text-sm">
-                                        <div className="flex items-center gap-2">
-                                          <Checkbox
-                                            checked={selectedModules[module.id]?.can_view || false}
-                                            onCheckedChange={(checked) =>
-                                              handleModulePermissionChange(module.id, 'can_view', checked as boolean)
-                                            }
-                                          />
-                                          <span>{module.name}</span>
-                                        </div>
-                                      </AccordionTrigger>
-                                      <AccordionContent>
-                                        <div className="space-y-2 pr-6">
-                                          <div className="flex items-center gap-2">
-                                            <Checkbox
-                                              checked={selectedModules[module.id]?.can_create || false}
-                                              disabled={!selectedModules[module.id]?.can_view}
-                                              onCheckedChange={(checked) =>
-                                                handleModulePermissionChange(module.id, 'can_create', checked as boolean)
-                                              }
-                                            />
-                                            <Label className="text-sm font-normal">إضافة</Label>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Checkbox
-                                              checked={selectedModules[module.id]?.can_edit || false}
-                                              disabled={!selectedModules[module.id]?.can_view}
-                                              onCheckedChange={(checked) =>
-                                                handleModulePermissionChange(module.id, 'can_edit', checked as boolean)
-                                              }
-                                            />
-                                            <Label className="text-sm font-normal">تعديل</Label>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Checkbox
-                                              checked={selectedModules[module.id]?.can_delete || false}
-                                              disabled={!selectedModules[module.id]?.can_view}
-                                              onCheckedChange={(checked) =>
-                                                handleModulePermissionChange(module.id, 'can_delete', checked as boolean)
-                                              }
-                                            />
-                                            <Label className="text-sm font-normal">حذف</Label>
-                                          </div>
-                                        </div>
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  ))}
-                                </Accordion>
-                                <Button 
-                                  onClick={() => handleSavePermissions(user.id)}
-                                  className="w-full"
-                                >
-                                  حفظ التغييرات
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                            <Settings className="h-4 w-4 ml-1" />
+                            الصلاحيات
+                          </Button>
                           <Button
                             variant="destructive"
                             size="sm"
@@ -622,6 +544,78 @@ const UsersManagement = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Permissions Dialog */}
+        <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
+          <DialogContent className="max-w-3xl" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تعديل صلاحيات الأقسام</DialogTitle>
+            </DialogHeader>
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right w-[200px]">القسم</TableHead>
+                    <TableHead className="text-center">عرض</TableHead>
+                    <TableHead className="text-center">إضافة</TableHead>
+                    <TableHead className="text-center">تعديل</TableHead>
+                    <TableHead className="text-center">حذف</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {MODULES.map((module) => {
+                    const permission = userPermissions.find(p => p.module_name === module.id);
+                    return (
+                      <TableRow key={module.id}>
+                        <TableCell className="font-medium">{module.name}</TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={permission?.can_view || false}
+                            onCheckedChange={(checked) =>
+                              updateUserPermission(module.id, 'can_view', checked as boolean)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={permission?.can_create || false}
+                            onCheckedChange={(checked) =>
+                              updateUserPermission(module.id, 'can_create', checked as boolean)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={permission?.can_edit || false}
+                            onCheckedChange={(checked) =>
+                              updateUserPermission(module.id, 'can_edit', checked as boolean)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={permission?.can_delete || false}
+                            onCheckedChange={(checked) =>
+                              updateUserPermission(module.id, 'can_delete', checked as boolean)
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsPermissionsDialogOpen(false)}>
+                إلغاء
+              </Button>
+              <Button onClick={handleSavePermissions}>
+                حفظ الصلاحيات
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
