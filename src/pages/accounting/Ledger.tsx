@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,37 +18,98 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAccounting } from "@/contexts/AccountingContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Printer } from "lucide-react";
+import { toast } from "sonner";
+
+interface Account {
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string;
+  parent_id: string | null;
+}
+
+interface JournalEntry {
+  id: string;
+  date: string;
+  entry_number: string;
+  description: string;
+}
+
+interface JournalLine {
+  id: string;
+  journal_entry_id: string;
+  account_id: string;
+  debit: number;
+  credit: number;
+  description: string;
+}
 
 const Ledger = () => {
-  const { accounts, journalEntries } = useAccounting();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [selectedAccount, setSelectedAccount] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const level4Accounts = accounts.filter(acc => acc.level === 4);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [accountsRes, entriesRes, linesRes] = await Promise.all([
+        supabase.from('chart_of_accounts').select('*').eq('is_active', true),
+        supabase.from('journal_entries').select('*').order('date', { ascending: true }),
+        supabase.from('journal_entry_lines').select('*')
+      ]);
+
+      if (accountsRes.error) throw accountsRes.error;
+      if (entriesRes.error) throw entriesRes.error;
+      if (linesRes.error) throw linesRes.error;
+
+      setAccounts(accountsRes.data || []);
+      setJournalEntries(entriesRes.data || []);
+      setJournalLines(linesRes.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('حدث خطأ في تحميل البيانات');
+    }
+  };
+
+  const calculateLevel = (account: Account): number => {
+    if (!account.parent_id) return 1;
+    const parent = accounts.find(a => a.id === account.parent_id);
+    if (!parent) return 1;
+    return calculateLevel(parent) + 1;
+  };
+
+  const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
   
   const selectedAccountData = accounts.find(acc => acc.id === selectedAccount);
   
   const filteredEntries = journalEntries.filter(entry => {
     if (startDate && entry.date < startDate) return false;
     if (endDate && entry.date > endDate) return false;
-    return entry.lines.some(line => line.accountId === selectedAccount);
+    const entryLines = journalLines.filter(line => line.journal_entry_id === entry.id);
+    return entryLines.some(line => line.account_id === selectedAccount);
   });
 
-  const ledgerEntries = filteredEntries.flatMap(entry => 
-    entry.lines
-      .filter(line => line.accountId === selectedAccount)
-      .map(line => ({
-        date: entry.date,
-        entryNumber: entry.entryNumber,
-        description: line.description || entry.description,
-        debit: line.debit,
-        credit: line.credit,
-      }))
-  );
+  const ledgerEntries = filteredEntries.flatMap(entry => {
+    const entryLines = journalLines.filter(
+      line => line.journal_entry_id === entry.id && line.account_id === selectedAccount
+    );
+    return entryLines.map(line => ({
+      date: entry.date,
+      entryNumber: entry.entry_number,
+      description: line.description || entry.description,
+      debit: Number(line.debit) || 0,
+      credit: Number(line.credit) || 0,
+    }));
+  });
 
   let runningBalance = 0;
   const ledgerWithBalance = ledgerEntries.map(entry => {
@@ -102,7 +163,7 @@ const Ledger = () => {
                   <SelectContent>
                     {level4Accounts.map(acc => (
                       <SelectItem key={acc.id} value={acc.id}>
-                        {acc.code} - {acc.name}
+                        {acc.code} - {acc.name_ar}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -133,8 +194,8 @@ const Ledger = () => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>{selectedAccountData.code} - {selectedAccountData.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">{selectedAccountData.nameEn}</p>
+                  <CardTitle>{selectedAccountData.code} - {selectedAccountData.name_ar}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{selectedAccountData.name_en}</p>
                 </div>
                 <div className="text-left">
                   <div className="text-sm text-muted-foreground">الرصيد الحالي</div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,33 +11,95 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAccounting } from "@/contexts/AccountingContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Printer } from "lucide-react";
+import { toast } from "sonner";
+
+interface Account {
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string;
+  parent_id: string | null;
+}
+
+interface JournalEntry {
+  id: string;
+  date: string;
+  entry_number: string;
+  description: string;
+}
+
+interface JournalLine {
+  id: string;
+  journal_entry_id: string;
+  account_id: string;
+  debit: number;
+  credit: number;
+  description: string;
+}
 
 const TrialBalance = () => {
-  const { accounts, journalEntries } = useAccounting();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const level4Accounts = accounts.filter(acc => acc.level === 4);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [accountsRes, entriesRes, linesRes] = await Promise.all([
+        supabase.from('chart_of_accounts').select('*').eq('is_active', true),
+        supabase.from('journal_entries').select('*').order('date', { ascending: true }),
+        supabase.from('journal_entry_lines').select('*')
+      ]);
+
+      if (accountsRes.error) throw accountsRes.error;
+      if (entriesRes.error) throw entriesRes.error;
+      if (linesRes.error) throw linesRes.error;
+
+      setAccounts(accountsRes.data || []);
+      setJournalEntries(entriesRes.data || []);
+      setJournalLines(linesRes.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('حدث خطأ في تحميل البيانات');
+    }
+  };
+
+  const calculateLevel = (account: Account): number => {
+    if (!account.parent_id) return 1;
+    const parent = accounts.find(a => a.id === account.parent_id);
+    if (!parent) return 1;
+    return calculateLevel(parent) + 1;
+  };
+
+  const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
 
   const trialBalanceData = level4Accounts.map(account => {
-    const accountEntries = journalEntries
-      .filter(entry => {
-        if (startDate && entry.date < startDate) return false;
-        if (endDate && entry.date > endDate) return false;
-        return true;
-      })
-      .flatMap(entry => entry.lines.filter(line => line.accountId === account.id));
+    const filteredEntries = journalEntries.filter(entry => {
+      if (startDate && entry.date < startDate) return false;
+      if (endDate && entry.date > endDate) return false;
+      return true;
+    });
 
-    const debit = accountEntries.reduce((sum, line) => sum + line.debit, 0);
-    const credit = accountEntries.reduce((sum, line) => sum + line.credit, 0);
+    const accountLines = journalLines.filter(line => {
+      const lineEntry = filteredEntries.find(e => e.id === line.journal_entry_id);
+      return lineEntry && line.account_id === account.id;
+    });
+
+    const debit = accountLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+    const credit = accountLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
     const balance = debit - credit;
 
     return {
       code: account.code,
-      name: account.name,
+      name: account.name_ar,
       debit,
       credit,
       balance,
