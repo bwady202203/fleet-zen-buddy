@@ -8,8 +8,11 @@ import { VehicleMileageProvider } from "@/contexts/VehicleMileageContext";
 import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Accounting from "./pages/Accounting";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
@@ -48,47 +51,49 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AccountingProvider>
-        <InvoicesProvider>
-          <VehiclesProvider>
-          <SparePartsProvider>
-            <VehicleMileageProvider>
-              <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/fleet" element={<Index />} />
-                  <Route path="/accounting" element={<Accounting />} />
-                  <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-                  <Route path="/accounting/journal-entries" element={<JournalEntries />} />
-                  <Route path="/accounting/ledger" element={<Ledger />} />
-                  <Route path="/accounting/trial-balance" element={<TrialBalance />} />
-                  <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
-                  <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
-                  <Route path="/accounting/sales-return" element={<SalesReturn />} />
-                  <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
-                  <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
-                  <Route path="/accounting/income-statement" element={<IncomeStatement />} />
-                  <Route path="/accounting/cost-centers" element={<CostCenters />} />
-                  <Route path="/accounting/projects" element={<Projects />} />
-                  <Route path="/hr" element={<HR />} />
-                  <Route path="/hr/employees" element={<Employees />} />
-                  <Route path="/hr/payroll" element={<Payroll />} />
-                  <Route path="/hr/advances" element={<Advances />} />
-                  <Route path="/hr/additions" element={<Additions />} />
-                  <Route path="/hr/deductions" element={<Deductions />} />
-                  <Route path="/hr/leaves" element={<Leaves />} />
-                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
-                  <Route path="/loads" element={<Loads />} />
-                  <Route path="/reports" element={<MaintenanceReports />} />
-                  <Route path="/spare-parts" element={<SpareParts />} />
-                  <Route path="/purchases" element={<Purchases />} />
-                  <Route path="/stock-movement" element={<StockMovement />} />
-                  <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
-                  <Route path="/price-history" element={<PurchasePriceHistory />} />
-                  <Route path="/bulk-vehicles" element={<BulkVehicles />} />
+      <AuthProvider>
+        <AccountingProvider>
+          <InvoicesProvider>
+            <VehiclesProvider>
+            <SparePartsProvider>
+              <VehicleMileageProvider>
+                <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/fleet" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/accounting" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                  <Route path="/accounting/chart-of-accounts" element={<ProtectedRoute><ChartOfAccounts /></ProtectedRoute>} />
+                  <Route path="/accounting/journal-entries" element={<ProtectedRoute><JournalEntries /></ProtectedRoute>} />
+                  <Route path="/accounting/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
+                  <Route path="/accounting/trial-balance" element={<ProtectedRoute><TrialBalance /></ProtectedRoute>} />
+                  <Route path="/accounting/sales-invoice" element={<ProtectedRoute><SalesInvoice /></ProtectedRoute>} />
+                  <Route path="/accounting/purchase-invoice" element={<ProtectedRoute><PurchaseInvoice /></ProtectedRoute>} />
+                  <Route path="/accounting/sales-return" element={<ProtectedRoute><SalesReturn /></ProtectedRoute>} />
+                  <Route path="/accounting/purchase-return" element={<ProtectedRoute><PurchaseReturn /></ProtectedRoute>} />
+                  <Route path="/accounting/balance-sheet" element={<ProtectedRoute><BalanceSheet /></ProtectedRoute>} />
+                  <Route path="/accounting/income-statement" element={<ProtectedRoute><IncomeStatement /></ProtectedRoute>} />
+                  <Route path="/accounting/cost-centers" element={<ProtectedRoute><CostCenters /></ProtectedRoute>} />
+                  <Route path="/accounting/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                  <Route path="/hr" element={<ProtectedRoute><HR /></ProtectedRoute>} />
+                  <Route path="/hr/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                  <Route path="/hr/payroll" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
+                  <Route path="/hr/advances" element={<ProtectedRoute><Advances /></ProtectedRoute>} />
+                  <Route path="/hr/additions" element={<ProtectedRoute><Additions /></ProtectedRoute>} />
+                  <Route path="/hr/deductions" element={<ProtectedRoute><Deductions /></ProtectedRoute>} />
+                  <Route path="/hr/leaves" element={<ProtectedRoute><Leaves /></ProtectedRoute>} />
+                  <Route path="/hr/bulk-employees" element={<ProtectedRoute><BulkEmployees /></ProtectedRoute>} />
+                  <Route path="/loads" element={<ProtectedRoute><Loads /></ProtectedRoute>} />
+                  <Route path="/reports" element={<ProtectedRoute><MaintenanceReports /></ProtectedRoute>} />
+                  <Route path="/spare-parts" element={<ProtectedRoute><SpareParts /></ProtectedRoute>} />
+                  <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
+                  <Route path="/stock-movement" element={<ProtectedRoute><StockMovement /></ProtectedRoute>} />
+                  <Route path="/vehicle-mileage" element={<ProtectedRoute><VehicleMileageReport /></ProtectedRoute>} />
+                  <Route path="/price-history" element={<ProtectedRoute><PurchasePriceHistory /></ProtectedRoute>} />
+                  <Route path="/bulk-vehicles" element={<ProtectedRoute><BulkVehicles /></ProtectedRoute>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
@@ -99,6 +104,7 @@ const App = () => {
         </VehiclesProvider>
         </InvoicesProvider>
       </AccountingProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

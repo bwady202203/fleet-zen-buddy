@@ -1,8 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Calculator, Users, Package, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calculator, Users, Package, Truck, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
+  const { signOut, user, userRole } = useAuth();
+  
   const modules = [
     {
       title: "المحاسبة المالية",
@@ -42,7 +46,31 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                نظام الإدارة المتكامل
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                إدارة شاملة لجميع عمليات المؤسسة
+              </p>
+              {user && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <span>مرحباً، {user.email}</span>
+                  {userRole && <span className="mr-2">• الصلاحية: {userRole}</span>}
+                </div>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => signOut()}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              تسجيل الخروج
+            </Button>
+          </div>
+          <div className="hidden">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               نظام الإدارة المتكامل
             </h1>
