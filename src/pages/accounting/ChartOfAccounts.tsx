@@ -152,16 +152,21 @@ const ChartOfAccounts = () => {
     }
   };
 
-  const resetForm = () => {
+  const resetForm = (parentId: string | null = null) => {
     setFormData({
       code: "",
       name_ar: "",
       name_en: "",
-      parent_id: null,
+      parent_id: parentId,
       type: "asset",
       is_active: true,
     });
     setEditingAccount(null);
+  };
+
+  const handleAddSubAccount = (parentAccount: Account) => {
+    resetForm(parentAccount.id);
+    setDialogOpen(true);
   };
 
   const handleEdit = (account: Account) => {
@@ -210,8 +215,19 @@ const ChartOfAccounts = () => {
         return (
           <TableRow key={level1.id} className="hover:bg-accent/50">
             <TableCell>
-              <div className="font-bold text-primary">
-                {level1.code} - {level1.name_ar}
+              <div className="flex items-center gap-2">
+                <div className="font-bold text-primary">
+                  {level1.code} - {level1.name_ar}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => handleAddSubAccount(level1)}
+                  title="إضافة حساب فرعي"
+                >
+                  <Plus className="h-3 w-3 text-primary" />
+                </Button>
               </div>
             </TableCell>
             <TableCell></TableCell>
@@ -245,14 +261,36 @@ const ChartOfAccounts = () => {
                   if (l3s.length === 0) return sum + 1;
                   return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
                 }, 0)} className="border-l">
-                  <div className="font-bold text-primary">
-                    {level1.code} - {level1.name_ar}
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-primary">
+                      {level1.code} - {level1.name_ar}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleAddSubAccount(level1)}
+                      title="إضافة حساب فرعي"
+                    >
+                      <Plus className="h-3 w-3 text-primary" />
+                    </Button>
                   </div>
                 </TableCell>
               ) : null}
               <TableCell>
-                <div className="font-semibold text-secondary-foreground">
-                  {level2.code} - {level2.name_ar}
+                <div className="flex items-center gap-2">
+                  <div className="font-semibold text-secondary-foreground">
+                    {level2.code} - {level2.name_ar}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleAddSubAccount(level2)}
+                    title="إضافة حساب فرعي"
+                  >
+                    <Plus className="h-3 w-3 text-secondary-foreground" />
+                  </Button>
                 </div>
               </TableCell>
               <TableCell></TableCell>
@@ -280,27 +318,60 @@ const ChartOfAccounts = () => {
             return (
               <TableRow key={level3.id} className="hover:bg-accent/50">
                 {idx2 === 0 && idx3 === 0 ? (
-                  <TableCell rowSpan={level2Accounts.reduce((sum, l2) => {
-                    const l3s = getLevel3Accounts(l2.id);
-                    return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
-                  }, 0)} className="border-l">
+                <TableCell rowSpan={level2Accounts.reduce((sum, l2) => {
+                  const l3s = getLevel3Accounts(l2.id);
+                  return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
+                }, 0)} className="border-l">
+                  <div className="flex items-center gap-2">
                     <div className="font-bold text-primary">
                       {level1.code} - {level1.name_ar}
                     </div>
-                  </TableCell>
-                ) : null}
-                {idx3 === 0 ? (
-                  <TableCell rowSpan={level3Accounts.reduce((sum, l3) => sum + Math.max(1, getLevel4Accounts(l3.id).length), 0)} className="border-l">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleAddSubAccount(level1)}
+                      title="إضافة حساب فرعي"
+                    >
+                      <Plus className="h-3 w-3 text-primary" />
+                    </Button>
+                  </div>
+                </TableCell>
+              ) : null}
+              {idx3 === 0 ? (
+                <TableCell rowSpan={level3Accounts.reduce((sum, l3) => sum + Math.max(1, getLevel4Accounts(l3.id).length), 0)} className="border-l">
+                  <div className="flex items-center gap-2">
                     <div className="font-semibold text-secondary-foreground">
                       {level2.code} - {level2.name_ar}
                     </div>
-                  </TableCell>
-                ) : null}
-                <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleAddSubAccount(level2)}
+                      title="إضافة حساب فرعي"
+                    >
+                      <Plus className="h-3 w-3 text-secondary-foreground" />
+                    </Button>
+                  </div>
+                </TableCell>
+              ) : null}
+              <TableCell>
+                <div className="flex items-center gap-2">
                   <div className="pr-2">
                     {level3.code} - {level3.name_ar}
                   </div>
-                </TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleAddSubAccount(level3)}
+                    title="إضافة حساب فرعي"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TableCell>
                 <TableCell></TableCell>
                 <TableCell className="text-center">
                   {level3.type === 'asset' && 'أصول'}
@@ -325,22 +396,55 @@ const ChartOfAccounts = () => {
                   const l3s = getLevel3Accounts(l2.id);
                   return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
                 }, 0)} className="border-l">
-                  <div className="font-bold text-primary">
-                    {level1.code} - {level1.name_ar}
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-primary">
+                      {level1.code} - {level1.name_ar}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleAddSubAccount(level1)}
+                      title="إضافة حساب فرعي"
+                    >
+                      <Plus className="h-3 w-3 text-primary" />
+                    </Button>
                   </div>
                 </TableCell>
               ) : null}
               {idx3 === 0 && idx4 === 0 ? (
                 <TableCell rowSpan={level3Accounts.reduce((sum, l3) => sum + Math.max(1, getLevel4Accounts(l3.id).length), 0)} className="border-l">
-                  <div className="font-semibold text-secondary-foreground">
-                    {level2.code} - {level2.name_ar}
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold text-secondary-foreground">
+                      {level2.code} - {level2.name_ar}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleAddSubAccount(level2)}
+                      title="إضافة حساب فرعي"
+                    >
+                      <Plus className="h-3 w-3 text-secondary-foreground" />
+                    </Button>
                   </div>
                 </TableCell>
               ) : null}
               {idx4 === 0 ? (
                 <TableCell rowSpan={level4Accounts.length} className="border-l">
-                  <div className="pr-2">
-                    {level3.code} - {level3.name_ar}
+                  <div className="flex items-center gap-2">
+                    <div className="pr-2">
+                      {level3.code} - {level3.name_ar}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleAddSubAccount(level3)}
+                      title="إضافة حساب فرعي"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
                   </div>
                 </TableCell>
               ) : null}
@@ -397,7 +501,7 @@ const ChartOfAccounts = () => {
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={resetForm}>
+                <Button onClick={() => resetForm()}>
                   <Plus className="h-4 w-4 ml-2" />
                   إضافة حساب جديد
                 </Button>
