@@ -208,7 +208,7 @@ const CustodyRepresentatives = () => {
                     <span className="font-medium">إجمالي العهدة</span>
                   </div>
                   <span className="text-lg font-bold">
-                    {rep.total_custody.toLocaleString('ar-SA')} ريال
+                    {(rep.total_custody || 0).toLocaleString('ar-SA')} ريال
                   </span>
                 </div>
 
@@ -218,7 +218,7 @@ const CustodyRepresentatives = () => {
                     <span className="font-medium">العهدة المستلمة</span>
                   </div>
                   <span className="text-lg font-bold text-green-600">
-                    {rep.received_custody.toLocaleString('ar-SA')} ريال
+                    {(rep.received_custody || 0).toLocaleString('ar-SA')} ريال
                   </span>
                 </div>
 
@@ -228,7 +228,7 @@ const CustodyRepresentatives = () => {
                     <span className="font-medium">العهدة الحالية</span>
                   </div>
                   <span className="text-lg font-bold text-blue-600">
-                    {rep.current_custody.toLocaleString('ar-SA')} ريال
+                    {(rep.current_custody || 0).toLocaleString('ar-SA')} ريال
                   </span>
                 </div>
 
@@ -238,7 +238,7 @@ const CustodyRepresentatives = () => {
                     <span className="font-medium">المتبقي</span>
                   </div>
                   <span className="text-lg font-bold text-orange-600">
-                    {rep.remaining_custody.toLocaleString('ar-SA')} ريال
+                    {(rep.remaining_custody || 0).toLocaleString('ar-SA')} ريال
                   </span>
                 </div>
               </CardContent>
