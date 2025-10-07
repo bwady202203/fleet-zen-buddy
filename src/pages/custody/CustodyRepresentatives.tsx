@@ -131,11 +131,12 @@ const CustodyRepresentatives = () => {
         }
       }
 
+      let repAccountId;
       // Create account for the representative
       if (custodyAccountId) {
         const accountCode = `110201${Math.floor(Math.random() * 1000)}`;
         
-        const { error: accountError } = await supabase
+        const { data: newRepAccount, error: accountError } = await supabase
           .from('chart_of_accounts')
           .insert([{
             code: accountCode,
@@ -144,9 +145,12 @@ const CustodyRepresentatives = () => {
             type: 'asset',
             parent_id: custodyAccountId,
             is_active: true
-          }]);
+          }])
+          .select()
+          .single();
 
         if (accountError) throw accountError;
+        repAccountId = newRepAccount.id;
       }
 
       // Create the representative
@@ -161,7 +165,71 @@ const CustodyRepresentatives = () => {
 
       if (error) throw error;
 
-      toast.success('تم إضافة المندوب وحسابه في شجرة الحسابات بنجاح');
+      // Create opening journal entry for the total custody if amount > 0
+      if (newRep.total_custody > 0 && repAccountId) {
+        // Find or create "رأس المال" account
+        const { data: capitalAccount } = await supabase
+          .from('chart_of_accounts')
+          .select('id')
+          .eq('name_ar', 'رأس المال')
+          .maybeSingle();
+
+        if (capitalAccount) {
+          // Generate entry number
+          const { data: lastEntry } = await supabase
+            .from('journal_entries')
+            .select('entry_number')
+            .order('entry_number', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          let nextNumber = 1;
+          if (lastEntry?.entry_number) {
+            const match = lastEntry.entry_number.match(/\d+/);
+            if (match) {
+              nextNumber = parseInt(match[0]) + 1;
+            }
+          }
+          const entryNumber = `JE-${nextNumber.toString().padStart(6, '0')}`;
+
+          // Insert journal entry
+          const { data: journalEntry, error: journalError } = await supabase
+            .from('journal_entries')
+            .insert([{
+              entry_number: entryNumber,
+              date: new Date().toISOString().split('T')[0],
+              description: `قيد افتتاحي - عهدة ${newRep.name}`
+            }])
+            .select()
+            .single();
+
+          if (journalError) throw journalError;
+
+          // Insert journal entry lines (debit custody, credit capital)
+          const { error: linesError } = await supabase
+            .from('journal_entry_lines')
+            .insert([
+              {
+                journal_entry_id: journalEntry.id,
+                account_id: repAccountId,
+                debit: newRep.total_custody,
+                credit: 0,
+                description: `قيد افتتاحي - إجمالي العهدة المخصصة`
+              },
+              {
+                journal_entry_id: journalEntry.id,
+                account_id: capitalAccount.id,
+                debit: 0,
+                credit: newRep.total_custody,
+                description: `قيد افتتاحي - إجمالي العهدة المخصصة`
+              }
+            ]);
+
+          if (linesError) throw linesError;
+        }
+      }
+
+      toast.success('تم إضافة المندوب وحسابه في شجرة الحسابات والقيد الافتتاحي بنجاح');
       setIsAddDialogOpen(false);
       setNewRep({ name: '', total_custody: 0 });
       fetchRepresentatives();
