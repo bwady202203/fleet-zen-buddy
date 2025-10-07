@@ -355,6 +355,47 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          driver_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          driver_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          driver_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_payments_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string | null
