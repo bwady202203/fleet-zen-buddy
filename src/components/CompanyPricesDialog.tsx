@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trash2 } from "lucide-react";
 
 interface CompanyPricesDialogProps {
   open: boolean;
@@ -150,6 +151,35 @@ export const CompanyPricesDialog = ({ open, onOpenChange, companyId, companyName
     }
   };
 
+  const handleDelete = async (loadTypeId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا السعر؟')) return;
+
+    try {
+      const { error } = await supabase
+        .from("company_load_type_prices")
+        .delete()
+        .eq("company_id", companyId)
+        .eq("load_type_id", loadTypeId);
+
+      if (error) throw error;
+
+      // تحديث الحالة المحلية
+      setCompanyPrices(prev => prev.filter(p => p.load_type_id !== loadTypeId));
+
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف السعر بنجاح",
+      });
+    } catch (error) {
+      console.error("Error deleting price:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل حذف السعر",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -168,6 +198,7 @@ export const CompanyPricesDialog = ({ open, onOpenChange, companyId, companyName
                   <TableHead>السعر للوحدة</TableHead>
                   <TableHead>نسبة العمولة</TableHead>
                   <TableHead className="w-20">نشط</TableHead>
+                  <TableHead className="w-20">حذف</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -194,6 +225,15 @@ export const CompanyPricesDialog = ({ open, onOpenChange, companyId, companyName
                         checked={isActive(loadType.id)}
                         onCheckedChange={(checked) => handleActiveToggle(loadType.id, checked)}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(loadType.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
 interface CompanyDriverCommissionsDialogProps {
   open: boolean;
@@ -107,6 +107,39 @@ export const CompanyDriverCommissionsDialog = ({
     }
   };
 
+  const handleDelete = async (commissionType: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذه العمولة؟')) return;
+
+    try {
+      const { error } = await supabase
+        .from("company_driver_commissions")
+        .delete()
+        .eq("company_id", companyId)
+        .eq("commission_type", commissionType as any);
+
+      if (error) throw error;
+
+      // تحديث الحالة المحلية
+      setCommissions(prev => {
+        const updated = { ...prev };
+        delete updated[commissionType];
+        return updated;
+      });
+
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف العمولة بنجاح",
+      });
+    } catch (error) {
+      console.error("Error deleting commission:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل حذف العمولة",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -121,18 +154,28 @@ export const CompanyDriverCommissionsDialog = ({
         ) : (
           <div className="space-y-4">
             {commissionTypes.map((type) => (
-              <div key={type.key} className="space-y-2">
-                <Label htmlFor={type.key}>{type.label}</Label>
-                <Input
-                  id={type.key}
-                  type="number"
-                  step="0.01"
-                  value={commissions[type.key] || ""}
-                  onChange={(e) =>
-                    setCommissions({ ...commissions, [type.key]: e.target.value })
-                  }
-                  placeholder="0.00"
-                />
+              <div key={type.key} className="flex items-end gap-2">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor={type.key}>{type.label}</Label>
+                  <Input
+                    id={type.key}
+                    type="number"
+                    step="0.01"
+                    value={commissions[type.key] || ""}
+                    onChange={(e) =>
+                      setCommissions({ ...commissions, [type.key]: e.target.value })
+                    }
+                    placeholder="0.00"
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(type.key)}
+                  className="mb-0.5"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
               </div>
             ))}
 
