@@ -79,6 +79,25 @@ const LoadsRegister = () => {
     setLoading(true);
 
     try {
+      // التحقق من عدم تكرار رقم الشحنة
+      const { data: existingLoad, error: checkError } = await supabase
+        .from('loads')
+        .select('id')
+        .eq('load_number', formData.loadNumber)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingLoad) {
+        toast({
+          title: "خطأ في رقم الشحنة",
+          description: `رقم الشحنة "${formData.loadNumber}" موجود مسبقاً. الرجاء استخدام رقم آخر.`,
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       const loadType = loadTypes.find(lt => lt.id === formData.loadTypeId);
       const quantity = parseFloat(formData.quantity);
       const unitPrice = parseFloat(formData.unitPrice);
