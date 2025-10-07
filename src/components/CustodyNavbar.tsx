@@ -18,6 +18,11 @@ const CustodyNavbar = () => {
       icon: FileText 
     },
     { 
+      title: 'المصروفات', 
+      path: '/custody/expenses', 
+      icon: List 
+    },
+    { 
       title: 'العهد المستلمة', 
       path: '/custody/records', 
       icon: List 

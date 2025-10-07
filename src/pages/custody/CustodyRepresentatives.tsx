@@ -43,9 +43,10 @@ const CustodyRepresentatives = () => {
 
       if (error) throw error;
 
-      // Fetch transfer amounts for each representative
+      // Fetch transfer amounts and expenses for each representative
       const repsWithTransfers = await Promise.all(
         (data || []).map(async (rep) => {
+          // Get received custody (total transfers)
           const { data: transfers } = await supabase
             .from('custody_transfers')
             .select('amount')
@@ -53,11 +54,23 @@ const CustodyRepresentatives = () => {
 
           const received_custody = transfers?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
 
+          // Get total expenses
+          const { data: expenses } = await supabase
+            .from('custody_expenses')
+            .select('amount')
+            .eq('representative_id', rep.id);
+          
+          const total_expenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+
+          // Calculate current custody (received - expenses)
+          const current_custody = received_custody - total_expenses;
+          const remaining_custody = rep.total_custody - current_custody;
+
           return {
             ...rep,
             received_custody,
-            current_custody: received_custody,
-            remaining_custody: rep.total_custody - received_custody
+            current_custody,
+            remaining_custody
           };
         })
       );

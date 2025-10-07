@@ -88,6 +88,50 @@ export type Database = {
         }
         Relationships: []
       }
+      custody_expenses: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          expense_type: string
+          id: string
+          representative_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expense_date: string
+          expense_type: string
+          id?: string
+          representative_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          expense_type?: string
+          id?: string
+          representative_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_expenses_representative_id_fkey"
+            columns: ["representative_id"]
+            isOneToOne: false
+            referencedRelation: "custody_representatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custody_journal_entries: {
         Row: {
           amount: number

@@ -19,6 +19,7 @@ import Accounting from "./pages/Accounting";
 import CustodyHome from "./pages/custody/CustodyHome";
 import CustodyRepresentatives from "./pages/custody/CustodyRepresentatives";
 import CustodyTransfers from "./pages/custody/CustodyTransfers";
+import CustodyExpenses from "./pages/custody/CustodyExpenses";
 import CustodyRecords from "./pages/custody/CustodyRecords";
 import CustodyFilter from "./pages/custody/CustodyFilter";
 import CustodyJournalEntries from "./pages/custody/CustodyJournalEntries";
@@ -112,6 +113,7 @@ const App = () => {
                   <Route path="/custody" element={<CustodyHome />} />
                   <Route path="/custody/representatives" element={<CustodyRepresentatives />} />
                   <Route path="/custody/transfers" element={<CustodyTransfers />} />
+                  <Route path="/custody/expenses" element={<CustodyExpenses />} />
                   <Route path="/custody/records" element={<CustodyRecords />} />
                   <Route path="/custody/filter" element={<CustodyFilter />} />
                   <Route path="/custody/journal" element={<CustodyJournalEntries />} />
