@@ -68,11 +68,46 @@ const LoadsRegister = () => {
     }
   };
 
+  const loadDriverCommission = async (companyId: string, quantity: number) => {
+    if (!companyId || isNaN(quantity) || quantity <= 0) return;
+
+    // تحديد نوع العمولة بناءً على الكمية (الوزن)
+    let commissionType = 'fixed';
+    
+    if (quantity < 40) {
+      commissionType = 'weight_less_40';
+    } else if (quantity >= 40 && quantity <= 44) {
+      commissionType = 'weight_40_44';
+    } else if (quantity > 44 && quantity <= 49) {
+      commissionType = 'weight_44_49';
+    } else if (quantity > 49) {
+      commissionType = 'weight_more_49';
+    }
+
+    const { data, error } = await supabase
+      .from('company_driver_commissions')
+      .select('amount')
+      .eq('company_id', companyId)
+      .eq('commission_type', commissionType as any)
+      .maybeSingle();
+
+    if (!error && data && data.amount > 0) {
+      setFormData(prev => ({ ...prev, unitPrice: data.amount.toString() }));
+    }
+  };
+
   useEffect(() => {
     if (formData.companyId && formData.loadTypeId) {
       loadCompanyPrice(formData.companyId, formData.loadTypeId);
     }
   }, [formData.companyId, formData.loadTypeId]);
+
+  useEffect(() => {
+    const quantity = parseFloat(formData.quantity);
+    if (formData.companyId && !isNaN(quantity) && quantity > 0) {
+      loadDriverCommission(formData.companyId, quantity);
+    }
+  }, [formData.companyId, formData.quantity]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
