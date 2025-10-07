@@ -1,25 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Edit, Trash2, Upload, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import * as XLSX from 'xlsx';
 
 const DriversManagement = () => {
   const { toast } = useToast();
   const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: ''
   });
+  const [bulkDrivers, setBulkDrivers] = useState<Array<{ name: string; phone: string }>>([
+    { name: '', phone: '' }
+  ]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadDrivers();
@@ -123,6 +129,115 @@ const DriversManagement = () => {
     }
   };
 
+  const handleBulkAdd = () => {
+    setBulkDrivers([{ name: '', phone: '' }]);
+    setBulkDialogOpen(true);
+  };
+
+  const addBulkRow = () => {
+    setBulkDrivers([...bulkDrivers, { name: '', phone: '' }]);
+  };
+
+  const removeBulkRow = (index: number) => {
+    if (bulkDrivers.length > 1) {
+      setBulkDrivers(bulkDrivers.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBulkRow = (index: number, field: 'name' | 'phone', value: string) => {
+    const updated = [...bulkDrivers];
+    updated[index][field] = value;
+    setBulkDrivers(updated);
+  };
+
+  const handleBulkSubmit = async () => {
+    const validDrivers = bulkDrivers.filter(d => d.name.trim() !== '');
+    
+    if (validDrivers.length === 0) {
+      toast({
+        title: "تنبيه",
+        description: "يجب إدخال اسم سائق واحد على الأقل",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('drivers').insert(
+        validDrivers.map(d => ({
+          name: d.name,
+          phone: d.phone || null
+        }))
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الإضافة",
+        description: `تم إضافة ${validDrivers.length} سائق بنجاح`
+      });
+
+      setBulkDialogOpen(false);
+      setBulkDrivers([{ name: '', phone: '' }]);
+      loadDrivers();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        const importedDrivers = jsonData.map((row: any) => ({
+          name: row['الاسم'] || row['name'] || row['Name'] || '',
+          phone: row['الجوال'] || row['phone'] || row['Phone'] || ''
+        })).filter(d => d.name);
+
+        if (importedDrivers.length > 0) {
+          setBulkDrivers(importedDrivers);
+          setBulkDialogOpen(true);
+          toast({
+            title: "تم الاستيراد",
+            description: `تم استيراد ${importedDrivers.length} سائق من الملف`
+          });
+        } else {
+          toast({
+            title: "تنبيه",
+            description: "لم يتم العثور على بيانات صالحة في الملف",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "خطأ",
+          description: "فشل قراءة الملف. تأكد من صيغة الملف",
+          variant: "destructive"
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
@@ -143,13 +258,29 @@ const DriversManagement = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>قائمة السائقين</CardTitle>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => { setEditingDriver(null); setFormData({ name: '', phone: '' }); }}>
-                  <Plus className="h-4 w-4 ml-2" />
-                  إضافة سائق
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".xlsx,.xls"
+                className="hidden"
+              />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="h-4 w-4 ml-2" />
+                استيراد Excel
+              </Button>
+              <Button variant="outline" onClick={handleBulkAdd}>
+                <Users className="h-4 w-4 ml-2" />
+                إضافة متعدد
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => { setEditingDriver(null); setFormData({ name: '', phone: '' }); }}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة سائق
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editingDriver ? 'تعديل السائق' : 'إضافة سائق جديد'}</DialogTitle>
@@ -185,6 +316,7 @@ const DriversManagement = () => {
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -222,6 +354,73 @@ const DriversManagement = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>إضافة سائقين متعددين</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>اسم السائق</TableHead>
+                      <TableHead>رقم الجوال</TableHead>
+                      <TableHead className="w-20">إجراء</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bulkDrivers.map((driver, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>
+                          <Input
+                            value={driver.name}
+                            onChange={(e) => updateBulkRow(index, 'name', e.target.value)}
+                            placeholder="اسم السائق"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={driver.phone}
+                            onChange={(e) => updateBulkRow(index, 'phone', e.target.value)}
+                            placeholder="رقم الجوال"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeBulkRow(index)}
+                            disabled={bulkDrivers.length === 1}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex gap-2 justify-between">
+                <Button variant="outline" onClick={addBulkRow}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  إضافة صف
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button onClick={handleBulkSubmit} disabled={loading}>
+                    حفظ الكل
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
