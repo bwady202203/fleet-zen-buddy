@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface CompanyDriverCommissionsDialogProps {
   open: boolean;
@@ -13,18 +14,12 @@ interface CompanyDriverCommissionsDialogProps {
   companyName: string;
 }
 
-type CommissionType = {
-  key: string;
-  label: string;
-  description: string;
-};
-
-const commissionTypes: CommissionType[] = [
-  { key: "fixed", label: "مبلغ ثابت", description: "عمولة ثابتة بغض النظر عن الوزن" },
-  { key: "weight_less_40", label: "أقل من 40 كيلو", description: "للشحنات أقل من 40 كيلو" },
-  { key: "weight_40_44", label: "من 40-44 كيلو", description: "للشحنات من 40 إلى 44 كيلو" },
-  { key: "weight_44_49", label: "من 44-49 كيلو", description: "للشحنات من 44 إلى 49 كيلو" },
-  { key: "weight_more_49", label: "أكثر من 49 كيلو", description: "للشحنات أكثر من 49 كيلو" },
+const commissionTypes = [
+  { key: 'fixed', label: 'مبلغ ثابت' },
+  { key: 'weight_less_40', label: 'أقل من 40 كيلو' },
+  { key: 'weight_40_44', label: 'من 40-44 كيلو' },
+  { key: 'weight_44_49', label: 'من 44-49 كيلو' },
+  { key: 'weight_more_49', label: 'أكثر من 49 كيلو' },
 ];
 
 export const CompanyDriverCommissionsDialog = ({
@@ -36,6 +31,7 @@ export const CompanyDriverCommissionsDialog = ({
   const { toast } = useToast();
   const [commissions, setCommissions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open && companyId) {
@@ -44,8 +40,8 @@ export const CompanyDriverCommissionsDialog = ({
   }, [open, companyId]);
 
   const loadCommissions = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("company_driver_commissions")
         .select("*")
@@ -58,11 +54,11 @@ export const CompanyDriverCommissionsDialog = ({
         commissionsMap[item.commission_type] = item.amount.toString();
       });
       setCommissions(commissionsMap);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error loading commissions:", error);
       toast({
         title: "خطأ",
-        description: "فشل في تحميل العمولات",
+        description: "فشل تحميل العمولات",
         variant: "destructive",
       });
     } finally {
@@ -70,82 +66,93 @@ export const CompanyDriverCommissionsDialog = ({
     }
   };
 
-  const handleCommissionChange = async (type: string, amount: string) => {
+  const handleSave = async () => {
     try {
-      const numAmount = parseFloat(amount) || 0;
+      setSaving(true);
 
-      const { error } = await supabase
-        .from("company_driver_commissions")
-        .upsert([
-          {
-            company_id: companyId,
-            commission_type: type as any,
-            amount: numAmount,
-          },
-        ]);
+      for (const type of commissionTypes) {
+        const amount = commissions[type.key] || "0";
+        
+        const { error } = await supabase
+          .from("company_driver_commissions")
+          .upsert(
+            {
+              company_id: companyId,
+              commission_type: type.key as any,
+              amount: parseFloat(amount),
+            },
+            {
+              onConflict: 'company_id,commission_type'
+            }
+          );
 
-      if (error) throw error;
-
-      setCommissions((prev) => ({ ...prev, [type]: amount }));
+        if (error) throw error;
+      }
 
       toast({
-        title: "تم التحديث",
-        description: "تم تحديث العمولة بنجاح",
+        title: "نجح",
+        description: "تم حفظ العمولات بنجاح",
       });
-    } catch (error: any) {
-      console.error("Error updating commission:", error);
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving commissions:", error);
       toast({
         title: "خطأ",
-        description: "فشل في تحديث العمولة",
+        description: "فشل حفظ العمولات",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>عمولات النقل للسائق - {companyName}</DialogTitle>
+          <DialogTitle>عمولة النقل للسائق - {companyName}</DialogTitle>
         </DialogHeader>
 
         {loading ? (
-          <div className="text-center py-8">جاري التحميل...</div>
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {commissionTypes.map((type) => (
-              <div key={type.key} className="space-y-2 p-4 border rounded-lg">
-                <Label htmlFor={type.key} className="text-base font-semibold">
-                  {type.label}
-                </Label>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    id={type.key}
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={commissions[type.key] || ""}
-                    onChange={(e) => setCommissions((prev) => ({ ...prev, [type.key]: e.target.value }))}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={() => handleCommissionChange(type.key, commissions[type.key] || "0")}
-                    size="sm"
-                  >
-                    حفظ
-                  </Button>
-                </div>
+              <div key={type.key} className="space-y-2">
+                <Label htmlFor={type.key}>{type.label}</Label>
+                <Input
+                  id={type.key}
+                  type="number"
+                  step="0.01"
+                  value={commissions[type.key] || ""}
+                  onChange={(e) =>
+                    setCommissions({ ...commissions, [type.key]: e.target.value })
+                  }
+                  placeholder="0.00"
+                />
               </div>
             ))}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                إلغاء
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  "حفظ"
+                )}
+              </Button>
+            </div>
           </div>
         )}
-
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            إغلاق
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
