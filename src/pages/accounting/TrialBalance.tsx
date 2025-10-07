@@ -82,33 +82,53 @@ const TrialBalance = () => {
   const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
 
   const trialBalanceData = level4Accounts.map(account => {
-    const filteredEntries = journalEntries.filter(entry => {
+    // حساب الرصيد الافتتاحي (قبل تاريخ البداية)
+    const openingEntries = journalEntries.filter(entry => {
+      if (startDate && entry.date < startDate) return true;
+      return false;
+    });
+
+    const openingLines = journalLines.filter(line => {
+      const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
+      return lineEntry && line.account_id === account.id;
+    });
+
+    const openingDebit = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+    const openingCredit = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+    const openingBalance = openingDebit - openingCredit;
+
+    // حساب حركة الفترة (من تاريخ البداية إلى تاريخ النهاية)
+    const periodEntries = journalEntries.filter(entry => {
       if (startDate && entry.date < startDate) return false;
       if (endDate && entry.date > endDate) return false;
       return true;
     });
 
-    const accountLines = journalLines.filter(line => {
-      const lineEntry = filteredEntries.find(e => e.id === line.journal_entry_id);
+    const periodLines = journalLines.filter(line => {
+      const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
       return lineEntry && line.account_id === account.id;
     });
 
-    const debit = accountLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
-    const credit = accountLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
-    const balance = debit - credit;
+    const periodDebit = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+    const periodCredit = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+
+    // حساب الرصيد الختامي
+    const closingBalance = openingBalance + periodDebit - periodCredit;
 
     return {
       code: account.code,
       name: account.name_ar,
-      debit,
-      credit,
-      balance,
+      openingBalance,
+      periodDebit,
+      periodCredit,
+      closingBalance,
     };
   });
 
-  const totalDebit = trialBalanceData.reduce((sum, acc) => sum + acc.debit, 0);
-  const totalCredit = trialBalanceData.reduce((sum, acc) => sum + acc.credit, 0);
-  const totalBalance = totalDebit - totalCredit;
+  const totalOpeningBalance = trialBalanceData.reduce((sum, acc) => sum + acc.openingBalance, 0);
+  const totalPeriodDebit = trialBalanceData.reduce((sum, acc) => sum + acc.periodDebit, 0);
+  const totalPeriodCredit = trialBalanceData.reduce((sum, acc) => sum + acc.periodCredit, 0);
+  const totalClosingBalance = trialBalanceData.reduce((sum, acc) => sum + acc.closingBalance, 0);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -169,8 +189,14 @@ const TrialBalance = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">رمز الحساب</TableHead>
-                  <TableHead className="text-right">اسم الحساب</TableHead>
+                  <TableHead className="text-right" rowSpan={2}>رمز الحساب</TableHead>
+                  <TableHead className="text-right" rowSpan={2}>اسم الحساب</TableHead>
+                  <TableHead className="text-center" colSpan={1}>الرصيد الافتتاحي</TableHead>
+                  <TableHead className="text-center" colSpan={2}>حركة الفترة</TableHead>
+                  <TableHead className="text-center" colSpan={1}>الرصيد الختامي</TableHead>
+                </TableRow>
+                <TableRow>
+                  <TableHead className="text-right">الرصيد</TableHead>
                   <TableHead className="text-right">المدين</TableHead>
                   <TableHead className="text-right">الدائن</TableHead>
                   <TableHead className="text-right">الرصيد</TableHead>
@@ -182,13 +208,16 @@ const TrialBalance = () => {
                     <TableCell className="font-medium">{account.code}</TableCell>
                     <TableCell>{account.name}</TableCell>
                     <TableCell className="text-left font-medium">
-                      {account.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {account.openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell className="text-left font-medium">
-                      {account.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="text-left font-medium">
+                      {account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell className="text-left font-bold">
-                      {account.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {account.closingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -196,19 +225,22 @@ const TrialBalance = () => {
                   <TableRow className="font-bold bg-accent/50">
                     <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
                     <TableCell className="text-left text-lg">
-                      {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {totalOpeningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell className="text-left text-lg">
-                      {totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {totalPeriodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell className="text-left text-lg">
-                      {totalBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {totalPeriodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="text-left text-lg">
+                      {totalClosingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
                   </TableRow>
                 )}
                 {trialBalanceData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       لا توجد حركات محاسبية في الفترة المحددة
                     </TableCell>
                   </TableRow>
@@ -219,13 +251,13 @@ const TrialBalance = () => {
           {trialBalanceData.length > 0 && (
             <CardContent className="border-t">
               <div className="flex justify-center">
-                {totalDebit === totalCredit ? (
+                {Math.abs(totalPeriodDebit - totalPeriodCredit) < 0.01 ? (
                   <div className="text-green-600 font-bold text-lg">
                     ✓ ميزان المراجعة متوازن
                   </div>
                 ) : (
                   <div className="text-destructive font-bold text-lg">
-                    ✗ ميزان المراجعة غير متوازن - الفرق: {Math.abs(totalDebit - totalCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    ✗ ميزان المراجعة غير متوازن - الفرق: {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                   </div>
                 )}
               </div>
