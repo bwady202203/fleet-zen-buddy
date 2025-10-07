@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
 
 const CompaniesManagement = () => {
   const { toast } = useToast();
@@ -20,6 +21,8 @@ const CompaniesManagement = () => {
     phone: '',
     email: ''
   });
+  const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
 
   useEffect(() => {
     loadCompanies();
@@ -224,7 +227,18 @@ const CompaniesManagement = () => {
                       <span className="font-semibold">البريد:</span> {company.email}
                     </p>
                   )}
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2 mt-4 flex-wrap">
+                    <Button 
+                      size="sm" 
+                      variant="default" 
+                      onClick={() => {
+                        setSelectedCompany(company);
+                        setPricesDialogOpen(true);
+                      }}
+                    >
+                      <DollarSign className="h-4 w-4 ml-1" />
+                      الأسعار
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => handleEdit(company)}>
                       <Edit className="h-4 w-4 ml-1" />
                       تعديل
@@ -239,6 +253,15 @@ const CompaniesManagement = () => {
             </Card>
           ))}
         </div>
+
+        {selectedCompany && (
+          <CompanyPricesDialog
+            open={pricesDialogOpen}
+            onOpenChange={setPricesDialogOpen}
+            companyId={selectedCompany.id}
+            companyName={selectedCompany.name}
+          />
+        )}
       </main>
     </div>
   );

@@ -48,6 +48,28 @@ const LoadsRegister = () => {
     if (driversRes.data) setDrivers(driversRes.data);
   };
 
+  const loadCompanyPrice = async (companyId: string, loadTypeId: string) => {
+    if (!companyId || !loadTypeId) return;
+
+    const { data, error } = await supabase
+      .from('company_load_type_prices')
+      .select('unit_price')
+      .eq('company_id', companyId)
+      .eq('load_type_id', loadTypeId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!error && data) {
+      setFormData(prev => ({ ...prev, unitPrice: data.unit_price.toString() }));
+    }
+  };
+
+  useEffect(() => {
+    if (formData.companyId && formData.loadTypeId) {
+      loadCompanyPrice(formData.companyId, formData.loadTypeId);
+    }
+  }, [formData.companyId, formData.loadTypeId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
