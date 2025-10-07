@@ -54,41 +54,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                نظام الإدارة المتكامل
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                إدارة شاملة لجميع عمليات المؤسسة
-              </p>
-              {user && (
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <span>مرحباً، {user.email}</span>
-                  {userRole && <span className="mr-2">• الصلاحية: {userRole}</span>}
-                </div>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {userRole === 'admin' && (
-                <Link to="/users">
-                  <Button variant="outline" className="gap-2">
-                    <Shield className="h-4 w-4" />
-                    إدارة المستخدمين
-                  </Button>
-                </Link>
-              )}
-              <Button 
-                variant="outline" 
-                onClick={() => signOut()}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                تسجيل الخروج
-              </Button>
-            </div>
-          </div>
-          <div className="hidden">
+          <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               نظام الإدارة المتكامل
             </h1>
