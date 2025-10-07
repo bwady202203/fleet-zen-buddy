@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban } from "lucide-react";
 
 const Accounting = () => {
   const sections = [
@@ -80,6 +80,20 @@ const Accounting = () => {
       icon: RotateCcw,
       link: "/accounting/purchase-return",
       color: "from-pink-500 to-pink-600"
+    },
+    {
+      title: "مراكز التكلفة",
+      description: "إدارة مراكز التكلفة",
+      icon: Target,
+      link: "/accounting/cost-centers",
+      color: "from-violet-500 to-violet-600"
+    },
+    {
+      title: "المشاريع",
+      description: "إدارة المشاريع",
+      icon: FolderKanban,
+      link: "/accounting/projects",
+      color: "from-fuchsia-500 to-fuchsia-600"
     }
   ];
 

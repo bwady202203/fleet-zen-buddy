@@ -21,6 +21,8 @@ import SalesReturn from "./pages/accounting/SalesReturn";
 import PurchaseReturn from "./pages/accounting/PurchaseReturn";
 import BalanceSheet from "./pages/accounting/BalanceSheet";
 import IncomeStatement from "./pages/accounting/IncomeStatement";
+import CostCenters from "./pages/accounting/CostCenters";
+import Projects from "./pages/accounting/Projects";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import Employees from "./pages/hr/Employees";
@@ -69,6 +71,8 @@ const App = () => {
                   <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
                   <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
                   <Route path="/accounting/income-statement" element={<IncomeStatement />} />
+                  <Route path="/accounting/cost-centers" element={<CostCenters />} />
+                  <Route path="/accounting/projects" element={<Projects />} />
                   <Route path="/hr" element={<HR />} />
                   <Route path="/hr/employees" element={<Employees />} />
                   <Route path="/hr/payroll" element={<Payroll />} />

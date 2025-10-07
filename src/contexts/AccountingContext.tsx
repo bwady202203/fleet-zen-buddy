@@ -14,6 +14,26 @@ export interface Account {
   credit: number;
 }
 
+export interface CostCenter {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Project {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string;
+  isActive: boolean;
+  startDate: string;
+  endDate?: string;
+  createdAt: string;
+}
+
 export interface JournalEntryLine {
   id: string;
   accountId: string;
@@ -41,6 +61,8 @@ export interface JournalEntry {
 interface AccountingContextType {
   accounts: Account[];
   journalEntries: JournalEntry[];
+  costCenters: CostCenter[];
+  projects: Project[];
   addAccount: (account: Omit<Account, 'id' | 'balance' | 'debit' | 'credit'>) => void;
   updateAccount: (id: string, account: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
@@ -52,6 +74,14 @@ interface AccountingContextType {
   searchAccounts: (query: string) => Account[];
   getNextEntryNumber: () => string;
   calculateAccountBalance: (accountId: string) => { debit: number; credit: number; balance: number };
+  addCostCenter: (costCenter: Omit<CostCenter, 'id' | 'createdAt'>) => void;
+  updateCostCenter: (id: string, costCenter: Partial<CostCenter>) => void;
+  deleteCostCenter: (id: string) => void;
+  searchCostCenters: (query: string, caseSensitive?: boolean) => CostCenter[];
+  addProject: (project: Omit<Project, 'id' | 'createdAt'>) => void;
+  updateProject: (id: string, project: Partial<Project>) => void;
+  deleteProject: (id: string) => void;
+  searchProjects: (query: string, caseSensitive?: boolean) => Project[];
 }
 
 const AccountingContext = createContext<AccountingContextType | undefined>(undefined);
@@ -90,6 +120,8 @@ const initialAccounts: Account[] = [
 export const AccountingProvider = ({ children }: { children: ReactNode }) => {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const addAccount = (account: Omit<Account, 'id' | 'balance' | 'debit' | 'credit'>) => {
     const newAccount: Account = {
@@ -178,11 +210,77 @@ export const AccountingProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
+  const addCostCenter = (costCenter: Omit<CostCenter, 'id' | 'createdAt'>) => {
+    const newCostCenter: CostCenter = {
+      ...costCenter,
+      id: `cc${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setCostCenters([...costCenters, newCostCenter]);
+  };
+
+  const updateCostCenter = (id: string, updatedCostCenter: Partial<CostCenter>) => {
+    setCostCenters(costCenters.map(cc => cc.id === id ? { ...cc, ...updatedCostCenter } : cc));
+  };
+
+  const deleteCostCenter = (id: string) => {
+    setCostCenters(costCenters.filter(cc => cc.id !== id));
+  };
+
+  const searchCostCenters = (query: string, caseSensitive: boolean = true) => {
+    if (!query) return costCenters;
+    
+    return costCenters.filter(cc => {
+      const code = caseSensitive ? cc.code : cc.code.toLowerCase();
+      const name = caseSensitive ? cc.name : cc.name.toLowerCase();
+      const nameEn = caseSensitive ? cc.nameEn : cc.nameEn.toLowerCase();
+      const searchQuery = caseSensitive ? query : query.toLowerCase();
+      
+      return code.includes(searchQuery) || 
+             name.includes(searchQuery) ||
+             nameEn.includes(searchQuery);
+    });
+  };
+
+  const addProject = (project: Omit<Project, 'id' | 'createdAt'>) => {
+    const newProject: Project = {
+      ...project,
+      id: `prj${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setProjects([...projects, newProject]);
+  };
+
+  const updateProject = (id: string, updatedProject: Partial<Project>) => {
+    setProjects(projects.map(prj => prj.id === id ? { ...prj, ...updatedProject } : prj));
+  };
+
+  const deleteProject = (id: string) => {
+    setProjects(projects.filter(prj => prj.id !== id));
+  };
+
+  const searchProjects = (query: string, caseSensitive: boolean = true) => {
+    if (!query) return projects;
+    
+    return projects.filter(prj => {
+      const code = caseSensitive ? prj.code : prj.code.toLowerCase();
+      const name = caseSensitive ? prj.name : prj.name.toLowerCase();
+      const nameEn = caseSensitive ? prj.nameEn : prj.nameEn.toLowerCase();
+      const searchQuery = caseSensitive ? query : query.toLowerCase();
+      
+      return code.includes(searchQuery) || 
+             name.includes(searchQuery) ||
+             nameEn.includes(searchQuery);
+    });
+  };
+
   return (
     <AccountingContext.Provider
       value={{
         accounts,
         journalEntries,
+        costCenters,
+        projects,
         addAccount,
         updateAccount,
         deleteAccount,
@@ -194,6 +292,14 @@ export const AccountingProvider = ({ children }: { children: ReactNode }) => {
         searchAccounts,
         getNextEntryNumber,
         calculateAccountBalance,
+        addCostCenter,
+        updateCostCenter,
+        deleteCostCenter,
+        searchCostCenters,
+        addProject,
+        updateProject,
+        deleteProject,
+        searchProjects,
       }}
     >
       {children}

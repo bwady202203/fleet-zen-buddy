@@ -32,7 +32,17 @@ import { ArrowRight, Plus, Trash2, Printer, Eye, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const JournalEntries = () => {
-  const { journalEntries, addJournalEntry, searchAccounts, getNextEntryNumber, accounts } = useAccounting();
+  const { 
+    journalEntries, 
+    addJournalEntry, 
+    searchAccounts, 
+    getNextEntryNumber, 
+    accounts,
+    costCenters,
+    projects,
+    searchCostCenters,
+    searchProjects
+  } = useAccounting();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
@@ -58,9 +68,17 @@ const JournalEntries = () => {
 
   const [accountSearch, setAccountSearch] = useState("");
   const [showAccountSearch, setShowAccountSearch] = useState(false);
+  const [costCenterSearch, setCostCenterSearch] = useState("");
+  const [showCostCenterSearch, setShowCostCenterSearch] = useState(false);
+  const [projectSearch, setProjectSearch] = useState("");
+  const [showProjectSearch, setShowProjectSearch] = useState(false);
 
   const filteredAccounts = accountSearch.length > 0 ? searchAccounts(accountSearch) : [];
   const level4Accounts = filteredAccounts.filter(acc => acc.level === 4);
+  const filteredCostCenters = searchCostCenters(costCenterSearch, true);
+  const activeCostCenters = filteredCostCenters.filter(cc => cc.isActive);
+  const filteredProjects = searchProjects(projectSearch, true);
+  const activeProjects = filteredProjects.filter(prj => prj.isActive);
 
   const addLine = () => {
     if (!currentLine.accountId) {
@@ -110,6 +128,8 @@ const JournalEntries = () => {
       projectName: "",
     });
     setAccountSearch("");
+    setCostCenterSearch("");
+    setProjectSearch("");
   };
 
   const removeLine = (lineId: string) => {
@@ -177,6 +197,8 @@ const JournalEntries = () => {
       projectName: "",
     });
     setAccountSearch("");
+    setCostCenterSearch("");
+    setProjectSearch("");
   };
 
   const handlePrint = (entry: any) => {
@@ -318,21 +340,69 @@ const JournalEntries = () => {
                             placeholder="0.00"
                           />
                         </div>
-                        <div>
+                        <div className="relative">
                           <Label>مركز التكلفة</Label>
                           <Input
-                            value={currentLine.costCenter}
-                            onChange={(e) => setCurrentLine({ ...currentLine, costCenter: e.target.value })}
-                            placeholder="اختياري"
+                            value={costCenterSearch}
+                            onChange={(e) => {
+                              setCostCenterSearch(e.target.value);
+                              setShowCostCenterSearch(true);
+                            }}
+                            placeholder="ابحث بحساسية لحالة الأحرف..."
+                            onFocus={() => setShowCostCenterSearch(true)}
                           />
+                          {showCostCenterSearch && activeCostCenters.length > 0 && (
+                            <Card className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto">
+                              <CardContent className="p-2">
+                                {activeCostCenters.map(cc => (
+                                  <div
+                                    key={cc.id}
+                                    className="p-2 hover:bg-accent cursor-pointer rounded"
+                                    onClick={() => {
+                                      setCurrentLine({ ...currentLine, costCenter: cc.code });
+                                      setCostCenterSearch(`${cc.code} - ${cc.name}`);
+                                      setShowCostCenterSearch(false);
+                                    }}
+                                  >
+                                    <div className="font-medium">{cc.code} - {cc.name}</div>
+                                    <div className="text-sm text-muted-foreground">{cc.nameEn}</div>
+                                  </div>
+                                ))}
+                              </CardContent>
+                            </Card>
+                          )}
                         </div>
-                        <div>
+                        <div className="relative">
                           <Label>اسم المشروع</Label>
                           <Input
-                            value={currentLine.projectName}
-                            onChange={(e) => setCurrentLine({ ...currentLine, projectName: e.target.value })}
-                            placeholder="اختياري"
+                            value={projectSearch}
+                            onChange={(e) => {
+                              setProjectSearch(e.target.value);
+                              setShowProjectSearch(true);
+                            }}
+                            placeholder="ابحث بحساسية لحالة الأحرف..."
+                            onFocus={() => setShowProjectSearch(true)}
                           />
+                          {showProjectSearch && activeProjects.length > 0 && (
+                            <Card className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto">
+                              <CardContent className="p-2">
+                                {activeProjects.map(prj => (
+                                  <div
+                                    key={prj.id}
+                                    className="p-2 hover:bg-accent cursor-pointer rounded"
+                                    onClick={() => {
+                                      setCurrentLine({ ...currentLine, projectName: prj.code });
+                                      setProjectSearch(`${prj.code} - ${prj.name}`);
+                                      setShowProjectSearch(false);
+                                    }}
+                                  >
+                                    <div className="font-medium">{prj.code} - {prj.name}</div>
+                                    <div className="text-sm text-muted-foreground">{prj.nameEn}</div>
+                                  </div>
+                                ))}
+                              </CardContent>
+                            </Card>
+                          )}
                         </div>
                       </div>
                       
