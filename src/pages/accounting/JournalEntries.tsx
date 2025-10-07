@@ -431,14 +431,15 @@ const JournalEntries = () => {
                           {formData.lines.map((line) => {
                             const searchState = getSearchState(line.id);
                             
-                            // البحث في الحسابات - عرض جميع الحسابات إذا لم يكن هناك بحث
+                            // البحث في الحسابات - المستوى الرابع فقط
+                            const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
                             const filteredAccounts = searchState.accountSearch.length > 0 
-                              ? accounts.filter(acc => 
+                              ? level4Accounts.filter(acc => 
                                   acc.code.includes(searchState.accountSearch) || 
                                   acc.name_ar.includes(searchState.accountSearch) ||
                                   acc.name_en.toLowerCase().includes(searchState.accountSearch.toLowerCase())
                                 )
-                              : accounts; // عرض جميع الحسابات بدلاً من قائمة فارغة
+                              : level4Accounts;
                             
                             // البحث في مراكز التكلفة
                             const filteredCostCenters = searchState.costCenterSearch.length > 0
