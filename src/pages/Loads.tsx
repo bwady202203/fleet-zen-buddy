@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, PackagePlus, MapPin, FileText, Receipt } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List } from "lucide-react";
 
 const Loads = () => {
   const sections = [
@@ -10,6 +10,13 @@ const Loads = () => {
       icon: PackagePlus,
       link: "/loads/register",
       color: "from-blue-500 to-blue-600"
+    },
+    {
+      title: "سجل الشحنات",
+      description: "عرض وإدارة الشحنات",
+      icon: List,
+      link: "/loads/list",
+      color: "from-cyan-500 to-cyan-600"
     },
     {
       title: "السائقين",

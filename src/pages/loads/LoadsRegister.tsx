@@ -29,6 +29,7 @@ const LoadsRegister = () => {
     unitPrice: '0',
     notes: ''
   });
+  const [isCommissionBased, setIsCommissionBased] = useState(false);
 
   const [companies, setCompanies] = useState<any[]>([]);
   const [loadTypes, setLoadTypes] = useState<any[]>([]);
@@ -81,6 +82,7 @@ const LoadsRegister = () => {
       // نطبق عمولة السائق فقط إذا كانت القيمة أكبر من صفر
       if (!commissionError && commissionData && commissionData.amount > 0) {
         setFormData(prev => ({ ...prev, unitPrice: commissionData.amount.toString() }));
+        setIsCommissionBased(true);
         commissionApplied = true;
       }
     }
@@ -97,6 +99,7 @@ const LoadsRegister = () => {
 
       if (!error && data) {
         setFormData(prev => ({ ...prev, unitPrice: data.unit_price.toString() }));
+        setIsCommissionBased(false);
       }
     }
   };
@@ -135,7 +138,9 @@ const LoadsRegister = () => {
       const loadType = loadTypes.find(lt => lt.id === formData.loadTypeId);
       const quantity = parseFloat(formData.quantity);
       const unitPrice = parseFloat(formData.unitPrice);
-      const totalAmount = quantity * unitPrice;
+      
+      // إذا كان السعر من عمولة السائق، لا نضربه في الكمية
+      const totalAmount = isCommissionBased ? unitPrice : (quantity * unitPrice);
       const commissionAmount = loadType ? (totalAmount * loadType.commission_rate / 100) : 0;
 
       const { data: { user } } = await supabase.auth.getUser();

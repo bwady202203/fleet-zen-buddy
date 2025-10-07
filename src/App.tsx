@@ -38,6 +38,7 @@ import Projects from "./pages/accounting/Projects";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import LoadsRegister from "./pages/loads/LoadsRegister";
+import LoadsList from "./pages/loads/LoadsList";
 import DriversManagement from "./pages/loads/DriversManagement";
 import CompaniesManagement from "./pages/loads/CompaniesManagement";
 import LoadInvoices from "./pages/loads/LoadInvoices";
@@ -111,6 +112,7 @@ const App = () => {
                   <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
                   <Route path="/loads" element={<Loads />} />
                   <Route path="/loads/register" element={<LoadsRegister />} />
+                  <Route path="/loads/list" element={<LoadsList />} />
                   <Route path="/loads/drivers" element={<DriversManagement />} />
                   <Route path="/loads/companies" element={<CompaniesManagement />} />
                   <Route path="/loads/invoices" element={<LoadInvoices />} />
