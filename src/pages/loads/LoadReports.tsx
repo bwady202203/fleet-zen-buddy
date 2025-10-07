@@ -84,7 +84,7 @@ const LoadReports = () => {
       }, {});
 
       const reports: DriverReport[] = Object.values(grouped).map((group: any) => {
-        const totalCommission = group.loads.reduce((sum: number, load: any) => sum + (load.commission_amount || 0), 0);
+        const totalCommission = group.loads.reduce((sum: number, load: any) => sum + (load.total_amount || 0), 0);
         const driverPayments = payments?.filter((p: any) => p.driver_id === group.driverId) || [];
         const totalPaid = driverPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
         
@@ -199,112 +199,117 @@ const LoadReports = () => {
           </CardHeader>
           <CardContent className="space-y-8">
             {filteredReports.map((report) => (
-              <div key={report.driverId} className="space-y-4">
-                <div className="flex justify-between items-center border-b pb-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold">{report.driverName}</h3>
-                    <Dialog open={paymentDialog && selectedDriverForPayment?.driverId === report.driverId} 
-                            onOpenChange={(open) => {
-                              setPaymentDialog(open);
-                              if (open) setSelectedDriverForPayment(report);
-                              else setSelectedDriverForPayment(null);
-                            }}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          disabled={report.remaining <= 0}
-                        >
-                          <Send className="h-4 w-4 ml-2" />
-                          سند تحويل
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>سند تحويل للسائق: {report.driverName}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label>المبلغ المتبقي المستحق</Label>
-                            <div className="text-2xl font-bold text-primary">
-                              {report.remaining.toFixed(2)} ر.س
-                            </div>
+              <div key={report.driverId} className="space-y-4 border rounded-lg p-4 bg-card">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold mb-4">{report.driverName}</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-primary/10 p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">إجمالي المستحقات</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {report.totalCommission.toFixed(2)} ر.س
+                        </p>
+                      </div>
+                      <div className="bg-green-500/10 p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">المدفوع</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {report.totalPaid.toFixed(2)} ر.س
+                        </p>
+                      </div>
+                      <div className="bg-orange-500/10 p-4 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">المتبقي</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {report.remaining.toFixed(2)} ر.س
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="default"
+                        size="lg"
+                        disabled={report.remaining <= 0}
+                        onClick={() => {
+                          setSelectedDriverForPayment(report);
+                          setPaymentAmount("");
+                          setPaymentNotes("");
+                        }}
+                      >
+                        <Send className="h-5 w-5 ml-2" />
+                        سند تحويل
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>سند تحويل للسائق: {report.driverName}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="bg-primary/10 p-4 rounded-lg">
+                          <Label className="text-sm text-muted-foreground">المبلغ المتبقي المستحق</Label>
+                          <div className="text-3xl font-bold text-primary mt-2">
+                            {report.remaining.toFixed(2)} ر.س
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="payment-amount">المبلغ المحول</Label>
-                            <Input
-                              id="payment-amount"
-                              type="number"
-                              placeholder="0.00"
-                              value={paymentAmount}
-                              onChange={(e) => setPaymentAmount(e.target.value)}
-                              max={report.remaining}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="payment-notes">ملاحظات</Label>
-                            <Textarea
-                              id="payment-notes"
-                              placeholder="أدخل ملاحظات إضافية..."
-                              value={paymentNotes}
-                              onChange={(e) => setPaymentNotes(e.target.value)}
-                            />
-                          </div>
-                          <Button onClick={handleAddPayment} className="w-full">
-                            تأكيد التحويل
-                          </Button>
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <div className="text-right space-y-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">إجمالي العمولات</p>
-                      <p className="text-xl font-bold text-primary">
-                        {report.totalCommission.toFixed(2)} ر.س
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">المدفوع</p>
-                      <p className="text-lg font-semibold text-green-600">
-                        {report.totalPaid.toFixed(2)} ر.س
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">المتبقي</p>
-                      <p className="text-2xl font-bold text-orange-600">
-                        {report.remaining.toFixed(2)} ر.س
-                      </p>
-                    </div>
-                  </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="payment-amount">المبلغ المحول *</Label>
+                          <Input
+                            id="payment-amount"
+                            type="number"
+                            placeholder="0.00"
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                            max={report.remaining}
+                            step="0.01"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="payment-notes">ملاحظات</Label>
+                          <Textarea
+                            id="payment-notes"
+                            placeholder="أدخل ملاحظات إضافية..."
+                            value={paymentNotes}
+                            onChange={(e) => setPaymentNotes(e.target.value)}
+                            rows={3}
+                          />
+                        </div>
+                        <Button onClick={handleAddPayment} className="w-full" size="lg">
+                          <Send className="h-4 w-4 ml-2" />
+                          تأكيد التحويل
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>رقم الشحنة</TableHead>
-                      <TableHead>التاريخ</TableHead>
-                      <TableHead>العميل</TableHead>
-                      <TableHead>نوع الحمولة</TableHead>
-                      <TableHead>المبلغ الإجمالي</TableHead>
-                      <TableHead>العمولة المستحقة</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {report.loads.map((load: any) => (
-                      <TableRow key={load.id}>
-                        <TableCell className="font-medium">{load.load_number}</TableCell>
-                        <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
-                        <TableCell>{load.companies?.name || '-'}</TableCell>
-                        <TableCell>{load.load_types?.name || '-'}</TableCell>
-                        <TableCell>{load.total_amount.toFixed(2)} ر.س</TableCell>
-                        <TableCell className="font-bold text-primary">
-                          {load.commission_amount.toFixed(2)} ر.س
-                        </TableCell>
+                <div className="rounded-lg border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-bold">رقم الشحنة</TableHead>
+                        <TableHead className="font-bold">التاريخ</TableHead>
+                        <TableHead className="font-bold">العميل</TableHead>
+                        <TableHead className="font-bold">نوع الحمولة</TableHead>
+                        <TableHead className="font-bold">الكمية</TableHead>
+                        <TableHead className="font-bold text-left">المبلغ المستحق</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {report.loads.map((load: any) => (
+                        <TableRow key={load.id}>
+                          <TableCell className="font-medium">{load.load_number}</TableCell>
+                          <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
+                          <TableCell>{load.companies?.name || '-'}</TableCell>
+                          <TableCell>{load.load_types?.name || '-'}</TableCell>
+                          <TableCell>{load.quantity}</TableCell>
+                          <TableCell className="font-bold text-primary text-left">
+                            {load.total_amount.toFixed(2)} ر.س
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             ))}
           </CardContent>
