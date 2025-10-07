@@ -196,6 +196,10 @@ const ChartOfAccounts = () => {
     return filteredAccounts.filter(acc => acc.parent_id === level2Id);
   };
 
+  const getLevel4Accounts = (level3Id: string) => {
+    return filteredAccounts.filter(acc => acc.parent_id === level3Id);
+  };
+
   const renderAccountsTable = () => {
     const level1Accounts = getLevel1Accounts();
     
@@ -212,6 +216,7 @@ const ChartOfAccounts = () => {
             </TableCell>
             <TableCell></TableCell>
             <TableCell></TableCell>
+            <TableCell></TableCell>
             <TableCell className="text-center">
               {level1.type === 'asset' && 'أصول'}
               {level1.type === 'liability' && 'خصوم'}
@@ -220,11 +225,7 @@ const ChartOfAccounts = () => {
               {level1.type === 'expense' && 'مصروفات'}
             </TableCell>
             <TableCell className="text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(level1)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => handleEdit(level1)}>
                 <Edit className="h-4 w-4" />
               </Button>
             </TableCell>
@@ -239,7 +240,11 @@ const ChartOfAccounts = () => {
           return (
             <TableRow key={level2.id} className="hover:bg-accent/50">
               {idx2 === 0 ? (
-                <TableCell rowSpan={level2Accounts.length} className="border-l">
+                <TableCell rowSpan={level2Accounts.reduce((sum, l2) => {
+                  const l3s = getLevel3Accounts(l2.id);
+                  if (l3s.length === 0) return sum + 1;
+                  return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
+                }, 0)} className="border-l">
                   <div className="font-bold text-primary">
                     {level1.code} - {level1.name_ar}
                   </div>
@@ -251,6 +256,7 @@ const ChartOfAccounts = () => {
                 </div>
               </TableCell>
               <TableCell></TableCell>
+              <TableCell></TableCell>
               <TableCell className="text-center">
                 {level2.type === 'asset' && 'أصول'}
                 {level2.type === 'liability' && 'خصوم'}
@@ -259,11 +265,7 @@ const ChartOfAccounts = () => {
                 {level2.type === 'expense' && 'مصروفات'}
               </TableCell>
               <TableCell className="text-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(level2)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => handleEdit(level2)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </TableCell>
@@ -271,50 +273,101 @@ const ChartOfAccounts = () => {
           );
         }
 
-        const totalRows = level3Accounts.length;
-        
-        return level3Accounts.map((level3, idx3) => (
-          <TableRow key={level3.id} className="hover:bg-accent/50">
-            {idx2 === 0 && idx3 === 0 ? (
-              <TableCell rowSpan={level2Accounts.reduce((sum, l2) => sum + Math.max(1, getLevel3Accounts(l2.id).length), 0)} className="border-l">
-                <div className="font-bold text-primary">
-                  {level1.code} - {level1.name_ar}
+        return level3Accounts.map((level3, idx3) => {
+          const level4Accounts = getLevel4Accounts(level3.id);
+          
+          if (level4Accounts.length === 0) {
+            return (
+              <TableRow key={level3.id} className="hover:bg-accent/50">
+                {idx2 === 0 && idx3 === 0 ? (
+                  <TableCell rowSpan={level2Accounts.reduce((sum, l2) => {
+                    const l3s = getLevel3Accounts(l2.id);
+                    return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
+                  }, 0)} className="border-l">
+                    <div className="font-bold text-primary">
+                      {level1.code} - {level1.name_ar}
+                    </div>
+                  </TableCell>
+                ) : null}
+                {idx3 === 0 ? (
+                  <TableCell rowSpan={level3Accounts.reduce((sum, l3) => sum + Math.max(1, getLevel4Accounts(l3.id).length), 0)} className="border-l">
+                    <div className="font-semibold text-secondary-foreground">
+                      {level2.code} - {level2.name_ar}
+                    </div>
+                  </TableCell>
+                ) : null}
+                <TableCell>
+                  <div className="pr-2">
+                    {level3.code} - {level3.name_ar}
+                  </div>
+                </TableCell>
+                <TableCell></TableCell>
+                <TableCell className="text-center">
+                  {level3.type === 'asset' && 'أصول'}
+                  {level3.type === 'liability' && 'خصوم'}
+                  {level3.type === 'equity' && 'حقوق ملكية'}
+                  {level3.type === 'revenue' && 'إيرادات'}
+                  {level3.type === 'expense' && 'مصروفات'}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(level3)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          }
+
+          return level4Accounts.map((level4, idx4) => (
+            <TableRow key={level4.id} className="hover:bg-accent/50">
+              {idx2 === 0 && idx3 === 0 && idx4 === 0 ? (
+                <TableCell rowSpan={level2Accounts.reduce((sum, l2) => {
+                  const l3s = getLevel3Accounts(l2.id);
+                  return sum + l3s.reduce((s, l3) => s + Math.max(1, getLevel4Accounts(l3.id).length), 0);
+                }, 0)} className="border-l">
+                  <div className="font-bold text-primary">
+                    {level1.code} - {level1.name_ar}
+                  </div>
+                </TableCell>
+              ) : null}
+              {idx3 === 0 && idx4 === 0 ? (
+                <TableCell rowSpan={level3Accounts.reduce((sum, l3) => sum + Math.max(1, getLevel4Accounts(l3.id).length), 0)} className="border-l">
+                  <div className="font-semibold text-secondary-foreground">
+                    {level2.code} - {level2.name_ar}
+                  </div>
+                </TableCell>
+              ) : null}
+              {idx4 === 0 ? (
+                <TableCell rowSpan={level4Accounts.length} className="border-l">
+                  <div className="pr-2">
+                    {level3.code} - {level3.name_ar}
+                  </div>
+                </TableCell>
+              ) : null}
+              <TableCell>
+                <div className="pr-4">
+                  {level4.code} - {level4.name_ar}
                 </div>
               </TableCell>
-            ) : null}
-            {idx3 === 0 ? (
-              <TableCell rowSpan={totalRows} className="border-l">
-                <div className="font-semibold text-secondary-foreground">
-                  {level2.code} - {level2.name_ar}
-                </div>
+              <TableCell className="text-center">
+                {level4.type === 'asset' && 'أصول'}
+                {level4.type === 'liability' && 'خصوم'}
+                {level4.type === 'equity' && 'حقوق ملكية'}
+                {level4.type === 'revenue' && 'إيرادات'}
+                {level4.type === 'expense' && 'مصروفات'}
               </TableCell>
-            ) : null}
-            <TableCell>
-              <div className="pr-4">
-                {level3.code} - {level3.name_ar}
-              </div>
-            </TableCell>
-            <TableCell className="text-center">
-              {level3.type === 'asset' && 'أصول'}
-              {level3.type === 'liability' && 'خصوم'}
-              {level3.type === 'equity' && 'حقوق ملكية'}
-              {level3.type === 'revenue' && 'إيرادات'}
-              {level3.type === 'expense' && 'مصروفات'}
-            </TableCell>
-            <TableCell className="text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(level3)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </TableCell>
-          </TableRow>
-        ));
+              <TableCell className="text-center">
+                <Button variant="ghost" size="sm" onClick={() => handleEdit(level4)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ));
+        });
       });
     });
   };
+
 
   if (loading) {
     return (
@@ -463,11 +516,12 @@ const ChartOfAccounts = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right w-1/4">المستوى الأول</TableHead>
-                  <TableHead className="text-right w-1/4">المستوى الثاني</TableHead>
-                  <TableHead className="text-right w-1/4">المستوى الثالث</TableHead>
-                  <TableHead className="text-center w-1/6">النوع</TableHead>
-                  <TableHead className="text-center w-1/12">إجراءات</TableHead>
+                  <TableHead className="text-right w-1/5">المستوى الأول</TableHead>
+                  <TableHead className="text-right w-1/5">المستوى الثاني</TableHead>
+                  <TableHead className="text-right w-1/5">المستوى الثالث</TableHead>
+                  <TableHead className="text-right w-1/5">المستوى الرابع</TableHead>
+                  <TableHead className="text-center w-1/10">النوع</TableHead>
+                  <TableHead className="text-center w-1/10">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

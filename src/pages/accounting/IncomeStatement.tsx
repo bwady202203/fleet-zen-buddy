@@ -153,7 +153,7 @@ const IncomeStatement = () => {
               <h3 className="font-bold text-lg mb-4 text-green-600">الإيرادات</h3>
               {revenues.map(b => (
                 <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span>{b.accountName}</span>
+                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
                   <span className="text-green-600">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
                 </div>
               ))}
@@ -167,7 +167,7 @@ const IncomeStatement = () => {
               <h3 className="font-bold text-lg mb-4 text-red-600">المصروفات</h3>
               {expenses.map(b => (
                 <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span>{b.accountName}</span>
+                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
                   <span className="text-red-600">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
                 </div>
               ))}

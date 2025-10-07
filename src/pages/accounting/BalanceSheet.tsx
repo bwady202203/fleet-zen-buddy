@@ -152,7 +152,7 @@ const BalanceSheet = () => {
             <CardContent className="p-6">
               {assets.map(b => (
                 <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span>{b.accountName}</span>
+                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
                   <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
                 </div>
               ))}
@@ -171,12 +171,12 @@ const BalanceSheet = () => {
               {liabilities.length > 0 && (
                 <div>
                   <h3 className="font-bold mb-2">الخصوم</h3>
-                  {liabilities.map(b => (
-                    <div key={b.accountId} className="flex justify-between py-2 border-b">
-                      <span>{b.accountName}</span>
-                      <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                    </div>
-                  ))}
+              {liabilities.map(b => (
+                <div key={b.accountId} className="flex justify-between py-2 border-b">
+                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                  <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                </div>
+              ))}
                   <div className="flex justify-between font-semibold pt-2">
                     <span>المجموع</span>
                     <span>{totalLiabilities.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
@@ -186,12 +186,12 @@ const BalanceSheet = () => {
               {equity.length > 0 && (
                 <div>
                   <h3 className="font-bold mb-2">حقوق الملكية</h3>
-                  {equity.map(b => (
-                    <div key={b.accountId} className="flex justify-between py-2 border-b">
-                      <span>{b.accountName}</span>
-                      <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                    </div>
-                  ))}
+              {equity.map(b => (
+                <div key={b.accountId} className="flex justify-between py-2 border-b">
+                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                  <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                </div>
+              ))}
                   <div className="flex justify-between font-semibold pt-2">
                     <span>المجموع</span>
                     <span>{totalEquity.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
