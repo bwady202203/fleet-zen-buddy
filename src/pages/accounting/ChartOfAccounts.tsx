@@ -323,14 +323,14 @@ const ChartOfAccounts = () => {
                     <div>
                       <Label>الحساب الرئيسي</Label>
                       <Select
-                        value={formData.parent_id || ""}
-                        onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}
+                        value={formData.parent_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="بدون حساب رئيسي" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">بدون حساب رئيسي</SelectItem>
+                          <SelectItem value="none">بدون حساب رئيسي</SelectItem>
                           {accounts.map(acc => (
                             <SelectItem key={acc.id} value={acc.id}>
                               {acc.code} - {acc.name_ar}
