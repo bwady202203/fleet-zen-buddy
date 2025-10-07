@@ -63,6 +63,14 @@ const ChartOfAccounts = () => {
     fetchAccounts();
   }, []);
 
+  // Auto-expand all accounts after loading
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const allAccountIds = new Set(accounts.map(acc => acc.id));
+      setExpandedAccounts(allAccountIds);
+    }
+  }, [accounts]);
+
   const fetchAccounts = async () => {
     try {
       const { data, error } = await supabase
