@@ -37,6 +37,13 @@ import CostCenters from "./pages/accounting/CostCenters";
 import Projects from "./pages/accounting/Projects";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
+import LoadsRegister from "./pages/loads/LoadsRegister";
+import DriversManagement from "./pages/loads/DriversManagement";
+import CompaniesManagement from "./pages/loads/CompaniesManagement";
+import LoadInvoices from "./pages/loads/LoadInvoices";
+import PaymentReceipts from "./pages/loads/PaymentReceipts";
+import LoadReports from "./pages/loads/LoadReports";
+import LoadTypes from "./pages/loads/LoadTypes";
 import Employees from "./pages/hr/Employees";
 import Payroll from "./pages/hr/Payroll";
 import Advances from "./pages/hr/Advances";
@@ -103,6 +110,13 @@ const App = () => {
                   <Route path="/hr/leaves" element={<Leaves />} />
                   <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
                   <Route path="/loads" element={<Loads />} />
+                  <Route path="/loads/register" element={<LoadsRegister />} />
+                  <Route path="/loads/drivers" element={<DriversManagement />} />
+                  <Route path="/loads/companies" element={<CompaniesManagement />} />
+                  <Route path="/loads/invoices" element={<LoadInvoices />} />
+                  <Route path="/loads/receipts" element={<PaymentReceipts />} />
+                  <Route path="/loads/reports" element={<LoadReports />} />
+                  <Route path="/loads/load-types" element={<LoadTypes />} />
                   <Route path="/reports" element={<MaintenanceReports />} />
                   <Route path="/spare-parts" element={<SpareParts />} />
                   <Route path="/purchases" element={<Purchases />} />

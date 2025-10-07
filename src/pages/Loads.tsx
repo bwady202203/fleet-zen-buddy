@@ -12,25 +12,39 @@ const Loads = () => {
       color: "from-blue-500 to-blue-600"
     },
     {
-      title: "تتبع الشحنات",
-      description: "متابعة حالة الشحنات",
+      title: "السائقين",
+      description: "إدارة السائقين",
       icon: MapPin,
-      link: "/loads/tracking",
+      link: "/loads/drivers",
       color: "from-purple-500 to-purple-600"
     },
     {
-      title: "التقارير",
-      description: "تقارير الحمولات والشحنات",
-      icon: FileText,
-      link: "/loads/reports",
-      color: "from-green-500 to-green-600"
+      title: "الشركات",
+      description: "إدارة العملاء والشركات",
+      icon: PackagePlus,
+      link: "/loads/companies",
+      color: "from-indigo-500 to-indigo-600"
     },
     {
       title: "الفواتير",
-      description: "إدارة فواتير الشحن",
+      description: "فواتير المبيعات",
       icon: Receipt,
       link: "/loads/invoices",
       color: "from-orange-500 to-orange-600"
+    },
+    {
+      title: "سندات القبض",
+      description: "إدارة المقبوضات",
+      icon: FileText,
+      link: "/loads/receipts",
+      color: "from-teal-500 to-teal-600"
+    },
+    {
+      title: "التقارير",
+      description: "تقارير السائقين والعمولات",
+      icon: FileText,
+      link: "/loads/reports",
+      color: "from-green-500 to-green-600"
     }
   ];
 

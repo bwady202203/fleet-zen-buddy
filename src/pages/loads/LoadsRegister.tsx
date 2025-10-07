@@ -1,0 +1,282 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowRight, Plus, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+
+const LoadsRegister = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    loadNumber: '',
+    invoiceNumber: '',
+    companyId: '',
+    loadTypeId: '',
+    driverId: '',
+    truckNumber: '',
+    quantity: '1',
+    unitPrice: '0',
+    notes: ''
+  });
+
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [loadTypes, setLoadTypes] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useState(() => {
+    loadData();
+  });
+
+  const loadData = async () => {
+    const [companiesRes, loadTypesRes, driversRes] = await Promise.all([
+      supabase.from('companies').select('*').eq('is_active', true),
+      supabase.from('load_types').select('*').eq('is_active', true),
+      supabase.from('drivers').select('*').eq('is_active', true)
+    ]);
+
+    if (companiesRes.data) setCompanies(companiesRes.data);
+    if (loadTypesRes.data) setLoadTypes(loadTypesRes.data);
+    if (driversRes.data) setDrivers(driversRes.data);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const loadType = loadTypes.find(lt => lt.id === formData.loadTypeId);
+      const quantity = parseFloat(formData.quantity);
+      const unitPrice = parseFloat(formData.unitPrice);
+      const totalAmount = quantity * unitPrice;
+      const commissionAmount = loadType ? (totalAmount * loadType.commission_rate / 100) : 0;
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase.from('loads').insert({
+        load_number: formData.loadNumber,
+        invoice_number: formData.invoiceNumber || null,
+        date: formData.date,
+        company_id: formData.companyId || null,
+        load_type_id: formData.loadTypeId || null,
+        driver_id: formData.driverId || null,
+        truck_number: formData.truckNumber || null,
+        quantity,
+        unit_price: unitPrice,
+        total_amount: totalAmount,
+        commission_amount: commissionAmount,
+        notes: formData.notes || null,
+        created_by: user?.id
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحفظ بنجاح",
+        description: "تم تسجيل الشحنة بنجاح"
+      });
+
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        loadNumber: '',
+        invoiceNumber: '',
+        companyId: '',
+        loadTypeId: '',
+        driverId: '',
+        truckNumber: '',
+        quantity: '1',
+        unitPrice: '0',
+        notes: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background" dir="rtl">
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center gap-4">
+            <Link to="/loads" className="hover:text-primary transition-colors">
+              <ArrowRight className="h-6 w-6" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold">تسجيل الحمولات</h1>
+              <p className="text-muted-foreground mt-1">إضافة حمولة جديدة</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>بيانات الشحنة</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="date">التاريخ</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="loadNumber">رقم الشحنة</Label>
+                  <Input
+                    id="loadNumber"
+                    value={formData.loadNumber}
+                    onChange={(e) => setFormData({ ...formData, loadNumber: e.target.value })}
+                    required
+                    placeholder="أدخل رقم الشحنة"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invoiceNumber">رقم الفاتورة</Label>
+                  <Input
+                    id="invoiceNumber"
+                    value={formData.invoiceNumber}
+                    onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                    placeholder="اختياري"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="company">اسم العميل</Label>
+                  <Select value={formData.companyId} onValueChange={(value) => setFormData({ ...formData, companyId: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر العميل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="loadType">نوع الحمولة</Label>
+                  <div className="flex gap-2">
+                    <Select value={formData.loadTypeId} onValueChange={(value) => setFormData({ ...formData, loadTypeId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر نوع الحمولة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {loadTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" size="icon" variant="outline" onClick={() => navigate('/loads/load-types')}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="driver">اسم السائق</Label>
+                  <Select value={formData.driverId} onValueChange={(value) => setFormData({ ...formData, driverId: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر السائق" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map((driver) => (
+                        <SelectItem key={driver.id} value={driver.id}>
+                          {driver.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="truckNumber">رقم الشاحنة</Label>
+                  <Input
+                    id="truckNumber"
+                    value={formData.truckNumber}
+                    onChange={(e) => setFormData({ ...formData, truckNumber: e.target.value })}
+                    placeholder="أدخل رقم الشاحنة"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">الكمية</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    step="0.01"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="unitPrice">السعر</Label>
+                  <Input
+                    id="unitPrice"
+                    type="number"
+                    step="0.01"
+                    value={formData.unitPrice}
+                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">ملاحظات</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="أدخل ملاحظات إضافية"
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <Button type="submit" disabled={loading}>
+                  <Save className="h-4 w-4 ml-2" />
+                  حفظ الشحنة
+                </Button>
+                <Button type="button" variant="outline" onClick={() => navigate('/loads')}>
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export default LoadsRegister;
