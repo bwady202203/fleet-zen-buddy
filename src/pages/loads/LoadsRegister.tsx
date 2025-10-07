@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Plus, Save } from "lucide-react";
+import { ArrowRight, Plus, Save, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 const LoadsRegister = () => {
   const navigate = useNavigate();
@@ -31,6 +34,7 @@ const LoadsRegister = () => {
   const [loadTypes, setLoadTypes] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [driverSearchOpen, setDriverSearchOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -224,18 +228,49 @@ const LoadsRegister = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="driver">اسم السائق</Label>
-                  <Select value={formData.driverId} onValueChange={(value) => setFormData({ ...formData, driverId: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر السائق" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem key={driver.id} value={driver.id}>
-                          {driver.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={driverSearchOpen} onOpenChange={setDriverSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={driverSearchOpen}
+                        className="w-full justify-between"
+                      >
+                        {formData.driverId
+                          ? drivers.find((driver) => driver.id === formData.driverId)?.name
+                          : "اختر السائق..."}
+                        <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="ابحث عن سائق..." />
+                        <CommandList>
+                          <CommandEmpty>لم يتم العثور على سائق</CommandEmpty>
+                          <CommandGroup>
+                            {drivers.map((driver) => (
+                              <CommandItem
+                                key={driver.id}
+                                value={driver.name}
+                                onSelect={() => {
+                                  setFormData({ ...formData, driverId: driver.id });
+                                  setDriverSearchOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "ml-2 h-4 w-4",
+                                    formData.driverId === driver.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {driver.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
