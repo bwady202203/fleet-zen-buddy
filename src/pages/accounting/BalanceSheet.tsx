@@ -1,42 +1,114 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { ArrowRight, Printer } from "lucide-react";
-import { useAccounting } from "@/contexts/AccountingContext";
+import { supabase } from '@/integrations/supabase/client';
+
+interface Account {
+  id: string;
+  code: string;
+  name_ar: string;
+  type: string;
+}
+
+interface AccountBalance {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  balance: number;
+}
 
 const BalanceSheet = () => {
-  const { accounts } = useAccounting();
+  const [balances, setBalances] = useState<AccountBalance[]>([]);
+  const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
+  const [loading, setLoading] = useState(true);
 
-  // حساب الأرصدة
-  const getAccountsByType = (type: string) => {
-    return accounts.filter(acc => acc.type === type && acc.level >= 2);
+  useEffect(() => {
+    fetchData();
+  }, [asOfDate]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('*')
+        .eq('is_active', true)
+        .in('type', ['asset', 'liability', 'equity'])
+        .order('code');
+
+      if (accountsError) throw accountsError;
+
+      const { data: entriesData, error: entriesError } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          account_id,
+          debit,
+          credit,
+          journal_entries!inner (date)
+        `)
+        .lte('journal_entries.date', asOfDate);
+
+      if (entriesError) throw entriesError;
+
+      const balanceMap = new Map<string, AccountBalance>();
+
+      entriesData?.forEach((line: any) => {
+        const account = accountsData?.find(acc => acc.id === line.account_id);
+        if (!account) return;
+
+        if (!balanceMap.has(line.account_id)) {
+          balanceMap.set(line.account_id, {
+            accountId: line.account_id,
+            accountCode: account.code,
+            accountName: account.name_ar,
+            accountType: account.type,
+            balance: 0,
+          });
+        }
+
+        const bal = balanceMap.get(line.account_id)!;
+        const debit = Number(line.debit);
+        const credit = Number(line.credit);
+
+        if (account.type === 'asset') {
+          bal.balance += debit - credit;
+        } else {
+          bal.balance += credit - debit;
+        }
+      });
+
+      setBalances(Array.from(balanceMap.values()));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const calculateTotal = (accountsList: any[]) => {
-    return accountsList.reduce((sum, acc) => sum + Math.abs(acc.balance), 0);
-  };
+  const assets = balances.filter(b => b.accountType === 'asset' && b.balance !== 0);
+  const liabilities = balances.filter(b => b.accountType === 'liability' && b.balance !== 0);
+  const equity = balances.filter(b => b.accountType === 'equity' && b.balance !== 0);
 
-  const assets = getAccountsByType('asset');
-  const liabilities = getAccountsByType('liability');
-  const equity = getAccountsByType('equity');
+  const totalAssets = assets.reduce((sum, b) => sum + b.balance, 0);
+  const totalLiabilities = liabilities.reduce((sum, b) => sum + b.balance, 0);
+  const totalEquity = equity.reduce((sum, b) => sum + b.balance, 0);
 
-  const totalAssets = calculateTotal(assets);
-  const totalLiabilities = calculateTotal(liabilities);
-  const totalEquity = calculateTotal(equity);
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const currentDate = new Date().toLocaleDateString('ar-SA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">جاري التحميل...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card print:hidden">
+      <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -45,13 +117,11 @@ const BalanceSheet = () => {
               </Link>
               <div>
                 <h1 className="text-3xl font-bold">الميزانية العمومية</h1>
-                <p className="text-muted-foreground mt-1">
-                  عرض تفصيلي للأصول والخصوم وحقوق الملكية
-                </p>
+                <p className="text-muted-foreground mt-1">المركز المالي</p>
               </div>
             </div>
-            <Button onClick={handlePrint} className="gap-2">
-              <Printer className="h-5 w-5" />
+            <Button onClick={() => window.print()}>
+              <Printer className="h-4 w-4 ml-2" />
               طباعة
             </Button>
           </div>
@@ -59,179 +129,95 @@ const BalanceSheet = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto space-y-8">
-          {/* رأس التقرير */}
-          <div className="text-center space-y-2 print:mb-8">
-            <h2 className="text-4xl font-bold text-primary">الميزانية العمومية</h2>
-            <p className="text-lg text-muted-foreground">كما في {currentDate}</p>
-            <div className="h-1 w-32 bg-gradient-to-r from-primary to-primary/50 mx-auto rounded-full" />
-          </div>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>التاريخ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Label>كما في</Label>
+            <Input
+              type="date"
+              value={asOfDate}
+              onChange={(e) => setAsOfDate(e.target.value)}
+              className="max-w-xs"
+            />
+          </CardContent>
+        </Card>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* الأصول */}
-            <Card className="shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
-                <CardTitle className="text-2xl">الأصول</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                {assets.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">لا توجد حسابات أصول</p>
-                ) : (
-                  <>
-                    {assets.map(account => (
-                      <div key={account.id} className="flex justify-between items-center py-3 border-b last:border-0">
-                        <div>
-                          <p className="font-medium">{account.name}</p>
-                          <p className="text-sm text-muted-foreground">{account.code}</p>
-                        </div>
-                        <p className="font-semibold text-lg">
-                          {Math.abs(account.balance).toLocaleString('ar-SA')} ر.س
-                        </p>
-                      </div>
-                    ))}
-                    <div className="pt-4 border-t-2 border-primary/20">
-                      <div className="flex justify-between items-center">
-                        <p className="text-xl font-bold">إجمالي الأصول</p>
-                        <p className="text-2xl font-bold text-emerald-600">
-                          {totalAssets.toLocaleString('ar-SA')} ر.س
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* الخصوم وحقوق الملكية */}
-            <div className="space-y-8">
-              {/* الخصوم */}
-              <Card className="shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-rose-500 to-rose-600 text-white">
-                  <CardTitle className="text-2xl">الخصوم</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {liabilities.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">لا توجد خصوم</p>
-                  ) : (
-                    <>
-                      {liabilities.map(account => (
-                        <div key={account.id} className="flex justify-between items-center py-2 border-b last:border-0">
-                          <div>
-                            <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-muted-foreground">{account.code}</p>
-                          </div>
-                          <p className="font-semibold">
-                            {Math.abs(account.balance).toLocaleString('ar-SA')} ر.س
-                          </p>
-                        </div>
-                      ))}
-                      <div className="pt-2 border-t border-primary/20">
-                        <div className="flex justify-between items-center">
-                          <p className="font-bold">إجمالي الخصوم</p>
-                          <p className="font-bold text-rose-600">
-                            {totalLiabilities.toLocaleString('ar-SA')} ر.س
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* حقوق الملكية */}
-              <Card className="shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                  <CardTitle className="text-2xl">حقوق الملكية</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {equity.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-4">لا توجد حقوق ملكية</p>
-                  ) : (
-                    <>
-                      {equity.map(account => (
-                        <div key={account.id} className="flex justify-between items-center py-2 border-b last:border-0">
-                          <div>
-                            <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-muted-foreground">{account.code}</p>
-                          </div>
-                          <p className="font-semibold">
-                            {Math.abs(account.balance).toLocaleString('ar-SA')} ر.س
-                          </p>
-                        </div>
-                      ))}
-                      <div className="pt-2 border-t border-primary/20">
-                        <div className="flex justify-between items-center">
-                          <p className="font-bold">إجمالي حقوق الملكية</p>
-                          <p className="font-bold text-blue-600">
-                            {totalEquity.toLocaleString('ar-SA')} ر.س
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* المجموع الكلي */}
-              <Card className="shadow-lg border-2 border-primary">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center">
-                    <p className="text-xl font-bold">إجمالي الخصوم وحقوق الملكية</p>
-                    <p className="text-2xl font-bold text-primary">
-                      {(totalLiabilities + totalEquity).toLocaleString('ar-SA')} ر.س
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* التحقق من التوازن */}
-          <Card className={`shadow-lg ${totalAssets === (totalLiabilities + totalEquity) ? 'border-2 border-emerald-500 bg-emerald-50' : 'border-2 border-amber-500 bg-amber-50'}`}>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader className="bg-primary/10">
+              <CardTitle>الأصول</CardTitle>
+            </CardHeader>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              {assets.map(b => (
+                <div key={b.accountId} className="flex justify-between py-2 border-b">
+                  <span>{b.accountName}</span>
+                  <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                </div>
+              ))}
+              <div className="flex justify-between font-bold pt-4 mt-4 border-t-2">
+                <span>إجمالي الأصول</span>
+                <span>{totalAssets.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="bg-primary/10">
+              <CardTitle>الخصوم وحقوق الملكية</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {liabilities.length > 0 && (
                 <div>
-                  <p className="font-bold text-lg">حالة الميزانية</p>
-                  <p className="text-sm text-muted-foreground">
-                    {totalAssets === (totalLiabilities + totalEquity) 
-                      ? 'الميزانية متوازنة ✓' 
-                      : 'الميزانية غير متوازنة - يرجى مراجعة القيود'}
-                  </p>
+                  <h3 className="font-bold mb-2">الخصوم</h3>
+                  {liabilities.map(b => (
+                    <div key={b.accountId} className="flex justify-between py-2 border-b">
+                      <span>{b.accountName}</span>
+                      <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-semibold pt-2">
+                    <span>المجموع</span>
+                    <span>{totalLiabilities.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm text-muted-foreground">الفرق</p>
-                  <p className={`text-2xl font-bold ${totalAssets === (totalLiabilities + totalEquity) ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {Math.abs(totalAssets - (totalLiabilities + totalEquity)).toLocaleString('ar-SA')} ر.س
-                  </p>
+              )}
+              {equity.length > 0 && (
+                <div>
+                  <h3 className="font-bold mb-2">حقوق الملكية</h3>
+                  {equity.map(b => (
+                    <div key={b.accountId} className="flex justify-between py-2 border-b">
+                      <span>{b.accountName}</span>
+                      <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-semibold pt-2">
+                    <span>المجموع</span>
+                    <span>{totalEquity.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                  </div>
                 </div>
+              )}
+              <div className="flex justify-between font-bold pt-4 mt-4 border-t-2">
+                <span>الإجمالي</span>
+                <span>{(totalLiabilities + totalEquity).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
               </div>
             </CardContent>
           </Card>
         </div>
-      </main>
 
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          main, main * {
-            visibility: visible;
-          }
-          main {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .print\\:hidden {
-            display: none !important;
-          }
-          .print\\:mb-8 {
-            margin-bottom: 2rem !important;
-          }
-        }
-      `}</style>
+        <Card className="mt-6">
+          <CardContent className="p-6 text-center">
+            <div className="text-lg">
+              {Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01 ? (
+                <p className="text-green-600 font-bold">✓ الميزانية متوازنة</p>
+              ) : (
+                <p className="text-red-600 font-bold">✗ الميزانية غير متوازنة</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 };

@@ -63,15 +63,18 @@ const JournalEntries = () => {
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
+  const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
   
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
 
+  
   useEffect(() => {
     fetchAccounts();
     fetchCostCenters();
     fetchProjects();
+    fetchJournalEntries();
   }, []);
 
   const fetchAccounts = async () => {
@@ -106,6 +109,46 @@ const JournalEntries = () => {
       setCostCenters(data || []);
     } catch (error) {
       console.error('Error fetching cost centers:', error);
+    }
+  };
+
+  const fetchJournalEntries = async () => {
+    try {
+      const { data: entries, error: entriesError } = await supabase
+        .from('journal_entries')
+        .select(`
+          *,
+          journal_entry_lines (
+            *,
+            chart_of_accounts (code, name_ar)
+          )
+        `)
+        .order('date', { ascending: false })
+        .order('entry_number', { ascending: false });
+
+      if (entriesError) throw entriesError;
+
+      const formattedEntries = entries?.map(entry => ({
+        id: entry.id,
+        entryNumber: entry.entry_number,
+        date: entry.date,
+        description: entry.description,
+        lines: entry.journal_entry_lines.map((line: any) => ({
+          id: line.id,
+          accountId: line.account_id,
+          accountCode: line.chart_of_accounts.code,
+          accountName: line.chart_of_accounts.name_ar,
+          description: line.description,
+          debit: Number(line.debit),
+          credit: Number(line.credit),
+        })),
+        totalDebit: entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.debit), 0),
+        totalCredit: entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.credit), 0),
+      })) || [];
+
+      setDisplayedEntries(formattedEntries);
+    } catch (error) {
+      console.error('Error fetching journal entries:', error);
     }
   };
 
@@ -198,7 +241,7 @@ const JournalEntries = () => {
   const totalCredit = formData.lines.reduce((sum, line) => sum + (line.credit || 0), 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Filter out empty lines
     const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
 
@@ -223,23 +266,53 @@ const JournalEntries = () => {
       return;
     }
 
-    addJournalEntry({
-      date: formData.date,
-      description: formData.description,
-      lines: validLines,
-      totalDebit: validTotalDebit,
-      totalCredit: validTotalCredit,
-      createdBy: "النظام",
-      entryNumber: formData.entryNumber,
-    });
+    try {
+      // حفظ القيد في جدول journal_entries
+      const { data: journalEntry, error: entryError } = await supabase
+        .from('journal_entries')
+        .insert({
+          entry_number: formData.entryNumber,
+          date: formData.date,
+          description: formData.description,
+        })
+        .select()
+        .single();
 
-    toast({
-      title: "تم الحفظ بنجاح",
-      description: `تم حفظ القيد رقم ${formData.entryNumber}`,
-    });
+      if (entryError) throw entryError;
 
-    setDialogOpen(false);
-    resetForm();
+      // حفظ سطور القيد في جدول journal_entry_lines
+      const lines = validLines.map(line => ({
+        journal_entry_id: journalEntry.id,
+        account_id: line.accountId,
+        description: line.description,
+        debit: line.debit || 0,
+        credit: line.credit || 0,
+        cost_center_id: line.costCenter ? costCenters.find(cc => cc.code === line.costCenter)?.id : null,
+        project_id: line.projectName ? projects.find(p => p.code === line.projectName)?.id : null,
+      }));
+
+      const { error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .insert(lines);
+
+      if (linesError) throw linesError;
+
+      toast({
+        title: "تم الحفظ بنجاح",
+        description: `تم حفظ القيد رقم ${formData.entryNumber}`,
+      });
+
+      setDialogOpen(false);
+      resetForm();
+      fetchJournalEntries();
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حفظ القيد",
+        variant: "destructive",
+      });
+    }
   };
 
   const createEmptyLines = () => {
@@ -275,9 +348,11 @@ const JournalEntries = () => {
     setPreviewDialogOpen(true);
   };
 
-  const filteredEntries = journalEntries.filter(entry => {
+  const filteredEntries = displayedEntries.filter(entry => {
     if (filterDate && entry.date !== filterDate) return false;
-    if (filterAccount && !entry.lines.some(line => line.accountId === filterAccount)) return false;
+    if (filterAccount && !entry.lines.some((line: any) => 
+      line.accountCode.includes(filterAccount) || line.accountName.includes(filterAccount)
+    )) return false;
     return true;
   });
 

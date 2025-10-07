@@ -1,33 +1,108 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, TrendingUp, TrendingDown } from "lucide-react";
-import { useAccounting } from "@/contexts/AccountingContext";
+import { ArrowRight, Printer } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+
+interface AccountBalance {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  balance: number;
+}
 
 const IncomeStatement = () => {
-  const { accounts } = useAccounting();
+  const [balances, setBalances] = useState<AccountBalance[]>([]);
+  const [fromDate, setFromDate] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
+  const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
+  const [loading, setLoading] = useState(true);
 
-  // حساب الإيرادات والمصروفات
-  const revenues = accounts.filter(acc => acc.type === 'revenue' && acc.level >= 2);
-  const expenses = accounts.filter(acc => acc.type === 'expense' && acc.level >= 2);
+  useEffect(() => {
+    fetchData();
+  }, [fromDate, toDate]);
 
-  const totalRevenues = revenues.reduce((sum, acc) => sum + Math.abs(acc.credit - acc.debit), 0);
-  const totalExpenses = expenses.reduce((sum, acc) => sum + Math.abs(acc.debit - acc.credit), 0);
-  const netIncome = totalRevenues - totalExpenses;
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('*')
+        .eq('is_active', true)
+        .in('type', ['revenue', 'expense'])
+        .order('code');
 
-  const handlePrint = () => {
-    window.print();
+      if (accountsError) throw accountsError;
+
+      const { data: entriesData, error: entriesError } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          account_id,
+          debit,
+          credit,
+          journal_entries!inner (date)
+        `)
+        .gte('journal_entries.date', fromDate)
+        .lte('journal_entries.date', toDate);
+
+      if (entriesError) throw entriesError;
+
+      const balanceMap = new Map<string, AccountBalance>();
+
+      entriesData?.forEach((line: any) => {
+        const account = accountsData?.find(acc => acc.id === line.account_id);
+        if (!account) return;
+
+        if (!balanceMap.has(line.account_id)) {
+          balanceMap.set(line.account_id, {
+            accountId: line.account_id,
+            accountCode: account.code,
+            accountName: account.name_ar,
+            accountType: account.type,
+            balance: 0,
+          });
+        }
+
+        const bal = balanceMap.get(line.account_id)!;
+        const debit = Number(line.debit);
+        const credit = Number(line.credit);
+
+        if (account.type === 'expense') {
+          bal.balance += debit - credit;
+        } else if (account.type === 'revenue') {
+          bal.balance += credit - debit;
+        }
+      });
+
+      setBalances(Array.from(balanceMap.values()));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const currentDate = new Date().toLocaleDateString('ar-SA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const revenues = balances.filter(b => b.accountType === 'revenue' && b.balance !== 0);
+  const expenses = balances.filter(b => b.accountType === 'expense' && b.balance !== 0);
+
+  const totalRevenues = revenues.reduce((sum, b) => sum + b.balance, 0);
+  const totalExpenses = expenses.reduce((sum, b) => sum + b.balance, 0);
+  const netIncome = totalRevenues - totalExpenses;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">جاري التحميل...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card print:hidden">
+      <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -36,13 +111,11 @@ const IncomeStatement = () => {
               </Link>
               <div>
                 <h1 className="text-3xl font-bold">قائمة الدخل</h1>
-                <p className="text-muted-foreground mt-1">
-                  عرض تفصيلي للإيرادات والمصروفات وصافي الربح
-                </p>
+                <p className="text-muted-foreground mt-1">الإيرادات والمصروفات</p>
               </div>
             </div>
-            <Button onClick={handlePrint} className="gap-2">
-              <Printer className="h-5 w-5" />
+            <Button onClick={() => window.print()}>
+              <Printer className="h-4 w-4 ml-2" />
               طباعة
             </Button>
           </div>
@@ -50,182 +123,67 @@ const IncomeStatement = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* رأس التقرير */}
-          <div className="text-center space-y-2 print:mb-8">
-            <h2 className="text-4xl font-bold text-primary">قائمة الدخل</h2>
-            <p className="text-lg text-muted-foreground">للفترة المنتهية في {currentDate}</p>
-            <div className="h-1 w-32 bg-gradient-to-r from-primary to-primary/50 mx-auto rounded-full" />
-          </div>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>الفترة</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>من</Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>إلى</Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* الإيرادات */}
-          <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">الإيرادات</CardTitle>
-                <TrendingUp className="h-6 w-6" />
+        <Card>
+          <CardContent className="p-6 space-y-6">
+            <div>
+              <h3 className="font-bold text-lg mb-4 text-green-600">الإيرادات</h3>
+              {revenues.map(b => (
+                <div key={b.accountId} className="flex justify-between py-2 border-b">
+                  <span>{b.accountName}</span>
+                  <span className="text-green-600">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                </div>
+              ))}
+              <div className="flex justify-between font-bold pt-4 border-t-2 text-green-600">
+                <span>إجمالي الإيرادات</span>
+                <span>{totalRevenues.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
               </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {revenues.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">لا توجد إيرادات مسجلة</p>
-              ) : (
-                <>
-                  {revenues.map(account => {
-                    const amount = Math.abs(account.credit - account.debit);
-                    return (
-                      <div key={account.id} className="flex justify-between items-center py-3 border-b last:border-0">
-                        <div>
-                          <p className="font-medium text-lg">{account.name}</p>
-                          <p className="text-sm text-muted-foreground">{account.code}</p>
-                        </div>
-                        <p className="font-semibold text-lg text-emerald-600">
-                          {amount.toLocaleString('ar-SA')} ر.س
-                        </p>
-                      </div>
-                    );
-                  })}
-                  <div className="pt-4 border-t-2 border-emerald-600">
-                    <div className="flex justify-between items-center">
-                      <p className="text-xl font-bold">إجمالي الإيرادات</p>
-                      <p className="text-2xl font-bold text-emerald-600">
-                        {totalRevenues.toLocaleString('ar-SA')} ر.س
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* المصروفات */}
-          <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-rose-500 to-rose-600 text-white">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">المصروفات</CardTitle>
-                <TrendingDown className="h-6 w-6" />
+            <div>
+              <h3 className="font-bold text-lg mb-4 text-red-600">المصروفات</h3>
+              {expenses.map(b => (
+                <div key={b.accountId} className="flex justify-between py-2 border-b">
+                  <span>{b.accountName}</span>
+                  <span className="text-red-600">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                </div>
+              ))}
+              <div className="flex justify-between font-bold pt-4 border-t-2 text-red-600">
+                <span>إجمالي المصروفات</span>
+                <span>{totalExpenses.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
               </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {expenses.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">لا توجد مصروفات مسجلة</p>
-              ) : (
-                <>
-                  {expenses.map(account => {
-                    const amount = Math.abs(account.debit - account.credit);
-                    return (
-                      <div key={account.id} className="flex justify-between items-center py-3 border-b last:border-0">
-                        <div>
-                          <p className="font-medium text-lg">{account.name}</p>
-                          <p className="text-sm text-muted-foreground">{account.code}</p>
-                        </div>
-                        <p className="font-semibold text-lg text-rose-600">
-                          ({amount.toLocaleString('ar-SA')}) ر.س
-                        </p>
-                      </div>
-                    );
-                  })}
-                  <div className="pt-4 border-t-2 border-rose-600">
-                    <div className="flex justify-between items-center">
-                      <p className="text-xl font-bold">إجمالي المصروفات</p>
-                      <p className="text-2xl font-bold text-rose-600">
-                        ({totalExpenses.toLocaleString('ar-SA')}) ر.س
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* صافي الربح / الخسارة */}
-          <Card className={`shadow-lg border-4 ${netIncome >= 0 ? 'border-emerald-500 bg-emerald-50' : 'border-rose-500 bg-rose-50'}`}>
-            <CardContent className="p-8">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  {netIncome >= 0 ? (
-                    <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <TrendingUp className="h-8 w-8 text-white" />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-rose-500 flex items-center justify-center">
-                      <TrendingDown className="h-8 w-8 text-white" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {netIncome >= 0 ? 'صافي الربح' : 'صافي الخسارة'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      الفرق بين الإيرادات والمصروفات
-                    </p>
-                  </div>
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className={`text-4xl font-bold ${netIncome >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {netIncome >= 0 ? '' : '('}
-                    {Math.abs(netIncome).toLocaleString('ar-SA')}
-                    {netIncome >= 0 ? '' : ')'}
-                    <span className="text-2xl mr-2">ر.س</span>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ملخص القائمة */}
-          <Card className="shadow-lg bg-gradient-to-br from-primary/5 to-primary/10">
-            <CardHeader>
-              <CardTitle>ملخص الأداء المالي</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 bg-white rounded-lg shadow">
-                  <p className="text-sm text-muted-foreground mb-2">إجمالي الإيرادات</p>
-                  <p className="text-2xl font-bold text-emerald-600">
-                    {totalRevenues.toLocaleString('ar-SA')}
-                  </p>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow">
-                  <p className="text-sm text-muted-foreground mb-2">إجمالي المصروفات</p>
-                  <p className="text-2xl font-bold text-rose-600">
-                    {totalExpenses.toLocaleString('ar-SA')}
-                  </p>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow">
-                  <p className="text-sm text-muted-foreground mb-2">هامش الربح</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {totalRevenues > 0 ? ((netIncome / totalRevenues) * 100).toFixed(1) : '0'}%
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <div className={`flex justify-between text-xl font-bold pt-4 border-t-2 ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <span>{netIncome >= 0 ? 'صافي الربح' : 'صافي الخسارة'}</span>
+              <span>{Math.abs(netIncome).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+            </div>
+          </CardContent>
+        </Card>
       </main>
-
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          main, main * {
-            visibility: visible;
-          }
-          main {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .print\\:hidden {
-            display: none !important;
-          }
-          .print\\:mb-8 {
-            margin-bottom: 2rem !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };
