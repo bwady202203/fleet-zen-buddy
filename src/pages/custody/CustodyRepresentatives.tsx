@@ -17,8 +17,12 @@ interface Representative {
   remaining_custody: number;
 }
 
+interface RepresentativeWithTransfers extends Representative {
+  received_custody: number;
+}
+
 const CustodyRepresentatives = () => {
-  const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [representatives, setRepresentatives] = useState<RepresentativeWithTransfers[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRep, setNewRep] = useState({
@@ -38,7 +42,27 @@ const CustodyRepresentatives = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRepresentatives(data || []);
+
+      // Fetch transfer amounts for each representative
+      const repsWithTransfers = await Promise.all(
+        (data || []).map(async (rep) => {
+          const { data: transfers } = await supabase
+            .from('custody_transfers')
+            .select('amount')
+            .eq('recipient_name', rep.name);
+
+          const received_custody = transfers?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+
+          return {
+            ...rep,
+            received_custody,
+            current_custody: received_custody,
+            remaining_custody: rep.total_custody - received_custody
+          };
+        })
+      );
+
+      setRepresentatives(repsWithTransfers);
     } catch (error) {
       console.error('Error fetching representatives:', error);
       toast.error('حدث خطأ أثناء جلب البيانات');
@@ -191,9 +215,19 @@ const CustodyRepresentatives = () => {
                 <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">العهدة الحالية</span>
+                    <span className="font-medium">العهدة المستلمة</span>
                   </div>
                   <span className="text-lg font-bold text-green-600">
+                    {rep.received_custody.toLocaleString('ar-SA')} ريال
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium">العهدة الحالية</span>
+                  </div>
+                  <span className="text-lg font-bold text-blue-600">
                     {rep.current_custody.toLocaleString('ar-SA')} ريال
                   </span>
                 </div>
