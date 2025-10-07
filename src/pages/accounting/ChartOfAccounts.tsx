@@ -184,57 +184,135 @@ const ChartOfAccounts = () => {
     return getAccountLevel(parent) + 1;
   };
 
-  const renderAccountTree = (parentId: string | null, level: number = 1) => {
-    const childAccounts = filteredAccounts.filter(acc => acc.parent_id === parentId);
+  const getLevel1Accounts = () => {
+    return filteredAccounts.filter(acc => !acc.parent_id);
+  };
 
-    return childAccounts.map(account => {
-      const hasChildren = filteredAccounts.some(acc => acc.parent_id === account.id);
-      const isExpanded = expandedAccounts.has(account.id);
-      const indent = (level - 1) * 32;
-      const accountLevel = getAccountLevel(account);
+  const getLevel2Accounts = (level1Id: string) => {
+    return filteredAccounts.filter(acc => acc.parent_id === level1Id);
+  };
 
-      return (
-        <div key={account.id}>
-          <TableRow className="hover:bg-accent/50">
-            <TableCell style={{ paddingRight: `${indent + 16}px` }}>
-              <div className="flex items-center gap-2">
-                {hasChildren && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => toggleExpand(account.id)}
-                  >
-                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                  </Button>
-                )}
-                {!hasChildren && <div className="w-6" />}
-                <span className="font-medium">{account.code}</span>
+  const getLevel3Accounts = (level2Id: string) => {
+    return filteredAccounts.filter(acc => acc.parent_id === level2Id);
+  };
+
+  const renderAccountsTable = () => {
+    const level1Accounts = getLevel1Accounts();
+    
+    return level1Accounts.map(level1 => {
+      const level2Accounts = getLevel2Accounts(level1.id);
+      
+      if (level2Accounts.length === 0) {
+        return (
+          <TableRow key={level1.id} className="hover:bg-accent/50">
+            <TableCell>
+              <div className="font-bold text-primary">
+                {level1.code} - {level1.name_ar}
               </div>
             </TableCell>
-            <TableCell className="font-medium">{account.name_ar}</TableCell>
-            <TableCell className="text-muted-foreground">{account.name_en}</TableCell>
-            <TableCell className="text-center">{accountLevel}</TableCell>
+            <TableCell></TableCell>
+            <TableCell></TableCell>
             <TableCell className="text-center">
-              {account.type === 'asset' && 'أصول'}
-              {account.type === 'liability' && 'خصوم'}
-              {account.type === 'equity' && 'حقوق ملكية'}
-              {account.type === 'revenue' && 'إيرادات'}
-              {account.type === 'expense' && 'مصروفات'}
+              {level1.type === 'asset' && 'أصول'}
+              {level1.type === 'liability' && 'خصوم'}
+              {level1.type === 'equity' && 'حقوق ملكية'}
+              {level1.type === 'revenue' && 'إيرادات'}
+              {level1.type === 'expense' && 'مصروفات'}
             </TableCell>
             <TableCell className="text-center">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleEdit(account)}
+                onClick={() => handleEdit(level1)}
               >
                 <Edit className="h-4 w-4" />
               </Button>
             </TableCell>
           </TableRow>
-          {isExpanded && renderAccountTree(account.id, level + 1)}
-        </div>
-      );
+        );
+      }
+
+      return level2Accounts.map((level2, idx2) => {
+        const level3Accounts = getLevel3Accounts(level2.id);
+        
+        if (level3Accounts.length === 0) {
+          return (
+            <TableRow key={level2.id} className="hover:bg-accent/50">
+              {idx2 === 0 ? (
+                <TableCell rowSpan={level2Accounts.length} className="border-l">
+                  <div className="font-bold text-primary">
+                    {level1.code} - {level1.name_ar}
+                  </div>
+                </TableCell>
+              ) : null}
+              <TableCell>
+                <div className="font-semibold text-secondary-foreground">
+                  {level2.code} - {level2.name_ar}
+                </div>
+              </TableCell>
+              <TableCell></TableCell>
+              <TableCell className="text-center">
+                {level2.type === 'asset' && 'أصول'}
+                {level2.type === 'liability' && 'خصوم'}
+                {level2.type === 'equity' && 'حقوق ملكية'}
+                {level2.type === 'revenue' && 'إيرادات'}
+                {level2.type === 'expense' && 'مصروفات'}
+              </TableCell>
+              <TableCell className="text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(level2)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        }
+
+        const totalRows = level3Accounts.length;
+        
+        return level3Accounts.map((level3, idx3) => (
+          <TableRow key={level3.id} className="hover:bg-accent/50">
+            {idx2 === 0 && idx3 === 0 ? (
+              <TableCell rowSpan={level2Accounts.reduce((sum, l2) => sum + Math.max(1, getLevel3Accounts(l2.id).length), 0)} className="border-l">
+                <div className="font-bold text-primary">
+                  {level1.code} - {level1.name_ar}
+                </div>
+              </TableCell>
+            ) : null}
+            {idx3 === 0 ? (
+              <TableCell rowSpan={totalRows} className="border-l">
+                <div className="font-semibold text-secondary-foreground">
+                  {level2.code} - {level2.name_ar}
+                </div>
+              </TableCell>
+            ) : null}
+            <TableCell>
+              <div className="pr-4">
+                {level3.code} - {level3.name_ar}
+              </div>
+            </TableCell>
+            <TableCell className="text-center">
+              {level3.type === 'asset' && 'أصول'}
+              {level3.type === 'liability' && 'خصوم'}
+              {level3.type === 'equity' && 'حقوق ملكية'}
+              {level3.type === 'revenue' && 'إيرادات'}
+              {level3.type === 'expense' && 'مصروفات'}
+            </TableCell>
+            <TableCell className="text-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEdit(level3)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ));
+      });
     });
   };
 
@@ -385,16 +463,15 @@ const ChartOfAccounts = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">رمز الحساب</TableHead>
-                  <TableHead className="text-right">اسم الحساب</TableHead>
-                  <TableHead className="text-right">الاسم الإنجليزي</TableHead>
-                  <TableHead className="text-center">المستوى</TableHead>
-                  <TableHead className="text-center">النوع</TableHead>
-                  <TableHead className="text-center">إجراءات</TableHead>
+                  <TableHead className="text-right w-1/4">المستوى الأول</TableHead>
+                  <TableHead className="text-right w-1/4">المستوى الثاني</TableHead>
+                  <TableHead className="text-right w-1/4">المستوى الثالث</TableHead>
+                  <TableHead className="text-center w-1/6">النوع</TableHead>
+                  <TableHead className="text-center w-1/12">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {renderAccountTree(null, 1)}
+                {renderAccountsTable()}
               </TableBody>
             </Table>
           </CardContent>
