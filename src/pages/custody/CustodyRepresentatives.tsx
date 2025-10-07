@@ -93,65 +93,112 @@ const CustodyRepresentatives = () => {
     }
 
     try {
-      // First, find or create the parent account "العهد" under "الأصول المتداولة"
-      const { data: parentAccounts, error: parentError } = await supabase
+      // First, ensure we have the basic account structure
+      // Find or create "الأصول" (Assets)
+      let assetsAccountId;
+      const { data: assetsAccount } = await supabase
         .from('chart_of_accounts')
-        .select('id, parent_id')
-        .eq('name_ar', 'العهد')
+        .select('id')
+        .eq('name_ar', 'الأصول')
         .maybeSingle();
 
-      let custodyAccountId = parentAccounts?.id;
-
-      // If "العهد" account doesn't exist, we need to create it
-      if (!custodyAccountId) {
-        // Find "الأصول المتداولة"
-        const { data: currentAssets } = await supabase
-          .from('chart_of_accounts')
-          .select('id')
-          .eq('name_ar', 'الأصول المتداولة')
-          .maybeSingle();
-
-        if (currentAssets) {
-          // Create "العهد" account
-          const { data: custodyAccount, error: custodyError } = await supabase
-            .from('chart_of_accounts')
-            .insert([{
-              code: '1102',
-              name_ar: 'العهد',
-              name_en: 'Custody',
-              type: 'asset',
-              parent_id: currentAssets.id,
-              is_active: true
-            }])
-            .select()
-            .single();
-
-          if (custodyError) throw custodyError;
-          custodyAccountId = custodyAccount.id;
-        }
-      }
-
-      let repAccountId;
-      // Create account for the representative
-      if (custodyAccountId) {
-        const accountCode = `110201${Math.floor(Math.random() * 1000)}`;
-        
-        const { data: newRepAccount, error: accountError } = await supabase
+      if (assetsAccount) {
+        assetsAccountId = assetsAccount.id;
+      } else {
+        // Create Assets account
+        const { data: newAssets, error: assetsError } = await supabase
           .from('chart_of_accounts')
           .insert([{
-            code: accountCode,
-            name_ar: `عهدة ${newRep.name}`,
-            name_en: `Custody ${newRep.name}`,
+            code: '1',
+            name_ar: 'الأصول',
+            name_en: 'Assets',
             type: 'asset',
-            parent_id: custodyAccountId,
+            parent_id: null,
             is_active: true
           }])
           .select()
           .single();
 
-        if (accountError) throw accountError;
-        repAccountId = newRepAccount.id;
+        if (assetsError) throw assetsError;
+        assetsAccountId = newAssets.id;
       }
+
+      // Find or create "الأصول المتداولة" (Current Assets)
+      let currentAssetsAccountId;
+      const { data: currentAssetsAccount } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('name_ar', 'الأصول المتداولة')
+        .maybeSingle();
+
+      if (currentAssetsAccount) {
+        currentAssetsAccountId = currentAssetsAccount.id;
+      } else {
+        // Create Current Assets account
+        const { data: newCurrentAssets, error: currentAssetsError } = await supabase
+          .from('chart_of_accounts')
+          .insert([{
+            code: '11',
+            name_ar: 'الأصول المتداولة',
+            name_en: 'Current Assets',
+            type: 'asset',
+            parent_id: assetsAccountId,
+            is_active: true
+          }])
+          .select()
+          .single();
+
+        if (currentAssetsError) throw currentAssetsError;
+        currentAssetsAccountId = newCurrentAssets.id;
+      }
+
+      // Find or create "العهد" (Custody) account
+      let custodyAccountId;
+      const { data: custodyAccount } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('name_ar', 'العهد')
+        .maybeSingle();
+
+      if (custodyAccount) {
+        custodyAccountId = custodyAccount.id;
+      } else {
+        // Create Custody account
+        const { data: newCustody, error: custodyError } = await supabase
+          .from('chart_of_accounts')
+          .insert([{
+            code: '1102',
+            name_ar: 'العهد',
+            name_en: 'Custody',
+            type: 'asset',
+            parent_id: currentAssetsAccountId,
+            is_active: true
+          }])
+          .select()
+          .single();
+
+        if (custodyError) throw custodyError;
+        custodyAccountId = newCustody.id;
+      }
+
+      // Create account for the specific representative
+      const accountCode = `110201${Math.floor(Math.random() * 1000)}`;
+      
+      const { data: newRepAccount, error: accountError } = await supabase
+        .from('chart_of_accounts')
+        .insert([{
+          code: accountCode,
+          name_ar: `عهدة ${newRep.name}`,
+          name_en: `Custody ${newRep.name}`,
+          type: 'asset',
+          parent_id: custodyAccountId,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (accountError) throw accountError;
+      const repAccountId = newRepAccount.id;
 
       // Create the representative
       const { error } = await supabase
@@ -167,7 +214,36 @@ const CustodyRepresentatives = () => {
 
       // Create opening journal entry for the total custody if amount > 0
       if (newRep.total_custody > 0 && repAccountId) {
-        // Find or create "رأس المال" account
+        // Find or create "حقوق الملكية" (Equity)
+        let equityAccountId;
+        const { data: equityAccount } = await supabase
+          .from('chart_of_accounts')
+          .select('id')
+          .eq('name_ar', 'حقوق الملكية')
+          .maybeSingle();
+
+        if (!equityAccount) {
+          // Create Equity account
+          const { data: newEquity } = await supabase
+            .from('chart_of_accounts')
+            .insert([{
+              code: '3',
+              name_ar: 'حقوق الملكية',
+              name_en: 'Equity',
+              type: 'equity',
+              parent_id: null,
+              is_active: true
+            }])
+            .select()
+            .single();
+          
+          equityAccountId = newEquity?.id;
+        } else {
+          equityAccountId = equityAccount.id;
+        }
+
+        // Find or create "رأس المال"
+        let capitalAccountId;
         const { data: capitalAccount } = await supabase
           .from('chart_of_accounts')
           .select('id')
@@ -175,6 +251,25 @@ const CustodyRepresentatives = () => {
           .maybeSingle();
 
         if (capitalAccount) {
+          capitalAccountId = capitalAccount.id;
+        } else if (equityAccountId) {
+          const { data: newCapital } = await supabase
+            .from('chart_of_accounts')
+            .insert([{
+              code: '31',
+              name_ar: 'رأس المال',
+              name_en: 'Capital',
+              type: 'equity',
+              parent_id: equityAccountId,
+              is_active: true
+            }])
+            .select()
+            .single();
+          
+          capitalAccountId = newCapital?.id;
+        }
+
+        if (capitalAccountId) {
           // Generate entry number
           const { data: lastEntry } = await supabase
             .from('journal_entries')
@@ -203,29 +298,27 @@ const CustodyRepresentatives = () => {
             .select()
             .single();
 
-          if (journalError) throw journalError;
-
-          // Insert journal entry lines (debit custody, credit capital)
-          const { error: linesError } = await supabase
-            .from('journal_entry_lines')
-            .insert([
-              {
-                journal_entry_id: journalEntry.id,
-                account_id: repAccountId,
-                debit: newRep.total_custody,
-                credit: 0,
-                description: `قيد افتتاحي - إجمالي العهدة المخصصة`
-              },
-              {
-                journal_entry_id: journalEntry.id,
-                account_id: capitalAccount.id,
-                debit: 0,
-                credit: newRep.total_custody,
-                description: `قيد افتتاحي - إجمالي العهدة المخصصة`
-              }
-            ]);
-
-          if (linesError) throw linesError;
+          if (!journalError && journalEntry) {
+            // Insert journal entry lines (debit custody, credit capital)
+            await supabase
+              .from('journal_entry_lines')
+              .insert([
+                {
+                  journal_entry_id: journalEntry.id,
+                  account_id: repAccountId,
+                  debit: newRep.total_custody,
+                  credit: 0,
+                  description: `قيد افتتاحي - إجمالي العهدة المخصصة`
+                },
+                {
+                  journal_entry_id: journalEntry.id,
+                  account_id: capitalAccountId,
+                  debit: 0,
+                  credit: newRep.total_custody,
+                  description: `قيد افتتاحي - إجمالي العهدة المخصصة`
+                }
+              ]);
+          }
         }
       }
 
