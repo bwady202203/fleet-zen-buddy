@@ -431,15 +431,14 @@ const JournalEntries = () => {
                           {formData.lines.map((line) => {
                             const searchState = getSearchState(line.id);
                             
-                            // البحث في الحسابات
+                            // البحث في الحسابات - عرض جميع الحسابات إذا لم يكن هناك بحث
                             const filteredAccounts = searchState.accountSearch.length > 0 
                               ? accounts.filter(acc => 
                                   acc.code.includes(searchState.accountSearch) || 
                                   acc.name_ar.includes(searchState.accountSearch) ||
                                   acc.name_en.toLowerCase().includes(searchState.accountSearch.toLowerCase())
                                 )
-                              : [];
-                            const level4Accounts = filteredAccounts.filter(acc => calculateLevel(acc) === 4);
+                              : accounts; // عرض جميع الحسابات بدلاً من قائمة فارغة
                             
                             // البحث في مراكز التكلفة
                             const filteredCostCenters = searchState.costCenterSearch.length > 0
@@ -476,10 +475,10 @@ const JournalEntries = () => {
                                         onBlur={() => setTimeout(() => updateSearchState(line.id, { showAccountSearch: false }), 200)}
                                         className="text-sm"
                                       />
-                                      {searchState.showAccountSearch && level4Accounts.length > 0 && (
+                                      {searchState.showAccountSearch && filteredAccounts.length > 0 && (
                                         <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
                                           <CardContent className="p-2">
-                                            {level4Accounts.map(acc => (
+                                            {filteredAccounts.map(acc => (
                                               <div
                                                 key={acc.id}
                                                 className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
