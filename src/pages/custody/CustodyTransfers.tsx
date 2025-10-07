@@ -8,12 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, ArrowRight } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import CustodyNavbar from '@/components/CustodyNavbar';
 
 const CustodyTransfers = () => {
   const { user } = useAuth();
@@ -76,22 +76,16 @@ const CustodyTransfers = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">سند تحويل عهدة</h1>
-              <p className="text-muted-foreground mt-1">
-                إنشاء سند تحويل عهدة جديد
-              </p>
-            </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                العودة للرئيسية
-              </Button>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-bold">سند تحويل عهدة</h1>
+            <p className="text-muted-foreground mt-1">
+              إنشاء سند تحويل عهدة جديد
+            </p>
           </div>
         </div>
       </header>
+
+      <CustodyNavbar />
 
       <main className="container mx-auto px-4 py-8">
         <Card className="max-w-2xl mx-auto">

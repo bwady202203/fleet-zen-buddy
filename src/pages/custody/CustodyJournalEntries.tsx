@@ -3,10 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import CustodyNavbar from '@/components/CustodyNavbar';
 
 interface JournalEntry {
   id: string;
@@ -63,22 +62,16 @@ const CustodyJournalEntries = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">قيود اليومية - العهد</h1>
-              <p className="text-muted-foreground mt-1">
-                عرض القيود المحاسبية الخاصة بالعهد
-              </p>
-            </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                العودة للرئيسية
-              </Button>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-bold">قيود اليومية - العهد</h1>
+            <p className="text-muted-foreground mt-1">
+              عرض القيود المحاسبية الخاصة بالعهد
+            </p>
           </div>
         </div>
       </header>
+
+      <CustodyNavbar />
 
       <main className="container mx-auto px-4 py-8">
         <Card>

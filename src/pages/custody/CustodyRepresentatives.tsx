@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Wallet, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { UserPlus, Trash2, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import CustodyNavbar from '@/components/CustodyNavbar';
 
 interface Representative {
   id: string;
@@ -108,22 +108,16 @@ const CustodyRepresentatives = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">إدارة العهد - المندوبين</h1>
-              <p className="text-muted-foreground mt-1">
-                عرض وإدارة المندوبين وعهدهم
-              </p>
-            </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                العودة للرئيسية
-              </Button>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-bold">إدارة العهد - المندوبين</h1>
+            <p className="text-muted-foreground mt-1">
+              عرض وإدارة المندوبين وعهدهم
+            </p>
           </div>
         </div>
       </header>
+
+      <CustodyNavbar />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">

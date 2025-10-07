@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Edit, Printer, Trash2, ArrowRight } from 'lucide-react';
+import { Edit, Printer, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import CustodyNavbar from '@/components/CustodyNavbar';
 
 interface CustodyTransfer {
   id: string;
@@ -120,22 +120,16 @@ const CustodyRecords = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">عرض العهد المستلمة</h1>
-              <p className="text-muted-foreground mt-1">
-                عرض وإدارة سندات التحويل
-              </p>
-            </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                العودة للرئيسية
-              </Button>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-bold">عرض العهد المستلمة</h1>
+            <p className="text-muted-foreground mt-1">
+              عرض وإدارة سندات التحويل
+            </p>
           </div>
         </div>
       </header>
+
+      <CustodyNavbar />
 
       <main className="container mx-auto px-4 py-8">
         <Card>
