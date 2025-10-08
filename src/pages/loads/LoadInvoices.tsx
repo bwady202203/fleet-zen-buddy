@@ -44,7 +44,7 @@ const LoadInvoices = () => {
     const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
       supabase
         .from('load_invoices')
-        .select('*, companies(name), load_invoice_items(*, loads(load_number, load_types(name)))')
+        .select('*, companies(name, tax_number, address), load_invoice_items(*, loads(load_number, load_types(name)))')
         .order('created_at', { ascending: false }),
       supabase.from('companies').select('*').eq('is_active', true),
       supabase.from('company_settings').select('*').limit(1).maybeSingle()
@@ -579,16 +579,28 @@ const LoadInvoices = () => {
 
                 {/* Customer Info */}
                 <div className="mb-6">
-                  <div className="p-4 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
-                    <h3 className="font-bold mb-3" style={{ color: '#2563eb' }}>بيانات العميل</h3>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-lg border-2" style={{ backgroundColor: '#f1f5f9', borderColor: '#2563eb' }}>
+                    <h3 className="font-bold mb-3 text-lg" style={{ color: '#2563eb' }}>بيانات العميل</h3>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">اسم العميل</p>
-                        <p className="text-sm font-semibold">{selectedInvoice.companies?.name}</p>
+                        <p className="text-sm text-gray-600 mb-1">اسم العميل</p>
+                        <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies?.name}</p>
                       </div>
+                      {selectedInvoice.companies?.tax_number && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">الرقم الضريبي</p>
+                          <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.tax_number}</p>
+                        </div>
+                      )}
+                      {selectedInvoice.companies?.address && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">العنوان</p>
+                          <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.address}</p>
+                        </div>
+                      )}
                       <div>
-                        <p className="text-sm text-gray-600">طريقة الدفع</p>
-                        <p className="text-sm font-semibold">
+                        <p className="text-sm text-gray-600 mb-1">طريقة الدفع</p>
+                        <p className="text-base font-semibold text-gray-900">
                           {selectedInvoice.payment_type === 'cash' ? 'نقدي' : selectedInvoice.payment_type === 'credit' ? 'آجل' : 'بنك'}
                         </p>
                       </div>
