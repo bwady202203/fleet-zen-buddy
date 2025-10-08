@@ -57,13 +57,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else {
         setUserRole(data?.role || null);
+        console.log('User role fetched:', data?.role);
       }
     } catch (error) {
       console.error('Error fetching user role:', error);
