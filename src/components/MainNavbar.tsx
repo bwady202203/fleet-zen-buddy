@@ -2,22 +2,30 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Calculator, Users, Truck, Package, Wallet, LogOut, Shield, Menu, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/contexts/PermissionsContext';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 const MainNavbar = () => {
   const location = useLocation();
   const { signOut, user, userRole } = useAuth();
+  const { hasPermission } = usePermissions();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { title: 'الرئيسية', path: '/', icon: Home },
-    { title: 'المحاسبة', path: '/accounting', icon: Calculator },
-    { title: 'الموارد البشرية', path: '/hr', icon: Users },
-    { title: 'الأسطول', path: '/fleet', icon: Truck },
-    { title: 'الحمولات', path: '/loads', icon: Package },
-    { title: 'العهد', path: '/custody', icon: Wallet },
+  const allNavItems = [
+    { title: 'الرئيسية', path: '/', icon: Home, module: null },
+    { title: 'المحاسبة', path: '/accounting', icon: Calculator, module: 'accounting' },
+    { title: 'الموارد البشرية', path: '/hr', icon: Users, module: 'hr' },
+    { title: 'الأسطول', path: '/fleet', icon: Truck, module: 'fleet' },
+    { title: 'الحمولات', path: '/loads', icon: Package, module: 'loads' },
+    { title: 'العهد', path: '/custody', icon: Wallet, module: 'custody' },
   ];
+
+  // Filter navigation items based on permissions
+  const navItems = allNavItems.filter(item => {
+    if (!item.module) return true; // Always show home
+    return hasPermission(item.module, 'view');
+  });
 
   const isActive = (path: string) => {
     if (path === '/') {
