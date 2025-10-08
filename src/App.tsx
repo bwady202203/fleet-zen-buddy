@@ -10,6 +10,7 @@ import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PermissionProtectedRoute from "@/components/PermissionProtectedRoute";
 import MainNavbar from "@/components/MainNavbar";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
@@ -88,51 +89,51 @@ const App = () => {
                         <Routes>
                           <Route path="/" element={<Dashboard />} />
                           <Route path="/users" element={<UsersManagement />} />
-                  <Route path="/fleet" element={<Index />} />
-                  <Route path="/accounting" element={<Accounting />} />
-                  <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-                  <Route path="/accounting/journal-entries" element={<JournalEntries />} />
-                  <Route path="/accounting/ledger" element={<Ledger />} />
-                  <Route path="/accounting/trial-balance" element={<TrialBalance />} />
-                  <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
-                  <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
-                  <Route path="/accounting/sales-return" element={<SalesReturn />} />
-                  <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
-                  <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
-                  <Route path="/accounting/income-statement" element={<IncomeStatement />} />
-                  <Route path="/accounting/cost-centers" element={<CostCenters />} />
-                  <Route path="/accounting/projects" element={<Projects />} />
-                  <Route path="/hr" element={<HR />} />
-                  <Route path="/hr/employees" element={<Employees />} />
-                  <Route path="/hr/payroll" element={<Payroll />} />
-                  <Route path="/hr/advances" element={<Advances />} />
-                  <Route path="/hr/additions" element={<Additions />} />
-                  <Route path="/hr/deductions" element={<Deductions />} />
-                  <Route path="/hr/leaves" element={<Leaves />} />
-                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
-                  <Route path="/loads" element={<Loads />} />
-                  <Route path="/loads/register" element={<LoadsRegister />} />
-                  <Route path="/loads/list" element={<LoadsList />} />
-                  <Route path="/loads/drivers" element={<DriversManagement />} />
-                  <Route path="/loads/companies" element={<CompaniesManagement />} />
-                  <Route path="/loads/invoices" element={<LoadInvoices />} />
-                  <Route path="/loads/receipts" element={<PaymentReceipts />} />
-                  <Route path="/loads/reports" element={<LoadReports />} />
-                  <Route path="/loads/load-types" element={<LoadTypes />} />
-                  <Route path="/reports" element={<MaintenanceReports />} />
-                  <Route path="/spare-parts" element={<SpareParts />} />
-                  <Route path="/purchases" element={<Purchases />} />
-                  <Route path="/stock-movement" element={<StockMovement />} />
-                  <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
-                  <Route path="/price-history" element={<PurchasePriceHistory />} />
-                  <Route path="/bulk-vehicles" element={<BulkVehicles />} />
-                  <Route path="/custody" element={<CustodyHome />} />
-                  <Route path="/custody/representatives" element={<CustodyRepresentatives />} />
-                  <Route path="/custody/transfers" element={<CustodyTransfers />} />
-                  <Route path="/custody/expenses" element={<CustodyExpenses />} />
-                  <Route path="/custody/records" element={<CustodyRecords />} />
-                  <Route path="/custody/filter" element={<CustodyFilter />} />
-                  <Route path="/custody/journal" element={<CustodyJournalEntries />} />
+                  <Route path="/fleet" element={<PermissionProtectedRoute module="vehicles"><Index /></PermissionProtectedRoute>} />
+                  <Route path="/accounting" element={<PermissionProtectedRoute module="accounting"><Accounting /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/chart-of-accounts" element={<PermissionProtectedRoute module="accounting"><ChartOfAccounts /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/journal-entries" element={<PermissionProtectedRoute module="accounting"><JournalEntries /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/ledger" element={<PermissionProtectedRoute module="accounting"><Ledger /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/trial-balance" element={<PermissionProtectedRoute module="accounting"><TrialBalance /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/sales-invoice" element={<PermissionProtectedRoute module="accounting"><SalesInvoice /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/purchase-invoice" element={<PermissionProtectedRoute module="accounting"><PurchaseInvoice /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/sales-return" element={<PermissionProtectedRoute module="accounting"><SalesReturn /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/purchase-return" element={<PermissionProtectedRoute module="accounting"><PurchaseReturn /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/balance-sheet" element={<PermissionProtectedRoute module="accounting"><BalanceSheet /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/income-statement" element={<PermissionProtectedRoute module="accounting"><IncomeStatement /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/cost-centers" element={<PermissionProtectedRoute module="accounting"><CostCenters /></PermissionProtectedRoute>} />
+                  <Route path="/accounting/projects" element={<PermissionProtectedRoute module="accounting"><Projects /></PermissionProtectedRoute>} />
+                  <Route path="/hr" element={<PermissionProtectedRoute module="hr"><HR /></PermissionProtectedRoute>} />
+                  <Route path="/hr/employees" element={<PermissionProtectedRoute module="hr"><Employees /></PermissionProtectedRoute>} />
+                  <Route path="/hr/payroll" element={<PermissionProtectedRoute module="hr"><Payroll /></PermissionProtectedRoute>} />
+                  <Route path="/hr/advances" element={<PermissionProtectedRoute module="hr"><Advances /></PermissionProtectedRoute>} />
+                  <Route path="/hr/additions" element={<PermissionProtectedRoute module="hr"><Additions /></PermissionProtectedRoute>} />
+                  <Route path="/hr/deductions" element={<PermissionProtectedRoute module="hr"><Deductions /></PermissionProtectedRoute>} />
+                  <Route path="/hr/leaves" element={<PermissionProtectedRoute module="hr"><Leaves /></PermissionProtectedRoute>} />
+                  <Route path="/hr/bulk-employees" element={<PermissionProtectedRoute module="hr"><BulkEmployees /></PermissionProtectedRoute>} />
+                  <Route path="/loads" element={<PermissionProtectedRoute module="loads"><Loads /></PermissionProtectedRoute>} />
+                  <Route path="/loads/register" element={<PermissionProtectedRoute module="loads"><LoadsRegister /></PermissionProtectedRoute>} />
+                  <Route path="/loads/list" element={<PermissionProtectedRoute module="loads"><LoadsList /></PermissionProtectedRoute>} />
+                  <Route path="/loads/drivers" element={<PermissionProtectedRoute module="loads"><DriversManagement /></PermissionProtectedRoute>} />
+                  <Route path="/loads/companies" element={<PermissionProtectedRoute module="loads"><CompaniesManagement /></PermissionProtectedRoute>} />
+                  <Route path="/loads/invoices" element={<PermissionProtectedRoute module="loads"><LoadInvoices /></PermissionProtectedRoute>} />
+                  <Route path="/loads/receipts" element={<PermissionProtectedRoute module="loads"><PaymentReceipts /></PermissionProtectedRoute>} />
+                  <Route path="/loads/reports" element={<PermissionProtectedRoute module="loads"><LoadReports /></PermissionProtectedRoute>} />
+                  <Route path="/loads/load-types" element={<PermissionProtectedRoute module="loads"><LoadTypes /></PermissionProtectedRoute>} />
+                  <Route path="/reports" element={<PermissionProtectedRoute module="vehicles"><MaintenanceReports /></PermissionProtectedRoute>} />
+                  <Route path="/spare-parts" element={<PermissionProtectedRoute module="vehicles"><SpareParts /></PermissionProtectedRoute>} />
+                  <Route path="/purchases" element={<PermissionProtectedRoute module="vehicles"><Purchases /></PermissionProtectedRoute>} />
+                  <Route path="/stock-movement" element={<PermissionProtectedRoute module="vehicles"><StockMovement /></PermissionProtectedRoute>} />
+                  <Route path="/vehicle-mileage" element={<PermissionProtectedRoute module="vehicles"><VehicleMileageReport /></PermissionProtectedRoute>} />
+                  <Route path="/price-history" element={<PermissionProtectedRoute module="vehicles"><PurchasePriceHistory /></PermissionProtectedRoute>} />
+                  <Route path="/bulk-vehicles" element={<PermissionProtectedRoute module="vehicles"><BulkVehicles /></PermissionProtectedRoute>} />
+                  <Route path="/custody" element={<PermissionProtectedRoute module="custody"><CustodyHome /></PermissionProtectedRoute>} />
+                  <Route path="/custody/representatives" element={<PermissionProtectedRoute module="custody"><CustodyRepresentatives /></PermissionProtectedRoute>} />
+                  <Route path="/custody/transfers" element={<PermissionProtectedRoute module="custody"><CustodyTransfers /></PermissionProtectedRoute>} />
+                  <Route path="/custody/expenses" element={<PermissionProtectedRoute module="custody"><CustodyExpenses /></PermissionProtectedRoute>} />
+                  <Route path="/custody/records" element={<PermissionProtectedRoute module="custody"><CustodyRecords /></PermissionProtectedRoute>} />
+                  <Route path="/custody/filter" element={<PermissionProtectedRoute module="custody"><CustodyFilter /></PermissionProtectedRoute>} />
+                  <Route path="/custody/journal" element={<PermissionProtectedRoute module="custody"><CustodyJournalEntries /></PermissionProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                         </Routes>
                       </ProtectedRoute>
