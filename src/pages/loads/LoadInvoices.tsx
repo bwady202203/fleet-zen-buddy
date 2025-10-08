@@ -75,6 +75,21 @@ const LoadInvoices = () => {
     return { subtotal, taxAmount, totalAmount };
   };
 
+  const updateItem = (index: number, field: string, value: any) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    
+    if (field === 'quantity' || field === 'unitPrice') {
+      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+    }
+    
+    setItems(newItems);
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -222,23 +237,24 @@ const LoadInvoices = () => {
                 إنشاء فاتورة جديدة
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>فاتورة مبيعات جديدة</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">فاتورة مبيعات جديدة</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-2">
-                    <Label>التاريخ</Label>
+                    <Label className="text-sm font-semibold">التاريخ</Label>
                     <Input
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       required
+                      className="bg-background"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>اسم العميل</Label>
+                    <Label className="text-sm font-semibold">اسم العميل</Label>
                     <Select 
                       value={formData.companyId} 
                       onValueChange={(value) => {
@@ -246,7 +262,7 @@ const LoadInvoices = () => {
                         loadCompanyLoads(value);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background">
                         <SelectValue placeholder="اختر العميل" />
                       </SelectTrigger>
                       <SelectContent>
@@ -259,9 +275,9 @@ const LoadInvoices = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>نوع الدفع</Label>
+                    <Label className="text-sm font-semibold">نوع الدفع</Label>
                     <Select value={formData.paymentType} onValueChange={(value) => setFormData({ ...formData, paymentType: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -273,62 +289,128 @@ const LoadInvoices = () => {
                   </div>
                 </div>
 
-                <div>
-                  <Label>الأصناف</Label>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>م</TableHead>
-                        <TableHead>اسم الصنف</TableHead>
-                        <TableHead>الكمية</TableHead>
-                        <TableHead>السعر</TableHead>
-                        <TableHead>الإجمالي</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>{item.description}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
-                          <TableCell>{item.unitPrice.toFixed(2)}</TableCell>
-                          <TableCell>{item.total.toFixed(2)}</TableCell>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-lg font-semibold">الأصناف</Label>
+                    {items.length > 0 && (
+                      <span className="text-sm text-muted-foreground">
+                        عدد الأصناف: {items.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="text-right w-16">م</TableHead>
+                          <TableHead className="text-right">اسم الصنف</TableHead>
+                          <TableHead className="text-right w-32">الكمية</TableHead>
+                          <TableHead className="text-right w-32">السعر</TableHead>
+                          <TableHead className="text-right w-32">الإجمالي</TableHead>
+                          <TableHead className="text-right w-16"></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {items.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              اختر عميل لعرض الشحنات المعلقة
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          items.map((item, index) => (
+                            <TableRow key={index} className="hover:bg-muted/30">
+                              <TableCell className="text-right font-medium">{index + 1}</TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  value={item.description}
+                                  onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                  className="min-w-[200px]"
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                  className="text-right"
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.unitPrice}
+                                  onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  className="text-right"
+                                />
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {item.total.toFixed(2)} ر.س
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeItem(index)}
+                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
-                <div className="bg-muted p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between">
-                    <span>الإجمالي قبل الضريبة:</span>
-                    <span className="font-bold">{subtotal.toFixed(2)} ر.س</span>
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/20 space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-primary/20">
+                    <span className="text-muted-foreground">الإجمالي قبل الضريبة:</span>
+                    <span className="font-bold text-lg">{subtotal.toFixed(2)} ر.س</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>الضريبة (15%):</span>
-                    <span className="font-bold">{taxAmount.toFixed(2)} ر.س</span>
+                  <div className="flex justify-between items-center py-2 border-b border-primary/20">
+                    <span className="text-muted-foreground">الضريبة (15%):</span>
+                    <span className="font-bold text-lg">{taxAmount.toFixed(2)} ر.س</span>
                   </div>
-                  <div className="flex justify-between text-lg">
-                    <span>الإجمالي بعد الضريبة:</span>
-                    <span className="font-bold text-primary">{totalAmount.toFixed(2)} ر.س</span>
+                  <div className="flex justify-between items-center pt-3">
+                    <span className="text-lg font-semibold">الإجمالي الكلي:</span>
+                    <span className="font-bold text-2xl text-primary">{totalAmount.toFixed(2)} ر.س</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>ملاحظات</Label>
+                  <Label className="text-sm font-semibold">ملاحظات</Label>
                   <Textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
+                    className="resize-none"
+                    placeholder="أضف أي ملاحظات إضافية هنا..."
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={loading || items.length === 0}>
-                    <Save className="h-4 w-4 ml-2" />
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button 
+                    type="submit" 
+                    disabled={loading || items.length === 0}
+                    className="flex-1 h-11"
+                    size="lg"
+                  >
+                    <Save className="h-5 w-5 ml-2" />
                     حفظ الفاتورة
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setDialogOpen(false)}
+                    className="flex-1 h-11"
+                    size="lg"
+                  >
                     إلغاء
                   </Button>
                 </div>
