@@ -208,12 +208,24 @@ const CompaniesManagement = () => {
             <Card key={company.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl mb-2">{company.name}</CardTitle>
-                    <p className="text-2xl font-bold text-primary">
-                      {company.total_balance.toLocaleString('ar-SA')} ر.س
-                    </p>
-                    <p className="text-sm text-muted-foreground">الرصيد الإجمالي</p>
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-3">{company.name}</CardTitle>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div className="bg-primary/10 p-3 rounded-lg">
+                        <p className="text-2xl font-bold text-primary">
+                          {company.total_balance.toLocaleString('ar-SA')}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">الرصيد المالي (ر.س)</p>
+                      </div>
+                      
+                      <div className="bg-secondary/10 p-3 rounded-lg">
+                        <p className="text-2xl font-bold text-secondary-foreground">
+                          {(company.total_quantity || 0).toLocaleString('ar-SA')}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">إجمالي الكميات</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
