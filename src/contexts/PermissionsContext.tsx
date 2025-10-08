@@ -58,6 +58,7 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
           can_edit: d.can_edit ?? false,
           can_delete: d.can_delete ?? false,
         }));
+        console.log('Fetched permissions for user:', user.email, mappedPermissions);
         setPermissions(mappedPermissions);
       }
     } catch (error) {
@@ -75,6 +76,8 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
 
     const permission = permissions.find(p => p.module_name === moduleName);
+    console.log(`Checking permission for ${moduleName} (${action}):`, permission);
+    
     if (!permission) {
       return false;
     }
