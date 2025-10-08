@@ -112,3 +112,28 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for A4 invoice */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  .print\:p-12 {
+    padding: 3rem !important;
+  }
+  
+  .print\:max-w-full {
+    max-width: 100% !important;
+  }
+}

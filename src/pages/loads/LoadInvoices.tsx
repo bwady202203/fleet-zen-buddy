@@ -6,13 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Plus, Save, Printer, Eye, X } from "lucide-react";
+import { ArrowRight, Plus, Save, Printer, Eye, X, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import QRCode from "qrcode";
 import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const LoadInvoices = () => {
   const { toast } = useToast();
@@ -226,14 +228,44 @@ const LoadInvoices = () => {
   };
 
   const handlePrint = () => {
-    if (printRef.current) {
-      const printContent = printRef.current;
-      const windowPrint = window.open('', '', 'width=900,height=650');
-      windowPrint?.document.write(printContent.innerHTML);
-      windowPrint?.document.close();
-      windowPrint?.focus();
-      windowPrint?.print();
-      windowPrint?.close();
+    window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+
+    try {
+      const element = printRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`invoice-${selectedInvoice?.invoice_number}.pdf`);
+
+      toast({
+        title: "تم التحميل",
+        description: "تم تحميل الفاتورة بصيغة PDF بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحميل الفاتورة",
+        variant: "destructive"
+      });
     }
   };
 
@@ -494,11 +526,15 @@ const LoadInvoices = () => {
 
         {/* View Invoice Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-full">
+            <DialogHeader className="print:hidden">
               <div className="flex justify-between items-center">
                 <DialogTitle>عرض الفاتورة</DialogTitle>
                 <div className="flex gap-2">
+                  <Button onClick={handleDownloadPDF} size="sm" variant="outline">
+                    <Download className="h-4 w-4 ml-2" />
+                    تحميل PDF
+                  </Button>
                   <Button onClick={handlePrint} size="sm">
                     <Printer className="h-4 w-4 ml-2" />
                     طباعة
@@ -508,7 +544,7 @@ const LoadInvoices = () => {
             </DialogHeader>
             
             {selectedInvoice && (
-              <div ref={printRef} className="p-8 bg-white text-black">
+              <div ref={printRef} className="p-8 bg-white text-black print:p-12" style={{ minHeight: '297mm' }}>
                 {/* Invoice Header */}
                 <div className="border-b-2 pb-6 mb-6" style={{ borderColor: '#2563eb' }}>
                   <div className="flex justify-between items-start">
