@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, FileText, Send } from "lucide-react";
+import { ArrowRight, FileText, Send, Printer, Eye, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -152,6 +152,62 @@ const LoadReports = () => {
     }
   };
 
+  const handleDeleteLoad = async (loadId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذه الحمولة؟')) return;
+
+    const { error } = await supabase
+      .from('loads')
+      .delete()
+      .eq('id', loadId);
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف الحمولة",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "نجح",
+        description: "تم حذف الحمولة بنجاح",
+      });
+      loadDriverReports();
+    }
+  };
+
+  const handlePrintLoad = (load: any) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html dir="rtl">
+          <head>
+            <title>طباعة الحمولة - ${load.load_number}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <h1>تفاصيل الحمولة</h1>
+            <table>
+              <tr><th>رقم الشحنة</th><td>${load.load_number}</td></tr>
+              <tr><th>التاريخ</th><td>${new Date(load.date).toLocaleDateString('ar-SA')}</td></tr>
+              <tr><th>العميل</th><td>${load.companies?.name || '-'}</td></tr>
+              <tr><th>نوع الحمولة</th><td>${load.load_types?.name || '-'}</td></tr>
+              <tr><th>الكمية</th><td>${load.quantity}</td></tr>
+              <tr><th>المبلغ المستحق</th><td>${load.total_amount.toFixed(2)} ر.س</td></tr>
+            </table>
+            <script>window.print(); window.close();</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   const filteredReports = selectedDriver === "all" 
     ? driverReports 
     : driverReports.filter(r => r.driverId === selectedDriver);
@@ -197,26 +253,26 @@ const LoadReports = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-6">
             {filteredReports.map((report) => (
-              <div key={report.driverId} className="space-y-4 border rounded-lg p-4 bg-card">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
+              <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                  <div className="flex-1 w-full">
                     <h3 className="text-2xl font-bold mb-4">{report.driverName}</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="bg-primary/10 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
                         <p className="text-sm text-muted-foreground mb-1">إجمالي المستحقات</p>
                         <p className="text-2xl font-bold text-primary">
                           {report.totalCommission.toFixed(2)} ر.س
                         </p>
                       </div>
-                      <div className="bg-green-500/10 p-4 rounded-lg">
+                      <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
                         <p className="text-sm text-muted-foreground mb-1">المدفوع</p>
                         <p className="text-2xl font-bold text-green-600">
                           {report.totalPaid.toFixed(2)} ر.س
                         </p>
                       </div>
-                      <div className="bg-orange-500/10 p-4 rounded-lg">
+                      <div className="bg-orange-500/10 p-4 rounded-lg border border-orange-500/20">
                         <p className="text-sm text-muted-foreground mb-1">المتبقي</p>
                         <p className="text-2xl font-bold text-orange-600">
                           {report.remaining.toFixed(2)} ر.س
@@ -235,6 +291,7 @@ const LoadReports = () => {
                           setPaymentAmount("");
                           setPaymentNotes("");
                         }}
+                        className="w-full lg:w-auto"
                       >
                         <Send className="h-5 w-5 ml-2" />
                         سند تحويل
@@ -282,7 +339,7 @@ const LoadReports = () => {
                   </Dialog>
                 </div>
 
-                <div className="rounded-lg border overflow-hidden">
+                <div className="rounded-lg border overflow-hidden bg-background">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
@@ -291,7 +348,8 @@ const LoadReports = () => {
                         <TableHead className="font-bold">العميل</TableHead>
                         <TableHead className="font-bold">نوع الحمولة</TableHead>
                         <TableHead className="font-bold">الكمية</TableHead>
-                        <TableHead className="font-bold text-left">المبلغ المستحق</TableHead>
+                        <TableHead className="font-bold">المبلغ المستحق</TableHead>
+                        <TableHead className="font-bold text-center">إجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -302,8 +360,28 @@ const LoadReports = () => {
                           <TableCell>{load.companies?.name || '-'}</TableCell>
                           <TableCell>{load.load_types?.name || '-'}</TableCell>
                           <TableCell>{load.quantity}</TableCell>
-                          <TableCell className="font-bold text-primary text-left">
+                          <TableCell className="font-bold text-primary">
                             {load.total_amount.toFixed(2)} ر.س
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2 justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handlePrintLoad(load)}
+                                title="طباعة"
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLoad(load.id)}
+                                title="حذف"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
