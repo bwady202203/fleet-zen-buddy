@@ -68,16 +68,15 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AccountingProvider>
-          <InvoicesProvider>
-            <VehiclesProvider>
-            <SparePartsProvider>
-              <VehicleMileageProvider>
-                <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+      <AccountingProvider>
+        <InvoicesProvider>
+          <VehiclesProvider>
+          <SparePartsProvider>
+            <VehicleMileageProvider>
+              <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     
@@ -145,7 +144,6 @@ const App = () => {
         </VehiclesProvider>
         </InvoicesProvider>
       </AccountingProvider>
-      </AuthProvider>
     </QueryClientProvider>
   );
 };
