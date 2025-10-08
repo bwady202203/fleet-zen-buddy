@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import QRCode from "qrcode";
+import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
 
 const LoadInvoices = () => {
   const { toast } = useToast();
@@ -24,6 +25,7 @@ const LoadInvoices = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [companySettings, setCompanySettings] = useState<any>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     companyId: '',
@@ -37,16 +39,18 @@ const LoadInvoices = () => {
   }, []);
 
   const loadData = async () => {
-    const [invoicesRes, companiesRes] = await Promise.all([
+    const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
       supabase
         .from('load_invoices')
         .select('*, companies(name), load_invoice_items(*, loads(load_number, load_types(name)))')
         .order('created_at', { ascending: false }),
-      supabase.from('companies').select('*').eq('is_active', true)
+      supabase.from('companies').select('*').eq('is_active', true),
+      supabase.from('company_settings').select('*').limit(1).maybeSingle()
     ]);
 
     if (invoicesRes.data) setInvoices(invoicesRes.data);
     if (companiesRes.data) setCompanies(companiesRes.data);
+    if (settingsRes.data) setCompanySettings(settingsRes.data);
   };
 
   const loadCompanyLoads = async (companyId: string) => {
@@ -190,9 +194,32 @@ const LoadInvoices = () => {
   const handleViewInvoice = async (invoice: any) => {
     setSelectedInvoice(invoice);
     
-    // Generate QR Code
-    const qrData = `Invoice: ${invoice.invoice_number}\nDate: ${invoice.date}\nTotal: ${invoice.total_amount} SAR`;
-    const qrUrl = await QRCode.toDataURL(qrData);
+    // Load company settings if not loaded
+    if (!companySettings) {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      if (data) setCompanySettings(data);
+    }
+    
+    // Generate QR Code with company tax number
+    const qrData = `الشركة: ${companySettings?.company_name || 'شركة الرمال الصناعية'}
+الرقم الضريبي: ${companySettings?.tax_number || ''}
+رقم الفاتورة: ${invoice.invoice_number}
+التاريخ: ${invoice.date}
+المبلغ الإجمالي: ${invoice.total_amount} ر.س
+ضريبة القيمة المضافة: ${invoice.tax_amount} ر.س`;
+    
+    const qrUrl = await QRCode.toDataURL(qrData, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
     setQrCodeUrl(qrUrl);
     
     setViewDialogOpen(true);
@@ -229,7 +256,7 @@ const LoadInvoices = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -417,6 +444,7 @@ const LoadInvoices = () => {
               </form>
             </DialogContent>
           </Dialog>
+          <CompanySettingsDialog />
         </div>
 
         {/* Invoice List */}
@@ -482,87 +510,122 @@ const LoadInvoices = () => {
             {selectedInvoice && (
               <div ref={printRef} className="p-8 bg-white text-black">
                 {/* Invoice Header */}
-                <div className="border-b-2 border-primary pb-6 mb-6">
+                <div className="border-b-2 pb-6 mb-6" style={{ borderColor: '#2563eb' }}>
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h1 className="text-3xl font-bold text-primary mb-2">فاتورة مبيعات</h1>
-                      <p className="text-sm text-gray-600">رقم الفاتورة: {selectedInvoice.invoice_number}</p>
-                      <p className="text-sm text-gray-600">التاريخ: {new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</p>
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-bold mb-4" style={{ color: '#2563eb' }}>
+                        {companySettings?.company_name || 'شركة الرمال الصناعية'}
+                      </h1>
+                      {companySettings?.tax_number && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-semibold">الرقم الضريبي:</span> {companySettings.tax_number}
+                        </p>
+                      )}
+                      {companySettings?.address && (
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold">العنوان:</span> {companySettings.address}
+                        </p>
+                      )}
+                      <div className="mt-4 pt-4 border-t">
+                        <h2 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية مبسطة</h2>
+                        <p className="text-sm text-gray-700">رقم الفاتورة: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
+                        <p className="text-sm text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
+                      </div>
                     </div>
                     {qrCodeUrl && (
                       <div className="text-center">
-                        <img src={qrCodeUrl} alt="QR Code" className="w-32 h-32" />
-                        <p className="text-xs text-gray-500 mt-1">رمز الاستجابة السريعة</p>
+                        <img src={qrCodeUrl} alt="QR Code" className="w-40 h-40 border-2 p-2" style={{ borderColor: '#2563eb' }} />
+                        <p className="text-xs text-gray-600 mt-2 font-semibold">رمز الاستجابة السريعة</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Company Info */}
+                {/* Customer Info */}
                 <div className="mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold mb-2">معلومات العميل</h3>
-                    <p className="text-sm">العميل: {selectedInvoice.companies?.name}</p>
-                    <p className="text-sm">نوع الدفع: {selectedInvoice.payment_type === 'cash' ? 'نقدي' : selectedInvoice.payment_type === 'credit' ? 'آجل' : 'بنك'}</p>
+                  <div className="p-4 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
+                    <h3 className="font-bold mb-3" style={{ color: '#2563eb' }}>بيانات العميل</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-sm text-gray-600">اسم العميل</p>
+                        <p className="text-sm font-semibold">{selectedInvoice.companies?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">طريقة الدفع</p>
+                        <p className="text-sm font-semibold">
+                          {selectedInvoice.payment_type === 'cash' ? 'نقدي' : selectedInvoice.payment_type === 'credit' ? 'آجل' : 'بنك'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Invoice Items */}
                 <div className="mb-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-primary/10">
-                        <TableHead className="text-right">م</TableHead>
-                        <TableHead className="text-right">البيان</TableHead>
-                        <TableHead className="text-right">الكمية</TableHead>
-                        <TableHead className="text-right">السعر</TableHead>
-                        <TableHead className="text-right">الإجمالي</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedInvoice.load_invoice_items?.map((item: any, index: number) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="text-right">{index + 1}</TableCell>
-                          <TableCell className="text-right">{item.description}</TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">{item.unit_price.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">{item.total.toFixed(2)}</TableCell>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow style={{ backgroundColor: '#dbeafe' }}>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>م</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>وصف الصنف</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>الكمية</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>سعر الوحدة</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>الإجمالي</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedInvoice.load_invoice_items?.map((item: any, index: number) => (
+                          <TableRow key={item.id} className={index % 2 === 0 ? 'bg-white' : ''} style={{ backgroundColor: index % 2 === 1 ? '#f8fafc' : 'white' }}>
+                            <TableCell className="text-right font-medium">{index + 1}</TableCell>
+                            <TableCell className="text-right">{item.description}</TableCell>
+                            <TableCell className="text-right">{item.quantity}</TableCell>
+                            <TableCell className="text-right">{item.unit_price.toFixed(2)} ر.س</TableCell>
+                            <TableCell className="text-right font-semibold">{item.total.toFixed(2)} ر.س</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
                 {/* Totals */}
                 <div className="flex justify-end mb-6">
-                  <div className="w-80 space-y-2">
-                    <div className="flex justify-between py-2 border-b">
-                      <span>الإجمالي قبل الضريبة:</span>
-                      <span className="font-semibold">{selectedInvoice.subtotal?.toFixed(2)} ر.س</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b">
-                      <span>ضريبة القيمة المضافة (15%):</span>
-                      <span className="font-semibold">{selectedInvoice.tax_amount?.toFixed(2)} ر.س</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-t-2 border-primary">
-                      <span className="text-lg font-bold">الإجمالي الكلي:</span>
-                      <span className="text-lg font-bold text-primary">{selectedInvoice.total_amount?.toFixed(2)} ر.س</span>
+                  <div className="w-96 border-2 rounded-lg p-4" style={{ borderColor: '#2563eb', backgroundColor: '#f8fafc' }}>
+                    <div className="space-y-3">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-700">الإجمالي قبل الضريبة:</span>
+                        <span className="font-bold">{selectedInvoice.subtotal?.toFixed(2)} ر.س</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-700">ضريبة القيمة المضافة (15%):</span>
+                        <span className="font-bold">{selectedInvoice.tax_amount?.toFixed(2)} ر.س</span>
+                      </div>
+                      <div className="flex justify-between py-3 pt-4" style={{ borderTop: '2px solid #2563eb' }}>
+                        <span className="text-xl font-bold" style={{ color: '#1e40af' }}>الإجمالي الكلي:</span>
+                        <span className="text-2xl font-bold" style={{ color: '#2563eb' }}>{selectedInvoice.total_amount?.toFixed(2)} ر.س</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Notes */}
                 {selectedInvoice.notes && (
-                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <h3 className="font-semibold mb-2">ملاحظات:</h3>
-                    <p className="text-sm">{selectedInvoice.notes}</p>
+                  <div className="p-4 rounded-lg mb-6 border" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
+                    <h3 className="font-bold mb-2" style={{ color: '#92400e' }}>ملاحظات:</h3>
+                    <p className="text-sm text-gray-800">{selectedInvoice.notes}</p>
                   </div>
                 )}
 
                 {/* Footer */}
-                <div className="border-t pt-4 mt-8 text-center text-xs text-gray-500">
-                  <p>شكراً لتعاملكم معنا</p>
-                  <p className="mt-1">تم إنشاء الفاتورة بواسطة نظام إدارة الشحنات</p>
+                <div className="border-t-2 pt-6 mt-8 text-center" style={{ borderColor: '#2563eb' }}>
+                  <p className="text-lg font-bold mb-2" style={{ color: '#2563eb' }}>شكراً لتعاملكم معنا</p>
+                  <p className="text-sm text-gray-600 mb-4">نتطلع لخدمتكم دائماً</p>
+                  {companySettings?.tax_number && (
+                    <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
+                      <p className="text-xs text-gray-600">هذه فاتورة ضريبية مبسطة صادرة إلكترونياً</p>
+                      <p className="text-xs text-gray-600 mt-1">الرقم الضريبي: {companySettings.tax_number}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
