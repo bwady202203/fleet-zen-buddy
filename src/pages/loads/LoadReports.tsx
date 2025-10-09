@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, FileText, Send, Printer, Eye, Trash2 } from "lucide-react";
+import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import HijriDate, { toHijri } from 'hijri-converter';
 
 interface DriverPayment {
   id: string;
@@ -36,10 +38,21 @@ const LoadReports = () => {
   const [selectedDriverForPayment, setSelectedDriverForPayment] = useState<DriverReport | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
+  
+  // Company report states
+  const [companyLoads, setCompanyLoads] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [loadTypes, setLoadTypes] = useState<any[]>([]);
+  const [filterCompany, setFilterCompany] = useState<string>("all");
+  const [filterLoadType, setFilterLoadType] = useState<string>("all");
+  const [filterDriver, setFilterDriver] = useState<string>("all");
 
   useEffect(() => {
     loadDrivers();
     loadDriverReports();
+    loadCompanyLoads();
+    loadCompanies();
+    loadLoadTypes();
   }, []);
 
   const loadDrivers = async () => {
@@ -175,6 +188,52 @@ const LoadReports = () => {
     }
   };
 
+  const loadCompanyLoads = async () => {
+    const { data } = await supabase
+      .from('loads')
+      .select(`
+        *,
+        drivers(id, name),
+        companies(id, name),
+        load_types(id, name)
+      `)
+      .order('date', { ascending: false });
+    
+    if (data) {
+      setCompanyLoads(data);
+    }
+  };
+
+  const loadCompanies = async () => {
+    const { data } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    
+    if (data) {
+      setCompanies(data);
+    }
+  };
+
+  const loadLoadTypes = async () => {
+    const { data } = await supabase
+      .from('load_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    
+    if (data) {
+      setLoadTypes(data);
+    }
+  };
+
+  const convertToHijri = (gregorianDate: string) => {
+    const date = new Date(gregorianDate);
+    const hijri = toHijri(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    return `${hijri.hy}-${String(hijri.hm).padStart(2, '0')}-${String(hijri.hd).padStart(2, '0')}`;
+  };
+
   const handlePrintLoad = (load: any) => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -212,6 +271,13 @@ const LoadReports = () => {
     ? driverReports 
     : driverReports.filter(r => r.driverId === selectedDriver);
 
+  const filteredCompanyLoads = companyLoads.filter(load => {
+    if (filterCompany !== "all" && load.company_id !== filterCompany) return false;
+    if (filterLoadType !== "all" && load.load_type_id !== filterLoadType) return false;
+    if (filterDriver !== "all" && load.driver_id !== filterDriver) return false;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
@@ -229,32 +295,45 @@ const LoadReports = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-6 w-6" />
-                تقرير السائقين والعمولات
-              </CardTitle>
-              <div className="w-64">
-                <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر السائق" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع السائقين</SelectItem>
-                    {drivers.map((driver) => (
-                      <SelectItem key={driver.id} value={driver.id}>
-                        {driver.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {filteredReports.map((report) => (
+        <Tabs defaultValue="drivers" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="drivers" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              تقرير السائقين
+            </TabsTrigger>
+            <TabsTrigger value="companies" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              تقرير الشركات
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="drivers">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-6 w-6" />
+                    تقرير السائقين والعمولات
+                  </CardTitle>
+                  <div className="w-64">
+                    <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السائق" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع السائقين</SelectItem>
+                        {drivers.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {filteredReports.map((report) => (
               <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                   <div className="flex-1 w-full">
@@ -389,9 +468,110 @@ const LoadReports = () => {
                   </Table>
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="companies">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-6 w-6" />
+                  تقرير الشركات والشحنات
+                </CardTitle>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <Label>فلتر حسب الشركة</Label>
+                    <Select value={filterCompany} onValueChange={setFilterCompany}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر الشركة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع الشركات</SelectItem>
+                        {companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>فلتر حسب نوع الحمولة</Label>
+                    <Select value={filterLoadType} onValueChange={setFilterLoadType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر نوع الحمولة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع الأنواع</SelectItem>
+                        {loadTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>فلتر حسب السائق</Label>
+                    <Select value={filterDriver} onValueChange={setFilterDriver}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر السائق" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع السائقين</SelectItem>
+                        {drivers.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border overflow-hidden bg-background">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-bold">رقم الشحنة</TableHead>
+                        <TableHead className="font-bold">التاريخ الميلادي</TableHead>
+                        <TableHead className="font-bold">التاريخ الهجري</TableHead>
+                        <TableHead className="font-bold">اسم الشركة</TableHead>
+                        <TableHead className="font-bold">نوع الحمولة</TableHead>
+                        <TableHead className="font-bold">الكمية</TableHead>
+                        <TableHead className="font-bold">اسم السائق</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCompanyLoads.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                            لا توجد شحنات
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredCompanyLoads.map((load) => (
+                          <TableRow key={load.id}>
+                            <TableCell className="font-medium">{load.load_number}</TableCell>
+                            <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
+                            <TableCell>{convertToHijri(load.date)}</TableCell>
+                            <TableCell>{load.companies?.name || '-'}</TableCell>
+                            <TableCell>{load.load_types?.name || '-'}</TableCell>
+                            <TableCell>{load.quantity}</TableCell>
+                            <TableCell>{load.drivers?.name || '-'}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
