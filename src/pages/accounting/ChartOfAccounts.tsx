@@ -823,26 +823,6 @@ const ChartOfAccounts = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>الحساب الرئيسي / Parent Account</Label>
-                      <Select
-                        value={formData.parent_id || "none"}
-                        onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="بدون حساب رئيسي / No Parent" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
-                          {accounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.id}>
-                              {acc.code} - {acc.name_ar}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
                       <Label>نوع الحساب / Account Type</Label>
                       <Select
                         value={formData.type}
@@ -857,6 +837,28 @@ const ChartOfAccounts = () => {
                           <SelectItem value="equity">حقوق ملكية / Equity</SelectItem>
                           <SelectItem value="revenue">إيرادات / Revenue</SelectItem>
                           <SelectItem value="expense">مصروفات / Expenses</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>الحساب الرئيسي / Parent Account</Label>
+                      <Select
+                        value={formData.parent_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="بدون حساب رئيسي / No Parent" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
+                          {accounts
+                            .filter(acc => acc.type === formData.type)
+                            .map(acc => (
+                              <SelectItem key={acc.id} value={acc.id}>
+                                {acc.code} - {acc.name_ar}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
