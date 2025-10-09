@@ -2,13 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Plus, Edit, Trash2, DollarSign } from "lucide-react";
+import { ArrowRight, Plus, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
 import { CompanyDriverCommissionsDialog } from "@/components/CompanyDriverCommissionsDialog";
 
 const CompaniesManagement = () => {
@@ -24,7 +23,6 @@ const CompaniesManagement = () => {
     tax_number: '',
     address: ''
   });
-  const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
 
@@ -280,24 +278,12 @@ const CompaniesManagement = () => {
                   <div className="flex gap-2 mt-4 flex-wrap">
                     <Button 
                       size="sm" 
-                      variant="default" 
-                      onClick={() => {
-                        setSelectedCompany(company);
-                        setPricesDialogOpen(true);
-                      }}
-                    >
-                      <DollarSign className="h-4 w-4 ml-1" />
-                      الأسعار
-                    </Button>
-                    <Button 
-                      size="sm" 
                       variant="secondary" 
                       onClick={() => {
                         setSelectedCompany(company);
                         setCommissionsDialogOpen(true);
                       }}
                     >
-                      <DollarSign className="h-4 w-4 ml-1" />
                       عمولة النقل
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => handleEdit(company)}>
@@ -316,20 +302,12 @@ const CompaniesManagement = () => {
         </div>
 
         {selectedCompany && (
-          <>
-            <CompanyPricesDialog
-              open={pricesDialogOpen}
-              onOpenChange={setPricesDialogOpen}
-              companyId={selectedCompany.id}
-              companyName={selectedCompany.name}
-            />
-            <CompanyDriverCommissionsDialog
-              open={commissionsDialogOpen}
-              onOpenChange={setCommissionsDialogOpen}
-              companyId={selectedCompany.id}
-              companyName={selectedCompany.name}
-            />
-          </>
+          <CompanyDriverCommissionsDialog
+            open={commissionsDialogOpen}
+            onOpenChange={setCommissionsDialogOpen}
+            companyId={selectedCompany.id}
+            companyName={selectedCompany.name}
+          />
         )}
       </main>
     </div>
