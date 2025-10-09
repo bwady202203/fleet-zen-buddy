@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2 } from "lucide-react";
+import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HijriDate, { toHijri } from 'hijri-converter';
+import * as XLSX from 'xlsx';
 
 interface DriverPayment {
   id: string;
@@ -278,6 +279,106 @@ const LoadReports = () => {
     return true;
   });
 
+  const totalQuantity = filteredCompanyLoads.reduce((sum, load) => sum + (parseFloat(load.quantity) || 0), 0);
+
+  const handlePrintCompanyReport = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const tableRows = filteredCompanyLoads.map(load => `
+        <tr>
+          <td>${load.load_number}</td>
+          <td>${new Date(load.date).toLocaleDateString('ar-SA')}</td>
+          <td>${convertToHijri(load.date)}</td>
+          <td>${load.companies?.name || '-'}</td>
+          <td>${load.load_types?.name || '-'}</td>
+          <td>${load.quantity}</td>
+          <td>${load.drivers?.name || '-'}</td>
+        </tr>
+      `).join('');
+
+      printWindow.document.write(`
+        <html dir="rtl">
+          <head>
+            <title>تقرير الشركات والشحنات</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { text-align: center; margin-bottom: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
+              th { background-color: #f2f2f2; font-weight: bold; }
+              .total-row { background-color: #e8f5e9; font-weight: bold; }
+              .footer { margin-top: 30px; text-align: center; color: #666; }
+            </style>
+          </head>
+          <body>
+            <h1>تقرير الشركات والشحنات</h1>
+            <table>
+              <thead>
+                <tr>
+                  <th>رقم الشحنة</th>
+                  <th>التاريخ الميلادي</th>
+                  <th>التاريخ الهجري</th>
+                  <th>اسم الشركة</th>
+                  <th>نوع الحمولة</th>
+                  <th>الكمية</th>
+                  <th>اسم السائق</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+                <tr class="total-row">
+                  <td colspan="5" style="text-align: center;">الإجمالي</td>
+                  <td>${totalQuantity.toFixed(2)}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="footer">
+              <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')} - ${new Date().toLocaleTimeString('ar-SA')}</p>
+            </div>
+            <script>window.print(); window.close();</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const handleExportToExcel = () => {
+    const excelData = filteredCompanyLoads.map(load => ({
+      'رقم الشحنة': load.load_number,
+      'التاريخ الميلادي': new Date(load.date).toLocaleDateString('ar-SA'),
+      'التاريخ الهجري': convertToHijri(load.date),
+      'اسم الشركة': load.companies?.name || '-',
+      'نوع الحمولة': load.load_types?.name || '-',
+      'الكمية': load.quantity,
+      'اسم السائق': load.drivers?.name || '-'
+    }));
+
+    // Add total row
+    excelData.push({
+      'رقم الشحنة': '',
+      'التاريخ الميلادي': '',
+      'التاريخ الهجري': '',
+      'اسم الشركة': '',
+      'نوع الحمولة': 'الإجمالي',
+      'الكمية': totalQuantity.toFixed(2),
+      'اسم السائق': ''
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير الشركات');
+    
+    const fileName = `تقرير_الشركات_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({
+      title: "نجح",
+      description: "تم تصدير التقرير بنجاح",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
@@ -476,11 +577,23 @@ const LoadReports = () => {
           <TabsContent value="companies">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-6 w-6" />
-                  تقرير الشركات والشحنات
-                </CardTitle>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-6 w-6" />
+                    تقرير الشركات والشحنات
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handlePrintCompanyReport}>
+                      <Printer className="h-4 w-4 ml-2" />
+                      طباعة
+                    </Button>
+                    <Button variant="outline" onClick={handleExportToExcel}>
+                      <Download className="h-4 w-4 ml-2" />
+                      تصدير إكسل
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>فلتر حسب الشركة</Label>
                     <Select value={filterCompany} onValueChange={setFilterCompany}>
@@ -553,17 +666,28 @@ const LoadReports = () => {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredCompanyLoads.map((load) => (
-                          <TableRow key={load.id}>
-                            <TableCell className="font-medium">{load.load_number}</TableCell>
-                            <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
-                            <TableCell>{convertToHijri(load.date)}</TableCell>
-                            <TableCell>{load.companies?.name || '-'}</TableCell>
-                            <TableCell>{load.load_types?.name || '-'}</TableCell>
-                            <TableCell>{load.quantity}</TableCell>
-                            <TableCell>{load.drivers?.name || '-'}</TableCell>
+                        <>
+                          {filteredCompanyLoads.map((load) => (
+                            <TableRow key={load.id}>
+                              <TableCell className="font-medium">{load.load_number}</TableCell>
+                              <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
+                              <TableCell>{convertToHijri(load.date)}</TableCell>
+                              <TableCell>{load.companies?.name || '-'}</TableCell>
+                              <TableCell>{load.load_types?.name || '-'}</TableCell>
+                              <TableCell>{load.quantity}</TableCell>
+                              <TableCell>{load.drivers?.name || '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-primary/10 font-bold">
+                            <TableCell colSpan={5} className="text-center text-lg">
+                              الإجمالي
+                            </TableCell>
+                            <TableCell className="text-lg text-primary">
+                              {totalQuantity.toFixed(2)}
+                            </TableCell>
+                            <TableCell></TableCell>
                           </TableRow>
-                        ))
+                        </>
                       )}
                     </TableBody>
                   </Table>
