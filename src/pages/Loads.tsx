@@ -6,56 +6,72 @@ const Loads = () => {
   const sections = [
     {
       title: "تسجيل الحمولات",
+      titleEn: "Loads Registration",
       description: "إضافة حمولات جديدة",
+      descriptionEn: "Add New Loads",
       icon: PackagePlus,
       link: "/loads/register",
       color: "from-blue-500 to-blue-600"
     },
     {
       title: "سجل الشحنات",
+      titleEn: "Loads List",
       description: "عرض وإدارة الشحنات",
+      descriptionEn: "View and Manage Loads",
       icon: List,
       link: "/loads/list",
       color: "from-cyan-500 to-cyan-600"
     },
     {
       title: "السائقين",
+      titleEn: "Drivers",
       description: "إدارة السائقين",
+      descriptionEn: "Drivers Management",
       icon: MapPin,
       link: "/loads/drivers",
       color: "from-purple-500 to-purple-600"
     },
     {
       title: "الشركات",
+      titleEn: "Companies",
       description: "إدارة العملاء والشركات",
+      descriptionEn: "Companies Management",
       icon: PackagePlus,
       link: "/loads/companies",
       color: "from-indigo-500 to-indigo-600"
     },
     {
       title: "الفواتير",
+      titleEn: "Invoices",
       description: "فواتير المبيعات",
+      descriptionEn: "Sales Invoices",
       icon: Receipt,
       link: "/loads/invoices",
       color: "from-orange-500 to-orange-600"
     },
     {
       title: "سندات القبض",
+      titleEn: "Receipts",
       description: "إدارة المقبوضات",
+      descriptionEn: "Payment Receipts",
       icon: FileText,
       link: "/loads/receipts",
       color: "from-teal-500 to-teal-600"
     },
     {
       title: "الموردين",
+      titleEn: "Suppliers",
       description: "إدارة الموردين",
+      descriptionEn: "Suppliers Management",
       icon: Truck,
       link: "/loads/suppliers",
       color: "from-pink-500 to-pink-600"
     },
     {
       title: "التقارير",
+      titleEn: "Reports",
       description: "تقارير السائقين والعمولات",
+      descriptionEn: "Drivers and Commissions Reports",
       icon: FileText,
       link: "/loads/reports",
       color: "from-green-500 to-green-600"
@@ -71,9 +87,9 @@ const Loads = () => {
               <ArrowRight className="h-6 w-6" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">إدارة الحمولات</h1>
+              <h1 className="text-3xl font-bold">إدارة الحمولات / Loads Management</h1>
               <p className="text-muted-foreground mt-1">
-                تتبع وإدارة الشحنات والحمولات
+                تتبع وإدارة الشحنات والحمولات / Track and Manage Loads
               </p>
             </div>
           </div>
@@ -91,13 +107,15 @@ const Loads = () => {
                   </div>
                   <CardTitle className="text-xl group-hover:text-primary transition-colors">
                     {section.title}
+                    <span className="block text-sm font-normal text-muted-foreground mt-1" dir="ltr">{section.titleEn}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">{section.description}</p>
+                  <p className="text-sm text-muted-foreground/80 mt-1" dir="ltr">{section.descriptionEn}</p>
                   <div className="mt-4 pt-4 border-t">
                     <span className="text-sm text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
-                      فتح
+                      فتح / Open
                       <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
                     </span>
                   </div>

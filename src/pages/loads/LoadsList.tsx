@@ -139,13 +139,13 @@ const LoadsList = () => {
                 <ArrowRight className="h-6 w-6" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold">سجل الشحنات</h1>
-                <p className="text-muted-foreground mt-1">عرض جميع الشحنات المسجلة</p>
+                <h1 className="text-3xl font-bold">سجل الشحنات / Loads List</h1>
+                <p className="text-muted-foreground mt-1">عرض جميع الشحنات المسجلة / View All Registered Loads</p>
               </div>
             </div>
             <Button onClick={handlePrint}>
               <Printer className="h-4 w-4 ml-2" />
-              طباعة
+              طباعة / Print
             </Button>
           </div>
         </div>
@@ -156,19 +156,19 @@ const LoadsList = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
-              <CardTitle>فلتر البحث</CardTitle>
+              <CardTitle>فلتر البحث / Search Filter</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">الشركة</label>
+                <label className="text-sm font-medium">الشركة / Company</label>
                 <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                   <SelectTrigger>
-                    <SelectValue placeholder="جميع الشركات" />
+                    <SelectValue placeholder="جميع الشركات / All companies" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الشركات</SelectItem>
+                    <SelectItem value="all">جميع الشركات / All Companies</SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
@@ -179,13 +179,13 @@ const LoadsList = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">نوع الحمولة</label>
+                <label className="text-sm font-medium">نوع الحمولة / Load Type</label>
                 <Select value={selectedLoadType} onValueChange={setSelectedLoadType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="جميع الأنواع" />
+                    <SelectValue placeholder="جميع الأنواع / All types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الأنواع</SelectItem>
+                    <SelectItem value="all">جميع الأنواع / All Types</SelectItem>
                     {loadTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id}>
                         {type.name}
@@ -196,13 +196,13 @@ const LoadsList = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">السائق</label>
+                <label className="text-sm font-medium">السائق / Driver</label>
                 <Select value={selectedDriver} onValueChange={setSelectedDriver}>
                   <SelectTrigger>
-                    <SelectValue placeholder="جميع السائقين" />
+                    <SelectValue placeholder="جميع السائقين / All drivers" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع السائقين</SelectItem>
+                    <SelectItem value="all">جميع السائقين / All Drivers</SelectItem>
                     {drivers.map((driver) => (
                       <SelectItem key={driver.id} value={driver.id}>
                         {driver.name}
@@ -218,43 +218,43 @@ const LoadsList = () => {
                   onClick={resetFilters}
                   className="w-full"
                 >
-                  إعادة تعيين
+                  إعادة تعيين / Reset
                 </Button>
               </div>
             </div>
 
             <div className="mt-4 text-sm text-muted-foreground">
-              عدد النتائج: {filteredLoads.length} من {loads.length}
+              عدد النتائج / Results: {filteredLoads.length} من / of {loads.length}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>جدول الشحنات</CardTitle>
+            <CardTitle>جدول الشحنات / Loads Table</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8">جاري التحميل...</div>
+              <div className="text-center py-8">جاري التحميل / Loading...</div>
             ) : filteredLoads.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                لا توجد شحنات مطابقة للفلتر
+                لا توجد شحنات مطابقة للفلتر / No loads match the filter
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">رقم الشحنة</TableHead>
-                      <TableHead className="text-right">الشركة</TableHead>
-                      <TableHead className="text-right">نوع الشحنة</TableHead>
-                      <TableHead className="text-right">السائق</TableHead>
-                      <TableHead className="text-right">رقم الشاحنة</TableHead>
-                      <TableHead className="text-right">الكمية</TableHead>
-                      <TableHead className="text-right">السعر</TableHead>
-                      <TableHead className="text-right">المجموع</TableHead>
-                      <TableHead className="text-right print:hidden">إجراءات</TableHead>
+                  <TableHead className="text-right">التاريخ / Date</TableHead>
+                  <TableHead className="text-right">رقم الشحنة / Load Number</TableHead>
+                  <TableHead className="text-right">الشركة / Company</TableHead>
+                  <TableHead className="text-right">نوع الشحنة / Load Type</TableHead>
+                  <TableHead className="text-right">السائق / Driver</TableHead>
+                  <TableHead className="text-right">رقم الشاحنة / Truck Number</TableHead>
+                  <TableHead className="text-right">الكمية / Quantity</TableHead>
+                  <TableHead className="text-right">السعر / Price</TableHead>
+                  <TableHead className="text-right">المجموع / Total</TableHead>
+                  <TableHead className="text-right print:hidden">إجراءات / Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
