@@ -444,8 +444,11 @@ const JournalEntries = () => {
     await generateNextEntryNumber();
   };
 
-  const handlePrint = (entry: any) => {
-    window.print();
+  const handlePrintEntry = (entry: any) => {
+    setSelectedEntry(entry);
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   const handlePreview = (entry: any) => {
@@ -453,12 +456,61 @@ const JournalEntries = () => {
     setPreviewDialogOpen(true);
   };
 
+  const handleDelete = async (entryId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا القيد؟ / Are you sure you want to delete this entry?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف بنجاح / Deleted Successfully",
+        description: "تم حذف القيد بنجاح / Entry deleted successfully",
+      });
+
+      fetchJournalEntries();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      toast({
+        title: "خطأ / Error",
+        description: "فشل في حذف القيد / Failed to delete entry",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredEntries = displayedEntries.filter(entry => {
     if (filterDate && entry.date !== filterDate) return false;
     if (filterAccount && !entry.lines.some((line: any) => 
       line.accountCode.includes(filterAccount) || line.accountName.includes(filterAccount)
     )) return false;
+    return true;
   });
+
+  const handleEdit = (entry: any) => {
+    setFormData({
+      entryNumber: entry.entryNumber,
+      date: entry.date,
+      description: entry.description,
+      lines: entry.lines.map((line: any) => ({
+        id: `line-${Date.now()}-${Math.random()}`,
+        accountId: line.accountId,
+        accountCode: line.accountCode,
+        accountName: line.accountName,
+        description: line.description,
+        debit: line.debit,
+        credit: line.credit,
+        costCenter: "",
+        projectName: "",
+      })),
+    });
+    navigate('/accounting/journal-entries/new');
+  };
+
 
   if (isNewEntryPage) {
     return (
@@ -767,194 +819,325 @@ const JournalEntries = () => {
           );
         }
 
-        return (
-          <div className="min-h-screen bg-background" dir="rtl">
-            <header className="border-b bg-card">
-              <div className="container mx-auto px-4 py-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Link to="/accounting" className="hover:text-primary transition-colors">
-                      <ArrowRight className="h-6 w-6" />
-                    </Link>
-                    <div>
-                      <h1 className="text-3xl font-bold">القيود اليومية / Journal Entries</h1>
-                      <p className="text-muted-foreground mt-1">
-                        تسجيل ومتابعة القيود المحاسبية اليومية / Record and track daily accounting entries
-                      </p>
-                    </div>
-                  </div>
-                  <Button onClick={() => navigate('/accounting/journal-entries/new')}>
-                    <Plus className="h-4 w-4 ml-2" />
-                    قيد جديد / New Entry
-                  </Button>
+  return (
+    <>
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="border-b bg-card no-print">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link to="/accounting" className="hover:text-primary transition-colors">
+                  <ArrowRight className="h-6 w-6" />
+                </Link>
+                <div>
+                  <h1 className="text-3xl font-bold">القيود اليومية / Journal Entries</h1>
+                  <p className="text-muted-foreground mt-1">
+                    تسجيل ومتابعة القيود المحاسبية اليومية / Record and track daily accounting entries
+                  </p>
                 </div>
               </div>
-            </header>
-
-            <main className="container mx-auto px-4 py-8">
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Filter className="h-5 w-5" />
-                      تصفية القيود / Filter Entries
-                    </CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>التاريخ / Date</Label>
-                      <Input
-                        type="date"
-                        value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>الحساب / Account</Label>
-                      <Input
-                        value={filterAccount}
-                        onChange={(e) => setFilterAccount(e.target.value)}
-                        placeholder="ابحث عن حساب... / Search account..."
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>سجل القيود اليومية</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredEntries.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
-                  لا توجد قيود حالياً
-                </p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">رقم القيد</TableHead>
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">البيان</TableHead>
-                    <TableHead className="text-right">المدين</TableHead>
-                    <TableHead className="text-right">الدائن</TableHead>
-                    <TableHead className="text-center">إجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{entry.entryNumber}</TableCell>
-                      <TableCell>{entry.date}</TableCell>
-                      <TableCell>{entry.description}</TableCell>
-                      <TableCell className="text-red-600">
-                        {entry.totalDebit.toLocaleString('ar-SA')} ريال
-                      </TableCell>
-                      <TableCell className="text-green-600">
-                        {entry.totalCredit.toLocaleString('ar-SA')} ريال
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex gap-2 justify-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handlePreview(entry)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handlePrint(entry)}
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </main>
-
-      {/* Preview Dialog */}
-      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>معاينة القيد</DialogTitle>
-          </DialogHeader>
-          {selectedEntry && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
-                <div>
-                  <Label className="text-sm">رقم القيد</Label>
-                  <p className="font-medium">{selectedEntry.entryNumber}</p>
-                </div>
-                <div>
-                  <Label className="text-sm">التاريخ</Label>
-                  <p className="font-medium">{selectedEntry.date}</p>
-                </div>
-                <div>
-                  <Label className="text-sm">البيان</Label>
-                  <p className="font-medium">{selectedEntry.description}</p>
-                </div>
-              </div>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">الحساب</TableHead>
-                    <TableHead className="text-right">البيان</TableHead>
-                    <TableHead className="text-right">المدين</TableHead>
-                    <TableHead className="text-right">الدائن</TableHead>
-                    <TableHead className="text-right">مركز التكلفة</TableHead>
-                    <TableHead className="text-right">المشروع</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedEntry.lines.map((line: any) => (
-                    <TableRow key={line.id}>
-                      <TableCell className="font-medium">
-                        {line.accountCode} - {line.accountName}
-                      </TableCell>
-                      <TableCell>{line.description}</TableCell>
-                      <TableCell className="text-red-600">
-                        {line.debit > 0 ? line.debit.toLocaleString('ar-SA') : '-'}
-                      </TableCell>
-                      <TableCell className="text-green-600">
-                        {line.credit > 0 ? line.credit.toLocaleString('ar-SA') : '-'}
-                      </TableCell>
-                      <TableCell>{line.costCenter || '-'}</TableCell>
-                      <TableCell>{line.projectName || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2} className="text-left">
-                      الإجمالي
-                    </TableCell>
-                    <TableCell className="text-red-600">
-                      {selectedEntry.totalDebit.toLocaleString('ar-SA')} ريال
-                    </TableCell>
-                    <TableCell className="text-green-600">
-                      {selectedEntry.totalCredit.toLocaleString('ar-SA')} ريال
-                    </TableCell>
-                    <TableCell colSpan={2}></TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <Button onClick={() => navigate('/accounting/journal-entries/new')}>
+                <Plus className="h-4 w-4 ml-2" />
+                قيد جديد / New Entry
+              </Button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8">
+          <Card className="mb-6 no-print">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  تصفية القيود / Filter Entries
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>التاريخ / Date</Label>
+                  <Input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>الحساب / Account</Label>
+                  <Input
+                    value={filterAccount}
+                    onChange={(e) => setFilterAccount(e.target.value)}
+                    placeholder="ابحث عن حساب... / Search account..."
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>سجل القيود اليومية / Journal Entries Register</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredEntries.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground text-lg">
+                    لا توجد قيود حالياً / No entries found
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">رقم القيد / Entry No.</TableHead>
+                      <TableHead className="text-right">التاريخ / Date</TableHead>
+                      <TableHead className="text-right">البيان / Description</TableHead>
+                      <TableHead className="text-right">المدين / Debit</TableHead>
+                      <TableHead className="text-right">الدائن / Credit</TableHead>
+                      <TableHead className="text-center no-print">إجراءات / Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEntries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className="font-medium">{entry.entryNumber}</TableCell>
+                        <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
+                        <TableCell>{entry.description}</TableCell>
+                        <TableCell className="text-red-600 font-bold">
+                          {entry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-green-600 font-bold">
+                          {entry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-center no-print">
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePreview(entry)}
+                              title="معاينة / Preview"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePrintEntry(entry)}
+                              title="طباعة / Print"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(entry.id)}
+                              title="حذف / Delete"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Print Template */}
+        {selectedEntry && (
+          <div className="print-content" style={{ display: 'none' }}>
+            <div className="max-w-4xl mx-auto bg-white p-8" dir="rtl">
+              <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
+                <h1 className="text-3xl font-bold mb-2">سند قيد يومية</h1>
+                <h2 className="text-xl text-gray-600">Journal Entry Voucher</h2>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
+                <div>
+                  <div className="text-sm text-gray-600">رقم القيد / Entry No.</div>
+                  <div className="font-bold text-lg">{selectedEntry.entryNumber}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">التاريخ / Date</div>
+                  <div className="font-bold text-lg">
+                    {new Date(selectedEntry.date).toLocaleDateString('ar-SA')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-600">البيان / Description</div>
+                  <div className="font-bold text-lg">{selectedEntry.description || '-'}</div>
+                </div>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #1f2937', marginBottom: '24px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#1f2937', color: 'white' }}>
+                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                      رمز الحساب<br/>Account Code
+                    </th>
+                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                      اسم الحساب<br/>Account Name
+                    </th>
+                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                      البيان<br/>Description
+                    </th>
+                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                      المدين<br/>Debit
+                    </th>
+                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                      الدائن<br/>Credit
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedEntry.lines.map((line: any, index: number) => (
+                    <tr key={index}>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px' }}>{line.accountCode}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px' }}>{line.accountName}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px' }}>{line.description}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px', color: '#dc2626', fontWeight: 'bold' }}>
+                        {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                      </td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px', color: '#16a34a', fontWeight: 'bold' }}>
+                        {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr style={{ backgroundColor: '#f3f4f6', fontWeight: 'bold', fontSize: '1.125rem' }}>
+                    <td colSpan={3} style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'left' }}>
+                      الإجمالي / Total
+                    </td>
+                    <td style={{ border: '1px solid #1f2937', padding: '12px', color: '#dc2626' }}>
+                      {selectedEntry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ border: '1px solid #1f2937', padding: '12px', color: '#16a34a' }}>
+                      {selectedEntry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="grid grid-cols-3 gap-8 mt-12 pt-8" style={{ borderTop: '1px solid #d1d5db', marginTop: '48px', paddingTop: '32px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderTop: '2px solid #1f2937', paddingTop: '8px', marginTop: '64px' }}>
+                    <div style={{ fontWeight: 'bold' }}>المحاسب</div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Accountant</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderTop: '2px solid #1f2937', paddingTop: '8px', marginTop: '64px' }}>
+                    <div style={{ fontWeight: 'bold' }}>المدير المالي</div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Financial Manager</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderTop: '2px solid #1f2937', paddingTop: '8px', marginTop: '64px' }}>
+                    <div style={{ fontWeight: 'bold' }}>المعتمد</div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Approved By</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
+                <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')} - {new Date().toLocaleTimeString('ar-SA')}</div>
+                <div>Print Date: {new Date().toLocaleDateString('en-US')} - {new Date().toLocaleTimeString('en-US')}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Preview Dialog */}
+        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>معاينة القيد / Entry Preview</DialogTitle>
+            </DialogHeader>
+            {selectedEntry && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
+                  <div>
+                    <Label className="text-sm">رقم القيد / Entry No.</Label>
+                    <p className="font-medium">{selectedEntry.entryNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm">التاريخ / Date</Label>
+                    <p className="font-medium">{new Date(selectedEntry.date).toLocaleDateString('ar-SA')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm">البيان / Description</Label>
+                    <p className="font-medium">{selectedEntry.description || '-'}</p>
+                  </div>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">رمز الحساب</TableHead>
+                      <TableHead className="text-right">اسم الحساب</TableHead>
+                      <TableHead className="text-right">البيان</TableHead>
+                      <TableHead className="text-right">المدين</TableHead>
+                      <TableHead className="text-right">الدائن</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedEntry.lines.map((line: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{line.accountCode}</TableCell>
+                        <TableCell>{line.accountName}</TableCell>
+                        <TableCell>{line.description}</TableCell>
+                        <TableCell className="text-red-600 font-bold">
+                          {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                        <TableCell className="text-green-600 font-bold">
+                          {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={3} className="text-left">
+                        الإجمالي / Total
+                      </TableCell>
+                      <TableCell className="text-red-600">
+                        {selectedEntry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-green-600">
+                        {selectedEntry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 };
 
