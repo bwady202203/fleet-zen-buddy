@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download } from "lucide-react";
+import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download, Calendar as CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +14,10 @@ import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HijriDate, { toHijri } from 'hijri-converter';
 import * as XLSX from 'xlsx';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface DriverPayment {
   id: string;
@@ -47,6 +51,8 @@ const LoadReports = () => {
   const [filterCompany, setFilterCompany] = useState<string>("all");
   const [filterLoadType, setFilterLoadType] = useState<string>("all");
   const [filterDriver, setFilterDriver] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     loadDrivers();
@@ -268,14 +274,55 @@ const LoadReports = () => {
     }
   };
 
-  const filteredReports = selectedDriver === "all" 
-    ? driverReports 
-    : driverReports.filter(r => r.driverId === selectedDriver);
+  const filteredReports = driverReports
+    .filter(r => selectedDriver === "all" || r.driverId === selectedDriver)
+    .map(report => ({
+      ...report,
+      loads: report.loads.filter((load: any) => {
+        const loadDate = new Date(load.date);
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (loadDate < fromDate) return false;
+        }
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (loadDate > toDate) return false;
+        }
+        return true;
+      })
+    }))
+    .map(report => {
+      const totalCommission = report.loads.reduce((sum: number, load: any) => sum + (load.total_amount || 0), 0);
+      const driverPayments = report.loads.length > 0 ? 
+        driverReports.find(r => r.driverId === report.driverId)?.totalPaid || 0 : 0;
+      return {
+        ...report,
+        totalCommission,
+        remaining: totalCommission - driverPayments
+      };
+    })
+    .filter(report => report.loads.length > 0);
 
   const filteredCompanyLoads = companyLoads.filter(load => {
     if (filterCompany !== "all" && load.company_id !== filterCompany) return false;
     if (filterLoadType !== "all" && load.load_type_id !== filterLoadType) return false;
     if (filterDriver !== "all" && load.driver_id !== filterDriver) return false;
+    
+    // Date filter
+    const loadDate = new Date(load.date);
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      if (loadDate < fromDate) return false;
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      if (loadDate > toDate) return false;
+    }
+    
     return true;
   });
 
@@ -517,12 +564,67 @@ const LoadReports = () => {
           <TabsContent value="drivers">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-6 w-6" />
                     تقرير السائقين والعمولات
                   </CardTitle>
-                  <div className="w-64">
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>من تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {dateFrom ? format(dateFrom, "yyyy-MM-dd") : <span>اختر التاريخ</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          onSelect={setDateFrom}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>إلى تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {dateTo ? format(dateTo, "yyyy-MM-dd") : <span>اختر التاريخ</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          onSelect={setDateTo}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>فلتر حسب السائق</Label>
                     <Select value={selectedDriver} onValueChange={setSelectedDriver}>
                       <SelectTrigger>
                         <SelectValue placeholder="اختر السائق" />
@@ -630,7 +732,8 @@ const LoadReports = () => {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="font-bold">رقم الشحنة</TableHead>
-                        <TableHead className="font-bold">التاريخ</TableHead>
+                        <TableHead className="font-bold">التاريخ الميلادي</TableHead>
+                        <TableHead className="font-bold">التاريخ الهجري</TableHead>
                         <TableHead className="font-bold">العميل</TableHead>
                         <TableHead className="font-bold">نوع الحمولة</TableHead>
                         <TableHead className="font-bold">الكمية</TableHead>
@@ -642,7 +745,8 @@ const LoadReports = () => {
                       {report.loads.map((load: any) => (
                         <TableRow key={load.id}>
                           <TableCell className="font-medium">{load.load_number}</TableCell>
-                          <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
+                          <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
+                          <TableCell>{convertToHijri(load.date)}</TableCell>
                           <TableCell>{load.companies?.name || '-'}</TableCell>
                           <TableCell>{load.load_types?.name || '-'}</TableCell>
                           <TableCell>{load.quantity}</TableCell>
@@ -699,7 +803,59 @@ const LoadReports = () => {
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div>
+                    <Label>من تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {dateFrom ? format(dateFrom, "yyyy-MM-dd") : <span>اختر التاريخ</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          onSelect={setDateFrom}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>إلى تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {dateTo ? format(dateTo, "yyyy-MM-dd") : <span>اختر التاريخ</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          onSelect={setDateTo}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div>
                     <Label>فلتر حسب الشركة</Label>
                     <Select value={filterCompany} onValueChange={setFilterCompany}>
@@ -776,7 +932,7 @@ const LoadReports = () => {
                           {filteredCompanyLoads.map((load) => (
                             <TableRow key={load.id}>
                               <TableCell className="font-medium">{load.load_number}</TableCell>
-                              <TableCell>{new Date(load.date).toLocaleDateString('ar-SA')}</TableCell>
+                              <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
                               <TableCell>{convertToHijri(load.date)}</TableCell>
                               <TableCell>{load.companies?.name || '-'}</TableCell>
                               <TableCell>{load.load_types?.name || '-'}</TableCell>
