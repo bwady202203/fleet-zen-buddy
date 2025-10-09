@@ -146,16 +146,16 @@ const App = () => {
                             } />
                           </Routes>
                         </BrowserRouter>
-                        </TooltipProvider>
-                      </VehicleMileageProvider>
-                    </SparePartsProvider>
-                  </VehiclesProvider>
-                </InvoicesProvider>
-              </AccountingProvider>
-            </PermissionsProvider>
-          </EmployeeTransactionsProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+                      </TooltipProvider>
+                    </VehicleMileageProvider>
+                  </SparePartsProvider>
+                </VehiclesProvider>
+              </InvoicesProvider>
+            </AccountingProvider>
+          </PermissionsProvider>
+        </EmployeeTransactionsProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 
