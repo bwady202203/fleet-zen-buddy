@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Plus, Save, Printer, Eye, X, Download } from "lucide-react";
+import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import QRCode from "qrcode";
 import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
+import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -30,6 +31,8 @@ const LoadInvoices = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [companySettings, setCompanySettings] = useState<any>(null);
+  const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
+  const [selectedCompanyForPrices, setSelectedCompanyForPrices] = useState<any>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     companyId: '',
@@ -335,7 +338,7 @@ const LoadInvoices = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center flex-wrap gap-4">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -550,8 +553,60 @@ const LoadInvoices = () => {
               </form>
             </DialogContent>
           </Dialog>
-          <CompanySettingsDialog />
+          <div className="flex gap-2">
+            <CompanySettingsDialog />
+          </div>
         </div>
+
+        {/* Company Prices Management Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              إدارة أسعار الشركات
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                قم بتحديد الأسعار لكل نوع شحنة لكل شركة. سيتم استخدام هذه الأسعار تلقائياً عند إنشاء فواتير جديدة.
+              </p>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">اسم الشركة</TableHead>
+                      <TableHead className="text-right">الهاتف</TableHead>
+                      <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                      <TableHead className="text-right">الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {companies.map((company) => (
+                      <TableRow key={company.id}>
+                        <TableCell className="font-medium text-right">{company.name}</TableCell>
+                        <TableCell className="text-right">{company.phone || '-'}</TableCell>
+                        <TableCell className="text-right">{company.email || '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCompanyForPrices(company);
+                              setPricesDialogOpen(true);
+                            }}
+                          >
+                            <Settings className="h-4 w-4 ml-1" />
+                            إدارة الأسعار
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Invoice List */}
         <Card>
@@ -814,6 +869,16 @@ const LoadInvoices = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Company Prices Dialog */}
+        {selectedCompanyForPrices && (
+          <CompanyPricesDialog
+            open={pricesDialogOpen}
+            onOpenChange={setPricesDialogOpen}
+            companyId={selectedCompanyForPrices.id}
+            companyName={selectedCompanyForPrices.name}
+          />
+        )}
       </main>
     </div>
   );
