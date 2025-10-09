@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -19,8 +18,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
-import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -58,7 +57,9 @@ const JournalEntries = () => {
     getNextEntryNumber
   } = useAccounting();
   const { toast } = useToast();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isNewEntryPage = location.pathname === '/accounting/journal-entries/new';
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
@@ -236,6 +237,83 @@ const JournalEntries = () => {
     }));
   };
 
+  const handlePasteFromExcel = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const rows = text.split('\n').filter(row => row.trim());
+      
+      if (rows.length === 0) {
+        toast({
+          title: "تنبيه / Warning",
+          description: "لا توجد بيانات للصق / No data to paste",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const newLines: JournalEntryLine[] = [];
+      
+      for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].split('\t');
+        if (cells.length < 2) continue;
+
+        // البحث عن الحساب بالكود
+        const accountCode = cells[0]?.trim();
+        const account = accounts.find(acc => acc.code === accountCode);
+        
+        newLines.push({
+          id: `line-${Date.now()}-${i}`,
+          accountId: account?.id || "",
+          accountCode: account?.code || accountCode,
+          accountName: account?.name_ar || "",
+          description: cells[1]?.trim() || "",
+          debit: parseFloat(cells[2]?.trim()) || 0,
+          credit: parseFloat(cells[3]?.trim()) || 0,
+          costCenter: cells[4]?.trim() || "",
+          projectName: cells[5]?.trim() || "",
+        });
+      }
+
+      if (newLines.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          lines: newLines,
+        }));
+        
+        toast({
+          title: "تم اللصق بنجاح / Pasted Successfully",
+          description: `تم لصق ${newLines.length} سطر / ${newLines.length} rows pasted`,
+        });
+      }
+    } catch (error) {
+      console.error('Paste error:', error);
+      toast({
+        title: "خطأ / Error",
+        description: "فشل اللصق من الحافظة / Failed to paste from clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addEmptyLine = () => {
+    const newLine: JournalEntryLine = {
+      id: `line-${Date.now()}`,
+      accountId: "",
+      accountCode: "",
+      accountName: "",
+      description: "",
+      debit: 0,
+      credit: 0,
+      costCenter: "",
+      projectName: "",
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      lines: [...prev.lines, newLine],
+    }));
+  };
+
   const totalDebit = formData.lines.reduce((sum, line) => sum + (line.debit || 0), 0);
   const totalCredit = formData.lines.reduce((sum, line) => sum + (line.credit || 0), 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
@@ -297,18 +375,18 @@ const JournalEntries = () => {
       if (linesError) throw linesError;
 
       toast({
-        title: "تم الحفظ بنجاح",
-        description: `تم حفظ القيد رقم ${formData.entryNumber}`,
+        title: "تم الحفظ بنجاح / Saved Successfully",
+        description: `تم حفظ القيد رقم ${formData.entryNumber} / Entry #${formData.entryNumber} saved`,
       });
 
-      setDialogOpen(false);
       resetForm();
       fetchJournalEntries();
+      navigate('/accounting/journal-entries');
     } catch (error) {
       console.error('Error saving journal entry:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في حفظ القيد",
+        title: "خطأ / Error",
+        description: "فشل في حفظ القيد / Failed to save entry",
         variant: "destructive",
       });
     }
@@ -352,115 +430,120 @@ const JournalEntries = () => {
     if (filterAccount && !entry.lines.some((line: any) => 
       line.accountCode.includes(filterAccount) || line.accountName.includes(filterAccount)
     )) return false;
-    return true;
   });
 
-  return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/accounting" className="hover:text-primary transition-colors">
-                <ArrowRight className="h-6 w-6" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold">القيود اليومية</h1>
-                <p className="text-muted-foreground mt-1">
-                  تسجيل ومتابعة القيود المحاسبية اليومية
-                </p>
+  if (isNewEntryPage) {
+    return (
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link to="/accounting/journal-entries" className="hover:text-primary transition-colors">
+                  <ArrowRight className="h-6 w-6" />
+                </Link>
+                <div>
+                  <h1 className="text-3xl font-bold text-center">سند قيد يومية / Journal Entry Voucher</h1>
+                </div>
               </div>
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <Plus className="h-4 w-4 ml-2" />
-                  قيد جديد
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>سند قيد يومية</DialogTitle>
-                </DialogHeader>
-                
-                <div className="space-y-6">
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
-                    <div>
-                      <Label className="text-sm">رقم القيد</Label>
-                      <Input 
-                        value={formData.entryNumber} 
-                        onChange={(e) => setFormData({ ...formData, entryNumber: e.target.value })}
-                        className="bg-background" 
-                        placeholder="رقم القيد"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm">التاريخ</Label>
-                      <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm">البيان العام</Label>
-                      <Input
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="بيان القيد"
-                      />
-                    </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
+              <div>
+                <Label className="text-sm">رقم القيد / Entry Number</Label>
+                <Input 
+                  value={formData.entryNumber} 
+                  onChange={(e) => setFormData({ ...formData, entryNumber: e.target.value })}
+                  className="bg-background" 
+                  placeholder="رقم القيد / Entry Number"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">التاريخ / Date</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm">البيان العام / Description</Label>
+                <Input
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="بيان القيد / Entry Description"
+                />
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>بنود القيد / Entry Lines</CardTitle>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handlePasteFromExcel}>
+                      <ClipboardPaste className="h-4 w-4 ml-2" />
+                      لصق من Excel / Paste from Excel
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={addEmptyLine}>
+                      <Plus className="h-4 w-4 ml-2" />
+                      إضافة سطر / Add Line
+                    </Button>
                   </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right min-w-[250px]">الحساب / Account</TableHead>
+                        <TableHead className="text-right min-w-[200px]">البيان / Description</TableHead>
+                        <TableHead className="text-right min-w-[120px]">المدين / Debit</TableHead>
+                        <TableHead className="text-right min-w-[120px]">الدائن / Credit</TableHead>
+                        <TableHead className="text-right min-w-[180px]">مركز التكلفة / Cost Center</TableHead>
+                        <TableHead className="text-right min-w-[180px]">المشروع / Project</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {formData.lines.map((line) => {
+                        const searchState = getSearchState(line.id);
+                        
+                        // البحث في الحسابات - المستوى الرابع فقط
+                        const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
+                        const filteredAccounts = searchState.accountSearch.length > 0 
+                          ? level4Accounts.filter(acc => 
+                              acc.code.includes(searchState.accountSearch) || 
+                              acc.name_ar.includes(searchState.accountSearch) ||
+                              acc.name_en.toLowerCase().includes(searchState.accountSearch.toLowerCase())
+                            )
+                          : level4Accounts;
+                        
+                        // البحث في مراكز التكلفة
+                        const filteredCostCenters = searchState.costCenterSearch.length > 0
+                          ? costCenters.filter(cc =>
+                              cc.code.includes(searchState.costCenterSearch) ||
+                              cc.name_ar.includes(searchState.costCenterSearch) ||
+                              cc.name_en.toLowerCase().includes(searchState.costCenterSearch.toLowerCase())
+                            )
+                          : [];
+                        
+                        // البحث في المشاريع
+                        const filteredProjects = searchState.projectSearch.length > 0
+                          ? projects.filter(prj =>
+                              prj.code.includes(searchState.projectSearch) ||
+                              prj.name_ar.includes(searchState.projectSearch) ||
+                              prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
+                            )
+                          : [];
 
-                  <Card>
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right min-w-[250px]">الحساب</TableHead>
-                              <TableHead className="text-right min-w-[200px]">البيان</TableHead>
-                              <TableHead className="text-right min-w-[120px]">المدين</TableHead>
-                              <TableHead className="text-right min-w-[120px]">الدائن</TableHead>
-                              <TableHead className="text-right min-w-[180px]">مركز التكلفة</TableHead>
-                              <TableHead className="text-right min-w-[180px]">المشروع</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                          {formData.lines.map((line) => {
-                            const searchState = getSearchState(line.id);
-                            
-                            // البحث في الحسابات - المستوى الرابع فقط
-                            const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
-                            const filteredAccounts = searchState.accountSearch.length > 0 
-                              ? level4Accounts.filter(acc => 
-                                  acc.code.includes(searchState.accountSearch) || 
-                                  acc.name_ar.includes(searchState.accountSearch) ||
-                                  acc.name_en.toLowerCase().includes(searchState.accountSearch.toLowerCase())
-                                )
-                              : level4Accounts;
-                            
-                            // البحث في مراكز التكلفة
-                            const filteredCostCenters = searchState.costCenterSearch.length > 0
-                              ? costCenters.filter(cc =>
-                                  cc.code.includes(searchState.costCenterSearch) ||
-                                  cc.name_ar.includes(searchState.costCenterSearch) ||
-                                  cc.name_en.toLowerCase().includes(searchState.costCenterSearch.toLowerCase())
-                                )
-                              : [];
-                            
-                            // البحث في المشاريع
-                            const filteredProjects = searchState.projectSearch.length > 0
-                              ? projects.filter(prj =>
-                                  prj.code.includes(searchState.projectSearch) ||
-                                  prj.name_ar.includes(searchState.projectSearch) ||
-                                  prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
-                                )
-                              : [];
-
-                              return (
-                                <TableRow key={line.id}>
-                                  <TableCell>
+                        return (
+                          <TableRow key={line.id}>
+                            <TableCell>
                                     <div className="relative">
                                       <Input
                                         value={searchState.accountSearch || (line.accountCode ? `${line.accountCode} - ${line.accountName}` : "")}
@@ -618,7 +701,7 @@ const JournalEntries = () => {
                             })}
                             <TableRow className="bg-muted/50 font-bold">
                               <TableCell colSpan={2} className="text-left">
-                                الإجمالي
+                                الإجمالي / Total
                               </TableCell>
                               <TableCell className="text-red-600">
                                 {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
@@ -628,9 +711,9 @@ const JournalEntries = () => {
                               </TableCell>
                               <TableCell colSpan={2}>
                                 {isBalanced ? (
-                                  <span className="text-green-600">✓ متوازن</span>
+                                  <span className="text-green-600">✓ متوازن / Balanced</span>
                                 ) : totalDebit > 0 || totalCredit > 0 ? (
-                                  <span className="text-red-600">✗ غير متوازن</span>
+                                  <span className="text-red-600">✗ غير متوازن / Unbalanced</span>
                                 ) : null}
                               </TableCell>
                             </TableRow>
@@ -642,50 +725,75 @@ const JournalEntries = () => {
 
                   <div className="flex gap-4">
                     <Button onClick={handleSubmit} className="flex-1" disabled={!isBalanced}>
-                      حفظ القيد
+                      <Save className="h-4 w-4 ml-2" />
+                      حفظ القيد / Save Entry
                     </Button>
-                    <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1">
-                      إلغاء
+                    <Button variant="outline" onClick={() => navigate('/accounting/journal-entries')} className="flex-1">
+                      <X className="h-4 w-4 ml-2" />
+                      إلغاء / Cancel
                     </Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </header>
+              </main>
+            </div>
+          );
+        }
 
-      <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                تصفية القيود
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>التاريخ</Label>
-                <Input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                />
+        return (
+          <div className="min-h-screen bg-background" dir="rtl">
+            <header className="border-b bg-card">
+              <div className="container mx-auto px-4 py-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Link to="/accounting" className="hover:text-primary transition-colors">
+                      <ArrowRight className="h-6 w-6" />
+                    </Link>
+                    <div>
+                      <h1 className="text-3xl font-bold">القيود اليومية / Journal Entries</h1>
+                      <p className="text-muted-foreground mt-1">
+                        تسجيل ومتابعة القيود المحاسبية اليومية / Record and track daily accounting entries
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={() => navigate('/accounting/journal-entries/new')}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    قيد جديد / New Entry
+                  </Button>
+                </div>
               </div>
-              <div>
-                <Label>الحساب</Label>
-                <Input
-                  value={filterAccount}
-                  onChange={(e) => setFilterAccount(e.target.value)}
-                  placeholder="ابحث عن حساب..."
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </header>
+
+            <main className="container mx-auto px-4 py-8">
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Filter className="h-5 w-5" />
+                      تصفية القيود / Filter Entries
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>التاريخ / Date</Label>
+                      <Input
+                        type="date"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>الحساب / Account</Label>
+                      <Input
+                        value={filterAccount}
+                        onChange={(e) => setFilterAccount(e.target.value)}
+                        placeholder="ابحث عن حساب... / Search account..."
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
         <Card>
           <CardHeader>
