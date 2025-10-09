@@ -28,23 +28,46 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   const loadOrganizations = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('user_organizations')
-      .select('organization_id, organizations(*)')
-      .eq('user_id', user.id);
+    try {
+      const { data, error } = await supabase
+        .from('user_organizations')
+        .select(`
+          organization_id,
+          organizations (
+            id,
+            name,
+            name_en,
+            is_active,
+            database_initialized
+          )
+        `)
+        .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Error loading organizations:', error);
-      return;
-    }
+      if (error) {
+        console.error('Error loading organizations:', error);
+        return;
+      }
 
-    const orgs = data?.map(item => item.organizations).filter(Boolean) as Organization[];
-    setOrganizations(orgs);
+      const orgs = data
+        ?.map(item => item.organizations)
+        .filter((org): org is NonNullable<typeof org> => org !== null)
+        .map(org => ({
+          id: org.id,
+          name: org.name,
+          name_en: org.name_en || undefined,
+          is_active: org.is_active,
+          database_initialized: org.database_initialized
+        })) as Organization[];
+      
+      setOrganizations(orgs || []);
 
-    // Set first organization as current if none selected
-    if (!currentOrganization && orgs.length > 0) {
-      setCurrentOrganization(orgs[0]);
-      localStorage.setItem('currentOrganizationId', orgs[0].id);
+      // Set first organization as current if none selected
+      if (!currentOrganization && orgs && orgs.length > 0) {
+        setCurrentOrganization(orgs[0]);
+        localStorage.setItem('currentOrganizationId', orgs[0].id);
+      }
+    } catch (err) {
+      console.error('Exception loading organizations:', err);
     }
   };
 
@@ -85,15 +108,11 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (user) {
       loadOrganizations();
-      
-      // Try to restore last selected organization
-      const savedOrgId = localStorage.getItem('currentOrganizationId');
-      if (savedOrgId) {
-        const savedOrg = organizations.find(org => org.id === savedOrgId);
-        if (savedOrg) setCurrentOrganization(savedOrg);
-      }
+    } else {
+      setOrganizations([]);
+      setCurrentOrganization(null);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (currentOrganization) {
