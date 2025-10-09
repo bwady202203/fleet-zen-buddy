@@ -53,7 +53,7 @@ const LoadInvoices = () => {
         .select('*, companies(name, tax_number, address, phone), load_invoice_items(*, loads(load_number, load_types(name)))')
         .order('created_at', { ascending: false }),
       supabase.from('companies').select('*').eq('is_active', true),
-      supabase.from('suppliers').select('*').eq('is_active', true),
+      supabase.from('suppliers').select('*, name_en').eq('is_active', true),
       supabase.from('company_settings').select('*').limit(1).maybeSingle()
     ]);
 
@@ -773,7 +773,7 @@ const LoadInvoices = () => {
                     {/* English Section - Supplier Info */}
                     <div className="flex-1 text-left" dir="ltr">
                       <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
-                        {selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}
+                        {selectedSupplier?.name_en || selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}
                       </h1>
                       {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
                         <p className="text-xs text-gray-700 mb-1">
@@ -860,7 +860,7 @@ const LoadInvoices = () => {
                       <TableBody>
                         {(() => {
                           const itemsToShow = [...(selectedInvoice.load_invoice_items || [])];
-                          while (itemsToShow.length < 4) {
+                          while (itemsToShow.length < 3) {
                             itemsToShow.push({ id: `empty-${itemsToShow.length}`, description: '', quantity: '', unit_price: '', total: '' });
                           }
                           return itemsToShow.map((item: any, index: number) => (
