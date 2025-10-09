@@ -1,10 +1,52 @@
-import { Calculator, Users, Package, Truck, Wallet, Home } from "lucide-react";
+import { Calculator, Users, Package, Truck, Wallet, Home, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import * as HijriDate from "hijri-converter";
 
 export const SystemIconsBar = () => {
+  const { signOut } = useAuth();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hijriDate = HijriDate.toHijri(
+    currentTime.getFullYear(),
+    currentTime.getMonth() + 1,
+    currentTime.getDate()
+  );
+  const hijriDateStr = `${hijriDate.hy}/${hijriDate.hm}/${hijriDate.hd}`;
+  const gregorianDateStr = format(currentTime, "yyyy/MM/dd", { locale: ar });
+  const timeStr = format(currentTime, "HH:mm:ss", { locale: ar });
+
   return (
     <div className="border-b bg-card/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
       <div className="container mx-auto px-4 py-3">
+        {/* Date and Time Section */}
+        <div className="flex items-center justify-center gap-6 mb-3 text-sm text-muted-foreground" dir="rtl">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">التاريخ الهجري:</span>
+            <span>{hijriDateStr}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">التاريخ الميلادي:</span>
+            <span>{gregorianDateStr}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">الساعة:</span>
+            <span className="font-mono">{timeStr}</span>
+          </div>
+        </div>
+
+        {/* Icons Section */}
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link to="/" className="group flex items-center gap-2 p-2 rounded-lg hover:bg-primary/10 transition-all">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
@@ -47,6 +89,17 @@ export const SystemIconsBar = () => {
             </div>
             <span className="text-sm font-medium text-muted-foreground group-hover:text-primary">العهد</span>
           </Link>
+
+          <Button
+            variant="outline"
+            onClick={signOut}
+            className="group flex items-center gap-2 p-2 rounded-lg hover:bg-destructive/10 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-destructive to-destructive/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+              <LogOut className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground group-hover:text-destructive">خروج</span>
+          </Button>
         </div>
       </div>
     </div>

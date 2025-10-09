@@ -55,6 +55,14 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
       <main className="container mx-auto px-4 py-12">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+            نظام الإدارة المتكامل
+          </h1>
+          <h2 className="text-3xl font-bold mb-2">اختر النظام المناسب</h2>
+          <p className="text-muted-foreground">جميع الأنظمة متكاملة لإدارة أعمالك بكفاءة</p>
+        </div>
+        
         <Tabs defaultValue="modules" className="w-full" dir="rtl">
           <TabsList className="hidden">
             <TabsTrigger value="modules">الأنظمة</TabsTrigger>
@@ -62,11 +70,6 @@ const Dashboard = () => {
           </TabsList>
           
           <TabsContent value="modules" dir="rtl">
-            <div className="mb-8 text-center">
-              <h2 className="text-3xl font-bold mb-2">اختر النظام المناسب</h2>
-              <p className="text-muted-foreground">جميع الأنظمة متكاملة لإدارة أعمالك بكفاءة</p>
-            </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {modules.map((module, index) => (
             <Link key={module.title} to={module.link}>
