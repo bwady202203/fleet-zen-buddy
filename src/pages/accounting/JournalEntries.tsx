@@ -322,19 +322,10 @@ const JournalEntries = () => {
     // Filter out empty lines
     const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
 
-    if (validLines.length === 0) {
-      toast({
-        title: "خطأ",
-        description: "يجب إضافة سطر واحد على الأقل مع حساب ومبلغ",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const validTotalDebit = validLines.reduce((sum, line) => sum + (line.debit || 0), 0);
     const validTotalCredit = validLines.reduce((sum, line) => sum + (line.credit || 0), 0);
 
-    if (validTotalDebit !== validTotalCredit || validTotalDebit === 0) {
+    if (validTotalDebit !== validTotalCredit) {
       toast({
         title: "خطأ",
         description: "القيد غير متوازن. يجب أن يكون مجموع المدين مساوياً لمجموع الدائن",
