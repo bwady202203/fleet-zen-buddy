@@ -26,14 +26,18 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
 
   const loadOrganizations = async () => {
-    if (!user) return;
+    if (!user) {
+      setOrganizations([]);
+      setCurrentOrganization(null);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
         .from('user_organizations')
         .select(`
           organization_id,
-          organizations (
+          organizations!inner (
             id,
             name,
             name_en,
@@ -45,80 +49,95 @@ export const OrganizationProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error loading organizations:', error);
+        setOrganizations([]);
         return;
       }
 
-      const orgs = data
-        ?.map(item => item.organizations)
-        .filter((org): org is NonNullable<typeof org> => org !== null)
-        .map(org => ({
-          id: org.id,
-          name: org.name,
-          name_en: org.name_en || undefined,
-          is_active: org.is_active,
-          database_initialized: org.database_initialized
-        })) as Organization[];
+      if (!data || data.length === 0) {
+        setOrganizations([]);
+        setCurrentOrganization(null);
+        return;
+      }
+
+      const orgs: Organization[] = data
+        .map(item => {
+          const org = item.organizations;
+          if (!org || typeof org !== 'object' || Array.isArray(org)) return null;
+          
+          return {
+            id: String(org.id),
+            name: String(org.name),
+            name_en: org.name_en ? String(org.name_en) : undefined,
+            is_active: Boolean(org.is_active),
+            database_initialized: Boolean(org.database_initialized)
+          } as Organization;
+        })
+        .filter((org): org is Organization => org !== null);
       
-      setOrganizations(orgs || []);
+      setOrganizations(orgs);
 
       // Set first organization as current if none selected
-      if (!currentOrganization && orgs && orgs.length > 0) {
+      const savedOrgId = localStorage.getItem('currentOrganizationId');
+      if (savedOrgId && orgs.find(org => org.id === savedOrgId)) {
+        const savedOrg = orgs.find(org => org.id === savedOrgId);
+        if (savedOrg) setCurrentOrganization(savedOrg);
+      } else if (orgs.length > 0) {
         setCurrentOrganization(orgs[0]);
         localStorage.setItem('currentOrganizationId', orgs[0].id);
       }
     } catch (err) {
       console.error('Exception loading organizations:', err);
+      setOrganizations([]);
     }
   };
 
   const createOrganization = async (name: string, nameEn?: string) => {
     if (!user) return { error: 'User not authenticated' };
 
-    // Create organization
-    const { data: org, error: orgError } = await supabase
-      .from('organizations')
-      .insert({ name, name_en: nameEn })
-      .select()
-      .single();
+    try {
+      // Create organization
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .insert({ name, name_en: nameEn })
+        .select()
+        .single();
 
-    if (orgError) return { error: orgError };
+      if (orgError) return { error: orgError };
 
-    // Add user to organization
-    const { error: userOrgError } = await supabase
-      .from('user_organizations')
-      .insert({ user_id: user.id, organization_id: org.id });
+      // Add user to organization
+      const { error: userOrgError } = await supabase
+        .from('user_organizations')
+        .insert({ user_id: user.id, organization_id: org.id });
 
-    if (userOrgError) return { error: userOrgError };
+      if (userOrgError) return { error: userOrgError };
 
-    // Add admin role for this organization
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert({ 
-        user_id: user.id, 
-        role: 'admin',
-        organization_id: org.id 
-      });
+      // Add admin role for this organization
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ 
+          user_id: user.id, 
+          role: 'admin',
+          organization_id: org.id 
+        });
 
-    if (roleError) return { error: roleError };
+      if (roleError) return { error: roleError };
 
-    await loadOrganizations();
-    return { error: null };
+      await loadOrganizations();
+      return { error: null };
+    } catch (err) {
+      return { error: err };
+    }
   };
 
   useEffect(() => {
-    if (user) {
-      loadOrganizations();
-    } else {
-      setOrganizations([]);
-      setCurrentOrganization(null);
-    }
+    loadOrganizations();
   }, [user?.id]);
 
   useEffect(() => {
     if (currentOrganization) {
       localStorage.setItem('currentOrganizationId', currentOrganization.id);
     }
-  }, [currentOrganization]);
+  }, [currentOrganization?.id]);
 
   return (
     <OrganizationContext.Provider value={{
