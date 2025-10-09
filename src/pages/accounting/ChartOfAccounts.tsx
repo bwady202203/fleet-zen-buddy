@@ -26,8 +26,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2, Trash2, Download, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +57,8 @@ const ChartOfAccounts = () => {
   const [viewMode, setViewMode] = useState<"tree" | "table">("table");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkAccounts, setBulkAccounts] = useState<Array<{code: string; name_ar: string; name_en: string; type: string; parent_id: string | null}>>([]);
   const [formData, setFormData] = useState({
     code: "",
     name_ar: "",
@@ -164,23 +167,26 @@ const ChartOfAccounts = () => {
       // For root accounts, find the next available number
       const rootAccounts = accounts.filter(acc => !acc.parent_id);
       const maxCode = rootAccounts.reduce((max, acc) => {
-        const codeNum = parseInt(acc.code.split('-')[0]) || 0;
+        const codeNum = parseInt(acc.code) || 0;
         return Math.max(max, codeNum);
       }, 0);
       return String(maxCode + 1);
     } else {
-      // For sub-accounts, use parent code + sequence
+      // For sub-accounts, use parent code + sequence number
       const parent = accounts.find(acc => acc.id === parentId);
       if (!parent) return "1";
       
       const siblings = accounts.filter(acc => acc.parent_id === parentId);
       const maxSubCode = siblings.reduce((max, acc) => {
-        const parts = acc.code.split('-');
-        const lastPart = parseInt(parts[parts.length - 1]) || 0;
-        return Math.max(max, lastPart);
+        if (acc.code.startsWith(parent.code)) {
+          const suffix = acc.code.substring(parent.code.length);
+          const num = parseInt(suffix) || 0;
+          return Math.max(max, num);
+        }
+        return max;
       }, 0);
       
-      return `${parent.code}-${maxSubCode + 1}`;
+      return `${parent.code}${String(maxSubCode + 1).padStart(2, '0')}`;
     }
   };
 
@@ -260,6 +266,111 @@ const ChartOfAccounts = () => {
   const confirmDelete = (account: Account) => {
     setAccountToDelete(account);
     setDeleteDialogOpen(true);
+  };
+
+  const exportToExcel = () => {
+    const exportData = accounts.map(acc => ({
+      'رمز الحساب / Code': acc.code,
+      'الاسم بالعربي / Name (AR)': acc.name_ar,
+      'الاسم بالإنجليزي / Name (EN)': acc.name_en,
+      'النوع / Type': acc.type === 'asset' ? 'أصول / Assets' :
+                      acc.type === 'liability' ? 'خصوم / Liabilities' :
+                      acc.type === 'equity' ? 'حقوق ملكية / Equity' :
+                      acc.type === 'revenue' ? 'إيرادات / Revenue' : 'مصروفات / Expenses',
+      'الرصيد / Balance': acc.balance,
+      'الحساب الرئيسي / Parent': acc.parent_id ? accounts.find(a => a.id === acc.parent_id)?.code : '',
+      'نشط / Active': acc.is_active ? 'نعم / Yes' : 'لا / No'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Chart of Accounts");
+    
+    // Auto-size columns
+    const maxWidth = exportData.reduce((w, r) => Math.max(w, String(r['الاسم بالعربي / Name (AR)']).length), 10);
+    ws['!cols'] = [
+      { wch: 15 }, { wch: maxWidth }, { wch: maxWidth }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 12 }
+    ];
+    
+    XLSX.writeFile(wb, `شجرة_الحسابات_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "تم التحميل بنجاح",
+      description: "تم تحميل ملف Excel بنجاح",
+    });
+  };
+
+  const handleBulkAdd = () => {
+    setBulkAccounts([{
+      code: generateAccountCode(),
+      name_ar: '',
+      name_en: '',
+      type: 'asset',
+      parent_id: null
+    }]);
+    setBulkDialogOpen(true);
+  };
+
+  const addBulkRow = () => {
+    const lastAccount = bulkAccounts[bulkAccounts.length - 1];
+    setBulkAccounts([...bulkAccounts, {
+      code: generateAccountCode(lastAccount.parent_id),
+      name_ar: '',
+      name_en: '',
+      type: lastAccount.type,
+      parent_id: lastAccount.parent_id
+    }]);
+  };
+
+  const updateBulkAccount = (index: number, field: string, value: any) => {
+    const updated = [...bulkAccounts];
+    updated[index] = { ...updated[index], [field]: value };
+    setBulkAccounts(updated);
+  };
+
+  const removeBulkRow = (index: number) => {
+    setBulkAccounts(bulkAccounts.filter((_, i) => i !== index));
+  };
+
+  const handleBulkSubmit = async () => {
+    try {
+      const validAccounts = bulkAccounts.filter(acc => acc.code && acc.name_ar && acc.name_en);
+      
+      if (validAccounts.length === 0) {
+        toast({
+          title: "خطأ",
+          description: "يجب إدخال بيانات صحيحة",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('chart_of_accounts')
+        .insert(validAccounts.map(acc => ({
+          ...acc,
+          is_active: true,
+          balance: 0
+        })));
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الإضافة بنجاح",
+        description: `تم إضافة ${validAccounts.length} حساب بنجاح`,
+      });
+
+      setBulkDialogOpen(false);
+      setBulkAccounts([]);
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error bulk adding accounts:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في إضافة الحسابات",
+        variant: "destructive",
+      });
+    }
   };
 
   const getAccountLevel = (account: Account): number => {
@@ -679,13 +790,22 @@ const ChartOfAccounts = () => {
                 </p>
               </div>
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => resetForm()}>
-                  <Plus className="h-4 w-4 ml-2" />
-                  إضافة حساب جديد / Add New Account
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <Button onClick={exportToExcel} variant="outline">
+                <Download className="h-4 w-4 ml-2" />
+                تحميل Excel
+              </Button>
+              <Button onClick={handleBulkAdd} variant="outline">
+                <FileSpreadsheet className="h-4 w-4 ml-2" />
+                إضافة دفعة
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => resetForm()}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة حساب جديد / Add New Account
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
@@ -785,7 +905,8 @@ const ChartOfAccounts = () => {
                   </div>
                 </form>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           </div>
         </div>
       </header>
@@ -863,6 +984,114 @@ const ChartOfAccounts = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>إضافة حسابات متعددة / Add Multiple Accounts</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">رمز الحساب / Code</TableHead>
+                    <TableHead className="text-right">الاسم عربي / Name AR</TableHead>
+                    <TableHead className="text-right">الاسم إنجليزي / Name EN</TableHead>
+                    <TableHead className="text-right">النوع / Type</TableHead>
+                    <TableHead className="text-right">الحساب الرئيسي / Parent</TableHead>
+                    <TableHead className="text-center">حذف</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bulkAccounts.map((account, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Input
+                          value={account.code}
+                          onChange={(e) => updateBulkAccount(index, 'code', e.target.value)}
+                          placeholder="1111"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={account.name_ar}
+                          onChange={(e) => updateBulkAccount(index, 'name_ar', e.target.value)}
+                          placeholder="اسم الحساب"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={account.name_en}
+                          onChange={(e) => updateBulkAccount(index, 'name_en', e.target.value)}
+                          placeholder="Account Name"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={account.type}
+                          onValueChange={(value) => updateBulkAccount(index, 'type', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="asset">أصول</SelectItem>
+                            <SelectItem value="liability">خصوم</SelectItem>
+                            <SelectItem value="equity">حقوق ملكية</SelectItem>
+                            <SelectItem value="revenue">إيرادات</SelectItem>
+                            <SelectItem value="expense">مصروفات</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={account.parent_id || "none"}
+                          onValueChange={(value) => updateBulkAccount(index, 'parent_id', value === "none" ? null : value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="لا يوجد" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">لا يوجد</SelectItem>
+                            {accounts.map(acc => (
+                              <SelectItem key={acc.id} value={acc.id}>
+                                {acc.code} - {acc.name_ar}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeBulkRow(index)}
+                          disabled={bulkAccounts.length === 1}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="flex justify-between pt-4">
+                <Button type="button" variant="outline" onClick={addBulkRow}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  إضافة صف / Add Row
+                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => setBulkDialogOpen(false)}>
+                    إلغاء / Cancel
+                  </Button>
+                  <Button type="button" onClick={handleBulkSubmit}>
+                    حفظ الكل / Save All
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
