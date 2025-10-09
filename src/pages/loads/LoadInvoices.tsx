@@ -586,117 +586,116 @@ const LoadInvoices = () => {
             </DialogHeader>
             
             {selectedInvoice && (
-              <div ref={printRef} className="p-8 bg-white text-black print:p-12" style={{ minHeight: '297mm' }}>
+              <div ref={printRef} className="p-6 bg-white text-black print:p-8" style={{ maxHeight: '297mm' }}>
                 {/* Invoice Header */}
-                <div className="border-b-2 pb-6 mb-6" style={{ borderColor: '#2563eb' }}>
+                <div className="border-b-2 pb-4 mb-4" style={{ borderColor: '#2563eb' }}>
                   <div className="flex justify-between items-start gap-8">
                     {/* Arabic Section - Supplier Info */}
                     <div className="flex-1">
-                      <h1 className="text-2xl font-bold mb-3" style={{ color: '#2563eb' }}>
+                      <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
                         {selectedSupplier?.name || companySettings?.supplier_name || 'اسم المورد'}
                       </h1>
                       {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
-                        <p className="text-sm text-gray-700 mb-1">
+                        <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">الرقم الضريبي:</span> {selectedSupplier?.tax_number || companySettings?.tax_number}
                         </p>
                       )}
                       {(selectedSupplier?.commercial_registration || companySettings?.commercial_registration) && (
-                        <p className="text-sm text-gray-700 mb-1">
+                        <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">السجل التجاري:</span> {selectedSupplier?.commercial_registration || companySettings?.commercial_registration}
                         </p>
                       )}
                       {(selectedSupplier?.phone || companySettings?.phone) && (
-                        <p className="text-sm text-gray-700 mb-1">
+                        <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">الهاتف:</span> {selectedSupplier?.phone || companySettings?.phone}
                         </p>
                       )}
                       {(selectedSupplier?.address || companySettings?.address) && (
-                        <p className="text-sm text-gray-700">
+                        <p className="text-xs text-gray-700">
                           <span className="font-semibold">العنوان:</span> {selectedSupplier?.address || companySettings?.address}
                         </p>
                       )}
-                      <div className="mt-4 pt-4 border-t">
-                        <h2 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية مبسطة</h2>
-                        <p className="text-sm text-gray-700">رقم الفاتورة: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
-                        <p className="text-sm text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
+                      <div className="mt-3 pt-3 border-t">
+                        <h2 className="text-lg font-bold mb-1" style={{ color: '#2563eb' }}>فاتورة ضريبية مبسطة</h2>
+                        <p className="text-xs text-gray-700">رقم الفاتورة: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
+                        <p className="text-xs text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
                       </div>
                     </div>
 
                     {/* English Section - Supplier Info */}
                     <div className="flex-1 text-left" dir="ltr">
-                      <h1 className="text-2xl font-bold mb-3" style={{ color: '#2563eb' }}>
+                      <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
                         {selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}
                       </h1>
                       {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
-                        <p className="text-sm text-gray-700 mb-1">
+                        <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">Tax Number:</span> {selectedSupplier?.tax_number || companySettings?.tax_number}
                         </p>
                       )}
                       {(selectedSupplier?.commercial_registration || companySettings?.commercial_registration) && (
-                        <p className="text-sm text-gray-700 mb-1">
+                        <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">Commercial Registration:</span> {selectedSupplier?.commercial_registration || companySettings?.commercial_registration}
                         </p>
                       )}
                       {(selectedSupplier?.phone || companySettings?.phone) && (
-                        <p className="text-sm text-gray-700 mb-1">
+                        <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">Phone:</span> {selectedSupplier?.phone || companySettings?.phone}
                         </p>
                       )}
                       {(selectedSupplier?.address || companySettings?.address) && (
-                        <p className="text-sm text-gray-700">
+                        <p className="text-xs text-gray-700">
                           <span className="font-semibold">Address:</span> {selectedSupplier?.address || companySettings?.address}
                         </p>
                       )}
-                      <div className="mt-4 pt-4 border-t">
-                        <h2 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>Simplified Tax Invoice</h2>
-                        <p className="text-sm text-gray-700">Invoice Number: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
-                        <p className="text-sm text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
+                      <div className="mt-3 pt-3 border-t">
+                        <h2 className="text-lg font-bold mb-1" style={{ color: '#2563eb' }}>Simplified Tax Invoice</h2>
+                        <p className="text-xs text-gray-700">Invoice Number: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
+                        <p className="text-xs text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
                       </div>
                     </div>
 
                     {qrCodeUrl && (
                       <div className="text-center">
-                        <img src={qrCodeUrl} alt="QR Code" className="w-40 h-40 border-2 p-2" style={{ borderColor: '#2563eb' }} />
-                        <p className="text-xs text-gray-600 mt-2 font-semibold">رمز الاستجابة السريعة</p>
-                        <p className="text-xs text-gray-600 font-semibold">QR Code</p>
+                        <img src={qrCodeUrl} alt="QR Code" className="w-32 h-32 border-2 p-1" style={{ borderColor: '#2563eb' }} />
+                        <p className="text-xs text-gray-600 mt-1 font-semibold">QR Code</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Customer Info */}
-                <div className="mb-6">
-                  <div className="p-4 rounded-lg border-2" style={{ backgroundColor: '#f1f5f9', borderColor: '#2563eb' }}>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-bold text-lg" style={{ color: '#2563eb' }}>بيانات العميل</h3>
-                      <h3 className="font-bold text-lg" style={{ color: '#2563eb' }}>Customer Information</h3>
+                <div className="mb-4">
+                  <div className="p-3 rounded-lg border-2" style={{ backgroundColor: '#f1f5f9', borderColor: '#2563eb' }}>
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-base" style={{ color: '#2563eb' }}>بيانات العميل</h3>
+                      <h3 className="font-bold text-base" style={{ color: '#2563eb' }}>Customer Information</h3>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">اسم العميل / Customer Name</p>
-                        <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies?.name}</p>
+                        <p className="text-xs text-gray-600 mb-1">اسم العميل / Customer Name</p>
+                        <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies?.name}</p>
                       </div>
                       {selectedInvoice.companies?.tax_number && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">الرقم الضريبي / Tax Number</p>
-                          <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.tax_number}</p>
+                          <p className="text-xs text-gray-600 mb-1">الرقم الضريبي / Tax Number</p>
+                          <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies.tax_number}</p>
                         </div>
                       )}
                       {selectedInvoice.companies?.phone && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">الهاتف / Phone</p>
-                          <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.phone}</p>
+                          <p className="text-xs text-gray-600 mb-1">الهاتف / Phone</p>
+                          <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies.phone}</p>
                         </div>
                       )}
                       {selectedInvoice.companies?.address && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">العنوان / Address</p>
-                          <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.address}</p>
+                          <p className="text-xs text-gray-600 mb-1">العنوان / Address</p>
+                          <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies.address}</p>
                         </div>
                       )}
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">طريقة الدفع / Payment Method</p>
-                        <p className="text-base font-semibold text-gray-900">
+                        <p className="text-xs text-gray-600 mb-1">طريقة الدفع / Payment Method</p>
+                        <p className="text-sm font-semibold text-gray-900">
                           {selectedInvoice.payment_type === 'cash' ? 'نقدي / Cash' : selectedInvoice.payment_type === 'credit' ? 'آجل / Credit' : 'بنك / Bank'}
                         </p>
                       </div>
@@ -705,7 +704,7 @@ const LoadInvoices = () => {
                 </div>
 
                 {/* Invoice Items */}
-                <div className="mb-6">
+                <div className="mb-4">
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader>
@@ -732,29 +731,29 @@ const LoadInvoices = () => {
                   </div>
                 </div>
 
-                {/* Totals */}
-                <div className="flex justify-end mb-6">
-                  <div className="w-96 border-2 rounded-lg p-4" style={{ borderColor: '#2563eb', backgroundColor: '#f8fafc' }}>
-                    <div className="space-y-3">
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-700">الإجمالي قبل الخصم / Subtotal:</span>
-                        <span className="font-bold">{selectedInvoice.subtotal?.toFixed(2)} ر.س</span>
+                {/* Totals - Horizontal Layout */}
+                <div className="mb-4">
+                  <div className="border-2 rounded-lg p-3" style={{ borderColor: '#2563eb', backgroundColor: '#f8fafc' }}>
+                    <div className="grid grid-cols-5 gap-2 text-center">
+                      <div className="border-l px-2">
+                        <p className="text-xs text-gray-600 mb-1">الإجمالي قبل الخصم<br/>Subtotal</p>
+                        <p className="text-sm font-bold">{selectedInvoice.subtotal?.toFixed(2)} ر.س</p>
                       </div>
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-700">الخصم / Discount:</span>
-                        <span className="font-bold text-red-600">-{discountAmount.toFixed(2)} ر.س</span>
+                      <div className="border-l px-2">
+                        <p className="text-xs text-gray-600 mb-1">الخصم<br/>Discount</p>
+                        <p className="text-sm font-bold text-red-600">-{discountAmount.toFixed(2)} ر.س</p>
                       </div>
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-700">الإجمالي بعد الخصم / After Discount:</span>
-                        <span className="font-bold">{(selectedInvoice.subtotal - discountAmount).toFixed(2)} ر.س</span>
+                      <div className="border-l px-2">
+                        <p className="text-xs text-gray-600 mb-1">بعد الخصم<br/>After Discount</p>
+                        <p className="text-sm font-bold">{(selectedInvoice.subtotal - discountAmount).toFixed(2)} ر.س</p>
                       </div>
-                      <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-700">ضريبة القيمة المضافة (15%) / VAT:</span>
-                        <span className="font-bold">{selectedInvoice.tax_amount?.toFixed(2)} ر.س</span>
+                      <div className="border-l px-2">
+                        <p className="text-xs text-gray-600 mb-1">ض.ق.م (15%)<br/>VAT</p>
+                        <p className="text-sm font-bold">{selectedInvoice.tax_amount?.toFixed(2)} ر.س</p>
                       </div>
-                      <div className="flex justify-between py-3 pt-4" style={{ borderTop: '2px solid #2563eb' }}>
-                        <span className="text-xl font-bold" style={{ color: '#1e40af' }}>الإجمالي الكلي / Grand Total:</span>
-                        <span className="text-2xl font-bold" style={{ color: '#2563eb' }}>{selectedInvoice.total_amount?.toFixed(2)} ر.س</span>
+                      <div className="px-2" style={{ backgroundColor: '#dbeafe' }}>
+                        <p className="text-xs font-bold mb-1" style={{ color: '#1e40af' }}>الإجمالي الكلي<br/>Grand Total</p>
+                        <p className="text-lg font-bold" style={{ color: '#2563eb' }}>{selectedInvoice.total_amount?.toFixed(2)} ر.س</p>
                       </div>
                     </div>
                   </div>
@@ -762,18 +761,18 @@ const LoadInvoices = () => {
 
                 {/* Notes */}
                 {selectedInvoice.notes && (
-                  <div className="p-4 rounded-lg mb-6 border" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
-                    <h3 className="font-bold mb-2" style={{ color: '#92400e' }}>ملاحظات:</h3>
-                    <p className="text-sm text-gray-800">{selectedInvoice.notes}</p>
+                  <div className="p-3 rounded-lg mb-4 border" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
+                    <h3 className="font-bold mb-1 text-sm" style={{ color: '#92400e' }}>ملاحظات:</h3>
+                    <p className="text-xs text-gray-800">{selectedInvoice.notes}</p>
                   </div>
                 )}
 
                 {/* Footer */}
-                <div className="border-t-2 pt-6 mt-8 text-center" style={{ borderColor: '#2563eb' }}>
-                  <p className="text-lg font-bold mb-2" style={{ color: '#2563eb' }}>شكراً لتعاملكم معنا</p>
-                  <p className="text-sm text-gray-600 mb-4">نتطلع لخدمتكم دائماً</p>
+                <div className="border-t-2 pt-3 mt-4 text-center" style={{ borderColor: '#2563eb' }}>
+                  <p className="text-base font-bold mb-1" style={{ color: '#2563eb' }}>شكراً لتعاملكم معنا</p>
+                  <p className="text-xs text-gray-600 mb-2">نتطلع لخدمتكم دائماً</p>
                   {companySettings?.tax_number && (
-                    <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
+                    <div className="mt-2 p-2 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
                       <p className="text-xs text-gray-600">هذه فاتورة ضريبية مبسطة صادرة إلكترونياً</p>
                       <p className="text-xs text-gray-600 mt-1">الرقم الضريبي: {companySettings.tax_number}</p>
                     </div>
