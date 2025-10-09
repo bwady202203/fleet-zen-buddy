@@ -553,9 +553,6 @@ const LoadInvoices = () => {
                   <div className="flex justify-between items-start gap-8">
                     {/* Arabic Section */}
                     <div className="flex-1">
-                      <h1 className="text-3xl font-bold mb-4" style={{ color: '#2563eb' }}>
-                        {companySettings?.company_name || 'شركة الرمال الصناعية'}
-                      </h1>
                       {companySettings?.tax_number && (
                         <p className="text-sm text-gray-700 mb-1">
                           <span className="font-semibold">الرقم الضريبي:</span> {companySettings.tax_number}
@@ -585,9 +582,6 @@ const LoadInvoices = () => {
 
                     {/* English Section */}
                     <div className="flex-1 text-left" dir="ltr">
-                      <h1 className="text-3xl font-bold mb-4" style={{ color: '#2563eb' }}>
-                        {companySettings?.company_name || 'Al-Remal Industrial Company'}
-                      </h1>
                       {companySettings?.tax_number && (
                         <p className="text-sm text-gray-700 mb-1">
                           <span className="font-semibold">Tax Number:</span> {companySettings.tax_number}
