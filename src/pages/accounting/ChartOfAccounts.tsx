@@ -342,7 +342,7 @@ const ChartOfAccounts = () => {
 
   const handleBulkSubmit = async () => {
     try {
-      const validAccounts = bulkAccounts.filter(acc => acc.code && acc.name_ar && acc.name_en);
+      const validAccounts = bulkAccounts.filter(acc => acc.code && acc.name_ar);
       
       if (validAccounts.length === 0) {
         toast({
@@ -853,7 +853,13 @@ const ChartOfAccounts = () => {
                         <SelectContent>
                           <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
                           {accounts
-                            .filter(acc => acc.type === formData.type)
+                            .filter(acc => {
+                              // Filter by type
+                              if (acc.type !== formData.type) return false;
+                              // Calculate level and exclude level 4 accounts
+                              const level = getAccountLevel(acc);
+                              return level < 4;
+                            })
                             .map(acc => (
                               <SelectItem key={acc.id} value={acc.id}>
                                 {acc.code} - {acc.name_ar}
@@ -890,7 +896,6 @@ const ChartOfAccounts = () => {
                       value={formData.name_en}
                       onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                       placeholder="Example: Cash Box"
-                      required
                     />
                   </div>
                   
