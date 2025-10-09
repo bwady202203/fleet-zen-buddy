@@ -1158,30 +1158,45 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: string | null
+          commercial_registration: string | null
           created_at: string | null
           database_initialized: boolean | null
+          email: string | null
           id: string
           is_active: boolean | null
           name: string
           name_en: string | null
+          phone: string | null
+          tax_number: string | null
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
+          commercial_registration?: string | null
           created_at?: string | null
           database_initialized?: boolean | null
+          email?: string | null
           id?: string
           is_active?: boolean | null
           name: string
           name_en?: string | null
+          phone?: string | null
+          tax_number?: string | null
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
+          commercial_registration?: string | null
           created_at?: string | null
           database_initialized?: boolean | null
+          email?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
           name_en?: string | null
+          phone?: string | null
+          tax_number?: string | null
           updated_at?: string | null
         }
         Relationships: []
