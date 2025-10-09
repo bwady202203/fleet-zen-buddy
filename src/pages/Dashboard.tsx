@@ -124,7 +124,7 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-12">
         <Tabs defaultValue="modules" className="w-full" dir="rtl">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+          <TabsList className="hidden">
             <TabsTrigger value="modules">الأنظمة</TabsTrigger>
             <TabsTrigger value="statistics">الإحصائيات</TabsTrigger>
           </TabsList>
