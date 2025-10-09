@@ -35,6 +35,8 @@ const LoadInvoices = () => {
   const [selectedCompanyForPrices, setSelectedCompanyForPrices] = useState<any>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
+    issueDate: new Date().toISOString().split('T')[0],
+    dueDate: new Date().toISOString().split('T')[0],
     companyId: '',
     supplierId: '',
     paymentType: 'cash',
@@ -184,7 +186,7 @@ const LoadInvoices = () => {
       const { data: { user } } = await supabase.auth.getUser();
       const { subtotal, taxAmount, totalAmount } = calculateTotals();
       
-      const invoiceNumber = `INV-${Date.now()}`;
+      const invoiceNumber = `${Date.now().toString().slice(-6)}`;
 
       // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
@@ -254,6 +256,8 @@ const LoadInvoices = () => {
       setDialogOpen(false);
       setFormData({
         date: new Date().toISOString().split('T')[0],
+        issueDate: new Date().toISOString().split('T')[0],
+        dueDate: new Date().toISOString().split('T')[0],
         companyId: '',
         supplierId: '',
         paymentType: 'cash',
@@ -397,6 +401,26 @@ const LoadInvoices = () => {
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">تاريخ الإصدار</Label>
+                    <Input
+                      type="date"
+                      value={formData.issueDate}
+                      onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
+                      required
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">تاريخ الاستحقاق</Label>
+                    <Input
+                      type="date"
+                      value={formData.dueDate}
+                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                       required
                       className="bg-background"
                     />
@@ -759,6 +783,8 @@ const LoadInvoices = () => {
                         <h2 className="text-lg font-bold mb-1" style={{ color: '#2563eb' }}>فاتورة ضريبية مبسطة</h2>
                         <p className="text-xs text-gray-700">رقم الفاتورة: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
                         <p className="text-xs text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
+                        <p className="text-xs text-gray-700">تاريخ الإصدار: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
+                        <p className="text-xs text-gray-700">تاريخ الاستحقاق: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
                       </div>
                     </div>
 
@@ -801,6 +827,8 @@ const LoadInvoices = () => {
                         <h2 className="text-lg font-bold mb-1" style={{ color: '#2563eb' }}>Simplified Tax Invoice</h2>
                         <p className="text-xs text-gray-700">Invoice Number: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
                         <p className="text-xs text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
+                        <p className="text-xs text-gray-700">Issue Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
+                        <p className="text-xs text-gray-700">Due Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
                       </div>
                     </div>
                   </div>
