@@ -860,7 +860,7 @@ const LoadInvoices = () => {
                       <TableBody>
                         {(() => {
                           const itemsToShow = [...(selectedInvoice.load_invoice_items || [])];
-                          while (itemsToShow.length < 3) {
+                          while (itemsToShow.length < 6) {
                             itemsToShow.push({ id: `empty-${itemsToShow.length}`, description: '', quantity: '', unit_price: '', total: '' });
                           }
                           return itemsToShow.map((item: any, index: number) => (
