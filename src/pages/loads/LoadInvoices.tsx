@@ -65,40 +65,66 @@ const LoadInvoices = () => {
 
   const loadCompanyLoads = async (companyId: string) => {
     try {
-      // Load all load types
-      const { data: loadTypes } = await supabase
-        .from('load_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      // Load pending loads for this company
+      const { data: pendingLoads } = await supabase
+        .from('loads')
+        .select('*, load_types(id, name)')
+        .eq('company_id', companyId)
+        .eq('status', 'pending')
+        .order('date', { ascending: false });
 
       // Load company prices
       const { data: companyPrices } = await supabase
         .from('company_load_type_prices')
-        .select('*, load_types(name)')
+        .select('*, load_types(id, name)')
         .eq('company_id', companyId)
         .eq('is_active', true);
 
+      // Group pending loads by load type and sum quantities
+      const loadsByType = new Map();
+      if (pendingLoads && pendingLoads.length > 0) {
+        pendingLoads.forEach(load => {
+          const typeId = load.load_type_id;
+          if (typeId) {
+            if (loadsByType.has(typeId)) {
+              const existing = loadsByType.get(typeId);
+              existing.quantity += load.quantity || 0;
+              existing.loadIds.push(load.id);
+            } else {
+              loadsByType.set(typeId, {
+                loadTypeId: typeId,
+                typeName: load.load_types?.name || 'صنف',
+                quantity: load.quantity || 0,
+                loadIds: [load.id]
+              });
+            }
+          }
+        });
+      }
+
+      // Create items based on company prices and pending loads
       if (companyPrices && companyPrices.length > 0) {
-        // Create items from company prices
-        setItems(companyPrices.map(price => ({
-          loadId: null,
-          loadTypeId: price.load_type_id,
-          description: price.load_types?.name || 'صنف',
-          quantity: 1,
-          unitPrice: price.unit_price,
-          total: price.unit_price
-        })));
-      } else if (loadTypes && loadTypes.length > 0) {
-        // Fallback to load types if no prices set
-        setItems(loadTypes.map(type => ({
-          loadId: null,
-          loadTypeId: type.id,
-          description: type.name,
-          quantity: 1,
-          unitPrice: 0,
-          total: 0
-        })));
+        const items = companyPrices.map(price => {
+          const pendingData = loadsByType.get(price.load_type_id);
+          return {
+            loadId: null,
+            loadTypeId: price.load_type_id,
+            description: price.load_types?.name || 'صنف',
+            quantity: pendingData?.quantity || 0,
+            unitPrice: price.unit_price,
+            total: (pendingData?.quantity || 0) * price.unit_price,
+            loadIds: pendingData?.loadIds || []
+          };
+        });
+        setItems(items);
+      } else {
+        // If no prices set, show message
+        toast({
+          title: "تنبيه",
+          description: "لم يتم تحديد أسعار لهذه الشركة. يرجى إضافة الأسعار أولاً.",
+          variant: "destructive"
+        });
+        setItems([]);
       }
     } catch (error) {
       console.error('Error loading company data:', error);
