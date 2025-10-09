@@ -159,9 +159,34 @@ const ChartOfAccounts = () => {
     }
   };
 
+  const generateAccountCode = (parentId: string | null = null): string => {
+    if (!parentId) {
+      // For root accounts, find the next available number
+      const rootAccounts = accounts.filter(acc => !acc.parent_id);
+      const maxCode = rootAccounts.reduce((max, acc) => {
+        const codeNum = parseInt(acc.code.split('-')[0]) || 0;
+        return Math.max(max, codeNum);
+      }, 0);
+      return String(maxCode + 1);
+    } else {
+      // For sub-accounts, use parent code + sequence
+      const parent = accounts.find(acc => acc.id === parentId);
+      if (!parent) return "1";
+      
+      const siblings = accounts.filter(acc => acc.parent_id === parentId);
+      const maxSubCode = siblings.reduce((max, acc) => {
+        const parts = acc.code.split('-');
+        const lastPart = parseInt(parts[parts.length - 1]) || 0;
+        return Math.max(max, lastPart);
+      }, 0);
+      
+      return `${parent.code}-${maxSubCode + 1}`;
+    }
+  };
+
   const resetForm = (parentId: string | null = null) => {
     setFormData({
-      code: "",
+      code: generateAccountCode(parentId),
       name_ar: "",
       name_en: "",
       parent_id: parentId,
