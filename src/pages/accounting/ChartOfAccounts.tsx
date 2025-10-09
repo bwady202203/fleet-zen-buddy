@@ -26,8 +26,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft } from "lucide-react";
+import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Account {
@@ -50,6 +51,7 @@ const ChartOfAccounts = () => {
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [viewMode, setViewMode] = useState<"tree" | "table">("table");
   const [formData, setFormData] = useState({
     code: "",
     name_ar: "",
@@ -203,6 +205,70 @@ const ChartOfAccounts = () => {
 
   const getLevel4Accounts = (level3Id: string) => {
     return filteredAccounts.filter(acc => acc.parent_id === level3Id);
+  };
+
+  const renderTreeView = () => {
+    const renderAccount = (account: Account, level: number = 0) => {
+      const children = filteredAccounts.filter(acc => acc.parent_id === account.id);
+      const isExpanded = expandedAccounts.has(account.id);
+      
+      return (
+        <div key={account.id}>
+          <div 
+            className="flex items-center gap-2 p-2 hover:bg-accent/50 rounded-lg cursor-pointer"
+            style={{ paddingRight: `${level * 2}rem` }}
+          >
+            {children.length > 0 && (
+              <button onClick={() => toggleExpand(account.id)} className="p-1">
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </button>
+            )}
+            <div className="flex-1 flex items-center gap-4">
+              <span className="font-semibold">{account.code}</span>
+              <span>{account.name_ar}</span>
+              <span className="text-muted-foreground text-sm" dir="ltr">{account.name_en}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {account.type === 'asset' && 'أصول / Assets'}
+                {account.type === 'liability' && 'خصوم / Liabilities'}
+                {account.type === 'equity' && 'حقوق ملكية / Equity'}
+                {account.type === 'revenue' && 'إيرادات / Revenue'}
+                {account.type === 'expense' && 'مصروفات / Expenses'}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleAddSubAccount(account)}
+                title="إضافة حساب فرعي / Add Sub-Account"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEdit(account)}
+                title="تعديل / Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          {isExpanded && children.length > 0 && (
+            <div>
+              {children.map(child => renderAccount(child, level + 1))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const rootAccounts = filteredAccounts.filter(acc => !acc.parent_id);
+    return rootAccounts.map(account => renderAccount(account));
   };
 
   const renderAccountsTable = () => {
@@ -493,9 +559,9 @@ const ChartOfAccounts = () => {
                 <ArrowRight className="h-6 w-6" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold">شجرة الحسابات</h1>
+                <h1 className="text-3xl font-bold">شجرة الحسابات / Chart of Accounts</h1>
                 <p className="text-muted-foreground mt-1">
-                  إدارة الدليل المحاسبي - 4 مستويات
+                  إدارة الدليل المحاسبي - 4 مستويات / Manage Chart of Accounts - 4 Levels
                 </p>
               </div>
             </div>
@@ -503,38 +569,38 @@ const ChartOfAccounts = () => {
               <DialogTrigger asChild>
                 <Button onClick={() => resetForm()}>
                   <Plus className="h-4 w-4 ml-2" />
-                  إضافة حساب جديد
+                  إضافة حساب جديد / Add New Account
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingAccount ? "تعديل الحساب" : "إضافة حساب جديد"}
+                    {editingAccount ? "تعديل الحساب / Edit Account" : "إضافة حساب جديد / Add New Account"}
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label>رمز الحساب</Label>
+                    <Label>رمز الحساب / Account Code</Label>
                     <Input
                       value={formData.code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      placeholder="مثال: 1111"
+                      placeholder="مثال: 1111 / Example: 1111"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label>اسم الحساب (عربي)</Label>
+                    <Label>اسم الحساب (عربي) / Account Name (Arabic)</Label>
                     <Input
                       value={formData.name_ar}
                       onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                      placeholder="مثال: الصندوق"
+                      placeholder="مثال: الصندوق / Example: Cash"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label>اسم الحساب (إنجليزي)</Label>
+                    <Label>اسم الحساب (إنجليزي) / Account Name (English)</Label>
                     <Input
                       value={formData.name_en}
                       onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
@@ -545,7 +611,7 @@ const ChartOfAccounts = () => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>نوع الحساب</Label>
+                      <Label>نوع الحساب / Account Type</Label>
                       <Select
                         value={formData.type}
                         onValueChange={(value) => setFormData({ ...formData, type: value })}
@@ -554,26 +620,26 @@ const ChartOfAccounts = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="asset">أصول</SelectItem>
-                          <SelectItem value="liability">خصوم</SelectItem>
-                          <SelectItem value="equity">حقوق ملكية</SelectItem>
-                          <SelectItem value="revenue">إيرادات</SelectItem>
-                          <SelectItem value="expense">مصروفات</SelectItem>
+                          <SelectItem value="asset">أصول / Assets</SelectItem>
+                          <SelectItem value="liability">خصوم / Liabilities</SelectItem>
+                          <SelectItem value="equity">حقوق ملكية / Equity</SelectItem>
+                          <SelectItem value="revenue">إيرادات / Revenue</SelectItem>
+                          <SelectItem value="expense">مصروفات / Expenses</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div>
-                      <Label>الحساب الرئيسي</Label>
+                      <Label>الحساب الرئيسي / Parent Account</Label>
                       <Select
                         value={formData.parent_id || "none"}
                         onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="بدون حساب رئيسي" />
+                          <SelectValue placeholder="بدون حساب رئيسي / No Parent" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">بدون حساب رئيسي</SelectItem>
+                          <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
                           {accounts.map(acc => (
                             <SelectItem key={acc.id} value={acc.id}>
                               {acc.code} - {acc.name_ar}
@@ -586,10 +652,10 @@ const ChartOfAccounts = () => {
                   
                   <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      إلغاء
+                      إلغاء / Cancel
                     </Button>
                     <Button type="submit">
-                      {editingAccount ? "تحديث" : "إضافة"}
+                      {editingAccount ? "تحديث / Update" : "إضافة / Add"}
                     </Button>
                   </div>
                 </form>
@@ -607,31 +673,49 @@ const ChartOfAccounts = () => {
                 <div className="relative">
                   <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="ابحث بالرمز أو الاسم..."
+                    placeholder="ابحث بالرمز أو الاسم... / Search by code or name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pr-10"
                   />
                 </div>
               </div>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "tree" | "table")} className="w-auto">
+                <TabsList>
+                  <TabsTrigger value="table" className="gap-2">
+                    <Table2 className="h-4 w-4" />
+                    <span>جدول / Table</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="tree" className="gap-2">
+                    <List className="h-4 w-4" />
+                    <span>شجرة / Tree</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right w-1/5">المستوى الأول</TableHead>
-                  <TableHead className="text-right w-1/5">المستوى الثاني</TableHead>
-                  <TableHead className="text-right w-1/5">المستوى الثالث</TableHead>
-                  <TableHead className="text-right w-1/5">المستوى الرابع</TableHead>
-                  <TableHead className="text-center w-1/10">النوع</TableHead>
-                  <TableHead className="text-center w-1/10">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {renderAccountsTable()}
-              </TableBody>
-            </Table>
+            {viewMode === "table" ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right w-1/5">المستوى الأول / Level 1</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الثاني / Level 2</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الثالث / Level 3</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الرابع / Level 4</TableHead>
+                    <TableHead className="text-center w-1/10">النوع / Type</TableHead>
+                    <TableHead className="text-center w-1/10">إجراءات / Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {renderAccountsTable()}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="space-y-2">
+                {renderTreeView()}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
