@@ -11,6 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -19,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowRight, Printer } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,13 +54,13 @@ interface JournalLine {
 }
 
 const Ledger = () => {
-  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [selectedAccount, setSelectedAccount] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [previewEntry, setPreviewEntry] = useState<JournalEntry | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -114,8 +120,18 @@ const Ledger = () => {
   });
 
   const handleOpenEntry = (entryId: string) => {
-    navigate('/accounting/journal-entries', { state: { openEntryId: entryId } });
+    const entry = journalEntries.find(e => e.id === entryId);
+    if (entry) {
+      setPreviewEntry(entry);
+    }
   };
+
+  const previewEntryLines = previewEntry 
+    ? journalLines.filter(line => line.journal_entry_id === previewEntry.id)
+    : [];
+
+  const previewTotalDebit = previewEntryLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+  const previewTotalCredit = previewEntryLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
 
   let runningBalance = 0;
   const ledgerWithBalance = ledgerEntries.map(entry => {
@@ -348,6 +364,89 @@ const Ledger = () => {
           </Card>
         )}
       </main>
+
+      <Dialog open={!!previewEntry} onOpenChange={() => setPreviewEntry(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">معاينة القيد اليومي</DialogTitle>
+          </DialogHeader>
+          
+          {previewEntry && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
+                <div>
+                  <div className="text-sm text-muted-foreground">رقم القيد</div>
+                  <div className="font-bold text-lg">{previewEntry.entry_number}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">التاريخ</div>
+                  <div className="font-bold text-lg">
+                    {new Date(previewEntry.date).toLocaleDateString('ar-SA')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">المرجع</div>
+                  <div className="font-bold text-lg">{previewEntry.description || '-'}</div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-3">تفاصيل القيد</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">الحساب</TableHead>
+                      <TableHead className="text-right">البيان</TableHead>
+                      <TableHead className="text-right">مدين</TableHead>
+                      <TableHead className="text-right">دائن</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewEntryLines.map((line) => {
+                      const account = accounts.find(a => a.id === line.account_id);
+                      return (
+                        <TableRow key={line.id}>
+                          <TableCell className="font-medium">
+                            {account ? `${account.code} - ${account.name_ar}` : '-'}
+                          </TableCell>
+                          <TableCell>{line.description || '-'}</TableCell>
+                          <TableCell className="text-left font-medium">
+                            {Number(line.debit) > 0 
+                              ? Number(line.debit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="text-left font-medium">
+                            {Number(line.credit) > 0 
+                              ? Number(line.credit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })
+                              : '-'
+                            }
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    <TableRow className="font-bold bg-accent/50">
+                      <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                      <TableCell className="text-left">
+                        {previewTotalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-left">
+                        {previewTotalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setPreviewEntry(null)}>
+                  إغلاق
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
