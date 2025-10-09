@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatsCard } from "@/components/StatsCard";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
@@ -80,13 +82,62 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold mb-2">اختر النظام المناسب</h2>
-          <p className="text-muted-foreground">جميع الأنظمة متكاملة لإدارة أعمالك بكفاءة</p>
+      {/* Icons Bar */}
+      <div className="border-b bg-card/50 backdrop-blur-sm shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-center gap-6 flex-wrap">
+            <Link to="/accounting" className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-primary/10 transition-all">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Calculator className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-primary">المحاسبة</span>
+            </Link>
+            
+            <Link to="/hr" className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-primary/10 transition-all">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-primary">الموارد البشرية</span>
+            </Link>
+            
+            <Link to="/fleet" className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-primary/10 transition-all">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Truck className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-primary">الأسطول</span>
+            </Link>
+            
+            <Link to="/loads" className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-primary/10 transition-all">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Package className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-primary">الحمولات</span>
+            </Link>
+            
+            <Link to="/custody" className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-primary/10 transition-all">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                <Wallet className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-primary">العهد</span>
+            </Link>
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      </div>
+
+      <main className="container mx-auto px-4 py-12">
+        <Tabs defaultValue="modules" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="modules">الأنظمة</TabsTrigger>
+            <TabsTrigger value="statistics">الإحصائيات</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="modules">
+            <div className="mb-8 text-center">
+              <h2 className="text-3xl font-bold mb-2">اختر النظام المناسب</h2>
+              <p className="text-muted-foreground">جميع الأنظمة متكاملة لإدارة أعمالك بكفاءة</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {modules.map((module, index) => (
             <Link key={module.title} to={module.link}>
               <Card className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 h-full border-2 hover:border-primary/50 bg-card/50 backdrop-blur-sm">
@@ -136,11 +187,192 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </Link>
-          ))}
-        </div>
-      </main>
-    </div>
-  );
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="statistics">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-bold mb-2">إحصائيات شاملة للنظام</h2>
+            <p className="text-muted-foreground">نظرة عامة على جميع الأنظمة</p>
+          </div>
+
+          <div className="space-y-8">
+            {/* Accounting Statistics */}
+            <div>
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-blue-600" />
+                إحصائيات المحاسبة
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatsCard
+                  title="إجمالي الإيرادات"
+                  value="0"
+                  icon={DollarSign}
+                  description="إيرادات هذا الشهر"
+                />
+                <StatsCard
+                  title="المصروفات"
+                  value="0"
+                  icon={TrendingUp}
+                  description="مصروفات هذا الشهر"
+                />
+                <StatsCard
+                  title="صافي الربح"
+                  value="0"
+                  icon={BarChart3}
+                  description="الربح الصافي"
+                />
+                <StatsCard
+                  title="عدد القيود"
+                  value="0"
+                  icon={FileText}
+                  description="قيود يومية"
+                />
+              </div>
+            </div>
+
+            {/* HR Statistics */}
+            <div>
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Users className="h-5 w-5 text-green-600" />
+                إحصائيات الموارد البشرية
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatsCard
+                  title="إجمالي الموظفين"
+                  value="0"
+                  icon={Users}
+                  description="موظفين نشطين"
+                />
+                <StatsCard
+                  title="الرواتب الشهرية"
+                  value="0"
+                  icon={DollarSign}
+                  description="إجمالي الرواتب"
+                />
+                <StatsCard
+                  title="السلف"
+                  value="0"
+                  icon={TrendingUp}
+                  description="سلف مستحقة"
+                />
+                <StatsCard
+                  title="الإجازات"
+                  value="0"
+                  icon={Activity}
+                  description="إجازات هذا الشهر"
+                />
+              </div>
+            </div>
+
+            {/* Fleet Statistics */}
+            <div>
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Truck className="h-5 w-5 text-purple-600" />
+                إحصائيات الأسطول
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatsCard
+                  title="إجمالي المركبات"
+                  value="0"
+                  icon={Truck}
+                  description="مركبات نشطة"
+                />
+                <StatsCard
+                  title="قيد الصيانة"
+                  value="0"
+                  icon={Activity}
+                  description="تحت الصيانة"
+                />
+                <StatsCard
+                  title="تكلفة الصيانة"
+                  value="0"
+                  icon={DollarSign}
+                  description="هذا الشهر"
+                />
+                <StatsCard
+                  title="قطع الغيار"
+                  value="0"
+                  icon={Package}
+                  description="مخزون متوفر"
+                />
+              </div>
+            </div>
+
+            {/* Loads Statistics */}
+            <div>
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Package className="h-5 w-5 text-orange-600" />
+                إحصائيات الحمولات
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatsCard
+                  title="إجمالي الحمولات"
+                  value="0"
+                  icon={Package}
+                  description="حمولات هذا الشهر"
+                />
+                <StatsCard
+                  title="تحت التوصيل"
+                  value="0"
+                  icon={Truck}
+                  description="قيد التوصيل"
+                />
+                <StatsCard
+                  title="الإيرادات"
+                  value="0"
+                  icon={DollarSign}
+                  description="من الحمولات"
+                />
+                <StatsCard
+                  title="العملاء"
+                  value="0"
+                  icon={Users}
+                  description="عملاء نشطين"
+                />
+              </div>
+            </div>
+
+            {/* Custody Statistics */}
+            <div>
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-teal-600" />
+                إحصائيات العهد
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatsCard
+                  title="المندوبين"
+                  value="0"
+                  icon={Users}
+                  description="مندوبين نشطين"
+                />
+                <StatsCard
+                  title="العهد المستلمة"
+                  value="0"
+                  icon={DollarSign}
+                  description="إجمالي العهد"
+                />
+                <StatsCard
+                  title="التحويلات"
+                  value="0"
+                  icon={TrendingUp}
+                  description="هذا الشهر"
+                />
+                <StatsCard
+                  title="المصروفات"
+                  value="0"
+                  icon={FileText}
+                  description="مصروفات العهد"
+                />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </main>
+  </div>
+);
 };
 
 export default Dashboard;
