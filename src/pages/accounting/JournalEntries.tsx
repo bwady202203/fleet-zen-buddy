@@ -190,11 +190,47 @@ const JournalEntries = () => {
   };
 
   const [formData, setFormData] = useState({
-    entryNumber: getNextEntryNumber(),
+    entryNumber: "",
     date: new Date().toISOString().split('T')[0],
     description: "",
     lines: createInitialEmptyLines() as JournalEntryLine[],
   });
+
+  useEffect(() => {
+    if (isNewEntryPage && !formData.entryNumber) {
+      generateNextEntryNumber();
+    }
+  }, [isNewEntryPage]);
+
+  const generateNextEntryNumber = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('entry_number')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      let nextNumber = 1;
+      if (data && data.length > 0) {
+        const lastEntry = data[0].entry_number;
+        // استخراج الرقم من نهاية رقم القيد (مثال: JE-2025000007 -> 7)
+        const match = lastEntry.match(/(\d+)$/);
+        if (match) {
+          nextNumber = parseInt(match[1]) + 1;
+        }
+      }
+
+      const newEntryNumber = `JE-${new Date().getFullYear()}${nextNumber.toString().padStart(6, '0')}`;
+      setFormData(prev => ({ ...prev, entryNumber: newEntryNumber }));
+    } catch (error) {
+      console.error('Error generating entry number:', error);
+      // في حالة الخطأ، استخدم رقم افتراضي
+      const fallbackNumber = `JE-${new Date().getFullYear()}${Date.now().toString().slice(-6)}`;
+      setFormData(prev => ({ ...prev, entryNumber: fallbackNumber }));
+    }
+  };
 
   const [searchStates, setSearchStates] = useState<{
     [key: string]: {
@@ -397,14 +433,15 @@ const JournalEntries = () => {
     }));
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setFormData({
-      entryNumber: getNextEntryNumber(),
+      entryNumber: "",
       date: new Date().toISOString().split('T')[0],
       description: "",
       lines: createEmptyLines(),
     });
     setSearchStates({});
+    await generateNextEntryNumber();
   };
 
   const handlePrint = (entry: any) => {
