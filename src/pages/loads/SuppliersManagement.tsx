@@ -147,8 +147,8 @@ const SuppliersManagement = () => {
               <ArrowRight className="h-6 w-6" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">إدارة الموردين</h1>
-              <p className="text-muted-foreground mt-1">عرض وإضافة الموردين</p>
+              <h1 className="text-3xl font-bold">إدارة الموردين / Suppliers Management</h1>
+              <p className="text-muted-foreground mt-1">عرض وإضافة الموردين / View and Add Suppliers</p>
             </div>
           </div>
         </div>
@@ -160,76 +160,76 @@ const SuppliersManagement = () => {
             <DialogTrigger asChild>
               <Button onClick={() => { setEditingSupplier(null); setFormData({ name: '', address: '', tax_number: '', commercial_registration: '', phone: '', email: '' }); }}>
                 <Plus className="h-4 w-4 ml-2" />
-                إضافة مورد
+                إضافة مورد / Add Supplier
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingSupplier ? 'تعديل المورد' : 'إضافة مورد جديد'}</DialogTitle>
+                <DialogTitle>{editingSupplier ? 'تعديل المورد / Edit Supplier' : 'إضافة مورد جديد / Add New Supplier'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">اسم المورد</Label>
+                  <Label htmlFor="name">اسم المورد / Supplier Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    placeholder="أدخل اسم المورد"
+                    placeholder="أدخل اسم المورد / Enter supplier name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tax_number">الرقم الضريبي</Label>
+                  <Label htmlFor="tax_number">الرقم الضريبي / Tax Number</Label>
                   <Input
                     id="tax_number"
                     value={formData.tax_number}
                     onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                    placeholder="أدخل الرقم الضريبي"
+                    placeholder="أدخل الرقم الضريبي / Enter tax number"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="commercial_registration">السجل التجاري</Label>
+                  <Label htmlFor="commercial_registration">السجل التجاري / Commercial Registration</Label>
                   <Input
                     id="commercial_registration"
                     value={formData.commercial_registration}
                     onChange={(e) => setFormData({ ...formData, commercial_registration: e.target.value })}
-                    placeholder="أدخل السجل التجاري"
+                    placeholder="أدخل السجل التجاري / Enter commercial registration"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">العنوان</Label>
+                  <Label htmlFor="address">العنوان / Address</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="أدخل العنوان"
+                    placeholder="أدخل العنوان / Enter address"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">رقم الجوال</Label>
+                  <Label htmlFor="phone">رقم الجوال / Mobile Number</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="أدخل رقم الجوال"
+                    placeholder="أدخل رقم الجوال / Enter mobile number"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Label htmlFor="email">البريد الإلكتروني / Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="أدخل البريد الإلكتروني"
+                    placeholder="أدخل البريد الإلكتروني / Enter email"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
-                    {editingSupplier ? 'تحديث' : 'إضافة'}
+                    {editingSupplier ? 'تحديث / Update' : 'إضافة / Add'}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    إلغاء
+                    إلغاء / Cancel
                   </Button>
                 </div>
               </form>

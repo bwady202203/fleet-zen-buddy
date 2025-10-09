@@ -200,8 +200,8 @@ const LoadsRegister = () => {
               <ArrowRight className="h-6 w-6" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">تسجيل الحمولات</h1>
-              <p className="text-muted-foreground mt-1">إضافة حمولة جديدة</p>
+              <h1 className="text-3xl font-bold">تسجيل الحمولات / Loads Registration</h1>
+              <p className="text-muted-foreground mt-1">إضافة حمولة جديدة / Add New Load</p>
             </div>
           </div>
         </div>
@@ -210,13 +210,13 @@ const LoadsRegister = () => {
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>بيانات الشحنة</CardTitle>
+            <CardTitle>بيانات الشحنة / Load Information</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="date">التاريخ</Label>
+                  <Label htmlFor="date">التاريخ / Date</Label>
                   <Input
                     id="date"
                     type="date"
@@ -227,31 +227,31 @@ const LoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="loadNumber">رقم الشحنة</Label>
+                  <Label htmlFor="loadNumber">رقم الشحنة / Load Number</Label>
                   <Input
                     id="loadNumber"
                     value={formData.loadNumber}
                     onChange={(e) => setFormData({ ...formData, loadNumber: e.target.value })}
                     required
-                    placeholder="أدخل رقم الشحنة"
+                    placeholder="أدخل رقم الشحنة / Enter load number"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="invoiceNumber">رقم الفاتورة</Label>
+                  <Label htmlFor="invoiceNumber">رقم الفاتورة / Invoice Number</Label>
                   <Input
                     id="invoiceNumber"
                     value={formData.invoiceNumber}
                     onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                    placeholder="اختياري"
+                    placeholder="اختياري / Optional"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="company">اسم العميل</Label>
+                  <Label htmlFor="company">اسم العميل / Customer Name</Label>
                   <Select value={formData.companyId} onValueChange={(value) => setFormData({ ...formData, companyId: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="اختر العميل" />
+                      <SelectValue placeholder="اختر العميل / Select customer" />
                     </SelectTrigger>
                     <SelectContent>
                       {companies.map((company) => (
@@ -264,11 +264,11 @@ const LoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="loadType">نوع الحمولة</Label>
+                  <Label htmlFor="loadType">نوع الحمولة / Load Type</Label>
                   <div className="flex gap-2">
                     <Select value={formData.loadTypeId} onValueChange={(value) => setFormData({ ...formData, loadTypeId: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="اختر نوع الحمولة" />
+                        <SelectValue placeholder="اختر نوع الحمولة / Select load type" />
                       </SelectTrigger>
                       <SelectContent>
                         {loadTypes.map((type) => (
@@ -285,7 +285,7 @@ const LoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="driver">اسم السائق</Label>
+                  <Label htmlFor="driver">اسم السائق / Driver Name</Label>
                   <Popover open={driverSearchOpen} onOpenChange={setDriverSearchOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -296,15 +296,15 @@ const LoadsRegister = () => {
                       >
                         {formData.driverId
                           ? drivers.find((driver) => driver.id === formData.driverId)?.name
-                          : "اختر السائق..."}
+                          : "اختر السائق / Select driver..."}
                         <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="ابحث عن سائق..." />
+                        <CommandInput placeholder="ابحث عن سائق / Search driver..." />
                         <CommandList>
-                          <CommandEmpty>لم يتم العثور على سائق</CommandEmpty>
+                          <CommandEmpty>لم يتم العثور على سائق / No driver found</CommandEmpty>
                           <CommandGroup>
                             {drivers.map((driver) => (
                               <CommandItem
@@ -332,17 +332,17 @@ const LoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="truckNumber">رقم الشاحنة</Label>
+                  <Label htmlFor="truckNumber">رقم الشاحنة / Truck Number</Label>
                   <Input
                     id="truckNumber"
                     value={formData.truckNumber}
                     onChange={(e) => setFormData({ ...formData, truckNumber: e.target.value })}
-                    placeholder="أدخل رقم الشاحنة"
+                    placeholder="أدخل رقم الشاحنة / Enter truck number"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">الكمية</Label>
+                  <Label htmlFor="quantity">الكمية / Quantity</Label>
                   <Input
                     id="quantity"
                     type="number"
@@ -354,7 +354,7 @@ const LoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="unitPrice">السعر</Label>
+                  <Label htmlFor="unitPrice">السعر / Price</Label>
                   <Input
                     id="unitPrice"
                     type="number"
@@ -366,23 +366,25 @@ const LoadsRegister = () => {
                   {isCommissionBased && formData.unitPrice !== '0' && (
                     <p className="text-sm text-green-600 font-medium">
                       السعر تم تحديده تلقائياً بناءً على الكمية ({parseFloat(formData.quantity)} طن)
+                      <br />
+                      <span dir="ltr">Price auto-set based on quantity ({parseFloat(formData.quantity)} tons)</span>
                     </p>
                   )}
                   {!isCommissionBased && formData.unitPrice !== '0' && formData.companyId && formData.loadTypeId && (
                     <p className="text-sm text-blue-600 font-medium">
-                      السعر من قائمة أسعار الشركة
+                      السعر من قائمة أسعار الشركة / Price from company price list
                     </p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">ملاحظات</Label>
+                <Label htmlFor="notes">ملاحظات / Notes</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="أدخل ملاحظات إضافية"
+                  placeholder="أدخل ملاحظات إضافية / Enter additional notes"
                   rows={4}
                 />
               </div>
@@ -390,10 +392,10 @@ const LoadsRegister = () => {
               <div className="flex gap-4">
                 <Button type="submit" disabled={loading}>
                   <Save className="h-4 w-4 ml-2" />
-                  حفظ الشحنة
+                  حفظ الشحنة / Save Load
                 </Button>
                 <Button type="button" variant="outline" onClick={() => navigate('/loads')}>
-                  إلغاء
+                  إلغاء / Cancel
                 </Button>
               </div>
             </form>

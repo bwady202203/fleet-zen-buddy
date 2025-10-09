@@ -247,8 +247,8 @@ const DriversManagement = () => {
               <ArrowRight className="h-6 w-6" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">إدارة السائقين</h1>
-              <p className="text-muted-foreground mt-1">إضافة وتعديل السائقين</p>
+              <h1 className="text-3xl font-bold">إدارة السائقين / Drivers Management</h1>
+              <p className="text-muted-foreground mt-1">إضافة وتعديل السائقين / Add and Edit Drivers</p>
             </div>
           </div>
         </div>
@@ -257,7 +257,7 @@ const DriversManagement = () => {
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>قائمة السائقين</CardTitle>
+            <CardTitle>قائمة السائقين / Drivers List</CardTitle>
             <div className="flex gap-2">
               <input
                 type="file"
@@ -268,49 +268,49 @@ const DriversManagement = () => {
               />
               <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-4 w-4 ml-2" />
-                استيراد Excel
+                استيراد Excel / Import Excel
               </Button>
               <Button variant="outline" onClick={handleBulkAdd}>
                 <Users className="h-4 w-4 ml-2" />
-                إضافة متعدد
+                إضافة متعدد / Bulk Add
               </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={() => { setEditingDriver(null); setFormData({ name: '', phone: '' }); }}>
                     <Plus className="h-4 w-4 ml-2" />
-                    إضافة سائق
+                    إضافة سائق / Add Driver
                   </Button>
                 </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingDriver ? 'تعديل السائق' : 'إضافة سائق جديد'}</DialogTitle>
+                  <DialogTitle>{editingDriver ? 'تعديل السائق / Edit Driver' : 'إضافة سائق جديد / Add New Driver'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">اسم السائق</Label>
+                    <Label htmlFor="name">اسم السائق / Driver Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
-                      placeholder="أدخل اسم السائق"
+                      placeholder="أدخل اسم السائق / Enter driver name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">رقم الجوال</Label>
+                    <Label htmlFor="phone">رقم الجوال / Mobile Number</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="أدخل رقم الجوال"
+                      placeholder="أدخل رقم الجوال / Enter mobile number"
                     />
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" disabled={loading}>
-                      {editingDriver ? 'تحديث' : 'إضافة'}
+                      {editingDriver ? 'تحديث / Update' : 'إضافة / Add'}
                     </Button>
                     <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      إلغاء
+                      إلغاء / Cancel
                     </Button>
                   </div>
                 </form>
@@ -322,10 +322,10 @@ const DriversManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>اسم السائق</TableHead>
-                  <TableHead>رقم الجوال</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الإجراءات</TableHead>
+                  <TableHead>اسم السائق / Driver Name</TableHead>
+                  <TableHead>رقم الجوال / Mobile Number</TableHead>
+                  <TableHead>الحالة / Status</TableHead>
+                  <TableHead>الإجراءات / Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -358,7 +358,7 @@ const DriversManagement = () => {
         <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>إضافة سائقين متعددين</DialogTitle>
+              <DialogTitle>إضافة سائقين متعددين / Add Multiple Drivers</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="border rounded-lg overflow-hidden">

@@ -146,8 +146,8 @@ const CompaniesManagement = () => {
               <ArrowRight className="h-6 w-6" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">إدارة الشركات</h1>
-              <p className="text-muted-foreground mt-1">عرض وإضافة العملاء</p>
+              <h1 className="text-3xl font-bold">إدارة الشركات / Companies Management</h1>
+              <p className="text-muted-foreground mt-1">عرض وإضافة العملاء / View and Add Customers</p>
             </div>
           </div>
         </div>
@@ -159,67 +159,67 @@ const CompaniesManagement = () => {
             <DialogTrigger asChild>
               <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', address: '' }); }}>
                 <Plus className="h-4 w-4 ml-2" />
-                إضافة شركة
+                إضافة شركة / Add Company
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingCompany ? 'تعديل الشركة' : 'إضافة شركة جديدة'}</DialogTitle>
+                <DialogTitle>{editingCompany ? 'تعديل الشركة / Edit Company' : 'إضافة شركة جديدة / Add New Company'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">اسم الشركة</Label>
+                  <Label htmlFor="name">اسم الشركة / Company Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    placeholder="أدخل اسم الشركة"
+                    placeholder="أدخل اسم الشركة / Enter company name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">رقم الجوال</Label>
+                  <Label htmlFor="phone">رقم الجوال / Mobile Number</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="أدخل رقم الجوال"
+                    placeholder="أدخل رقم الجوال / Enter mobile number"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Label htmlFor="email">البريد الإلكتروني / Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="أدخل البريد الإلكتروني"
+                    placeholder="أدخل البريد الإلكتروني / Enter email"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tax_number">الرقم الضريبي</Label>
+                  <Label htmlFor="tax_number">الرقم الضريبي / Tax Number</Label>
                   <Input
                     id="tax_number"
                     value={formData.tax_number}
                     onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                    placeholder="أدخل الرقم الضريبي"
+                    placeholder="أدخل الرقم الضريبي / Enter tax number"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">العنوان</Label>
+                  <Label htmlFor="address">العنوان / Address</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="أدخل العنوان"
+                    placeholder="أدخل العنوان / Enter address"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
-                    {editingCompany ? 'تحديث' : 'إضافة'}
+                    {editingCompany ? 'تحديث / Update' : 'إضافة / Add'}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    إلغاء
+                    إلغاء / Cancel
                   </Button>
                 </div>
               </form>
@@ -240,14 +240,14 @@ const CompaniesManagement = () => {
                         <p className="text-2xl font-bold text-primary">
                           {company.total_balance.toLocaleString('ar-SA')}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">الرصيد المالي (ر.س)</p>
+                        <p className="text-xs text-muted-foreground mt-1">الرصيد المالي (ر.س) / Balance (SAR)</p>
                       </div>
                       
                       <div className="bg-secondary/10 p-3 rounded-lg">
                         <p className="text-2xl font-bold text-secondary-foreground">
                           {(company.total_quantity || 0).toLocaleString('ar-SA')}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">إجمالي الكميات</p>
+                        <p className="text-xs text-muted-foreground mt-1">إجمالي الكميات / Total Quantities</p>
                       </div>
                     </div>
                   </div>
