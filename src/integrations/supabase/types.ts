@@ -864,6 +864,7 @@ export type Database = {
           payment_type: string | null
           status: string | null
           subtotal: number | null
+          supplier_id: string | null
           tax_amount: number | null
           total_amount: number | null
           updated_at: string | null
@@ -879,6 +880,7 @@ export type Database = {
           payment_type?: string | null
           status?: string | null
           subtotal?: number | null
+          supplier_id?: string | null
           tax_amount?: number | null
           total_amount?: number | null
           updated_at?: string | null
@@ -894,6 +896,7 @@ export type Database = {
           payment_type?: string | null
           status?: string | null
           subtotal?: number | null
+          supplier_id?: string | null
           tax_amount?: number | null
           total_amount?: number | null
           updated_at?: string | null
@@ -904,6 +907,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "load_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]

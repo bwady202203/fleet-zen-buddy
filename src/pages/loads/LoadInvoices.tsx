@@ -121,6 +121,7 @@ const LoadInvoices = () => {
           invoice_number: invoiceNumber,
           date: formData.date,
           company_id: formData.companyId,
+          supplier_id: formData.supplierId || null,
           payment_type: formData.paymentType,
           subtotal,
           tax_amount: taxAmount,
