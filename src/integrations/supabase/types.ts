@@ -1156,6 +1156,36 @@ export type Database = {
           },
         ]
       }
+      organizations: {
+        Row: {
+          created_at: string | null
+          database_initialized: boolean | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_en: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          database_initialized?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_en?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          database_initialized?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_en?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payment_receipts: {
         Row: {
           amount: number
@@ -1480,26 +1510,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
           id: string
+          organization_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          organization_id?: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          organization_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicles: {
         Row: {

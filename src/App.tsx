@@ -9,6 +9,7 @@ import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -72,14 +73,15 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <EmployeeTransactionsProvider>
-          <PermissionsProvider>
-            <AccountingProvider>
-              <InvoicesProvider>
-                <VehiclesProvider>
-                  <SparePartsProvider>
-                    <VehicleMileageProvider>
-                      <TooltipProvider>
+        <OrganizationProvider>
+          <EmployeeTransactionsProvider>
+            <PermissionsProvider>
+              <AccountingProvider>
+                <InvoicesProvider>
+                  <VehiclesProvider>
+                    <SparePartsProvider>
+                      <VehicleMileageProvider>
+                        <TooltipProvider>
                         <Toaster />
                         <Sonner />
                         <BrowserRouter>
@@ -146,14 +148,15 @@ const App = () => {
                             } />
                           </Routes>
                         </BrowserRouter>
-                      </TooltipProvider>
-                    </VehicleMileageProvider>
-                  </SparePartsProvider>
-                </VehiclesProvider>
-              </InvoicesProvider>
-            </AccountingProvider>
-          </PermissionsProvider>
-        </EmployeeTransactionsProvider>
+                        </TooltipProvider>
+                      </VehicleMileageProvider>
+                    </SparePartsProvider>
+                  </VehiclesProvider>
+                </InvoicesProvider>
+              </AccountingProvider>
+            </PermissionsProvider>
+          </EmployeeTransactionsProvider>
+        </OrganizationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

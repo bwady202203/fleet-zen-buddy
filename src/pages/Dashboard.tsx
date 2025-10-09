@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Shield, Wallet } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Shield, Wallet, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { OrganizationSelector } from "@/components/OrganizationSelector";
+import { BackupButton } from "@/components/BackupButton";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
@@ -51,57 +53,91 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              نظام الإدارة المتكامل
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              إدارة شاملة لجميع عمليات المؤسسة
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
+      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                  نظام الإدارة المتكامل
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  إدارة شاملة لجميع عمليات المؤسسة
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <OrganizationSelector />
+              <BackupButton />
+              <Button 
+                variant="outline" 
+                onClick={signOut}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                تسجيل الخروج
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-12">
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-bold mb-2">اختر النظام المناسب</h2>
+          <p className="text-muted-foreground">جميع الأنظمة متكاملة لإدارة أعمالك بكفاءة</p>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {modules.map((module) => (
+          {modules.map((module, index) => (
             <Link key={module.title} to={module.link}>
-              <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full border-2 hover:border-primary/50">
-                <CardContent className="p-8">
-                  <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${module.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                    <module.icon className="h-10 w-10 text-white" />
+              <Card className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 h-full border-2 hover:border-primary/50 bg-card/50 backdrop-blur-sm">
+                <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${module.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                
+                <CardContent className="p-8 relative">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
+                      <module.icon className="h-8 w-8 text-white" />
+                    </div>
+                    <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${module.color} text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+                      نشط
+                    </div>
                   </div>
                   
-                  <h2 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors">
+                  <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
                     {module.title}
                   </h2>
                   
-                  <p className="text-muted-foreground mb-6">
+                  <p className="text-muted-foreground mb-6 text-sm">
                     {module.description}
                   </p>
                   
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold text-muted-foreground mb-3">
-                      الميزات الرئيسية:
+                  <div className="space-y-3 mb-6">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      الميزات الرئيسية
                     </p>
                     <ul className="space-y-2">
-                      {module.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                          <span>{feature}</span>
+                      {module.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-sm group/item">
+                          <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${module.color} group-hover/item:scale-150 transition-transform`}></div>
+                          <span className="group-hover/item:translate-x-[-2px] transition-transform">{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                   
-                  <div className="mt-6 pt-4 border-t">
-                    <span className="text-sm text-primary font-semibold group-hover:gap-3 flex items-center gap-2 transition-all">
-                      الدخول إلى النظام
-                      <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
-                    </span>
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-primary font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
+                        الدخول الآن
+                        <span className="group-hover:translate-x-[-4px] transition-transform text-lg">←</span>
+                      </span>
+                      <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${module.color} opacity-0 group-hover:opacity-20 transition-opacity duration-300`}></div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
