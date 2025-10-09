@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings } from "lucide-react";
+import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -161,6 +161,19 @@ const LoadInvoices = () => {
 
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
+  };
+
+  const resetAllQuantities = () => {
+    const newItems = items.map(item => ({
+      ...item,
+      quantity: 0,
+      total: 0
+    }));
+    setItems(newItems);
+    toast({
+      title: "تم التصفير",
+      description: "تم تصفير جميع الكميات بنجاح"
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -449,11 +462,25 @@ const LoadInvoices = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-lg font-semibold">الأصناف</Label>
-                    {items.length > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        عدد الأصناف: {items.length}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {items.length > 0 && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={resetAllQuantities}
+                            className="gap-2"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            تصفير الكميات
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            عدد الأصناف: {items.length}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
