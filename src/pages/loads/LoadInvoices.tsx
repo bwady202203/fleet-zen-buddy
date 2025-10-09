@@ -61,21 +61,44 @@ const LoadInvoices = () => {
   };
 
   const loadCompanyLoads = async (companyId: string) => {
-    const { data } = await supabase
-      .from('loads')
-      .select('*, load_types(name)')
-      .eq('company_id', companyId)
-      .eq('status', 'pending');
+    try {
+      // Load all load types
+      const { data: loadTypes } = await supabase
+        .from('load_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
 
-    if (data) {
-      setLoads(data);
-      setItems(data.map(load => ({
-        loadId: load.id,
-        description: load.load_types?.name || 'شحنة',
-        quantity: load.quantity,
-        unitPrice: load.unit_price,
-        total: load.total_amount
-      })));
+      // Load company prices
+      const { data: companyPrices } = await supabase
+        .from('company_load_type_prices')
+        .select('*, load_types(name)')
+        .eq('company_id', companyId)
+        .eq('is_active', true);
+
+      if (companyPrices && companyPrices.length > 0) {
+        // Create items from company prices
+        setItems(companyPrices.map(price => ({
+          loadId: null,
+          loadTypeId: price.load_type_id,
+          description: price.load_types?.name || 'صنف',
+          quantity: 1,
+          unitPrice: price.unit_price,
+          total: price.unit_price
+        })));
+      } else if (loadTypes && loadTypes.length > 0) {
+        // Fallback to load types if no prices set
+        setItems(loadTypes.map(type => ({
+          loadId: null,
+          loadTypeId: type.id,
+          description: type.name,
+          quantity: 1,
+          unitPrice: 0,
+          total: 0
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading company data:', error);
     }
   };
 
@@ -91,10 +114,17 @@ const LoadInvoices = () => {
 
   const updateItem = (index: number, field: string, value: any) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
     
-    if (field === 'quantity' || field === 'unitPrice') {
-      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+    if (field === 'quantity') {
+      const quantity = parseFloat(value) || 0;
+      newItems[index].quantity = quantity;
+      newItems[index].total = quantity * newItems[index].unitPrice;
+    } else if (field === 'unitPrice') {
+      const unitPrice = parseFloat(value) || 0;
+      newItems[index].unitPrice = unitPrice;
+      newItems[index].total = newItems[index].quantity * unitPrice;
+    } else {
+      newItems[index][field] = value;
     }
     
     setItems(newItems);
@@ -135,30 +165,27 @@ const LoadInvoices = () => {
 
       if (invoiceError) throw invoiceError;
 
-      // Insert invoice items
-      const itemsToInsert = items.map(item => ({
-        invoice_id: invoice.id,
-        load_id: item.loadId,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        total: item.total
-      }));
+      // Insert invoice items - filter out items with zero quantity
+      const itemsToInsert = items
+        .filter(item => item.quantity > 0)
+        .map(item => ({
+          invoice_id: invoice.id,
+          load_id: item.loadId,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total: item.total
+        }));
+
+      if (itemsToInsert.length === 0) {
+        throw new Error('يجب إضافة صنف واحد على الأقل مع كمية أكبر من صفر');
+      }
 
       const { error: itemsError } = await supabase
         .from('load_invoice_items')
         .insert(itemsToInsert);
 
       if (itemsError) throw itemsError;
-
-      // Update load status to completed
-      const loadIds = items.map(item => item.loadId);
-      const { error: loadUpdateError } = await supabase
-        .from('loads')
-        .update({ status: 'completed' })
-        .in('id', loadIds);
-
-      if (loadUpdateError) throw loadUpdateError;
 
       // Deduct quantities from company balance
       const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -415,7 +442,7 @@ const LoadInvoices = () => {
                         {items.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                              اختر عميل لعرض الشحنات المعلقة
+                              اختر عميل لعرض الأصناف والأسعار
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -427,24 +454,29 @@ const LoadInvoices = () => {
                                   value={item.description}
                                   onChange={(e) => updateItem(index, 'description', e.target.value)}
                                   className="min-w-[200px]"
+                                  placeholder="اسم الصنف"
                                 />
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input
                                   type="number"
                                   step="0.01"
+                                  min="0"
                                   value={item.quantity}
-                                  onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                   className="text-right"
+                                  placeholder="0"
                                 />
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input
                                   type="number"
                                   step="0.01"
+                                  min="0"
                                   value={item.unitPrice}
-                                  onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => updateItem(index, 'unitPrice', e.target.value)}
                                   className="text-right"
+                                  placeholder="0.00"
                                 />
                               </TableCell>
                               <TableCell className="text-right font-semibold">
