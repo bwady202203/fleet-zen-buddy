@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -46,6 +52,7 @@ const TrialBalance = () => {
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -116,6 +123,7 @@ const TrialBalance = () => {
     const closingBalance = openingBalance + periodDebit - periodCredit;
 
     return {
+      account,
       code: account.code,
       name: account.name_ar,
       openingBalance,
@@ -130,9 +138,113 @@ const TrialBalance = () => {
   const totalPeriodCredit = trialBalanceData.reduce((sum, acc) => sum + acc.periodCredit, 0);
   const totalClosingBalance = trialBalanceData.reduce((sum, acc) => sum + acc.closingBalance, 0);
 
+  // معاينة دفتر الأستاذ
+  const ledgerFilteredEntries = selectedAccountForLedger 
+    ? journalEntries.filter(entry => {
+        if (startDate && entry.date < startDate) return false;
+        if (endDate && entry.date > endDate) return false;
+        const entryLines = journalLines.filter(line => line.journal_entry_id === entry.id);
+        return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
+      })
+    : [];
+
+  const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
+    const entryLines = journalLines.filter(
+      line => line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
+    );
+    return entryLines.map(line => ({
+      date: entry.date,
+      entryNumber: entry.entry_number,
+      description: line.description || entry.description,
+      debit: Number(line.debit) || 0,
+      credit: Number(line.credit) || 0,
+    }));
+  });
+
+  let runningBalance = 0;
+  const ledgerWithBalance = ledgerEntries.map(entry => {
+    runningBalance += entry.debit - entry.credit;
+    return {
+      ...entry,
+      balance: runningBalance,
+    };
+  });
+
+  const ledgerTotalDebit = ledgerEntries.reduce((sum, entry) => sum + entry.debit, 0);
+  const ledgerTotalCredit = ledgerEntries.reduce((sum, entry) => sum + entry.credit, 0);
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+          }
+          .print-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .print-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+          }
+          .print-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-top: 10px;
+          }
+          .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          .print-table th, .print-table td {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: right;
+          }
+          .print-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+          }
+          .print-total {
+            background-color: #e8e8e8;
+            font-weight: bold;
+            font-size: 16px;
+          }
+          .print-balance-status {
+            margin-top: 20px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #000;
+            font-size: 18px;
+            font-weight: bold;
+          }
+        }
+      `}</style>
+      <header className="border-b bg-card no-print">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -155,7 +267,7 @@ const TrialBalance = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6">
+        <Card className="mb-6 no-print">
           <CardHeader>
             <CardTitle>فلترة الفترة</CardTitle>
           </CardHeader>
@@ -181,12 +293,26 @@ const TrialBalance = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="print-content">
           <CardHeader>
-            <CardTitle>ميزان المراجعة</CardTitle>
+            <div className="print-header">
+              <div className="print-title">ميزان المراجعة</div>
+              <div className="print-subtitle">Trial Balance</div>
+              <div className="print-info">
+                <div>
+                  {startDate && <span><strong>من:</strong> {new Date(startDate).toLocaleDateString('en-GB')}</span>}
+                  {startDate && endDate && <span className="mx-2">-</span>}
+                  {endDate && <span><strong>إلى:</strong> {new Date(endDate).toLocaleDateString('en-GB')}</span>}
+                </div>
+                <div>
+                  <strong>تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-GB')}
+                </div>
+              </div>
+            </div>
+            <CardTitle className="no-print">ميزان المراجعة</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
+            <Table className="print-table">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right" rowSpan={2}>رمز الحساب</TableHead>
@@ -204,9 +330,19 @@ const TrialBalance = () => {
               </TableHeader>
               <TableBody>
                 {trialBalanceData.map((account, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{account.code}</TableCell>
-                    <TableCell>{account.name}</TableCell>
+                  <TableRow key={index} className="hover:bg-accent/50 transition-colors">
+                    <TableCell 
+                      className="font-medium text-primary cursor-pointer hover:underline"
+                      onClick={() => setSelectedAccountForLedger(account.account)}
+                    >
+                      {account.code}
+                    </TableCell>
+                    <TableCell 
+                      className="cursor-pointer hover:text-primary hover:underline"
+                      onClick={() => setSelectedAccountForLedger(account.account)}
+                    >
+                      {account.name}
+                    </TableCell>
                     <TableCell className="text-left font-medium">
                       {account.openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
@@ -222,8 +358,8 @@ const TrialBalance = () => {
                   </TableRow>
                 ))}
                 {trialBalanceData.length > 0 && (
-                  <TableRow className="font-bold bg-accent/50">
-                    <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                  <TableRow className="font-bold bg-accent/50 print-total">
+                    <TableCell colSpan={2} className="text-right text-lg">الإجمالي</TableCell>
                     <TableCell className="text-left text-lg">
                       {totalOpeningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </TableCell>
@@ -250,13 +386,13 @@ const TrialBalance = () => {
           </CardContent>
           {trialBalanceData.length > 0 && (
             <CardContent className="border-t">
-              <div className="flex justify-center">
+              <div className="print-balance-status">
                 {Math.abs(totalPeriodDebit - totalPeriodCredit) < 0.01 ? (
-                  <div className="text-green-600 font-bold text-lg">
+                  <div className="text-green-600 font-bold text-xl">
                     ✓ ميزان المراجعة متوازن
                   </div>
                 ) : (
-                  <div className="text-destructive font-bold text-lg">
+                  <div className="text-destructive font-bold text-xl">
                     ✗ ميزان المراجعة غير متوازن - الفرق: {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                   </div>
                 )}
@@ -265,6 +401,97 @@ const TrialBalance = () => {
           )}
         </Card>
       </main>
+
+      {/* معاينة دفتر الأستاذ */}
+      <Dialog open={!!selectedAccountForLedger} onOpenChange={() => setSelectedAccountForLedger(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">دفتر الأستاذ - معاينة</DialogTitle>
+          </DialogHeader>
+          
+          {selectedAccountForLedger && (
+            <div className="space-y-6">
+              <div className="p-4 bg-accent/50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">الحساب</div>
+                    <div className="font-bold text-lg">
+                      {selectedAccountForLedger.code} - {selectedAccountForLedger.name_ar}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{selectedAccountForLedger.name_en}</div>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm text-muted-foreground">الرصيد</div>
+                    <div className="text-2xl font-bold">
+                      {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">رقم القيد</TableHead>
+                      <TableHead className="text-right">البيان</TableHead>
+                      <TableHead className="text-right">المدين</TableHead>
+                      <TableHead className="text-right">الدائن</TableHead>
+                      <TableHead className="text-right">الرصيد</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ledgerWithBalance.map((entry, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
+                        <TableCell className="font-medium">{entry.entryNumber}</TableCell>
+                        <TableCell>{entry.description}</TableCell>
+                        <TableCell className="text-left font-medium">
+                          {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                        <TableCell className="text-left font-medium">
+                          {entry.credit > 0 ? entry.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                        <TableCell className="text-left font-bold">
+                          {entry.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {ledgerWithBalance.length > 0 && (
+                      <TableRow className="font-bold bg-accent/50">
+                        <TableCell colSpan={3} className="text-right">الإجمالي</TableCell>
+                        <TableCell className="text-left">
+                          {ledgerTotalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-left">
+                          {ledgerTotalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-left">
+                          {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {ledgerWithBalance.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          لا توجد حركات على هذا الحساب في الفترة المحددة
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedAccountForLedger(null)}>
+                  إغلاق
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
