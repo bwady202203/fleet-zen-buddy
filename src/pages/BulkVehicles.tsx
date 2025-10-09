@@ -11,6 +11,9 @@ import { Link } from "react-router-dom";
 interface VehicleRow {
   id: string;
   name: string;
+  licensePlate: string;
+  driverName: string;
+  color: string;
   type: string;
   status: VehicleStatus;
   lastService: string;
@@ -20,14 +23,39 @@ interface VehicleRow {
 const BulkVehicles = () => {
   const { addVehicle } = useVehicles();
   const [vehicles, setVehicles] = useState<VehicleRow[]>([
-    { id: "1", name: "", type: "", status: "active", lastService: "", nextService: "" }
+    { id: "1", name: "", licensePlate: "", driverName: "", color: "", type: "", status: "active", lastService: "", nextService: "" }
   ]);
 
   const addRow = () => {
     setVehicles([
       ...vehicles,
-      { id: Date.now().toString(), name: "", type: "", status: "active", lastService: "", nextService: "" }
+      { id: Date.now().toString(), name: "", licensePlate: "", driverName: "", color: "", type: "", status: "active", lastService: "", nextService: "" }
     ]);
+  };
+
+  const handlePasteFromExcel = (e: React.ClipboardEvent) => {
+    const pastedData = e.clipboardData.getData('text');
+    const rows = pastedData.split('\n').filter(row => row.trim());
+    
+    const newVehicles = rows.map((row, index) => {
+      const columns = row.split('\t');
+      return {
+        id: Date.now().toString() + index,
+        name: columns[0] || "",
+        licensePlate: columns[1] || "",
+        driverName: columns[2] || "",
+        color: columns[3] || "",
+        type: columns[4] || "",
+        status: "active" as VehicleStatus,
+        lastService: columns[5] || "",
+        nextService: columns[6] || ""
+      };
+    });
+
+    if (newVehicles.length > 0) {
+      setVehicles(newVehicles);
+      toast.success(`تم لصق ${newVehicles.length} مركبة من Excel`);
+    }
   };
 
   const removeRow = (id: string) => {
@@ -62,7 +90,7 @@ const BulkVehicles = () => {
     });
 
     toast.success(`تم إضافة ${validVehicles.length} مركبة بنجاح`);
-    setVehicles([{ id: Date.now().toString(), name: "", type: "", status: "active", lastService: "", nextService: "" }]);
+    setVehicles([{ id: Date.now().toString(), name: "", licensePlate: "", driverName: "", color: "", type: "", status: "active", lastService: "", nextService: "" }]);
   };
 
   return (
@@ -83,17 +111,34 @@ const BulkVehicles = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="bg-card rounded-lg border p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">إضافة مركبات جديدة</h2>
-            <div className="flex gap-2">
-              <Button onClick={addRow} variant="outline">
-                <Plus className="h-4 w-4 ml-2" />
-                إضافة صف
-              </Button>
-              <Button onClick={handleSaveAll}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الجميع
-              </Button>
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">إضافة مركبات جديدة</h2>
+              <div className="flex gap-2">
+                <Button onClick={addRow} variant="outline">
+                  <Plus className="h-4 w-4 ml-2" />
+                  إضافة صف
+                </Button>
+                <Button onClick={handleSaveAll}>
+                  <Save className="h-4 w-4 ml-2" />
+                  حفظ الجميع
+                </Button>
+              </div>
+            </div>
+            <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/25">
+              <p className="text-sm text-muted-foreground text-center mb-2">
+                💡 نصيحة: يمكنك نسخ البيانات من Excel واللصق هنا مباشرة
+              </p>
+              <div 
+                onPaste={handlePasteFromExcel}
+                className="w-full min-h-[60px] bg-background rounded border-2 border-dashed border-primary/30 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                tabIndex={0}
+              >
+                <p className="text-muted-foreground text-sm">اضغط هنا والصق البيانات (Ctrl+V)</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                الترتيب: اسم المركبة | رقم اللوحة | اسم السائق | اللون | النوع | آخر صيانة | الصيانة القادمة
+              </p>
             </div>
           </div>
 
@@ -102,6 +147,9 @@ const BulkVehicles = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">اسم المركبة</TableHead>
+                  <TableHead className="text-right">رقم اللوحة</TableHead>
+                  <TableHead className="text-right">اسم السائق</TableHead>
+                  <TableHead className="text-right">اللون</TableHead>
                   <TableHead className="text-right">نوع المركبة</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">آخر صيانة</TableHead>
@@ -117,6 +165,30 @@ const BulkVehicles = () => {
                         value={vehicle.name}
                         onChange={(e) => updateVehicle(vehicle.id, "name", e.target.value)}
                         placeholder="شاحنة A-101"
+                        className="text-right"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={vehicle.licensePlate}
+                        onChange={(e) => updateVehicle(vehicle.id, "licensePlate", e.target.value)}
+                        placeholder="ABC-1234"
+                        className="text-right"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={vehicle.driverName}
+                        onChange={(e) => updateVehicle(vehicle.id, "driverName", e.target.value)}
+                        placeholder="اسم السائق"
+                        className="text-right"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={vehicle.color}
+                        onChange={(e) => updateVehicle(vehicle.id, "color", e.target.value)}
+                        placeholder="أبيض"
                         className="text-right"
                       />
                     </TableCell>

@@ -1920,8 +1920,10 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          color: string | null
           created_at: string | null
           current_mileage: number | null
+          driver_name: string | null
           id: string
           last_oil_change_date: string | null
           last_oil_change_mileage: number | null
@@ -1934,8 +1936,10 @@ export type Database = {
           year: number
         }
         Insert: {
+          color?: string | null
           created_at?: string | null
           current_mileage?: number | null
+          driver_name?: string | null
           id?: string
           last_oil_change_date?: string | null
           last_oil_change_mileage?: number | null
@@ -1948,8 +1952,10 @@ export type Database = {
           year: number
         }
         Update: {
+          color?: string | null
           created_at?: string | null
           current_mileage?: number | null
+          driver_name?: string | null
           id?: string
           last_oil_change_date?: string | null
           last_oil_change_mileage?: number | null
