@@ -8,7 +8,6 @@ import { VehicleMileageProvider } from "@/contexts/VehicleMileageContext";
 import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
-import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainNavbar from "@/components/MainNavbar";
 import Dashboard from "./pages/Dashboard";
