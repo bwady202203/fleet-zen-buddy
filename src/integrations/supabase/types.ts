@@ -188,6 +188,7 @@ export type Database = {
           created_at: string | null
           id: string
           phone: string | null
+          supplier_name: string | null
           tax_number: string | null
           updated_at: string | null
         }
@@ -198,6 +199,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           phone?: string | null
+          supplier_name?: string | null
           tax_number?: string | null
           updated_at?: string | null
         }
@@ -208,6 +210,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           phone?: string | null
+          supplier_name?: string | null
           tax_number?: string | null
           updated_at?: string | null
         }
@@ -1385,6 +1388,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          commercial_registration: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          tax_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          commercial_registration?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          commercial_registration?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_module_permissions: {
         Row: {
