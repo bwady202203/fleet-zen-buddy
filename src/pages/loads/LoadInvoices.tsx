@@ -729,7 +729,7 @@ const LoadInvoices = () => {
               <div ref={printRef} className="p-6 bg-white text-black print:p-8" style={{ maxHeight: '297mm' }}>
                 {/* Invoice Header */}
                 <div className="border-b-2 pb-4 mb-4" style={{ borderColor: '#2563eb' }}>
-                  <div className="flex justify-between items-start gap-8">
+                  <div className="flex justify-between items-start gap-4">
                     {/* Arabic Section - Supplier Info */}
                     <div className="flex-1">
                       <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
@@ -762,6 +762,14 @@ const LoadInvoices = () => {
                       </div>
                     </div>
 
+                    {/* QR Code in the center */}
+                    {qrCodeUrl && (
+                      <div className="text-center flex-shrink-0">
+                        <img src={qrCodeUrl} alt="QR Code" className="w-28 h-28 border-2 p-1" style={{ borderColor: '#2563eb' }} />
+                        <p className="text-xs text-gray-600 mt-1 font-semibold">QR Code</p>
+                      </div>
+                    )}
+
                     {/* English Section - Supplier Info */}
                     <div className="flex-1 text-left" dir="ltr">
                       <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
@@ -793,13 +801,6 @@ const LoadInvoices = () => {
                         <p className="text-xs text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
                       </div>
                     </div>
-
-                    {qrCodeUrl && (
-                      <div className="text-center">
-                        <img src={qrCodeUrl} alt="QR Code" className="w-32 h-32 border-2 p-1" style={{ borderColor: '#2563eb' }} />
-                        <p className="text-xs text-gray-600 mt-1 font-semibold">QR Code</p>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -857,15 +858,21 @@ const LoadInvoices = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {selectedInvoice.load_invoice_items?.map((item: any, index: number) => (
-                          <TableRow key={item.id} className={index % 2 === 0 ? 'bg-white' : ''} style={{ backgroundColor: index % 2 === 1 ? '#f8fafc' : 'white' }}>
-                            <TableCell className="text-right font-medium">{index + 1}</TableCell>
-                            <TableCell className="text-right">{item.description}</TableCell>
-                            <TableCell className="text-right">{item.quantity}</TableCell>
-                            <TableCell className="text-right">{item.unit_price.toFixed(2)} ر.س</TableCell>
-                            <TableCell className="text-right font-semibold">{item.total.toFixed(2)} ر.س</TableCell>
-                          </TableRow>
-                        ))}
+                        {(() => {
+                          const itemsToShow = [...(selectedInvoice.load_invoice_items || [])];
+                          while (itemsToShow.length < 4) {
+                            itemsToShow.push({ id: `empty-${itemsToShow.length}`, description: '', quantity: '', unit_price: '', total: '' });
+                          }
+                          return itemsToShow.map((item: any, index: number) => (
+                            <TableRow key={item.id} style={{ backgroundColor: index % 2 === 1 ? '#f8fafc' : 'white', minHeight: '40px' }}>
+                              <TableCell className="text-right font-medium">{item.description ? index + 1 : ''}</TableCell>
+                              <TableCell className="text-right">{item.description || ''}</TableCell>
+                              <TableCell className="text-right">{item.quantity || ''}</TableCell>
+                              <TableCell className="text-right">{item.unit_price ? `${item.unit_price.toFixed(2)} ر.س` : ''}</TableCell>
+                              <TableCell className="text-right font-semibold">{item.total ? `${item.total.toFixed(2)} ر.س` : ''}</TableCell>
+                            </TableRow>
+                          ));
+                        })()}
                       </TableBody>
                     </Table>
                   </div>
@@ -906,6 +913,33 @@ const LoadInvoices = () => {
                     <p className="text-xs text-gray-800">{selectedInvoice.notes}</p>
                   </div>
                 )}
+
+                {/* Signatures Section */}
+                <div className="mb-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="border rounded-lg p-4 text-center" style={{ borderColor: '#2563eb', minHeight: '100px' }}>
+                      <p className="text-sm font-bold mb-2" style={{ color: '#2563eb' }}>توقيع العميل</p>
+                      <p className="text-xs text-gray-600">Customer Signature</p>
+                      <div className="mt-4 border-t pt-2" style={{ borderColor: '#d1d5db' }}>
+                        <div className="h-8"></div>
+                      </div>
+                    </div>
+                    <div className="border rounded-lg p-4 text-center" style={{ borderColor: '#2563eb', minHeight: '100px' }}>
+                      <p className="text-sm font-bold mb-2" style={{ color: '#2563eb' }}>استلم بواسطة</p>
+                      <p className="text-xs text-gray-600">Received By</p>
+                      <div className="mt-4 border-t pt-2" style={{ borderColor: '#d1d5db' }}>
+                        <div className="h-8"></div>
+                      </div>
+                    </div>
+                    <div className="border rounded-lg p-4 text-center" style={{ borderColor: '#2563eb', minHeight: '100px' }}>
+                      <p className="text-sm font-bold mb-2" style={{ color: '#2563eb' }}>اعتمد بواسطة</p>
+                      <p className="text-xs text-gray-600">Approved By</p>
+                      <div className="mt-4 border-t pt-2" style={{ borderColor: '#d1d5db' }}>
+                        <div className="h-8"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Footer */}
                 <div className="border-t-2 pt-3 mt-4 text-center" style={{ borderColor: '#2563eb' }}>
