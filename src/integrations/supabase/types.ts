@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       chart_of_accounts: {
         Row: {
+          balance: number
           code: string
           created_at: string | null
           id: string
@@ -27,6 +28,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          balance?: number
           code: string
           created_at?: string | null
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          balance?: number
           code?: string
           created_at?: string | null
           id?: string

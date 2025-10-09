@@ -26,9 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2 } from "lucide-react";
+import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Account {
@@ -39,6 +40,7 @@ interface Account {
   type: string;
   parent_id: string | null;
   is_active: boolean;
+  balance: number;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +54,8 @@ const ChartOfAccounts = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [viewMode, setViewMode] = useState<"tree" | "table">("table");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
   const [formData, setFormData] = useState({
     code: "",
     name_ar: "",
@@ -59,6 +63,7 @@ const ChartOfAccounts = () => {
     parent_id: null as string | null,
     type: "asset",
     is_active: true,
+    balance: 0,
   });
 
   useEffect(() => {
@@ -162,8 +167,50 @@ const ChartOfAccounts = () => {
       parent_id: parentId,
       type: "asset",
       is_active: true,
+      balance: 0,
     });
     setEditingAccount(null);
+  };
+
+  const handleDelete = async () => {
+    if (!accountToDelete) return;
+    
+    try {
+      // Check if account has children
+      const hasChildren = accounts.some(acc => acc.parent_id === accountToDelete.id);
+      if (hasChildren) {
+        toast({
+          title: "لا يمكن الحذف / Cannot Delete",
+          description: "لا يمكن حذف حساب له حسابات فرعية / Cannot delete account with sub-accounts",
+          variant: "destructive",
+        });
+        setDeleteDialogOpen(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('chart_of_accounts')
+        .delete()
+        .eq('id', accountToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف بنجاح / Deleted Successfully",
+        description: "تم حذف الحساب / Account has been deleted",
+      });
+      
+      setDeleteDialogOpen(false);
+      setAccountToDelete(null);
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "خطأ / Error",
+        description: "حدث خطأ في حذف الحساب / Error deleting account",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddSubAccount = (parentAccount: Account) => {
@@ -180,8 +227,14 @@ const ChartOfAccounts = () => {
       parent_id: account.parent_id,
       type: account.type,
       is_active: account.is_active,
+      balance: account.balance,
     });
     setDialogOpen(true);
+  };
+
+  const confirmDelete = (account: Account) => {
+    setAccountToDelete(account);
+    setDeleteDialogOpen(true);
   };
 
   const getAccountLevel = (account: Account): number => {
@@ -233,6 +286,9 @@ const ChartOfAccounts = () => {
               <span className="text-muted-foreground text-sm" dir="ltr">{account.name_en}</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-primary">
+                {account.balance.toLocaleString('ar-SA')} ر.س
+              </span>
               <span className="text-sm text-muted-foreground">
                 {account.type === 'asset' && 'أصول / Assets'}
                 {account.type === 'liability' && 'خصوم / Liabilities'}
@@ -255,6 +311,15 @@ const ChartOfAccounts = () => {
                 title="تعديل / Edit"
               >
                 <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => confirmDelete(account)}
+                title="حذف / Delete"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -293,24 +358,30 @@ const ChartOfAccounts = () => {
                   title="إضافة حساب فرعي"
                 >
                   <Plus className="h-3 w-3 text-primary" />
-                </Button>
-              </div>
-            </TableCell>
-            <TableCell></TableCell>
-            <TableCell></TableCell>
-            <TableCell></TableCell>
-            <TableCell className="text-center">
+              </Button>
+            </div>
+          </TableCell>
+          <TableCell></TableCell>
+          <TableCell></TableCell>
+          <TableCell></TableCell>
+          <TableCell className="text-center font-semibold text-primary">
+            {level1.balance.toLocaleString('ar-SA')}
+          </TableCell>
+          <TableCell className="text-center">
               {level1.type === 'asset' && 'أصول'}
               {level1.type === 'liability' && 'خصوم'}
               {level1.type === 'equity' && 'حقوق ملكية'}
               {level1.type === 'revenue' && 'إيرادات'}
               {level1.type === 'expense' && 'مصروفات'}
-            </TableCell>
-            <TableCell className="text-center">
-              <Button variant="ghost" size="sm" onClick={() => handleEdit(level1)}>
-                <Edit className="h-4 w-4" />
-              </Button>
-            </TableCell>
+          </TableCell>
+          <TableCell className="text-center">
+            <Button variant="ghost" size="sm" onClick={() => handleEdit(level1)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => confirmDelete(level1)} className="text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TableCell>
           </TableRow>
         );
       }
@@ -358,21 +429,27 @@ const ChartOfAccounts = () => {
                     <Plus className="h-3 w-3 text-secondary-foreground" />
                   </Button>
                 </div>
-              </TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-              <TableCell className="text-center">
-                {level2.type === 'asset' && 'أصول'}
-                {level2.type === 'liability' && 'خصوم'}
-                {level2.type === 'equity' && 'حقوق ملكية'}
-                {level2.type === 'revenue' && 'إيرادات'}
-                {level2.type === 'expense' && 'مصروفات'}
-              </TableCell>
-              <TableCell className="text-center">
-                <Button variant="ghost" size="sm" onClick={() => handleEdit(level2)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TableCell>
+            </TableCell>
+            <TableCell></TableCell>
+            <TableCell></TableCell>
+            <TableCell className="text-center font-semibold text-primary">
+              {level2.balance.toLocaleString('ar-SA')}
+            </TableCell>
+            <TableCell className="text-center">
+              {level2.type === 'asset' && 'أصول'}
+              {level2.type === 'liability' && 'خصوم'}
+              {level2.type === 'equity' && 'حقوق ملكية'}
+              {level2.type === 'revenue' && 'إيرادات'}
+              {level2.type === 'expense' && 'مصروفات'}
+            </TableCell>
+            <TableCell className="text-center">
+              <Button variant="ghost" size="sm" onClick={() => handleEdit(level2)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => confirmDelete(level2)} className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TableCell>
             </TableRow>
           );
         }
@@ -439,6 +516,9 @@ const ChartOfAccounts = () => {
                 </div>
               </TableCell>
                 <TableCell></TableCell>
+                <TableCell className="text-center font-semibold text-primary">
+                  {level3.balance.toLocaleString('ar-SA')}
+                </TableCell>
                 <TableCell className="text-center">
                   {level3.type === 'asset' && 'أصول'}
                   {level3.type === 'liability' && 'خصوم'}
@@ -449,6 +529,9 @@ const ChartOfAccounts = () => {
                 <TableCell className="text-center">
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(level3)}>
                     <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => confirmDelete(level3)} className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -519,6 +602,9 @@ const ChartOfAccounts = () => {
                   {level4.code} - {level4.name_ar}
                 </div>
               </TableCell>
+              <TableCell className="text-center font-semibold text-primary">
+                {level4.balance.toLocaleString('ar-SA')}
+              </TableCell>
               <TableCell className="text-center">
                 {level4.type === 'asset' && 'أصول'}
                 {level4.type === 'liability' && 'خصوم'}
@@ -529,6 +615,9 @@ const ChartOfAccounts = () => {
               <TableCell className="text-center">
                 <Button variant="ghost" size="sm" onClick={() => handleEdit(level4)}>
                   <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => confirmDelete(level4)} className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </TableCell>
             </TableRow>
@@ -606,6 +695,17 @@ const ChartOfAccounts = () => {
                       onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                       placeholder="Example: Cash Box"
                       required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>الرصيد الافتتاحي / Opening Balance</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.balance}
+                      onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.00"
                     />
                   </div>
                   
@@ -703,8 +803,9 @@ const ChartOfAccounts = () => {
                     <TableHead className="text-right w-1/5">المستوى الثاني / Level 2</TableHead>
                     <TableHead className="text-right w-1/5">المستوى الثالث / Level 3</TableHead>
                     <TableHead className="text-right w-1/5">المستوى الرابع / Level 4</TableHead>
-                    <TableHead className="text-center w-1/10">النوع / Type</TableHead>
-                    <TableHead className="text-center w-1/10">إجراءات / Actions</TableHead>
+                    <TableHead className="text-center w-1/12">الرصيد / Balance</TableHead>
+                    <TableHead className="text-center w-1/12">النوع / Type</TableHead>
+                    <TableHead className="text-center w-1/12">إجراءات / Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -718,6 +819,25 @@ const ChartOfAccounts = () => {
             )}
           </CardContent>
         </Card>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>تأكيد الحذف / Confirm Delete</AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من حذف الحساب "{accountToDelete?.name_ar}"؟ لا يمكن التراجع عن هذا الإجراء.
+                <br />
+                Are you sure you want to delete the account "{accountToDelete?.name_en}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>إلغاء / Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                حذف / Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
