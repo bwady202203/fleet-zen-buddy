@@ -456,6 +456,7 @@ const JournalEntries = () => {
     setPreviewDialogOpen(true);
   };
 
+
   const handleDelete = async (entryId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا القيد؟ / Are you sure you want to delete this entry?')) return;
     
@@ -834,9 +835,15 @@ const JournalEntries = () => {
             left: 0;
             top: 0;
             width: 100%;
+            background: white;
           }
           .no-print {
             display: none !important;
+          }
+        }
+        @media screen {
+          .print-content {
+            display: none;
           }
         }
       `}</style>
@@ -971,7 +978,7 @@ const JournalEntries = () => {
 
         {/* Print Template */}
         {selectedEntry && (
-          <div className="print-content" style={{ display: 'none' }}>
+          <div className="print-content">
             <div className="max-w-4xl mx-auto bg-white p-8" dir="rtl">
               <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
                 <h1 className="text-3xl font-bold mb-2">سند قيد يومية</h1>
@@ -995,76 +1002,76 @@ const JournalEntries = () => {
                 </div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #1f2937', marginBottom: '24px' }}>
+              <table className="w-full border-collapse border-2 border-gray-800 mb-6">
                 <thead>
-                  <tr style={{ backgroundColor: '#1f2937', color: 'white' }}>
-                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                  <tr className="bg-gray-800 text-white">
+                    <th className="border border-gray-800 p-3 text-right">
                       رمز الحساب<br/>Account Code
                     </th>
-                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                    <th className="border border-gray-800 p-3 text-right">
                       اسم الحساب<br/>Account Name
                     </th>
-                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                    <th className="border border-gray-800 p-3 text-right">
                       البيان<br/>Description
                     </th>
-                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                    <th className="border border-gray-800 p-3 text-right">
                       المدين<br/>Debit
                     </th>
-                    <th style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'right' }}>
+                    <th className="border border-gray-800 p-3 text-right">
                       الدائن<br/>Credit
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedEntry.lines.map((line: any, index: number) => (
-                    <tr key={index}>
-                      <td style={{ border: '1px solid #d1d5db', padding: '12px' }}>{line.accountCode}</td>
-                      <td style={{ border: '1px solid #d1d5db', padding: '12px' }}>{line.accountName}</td>
-                      <td style={{ border: '1px solid #d1d5db', padding: '12px' }}>{line.description}</td>
-                      <td style={{ border: '1px solid #d1d5db', padding: '12px', color: '#dc2626', fontWeight: 'bold' }}>
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 p-3">{line.accountCode}</td>
+                      <td className="border border-gray-300 p-3">{line.accountName}</td>
+                      <td className="border border-gray-300 p-3">{line.description}</td>
+                      <td className="border border-gray-300 p-3 text-red-600 font-bold">
                         {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </td>
-                      <td style={{ border: '1px solid #d1d5db', padding: '12px', color: '#16a34a', fontWeight: 'bold' }}>
+                      <td className="border border-gray-300 p-3 text-green-600 font-bold">
                         {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </td>
                     </tr>
                   ))}
-                  <tr style={{ backgroundColor: '#f3f4f6', fontWeight: 'bold', fontSize: '1.125rem' }}>
-                    <td colSpan={3} style={{ border: '1px solid #1f2937', padding: '12px', textAlign: 'left' }}>
+                  <tr className="bg-gray-100 font-bold text-lg">
+                    <td colSpan={3} className="border border-gray-800 p-3 text-left">
                       الإجمالي / Total
                     </td>
-                    <td style={{ border: '1px solid #1f2937', padding: '12px', color: '#dc2626' }}>
+                    <td className="border border-gray-800 p-3 text-red-600">
                       {selectedEntry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </td>
-                    <td style={{ border: '1px solid #1f2937', padding: '12px', color: '#16a34a' }}>
+                    <td className="border border-gray-800 p-3 text-green-600">
                       {selectedEntry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tbody>
               </table>
 
-              <div className="grid grid-cols-3 gap-8 mt-12 pt-8" style={{ borderTop: '1px solid #d1d5db', marginTop: '48px', paddingTop: '32px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ borderTop: '2px solid #1f2937', paddingTop: '8px', marginTop: '64px' }}>
-                    <div style={{ fontWeight: 'bold' }}>المحاسب</div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Accountant</div>
+              <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-gray-300">
+                <div className="text-center">
+                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
+                    <div className="font-bold">المحاسب</div>
+                    <div className="text-sm text-gray-600">Accountant</div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ borderTop: '2px solid #1f2937', paddingTop: '8px', marginTop: '64px' }}>
-                    <div style={{ fontWeight: 'bold' }}>المدير المالي</div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Financial Manager</div>
+                <div className="text-center">
+                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
+                    <div className="font-bold">المدير المالي</div>
+                    <div className="text-sm text-gray-600">Financial Manager</div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ borderTop: '2px solid #1f2937', paddingTop: '8px', marginTop: '64px' }}>
-                    <div style={{ fontWeight: 'bold' }}>المعتمد</div>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Approved By</div>
+                <div className="text-center">
+                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
+                    <div className="font-bold">المعتمد</div>
+                    <div className="text-sm text-gray-600">Approved By</div>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
+              <div className="mt-8 text-center text-sm text-gray-500">
                 <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')} - {new Date().toLocaleTimeString('ar-SA')}</div>
                 <div>Print Date: {new Date().toLocaleDateString('en-US')} - {new Date().toLocaleTimeString('en-US')}</div>
               </div>
