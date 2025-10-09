@@ -172,7 +172,7 @@ const ChartOfAccounts = () => {
       }, 0);
       return String(maxCode + 1);
     } else {
-      // For sub-accounts, use parent code + sequence number
+      // For sub-accounts, use parent code + sequence number based on last existing sub-account
       const parent = accounts.find(acc => acc.id === parentId);
       if (!parent) return "1";
       
@@ -189,6 +189,14 @@ const ChartOfAccounts = () => {
       return `${parent.code}${String(maxSubCode + 1).padStart(2, '0')}`;
     }
   };
+
+  // Update account code when parent changes
+  useEffect(() => {
+    if (!editingAccount && dialogOpen) {
+      const newCode = generateAccountCode(formData.parent_id);
+      setFormData(prev => ({ ...prev, code: newCode }));
+    }
+  }, [formData.parent_id, dialogOpen, editingAccount]);
 
   const resetForm = (parentId: string | null = null) => {
     setFormData({
@@ -813,6 +821,47 @@ const ChartOfAccounts = () => {
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>الحساب الرئيسي / Parent Account</Label>
+                      <Select
+                        value={formData.parent_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="بدون حساب رئيسي / No Parent" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
+                          {accounts.map(acc => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.code} - {acc.name_ar}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>نوع الحساب / Account Type</Label>
+                      <Select
+                        value={formData.type}
+                        onValueChange={(value) => setFormData({ ...formData, type: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="asset">أصول / Assets</SelectItem>
+                          <SelectItem value="liability">خصوم / Liabilities</SelectItem>
+                          <SelectItem value="equity">حقوق ملكية / Equity</SelectItem>
+                          <SelectItem value="revenue">إيرادات / Revenue</SelectItem>
+                          <SelectItem value="expense">مصروفات / Expenses</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
                   <div>
                     <Label>رمز الحساب / Account Code</Label>
                     <Input
@@ -852,47 +901,6 @@ const ChartOfAccounts = () => {
                       onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
                     />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>نوع الحساب / Account Type</Label>
-                      <Select
-                        value={formData.type}
-                        onValueChange={(value) => setFormData({ ...formData, type: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="asset">أصول / Assets</SelectItem>
-                          <SelectItem value="liability">خصوم / Liabilities</SelectItem>
-                          <SelectItem value="equity">حقوق ملكية / Equity</SelectItem>
-                          <SelectItem value="revenue">إيرادات / Revenue</SelectItem>
-                          <SelectItem value="expense">مصروفات / Expenses</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>الحساب الرئيسي / Parent Account</Label>
-                      <Select
-                        value={formData.parent_id || "none"}
-                        onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="بدون حساب رئيسي / No Parent" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
-                          {accounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.id}>
-                              {acc.code} - {acc.name_ar}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
                   
                   <div className="flex justify-end gap-2 pt-4">
