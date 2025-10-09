@@ -281,6 +281,16 @@ const LoadReports = () => {
 
   const totalQuantity = filteredCompanyLoads.reduce((sum, load) => sum + (parseFloat(load.quantity) || 0), 0);
 
+  // Calculate totals by load type
+  const totalsByLoadType = filteredCompanyLoads.reduce((acc: any, load) => {
+    const loadTypeName = load.load_types?.name || 'غير محدد';
+    if (!acc[loadTypeName]) {
+      acc[loadTypeName] = 0;
+    }
+    acc[loadTypeName] += parseFloat(load.quantity) || 0;
+    return acc;
+  }, {});
+
   const handlePrintCompanyReport = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -296,18 +306,85 @@ const LoadReports = () => {
         </tr>
       `).join('');
 
+      const totalRowsByType = Object.entries(totalsByLoadType).map(([typeName, total]: [string, any]) => `
+        <tr class="subtotal-row">
+          <td colspan="4" style="text-align: center;">إجمالي ${typeName}</td>
+          <td style="font-weight: bold;">${typeName}</td>
+          <td style="font-weight: bold;">${total.toFixed(2)}</td>
+          <td></td>
+        </tr>
+      `).join('');
+
       printWindow.document.write(`
         <html dir="rtl">
           <head>
             <title>تقرير الشركات والشحنات</title>
+            <meta charset="UTF-8">
             <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { text-align: center; margin-bottom: 30px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
-              th { background-color: #f2f2f2; font-weight: bold; }
-              .total-row { background-color: #e8f5e9; font-weight: bold; }
-              .footer { margin-top: 30px; text-align: center; color: #666; }
+              * { direction: rtl; }
+              body { 
+                font-family: 'Arial', 'Tahoma', sans-serif; 
+                padding: 20px; 
+                direction: rtl;
+              }
+              h1 { 
+                text-align: center; 
+                margin-bottom: 30px;
+                color: #333;
+              }
+              table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 20px;
+                direction: rtl;
+              }
+              th, td { 
+                border: 1px solid #ddd; 
+                padding: 10px; 
+                text-align: right;
+                direction: rtl;
+              }
+              th { 
+                background-color: #4a5568; 
+                color: white;
+                font-weight: bold; 
+              }
+              .subtotal-row { 
+                background-color: #e3f2fd; 
+                font-weight: bold;
+                color: #1976d2;
+              }
+              .total-row { 
+                background-color: #c8e6c9; 
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #2e7d32;
+              }
+              .summary-section {
+                margin-top: 30px;
+                padding: 20px;
+                background-color: #f5f5f5;
+                border-radius: 8px;
+              }
+              .summary-title {
+                font-size: 1.2em;
+                font-weight: bold;
+                margin-bottom: 15px;
+                color: #333;
+                text-align: center;
+              }
+              .summary-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid #ddd;
+              }
+              .footer { 
+                margin-top: 30px; 
+                text-align: center; 
+                color: #666;
+                direction: rtl;
+              }
             </style>
           </head>
           <body>
@@ -326,13 +403,29 @@ const LoadReports = () => {
               </thead>
               <tbody>
                 ${tableRows}
+                ${totalRowsByType}
                 <tr class="total-row">
-                  <td colspan="5" style="text-align: center;">الإجمالي</td>
+                  <td colspan="5" style="text-align: center;">الإجمالي الكلي</td>
                   <td>${totalQuantity.toFixed(2)}</td>
                   <td></td>
                 </tr>
               </tbody>
             </table>
+            
+            <div class="summary-section">
+              <div class="summary-title">ملخص الكميات حسب نوع الحمولة</div>
+              ${Object.entries(totalsByLoadType).map(([typeName, total]: [string, any]) => `
+                <div class="summary-item">
+                  <span>${typeName}</span>
+                  <span style="font-weight: bold; color: #1976d2;">${total.toFixed(2)}</span>
+                </div>
+              `).join('')}
+              <div class="summary-item" style="border-top: 2px solid #333; margin-top: 10px; padding-top: 10px;">
+                <span style="font-weight: bold;">الإجمالي الكلي</span>
+                <span style="font-weight: bold; color: #2e7d32; font-size: 1.2em;">${totalQuantity.toFixed(2)}</span>
+              </div>
+            </div>
+            
             <div class="footer">
               <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')} - ${new Date().toLocaleTimeString('ar-SA')}</p>
             </div>
@@ -355,13 +448,26 @@ const LoadReports = () => {
       'اسم السائق': load.drivers?.name || '-'
     }));
 
+    // Add subtotal rows for each load type
+    Object.entries(totalsByLoadType).forEach(([typeName, total]: [string, any]) => {
+      excelData.push({
+        'رقم الشحنة': '',
+        'التاريخ الميلادي': '',
+        'التاريخ الهجري': '',
+        'اسم الشركة': '',
+        'نوع الحمولة': `إجمالي ${typeName}`,
+        'الكمية': total.toFixed(2),
+        'اسم السائق': ''
+      });
+    });
+
     // Add total row
     excelData.push({
       'رقم الشحنة': '',
       'التاريخ الميلادي': '',
       'التاريخ الهجري': '',
       'اسم الشركة': '',
-      'نوع الحمولة': 'الإجمالي',
+      'نوع الحمولة': 'الإجمالي الكلي',
       'الكمية': totalQuantity.toFixed(2),
       'اسم السائق': ''
     });
@@ -678,9 +784,23 @@ const LoadReports = () => {
                               <TableCell>{load.drivers?.name || '-'}</TableCell>
                             </TableRow>
                           ))}
+                          {Object.entries(totalsByLoadType).map(([typeName, total]: [string, any]) => (
+                            <TableRow key={typeName} className="bg-blue-50 dark:bg-blue-950/30">
+                              <TableCell colSpan={4} className="text-center font-semibold">
+                                إجمالي {typeName}
+                              </TableCell>
+                              <TableCell className="font-bold text-blue-600 dark:text-blue-400">
+                                {typeName}
+                              </TableCell>
+                              <TableCell className="font-bold text-blue-600 dark:text-blue-400">
+                                {total.toFixed(2)}
+                              </TableCell>
+                              <TableCell></TableCell>
+                            </TableRow>
+                          ))}
                           <TableRow className="bg-primary/10 font-bold">
                             <TableCell colSpan={5} className="text-center text-lg">
-                              الإجمالي
+                              الإجمالي الكلي
                             </TableCell>
                             <TableCell className="text-lg text-primary">
                               {totalQuantity.toFixed(2)}
