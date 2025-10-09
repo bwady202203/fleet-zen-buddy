@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Printer } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +48,7 @@ interface JournalLine {
 }
 
 const Ledger = () => {
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
@@ -105,11 +106,16 @@ const Ledger = () => {
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
+      entryId: entry.id,
       description: line.description || entry.description,
       debit: Number(line.debit) || 0,
       credit: Number(line.credit) || 0,
     }));
   });
+
+  const handleOpenEntry = (entryId: string) => {
+    navigate('/accounting/journal-entries', { state: { openEntryId: entryId } });
+  };
 
   let runningBalance = 0;
   const ledgerWithBalance = ledgerEntries.map(entry => {
@@ -125,6 +131,61 @@ const Ledger = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+          }
+          .print-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .print-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 14px;
+          }
+          .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          .print-table th, .print-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: right;
+          }
+          .print-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+          }
+          .print-total {
+            background-color: #e8e8e8;
+            font-weight: bold;
+          }
+        }
+      `}</style>
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -148,7 +209,7 @@ const Ledger = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6">
+        <Card className="mb-6 no-print">
           <CardHeader>
             <CardTitle>فلترة البيانات</CardTitle>
           </CardHeader>
@@ -190,9 +251,22 @@ const Ledger = () => {
         </Card>
 
         {selectedAccountData && (
-          <Card>
+          <Card className="print-content">
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="print-header">
+                <div className="print-title">دفتر الأستاذ</div>
+                <div className="print-info">
+                  <div>
+                    <strong>الحساب:</strong> {selectedAccountData.code} - {selectedAccountData.name_ar}
+                  </div>
+                  <div>
+                    {startDate && <span><strong>من:</strong> {new Date(startDate).toLocaleDateString('ar-SA')}</span>}
+                    {startDate && endDate && <span className="mx-2">-</span>}
+                    {endDate && <span><strong>إلى:</strong> {new Date(endDate).toLocaleDateString('ar-SA')}</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center no-print">
                 <div>
                   <CardTitle>{selectedAccountData.code} - {selectedAccountData.name_ar}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">{selectedAccountData.name_en}</p>
@@ -206,7 +280,7 @@ const Ledger = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
+              <Table className="print-table">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-right">التاريخ</TableHead>
@@ -221,7 +295,12 @@ const Ledger = () => {
                   {ledgerWithBalance.map((entry, index) => (
                     <TableRow key={index}>
                       <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
-                      <TableCell className="font-medium">{entry.entryNumber}</TableCell>
+                      <TableCell 
+                        className="font-medium text-primary cursor-pointer hover:underline"
+                        onClick={() => handleOpenEntry(entry.entryId)}
+                      >
+                        {entry.entryNumber}
+                      </TableCell>
                       <TableCell>{entry.description}</TableCell>
                       <TableCell className="text-left font-medium">
                         {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
@@ -235,7 +314,7 @@ const Ledger = () => {
                     </TableRow>
                   ))}
                   {ledgerWithBalance.length > 0 && (
-                    <TableRow className="font-bold bg-accent/50">
+                    <TableRow className="font-bold bg-accent/50 print-total">
                       <TableCell colSpan={3} className="text-right">الإجمالي</TableCell>
                       <TableCell className="text-left">
                         {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
