@@ -8,6 +8,9 @@ import { VehicleMileageProvider } from "@/contexts/VehicleMileageContext";
 import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
+import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainNavbar from "@/components/MainNavbar";
 import Dashboard from "./pages/Dashboard";
@@ -68,83 +71,89 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AccountingProvider>
-        <InvoicesProvider>
-          <VehiclesProvider>
-          <SparePartsProvider>
-            <VehicleMileageProvider>
-              <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                  <Routes>
-                    <Route path="/auth" element={<Auth />} />
-                    
-                    {/* Protected Routes with Navbar */}
-                    <Route path="/*" element={
-                      <ProtectedRoute>
-                        <MainNavbar />
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/users" element={<UsersManagement />} />
-                  <Route path="/fleet" element={<Index />} />
-                  <Route path="/accounting" element={<Accounting />} />
-                  <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-                  <Route path="/accounting/journal-entries" element={<JournalEntries />} />
-                  <Route path="/accounting/ledger" element={<Ledger />} />
-                  <Route path="/accounting/trial-balance" element={<TrialBalance />} />
-                  <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
-                  <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
-                  <Route path="/accounting/sales-return" element={<SalesReturn />} />
-                  <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
-                  <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
-                  <Route path="/accounting/income-statement" element={<IncomeStatement />} />
-                  <Route path="/accounting/cost-centers" element={<CostCenters />} />
-                  <Route path="/accounting/projects" element={<Projects />} />
-                  <Route path="/hr" element={<HR />} />
-                  <Route path="/hr/employees" element={<Employees />} />
-                  <Route path="/hr/payroll" element={<Payroll />} />
-                  <Route path="/hr/advances" element={<Advances />} />
-                  <Route path="/hr/additions" element={<Additions />} />
-                  <Route path="/hr/deductions" element={<Deductions />} />
-                  <Route path="/hr/leaves" element={<Leaves />} />
-                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
-                  <Route path="/loads" element={<Loads />} />
-                  <Route path="/loads/register" element={<LoadsRegister />} />
-                  <Route path="/loads/list" element={<LoadsList />} />
-                  <Route path="/loads/drivers" element={<DriversManagement />} />
-                  <Route path="/loads/companies" element={<CompaniesManagement />} />
-                  <Route path="/loads/invoices" element={<LoadInvoices />} />
-                  <Route path="/loads/receipts" element={<PaymentReceipts />} />
-                  <Route path="/loads/reports" element={<LoadReports />} />
-                  <Route path="/loads/load-types" element={<LoadTypes />} />
-                  <Route path="/loads/suppliers" element={<SuppliersManagement />} />
-                  <Route path="/reports" element={<MaintenanceReports />} />
-                  <Route path="/spare-parts" element={<SpareParts />} />
-                  <Route path="/purchases" element={<Purchases />} />
-                  <Route path="/stock-movement" element={<StockMovement />} />
-                  <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
-                  <Route path="/price-history" element={<PurchasePriceHistory />} />
-                  <Route path="/bulk-vehicles" element={<BulkVehicles />} />
-                  <Route path="/custody" element={<CustodyHome />} />
-                  <Route path="/custody/representatives" element={<CustodyRepresentatives />} />
-                  <Route path="/custody/transfers" element={<CustodyTransfers />} />
-                  <Route path="/custody/expenses" element={<CustodyExpenses />} />
-                  <Route path="/custody/records" element={<CustodyRecords />} />
-                  <Route path="/custody/filter" element={<CustodyFilter />} />
-                  <Route path="/custody/journal" element={<CustodyJournalEntries />} />
-                  <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </ProtectedRoute>
-                    } />
-                </Routes>
-              </BrowserRouter>
-              </TooltipProvider>
-            </VehicleMileageProvider>
-          </SparePartsProvider>
-        </VehiclesProvider>
-        </InvoicesProvider>
-      </AccountingProvider>
+      <AuthProvider>
+        <EmployeeTransactionsProvider>
+          <PermissionsProvider>
+            <AccountingProvider>
+              <InvoicesProvider>
+                <VehiclesProvider>
+                  <SparePartsProvider>
+                    <VehicleMileageProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter>
+                          <Routes>
+                            <Route path="/auth" element={<Auth />} />
+                            
+                            {/* Protected Routes with Navbar */}
+                            <Route path="/*" element={
+                              <ProtectedRoute>
+                                <MainNavbar />
+                                <Routes>
+                                  <Route path="/" element={<Dashboard />} />
+                                  <Route path="/users" element={<UsersManagement />} />
+                                  <Route path="/fleet" element={<Index />} />
+                                  <Route path="/accounting" element={<Accounting />} />
+                                  <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
+                                  <Route path="/accounting/journal-entries" element={<JournalEntries />} />
+                                  <Route path="/accounting/ledger" element={<Ledger />} />
+                                  <Route path="/accounting/trial-balance" element={<TrialBalance />} />
+                                  <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
+                                  <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
+                                  <Route path="/accounting/sales-return" element={<SalesReturn />} />
+                                  <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
+                                  <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
+                                  <Route path="/accounting/income-statement" element={<IncomeStatement />} />
+                                  <Route path="/accounting/cost-centers" element={<CostCenters />} />
+                                  <Route path="/accounting/projects" element={<Projects />} />
+                                  <Route path="/hr" element={<HR />} />
+                                  <Route path="/hr/employees" element={<Employees />} />
+                                  <Route path="/hr/payroll" element={<Payroll />} />
+                                  <Route path="/hr/advances" element={<Advances />} />
+                                  <Route path="/hr/additions" element={<Additions />} />
+                                  <Route path="/hr/deductions" element={<Deductions />} />
+                                  <Route path="/hr/leaves" element={<Leaves />} />
+                                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
+                                  <Route path="/loads" element={<Loads />} />
+                                  <Route path="/loads/register" element={<LoadsRegister />} />
+                                  <Route path="/loads/list" element={<LoadsList />} />
+                                  <Route path="/loads/drivers" element={<DriversManagement />} />
+                                  <Route path="/loads/companies" element={<CompaniesManagement />} />
+                                  <Route path="/loads/invoices" element={<LoadInvoices />} />
+                                  <Route path="/loads/receipts" element={<PaymentReceipts />} />
+                                  <Route path="/loads/reports" element={<LoadReports />} />
+                                  <Route path="/loads/load-types" element={<LoadTypes />} />
+                                  <Route path="/loads/suppliers" element={<SuppliersManagement />} />
+                                  <Route path="/reports" element={<MaintenanceReports />} />
+                                  <Route path="/spare-parts" element={<SpareParts />} />
+                                  <Route path="/purchases" element={<Purchases />} />
+                                  <Route path="/stock-movement" element={<StockMovement />} />
+                                  <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
+                                  <Route path="/price-history" element={<PurchasePriceHistory />} />
+                                  <Route path="/bulk-vehicles" element={<BulkVehicles />} />
+                                  <Route path="/custody" element={<CustodyHome />} />
+                                  <Route path="/custody/representatives" element={<CustodyRepresentatives />} />
+                                  <Route path="/custody/transfers" element={<CustodyTransfers />} />
+                                  <Route path="/custody/expenses" element={<CustodyExpenses />} />
+                                  <Route path="/custody/records" element={<CustodyRecords />} />
+                                  <Route path="/custody/filter" element={<CustodyFilter />} />
+                                  <Route path="/custody/journal" element={<CustodyJournalEntries />} />
+                                  <Route path="*" element={<NotFound />} />
+                                </Routes>
+                              </ProtectedRoute>
+                            } />
+                          </Routes>
+                        </BrowserRouter>
+                      </TooltipProvider>
+                    </VehicleMileageProvider>
+                  </SparePartsProvider>
+                </VehiclesProvider>
+              </InvoicesProvider>
+            </AccountingProvider>
+          </PermissionsProvider>
+        </EmployeeTransactionsProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
