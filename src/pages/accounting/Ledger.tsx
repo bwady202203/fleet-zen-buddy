@@ -276,9 +276,12 @@ const Ledger = () => {
                     <strong>الحساب:</strong> {selectedAccountData.code} - {selectedAccountData.name_ar}
                   </div>
                   <div>
-                    {startDate && <span><strong>من:</strong> {new Date(startDate).toLocaleDateString('ar-SA')}</span>}
+                    {startDate && <span><strong>من:</strong> {new Date(startDate).toLocaleDateString('en-GB')}</span>}
                     {startDate && endDate && <span className="mx-2">-</span>}
-                    {endDate && <span><strong>إلى:</strong> {new Date(endDate).toLocaleDateString('ar-SA')}</span>}
+                    {endDate && <span><strong>إلى:</strong> {new Date(endDate).toLocaleDateString('en-GB')}</span>}
+                  </div>
+                  <div>
+                    <strong>تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-GB')}
                   </div>
                 </div>
               </div>
@@ -310,7 +313,7 @@ const Ledger = () => {
                 <TableBody>
                   {ledgerWithBalance.map((entry, index) => (
                     <TableRow key={index}>
-                      <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
+                      <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
                       <TableCell 
                         className="font-medium text-primary cursor-pointer hover:underline"
                         onClick={() => handleOpenEntry(entry.entryId)}
