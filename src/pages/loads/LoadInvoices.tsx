@@ -21,16 +21,19 @@ const LoadInvoices = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loads, setLoads] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [companySettings, setCompanySettings] = useState<any>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     companyId: '',
+    supplierId: '',
     paymentType: 'cash',
     notes: ''
   });
@@ -41,17 +44,19 @@ const LoadInvoices = () => {
   }, []);
 
   const loadData = async () => {
-    const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
+    const [invoicesRes, companiesRes, suppliersRes, settingsRes] = await Promise.all([
       supabase
         .from('load_invoices')
         .select('*, companies(name, tax_number, address, phone), load_invoice_items(*, loads(load_number, load_types(name)))')
         .order('created_at', { ascending: false }),
       supabase.from('companies').select('*').eq('is_active', true),
+      supabase.from('suppliers').select('*').eq('is_active', true),
       supabase.from('company_settings').select('*').limit(1).maybeSingle()
     ]);
 
     if (invoicesRes.data) setInvoices(invoicesRes.data);
     if (companiesRes.data) setCompanies(companiesRes.data);
+    if (suppliersRes.data) setSuppliers(suppliersRes.data);
     if (settingsRes.data) setCompanySettings(settingsRes.data);
   };
 
@@ -180,6 +185,7 @@ const LoadInvoices = () => {
       setFormData({
         date: new Date().toISOString().split('T')[0],
         companyId: '',
+        supplierId: '',
         paymentType: 'cash',
         notes: ''
       });
@@ -198,6 +204,16 @@ const LoadInvoices = () => {
 
   const handleViewInvoice = async (invoice: any) => {
     setSelectedInvoice(invoice);
+    
+    // Load supplier if exists
+    if (invoice.supplier_id) {
+      const { data: supplierData } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', invoice.supplier_id)
+        .maybeSingle();
+      if (supplierData) setSelectedSupplier(supplierData);
+    }
     
     // Load company settings if not loaded
     if (!companySettings) {
@@ -331,6 +347,28 @@ const LoadInvoices = () => {
                         {companies.map((company) => (
                           <SelectItem key={company.id} value={company.id}>
                             {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">اسم المورد</Label>
+                    <Select 
+                      value={formData.supplierId} 
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, supplierId: value });
+                        const supplier = suppliers.find(s => s.id === value);
+                        setSelectedSupplier(supplier);
+                      }}
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="اختر المورد" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map((supplier) => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -551,29 +589,29 @@ const LoadInvoices = () => {
                 {/* Invoice Header */}
                 <div className="border-b-2 pb-6 mb-6" style={{ borderColor: '#2563eb' }}>
                   <div className="flex justify-between items-start gap-8">
-                    {/* Arabic Section */}
+                    {/* Arabic Section - Supplier Info */}
                     <div className="flex-1">
                       <h1 className="text-2xl font-bold mb-3" style={{ color: '#2563eb' }}>
-                        {companySettings?.supplier_name || 'اسم المورد'}
+                        {selectedSupplier?.name || companySettings?.supplier_name || 'اسم المورد'}
                       </h1>
-                      {companySettings?.tax_number && (
+                      {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
                         <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-semibold">الرقم الضريبي:</span> {companySettings.tax_number}
+                          <span className="font-semibold">الرقم الضريبي:</span> {selectedSupplier?.tax_number || companySettings?.tax_number}
                         </p>
                       )}
-                      {companySettings?.commercial_registration && (
+                      {(selectedSupplier?.commercial_registration || companySettings?.commercial_registration) && (
                         <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-semibold">السجل التجاري:</span> {companySettings.commercial_registration}
+                          <span className="font-semibold">السجل التجاري:</span> {selectedSupplier?.commercial_registration || companySettings?.commercial_registration}
                         </p>
                       )}
-                      {companySettings?.phone && (
+                      {(selectedSupplier?.phone || companySettings?.phone) && (
                         <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-semibold">الهاتف:</span> {companySettings.phone}
+                          <span className="font-semibold">الهاتف:</span> {selectedSupplier?.phone || companySettings?.phone}
                         </p>
                       )}
-                      {companySettings?.address && (
+                      {(selectedSupplier?.address || companySettings?.address) && (
                         <p className="text-sm text-gray-700">
-                          <span className="font-semibold">العنوان:</span> {companySettings.address}
+                          <span className="font-semibold">العنوان:</span> {selectedSupplier?.address || companySettings?.address}
                         </p>
                       )}
                       <div className="mt-4 pt-4 border-t">
@@ -583,29 +621,29 @@ const LoadInvoices = () => {
                       </div>
                     </div>
 
-                    {/* English Section */}
+                    {/* English Section - Supplier Info */}
                     <div className="flex-1 text-left" dir="ltr">
                       <h1 className="text-2xl font-bold mb-3" style={{ color: '#2563eb' }}>
-                        {companySettings?.supplier_name || 'Supplier Name'}
+                        {selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}
                       </h1>
-                      {companySettings?.tax_number && (
+                      {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
                         <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-semibold">Tax Number:</span> {companySettings.tax_number}
+                          <span className="font-semibold">Tax Number:</span> {selectedSupplier?.tax_number || companySettings?.tax_number}
                         </p>
                       )}
-                      {companySettings?.commercial_registration && (
+                      {(selectedSupplier?.commercial_registration || companySettings?.commercial_registration) && (
                         <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-semibold">Commercial Registration:</span> {companySettings.commercial_registration}
+                          <span className="font-semibold">Commercial Registration:</span> {selectedSupplier?.commercial_registration || companySettings?.commercial_registration}
                         </p>
                       )}
-                      {companySettings?.phone && (
+                      {(selectedSupplier?.phone || companySettings?.phone) && (
                         <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-semibold">Phone:</span> {companySettings.phone}
+                          <span className="font-semibold">Phone:</span> {selectedSupplier?.phone || companySettings?.phone}
                         </p>
                       )}
-                      {companySettings?.address && (
+                      {(selectedSupplier?.address || companySettings?.address) && (
                         <p className="text-sm text-gray-700">
-                          <span className="font-semibold">Address:</span> {companySettings.address}
+                          <span className="font-semibold">Address:</span> {selectedSupplier?.address || companySettings?.address}
                         </p>
                       )}
                       <div className="mt-4 pt-4 border-t">
