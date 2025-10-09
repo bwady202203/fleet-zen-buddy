@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { ArrowRight, Printer } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
@@ -24,12 +25,30 @@ interface AccountBalance {
 
 const BalanceSheet = () => {
   const [balances, setBalances] = useState<AccountBalance[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState("");
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
+    fetchBranches();
   }, [asOfDate]);
+
+  const fetchBranches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('is_active', true)
+        .order('code');
+      
+      if (error) throw error;
+      setBranches(data || []);
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -217,14 +236,32 @@ const BalanceSheet = () => {
           <CardHeader>
             <CardTitle>التاريخ</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Label>كما في</Label>
-            <Input
-              type="date"
-              value={asOfDate}
-              onChange={(e) => setAsOfDate(e.target.value)}
-              className="max-w-xs"
-            />
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>الفرع</Label>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الفرع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الفروع</SelectItem>
+                  {branches.map(branch => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.code} - {branch.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>كما في</Label>
+              <Input
+                type="date"
+                value={asOfDate}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                className="max-w-xs"
+              />
+            </div>
           </CardContent>
         </Card>
 
