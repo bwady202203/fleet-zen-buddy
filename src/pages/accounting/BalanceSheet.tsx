@@ -108,7 +108,82 @@ const BalanceSheet = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+          }
+          .print-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          .print-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+          }
+          .print-date {
+            font-size: 14px;
+            margin-top: 10px;
+          }
+          .print-section {
+            margin-bottom: 20px;
+          }
+          .print-section-title {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #000;
+            margin-bottom: 10px;
+          }
+          .print-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+          }
+          .print-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 10px;
+            font-weight: bold;
+            background-color: #e8e8e8;
+            border: 2px solid #000;
+            margin-top: 10px;
+            font-size: 16px;
+          }
+          .print-balance-status {
+            margin-top: 30px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #000;
+            font-size: 18px;
+            font-weight: bold;
+          }
+        }
+      `}</style>
+      <header className="border-b bg-card no-print">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -128,8 +203,17 @@ const BalanceSheet = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6">
+      <main className="container mx-auto px-4 py-8 print-content">
+        <div className="print-header">
+          <div className="print-title">الميزانية العمومية</div>
+          <div className="print-subtitle">Balance Sheet - قائمة المركز المالي</div>
+          <div className="print-date">
+            <strong>كما في:</strong> {new Date(asOfDate).toLocaleDateString('en-GB')} | 
+            <strong className="mr-4">تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-GB')}
+          </div>
+        </div>
+
+        <Card className="mb-6 no-print">
           <CardHeader>
             <CardTitle>التاريخ</CardTitle>
           </CardHeader>
@@ -145,74 +229,80 @@ const BalanceSheet = () => {
         </Card>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="bg-primary/10">
-              <CardTitle>الأصول</CardTitle>
+          <Card className="shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/10 border-b-2 border-primary">
+              <CardTitle className="text-2xl">الأصول - Assets</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {assets.map(b => (
-                <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                  <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                </div>
-              ))}
-              <div className="flex justify-between font-bold pt-4 mt-4 border-t-2">
+              <div className="space-y-2">
+                {assets.map(b => (
+                  <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item">
+                    <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                    <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-4 mt-4 border-t-2 border-primary bg-primary/5 p-3 rounded print-total">
                 <span>إجمالي الأصول</span>
-                <span>{totalAssets.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                <span>{totalAssets.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="bg-primary/10">
-              <CardTitle>الخصوم وحقوق الملكية</CardTitle>
+          <Card className="shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/10 border-b-2 border-primary">
+              <CardTitle className="text-2xl">الخصوم وحقوق الملكية</CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-6">
               {liabilities.length > 0 && (
-                <div>
-                  <h3 className="font-bold mb-2">الخصوم</h3>
-              {liabilities.map(b => (
-                <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                  <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                </div>
-              ))}
-                  <div className="flex justify-between font-semibold pt-2">
+                <div className="print-section">
+                  <h3 className="font-bold text-lg mb-3 text-primary print-section-title">الخصوم - Liabilities</h3>
+                  <div className="space-y-2">
+                    {liabilities.map(b => (
+                      <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item">
+                        <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                        <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between font-semibold pt-3 mt-2 bg-accent/30 p-2 rounded">
                     <span>المجموع</span>
-                    <span>{totalLiabilities.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                    <span>{totalLiabilities.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               )}
               {equity.length > 0 && (
-                <div>
-                  <h3 className="font-bold mb-2">حقوق الملكية</h3>
-              {equity.map(b => (
-                <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                  <span>{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                </div>
-              ))}
-                  <div className="flex justify-between font-semibold pt-2">
+                <div className="print-section">
+                  <h3 className="font-bold text-lg mb-3 text-primary print-section-title">حقوق الملكية - Equity</h3>
+                  <div className="space-y-2">
+                    {equity.map(b => (
+                      <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item">
+                        <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                        <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between font-semibold pt-3 mt-2 bg-accent/30 p-2 rounded">
                     <span>المجموع</span>
-                    <span>{totalEquity.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                    <span>{totalEquity.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               )}
-              <div className="flex justify-between font-bold pt-4 mt-4 border-t-2">
+              <div className="flex justify-between font-bold text-lg pt-4 mt-4 border-t-2 border-primary bg-primary/5 p-3 rounded print-total">
                 <span>الإجمالي</span>
-                <span>{(totalLiabilities + totalEquity).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                <span>{(totalLiabilities + totalEquity).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="mt-6">
-          <CardContent className="p-6 text-center">
-            <div className="text-lg">
+        <Card className="mt-6 shadow-lg">
+          <CardContent className="p-6 text-center print-balance-status">
+            <div className="text-xl">
               {Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01 ? (
-                <p className="text-green-600 font-bold">✓ الميزانية متوازنة</p>
+                <p className="text-green-600 font-bold">✓ الميزانية متوازنة - Balance Sheet is Balanced</p>
               ) : (
-                <p className="text-red-600 font-bold">✗ الميزانية غير متوازنة</p>
+                <p className="text-red-600 font-bold">✗ الميزانية غير متوازنة - Balance Sheet is not Balanced</p>
               )}
             </div>
           </CardContent>

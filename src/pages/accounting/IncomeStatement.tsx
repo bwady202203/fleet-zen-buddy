@@ -102,7 +102,85 @@ const IncomeStatement = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+          }
+          .print-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          .print-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+          }
+          .print-date {
+            font-size: 14px;
+            margin-top: 10px;
+          }
+          .print-section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+          }
+          .print-section-title {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #000;
+            margin-bottom: 10px;
+          }
+          .print-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+          }
+          .print-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 10px;
+            font-weight: bold;
+            background-color: #e8e8e8;
+            border: 2px solid #000;
+            margin-top: 10px;
+            font-size: 16px;
+          }
+          .print-net-income {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 10px;
+            font-weight: bold;
+            background-color: #d0d0d0;
+            border: 3px solid #000;
+            margin-top: 20px;
+            font-size: 20px;
+          }
+        }
+      `}</style>
+      <header className="border-b bg-card no-print">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -122,8 +200,18 @@ const IncomeStatement = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6">
+      <main className="container mx-auto px-4 py-8 print-content">
+        <div className="print-header">
+          <div className="print-title">قائمة الدخل</div>
+          <div className="print-subtitle">Income Statement - قائمة الأرباح والخسائر</div>
+          <div className="print-date">
+            <strong>من:</strong> {new Date(fromDate).toLocaleDateString('en-GB')} 
+            <strong className="mx-2">إلى:</strong> {new Date(toDate).toLocaleDateString('en-GB')} | 
+            <strong className="mr-4">تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-GB')}
+          </div>
+        </div>
+
+        <Card className="mb-6 no-print">
           <CardHeader>
             <CardTitle>الفترة</CardTitle>
           </CardHeader>
@@ -147,39 +235,47 @@ const IncomeStatement = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6 space-y-6">
-            <div>
-              <h3 className="font-bold text-lg mb-4 text-green-600">الإيرادات</h3>
-              {revenues.map(b => (
-                <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                  <span className="text-green-600">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                </div>
-              ))}
-              <div className="flex justify-between font-bold pt-4 border-t-2 text-green-600">
+        <Card className="shadow-lg">
+          <CardContent className="p-8 space-y-8">
+            <div className="print-section">
+              <h3 className="font-bold text-xl mb-4 pb-2 border-b-2 border-green-600 text-green-600 print-section-title">
+                الإيرادات - Revenue
+              </h3>
+              <div className="space-y-2">
+                {revenues.map(b => (
+                  <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-green-50 transition-colors px-2 rounded print-item">
+                    <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                    <span className="text-green-600 font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-4 mt-2 border-t-2 border-green-600 bg-green-50 p-3 rounded print-total">
                 <span>إجمالي الإيرادات</span>
-                <span>{totalRevenues.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                <span className="text-green-600">{totalRevenues.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
 
-            <div>
-              <h3 className="font-bold text-lg mb-4 text-red-600">المصروفات</h3>
-              {expenses.map(b => (
-                <div key={b.accountId} className="flex justify-between py-2 border-b">
-                  <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                  <span className="text-red-600">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
-                </div>
-              ))}
-              <div className="flex justify-between font-bold pt-4 border-t-2 text-red-600">
+            <div className="print-section">
+              <h3 className="font-bold text-xl mb-4 pb-2 border-b-2 border-red-600 text-red-600 print-section-title">
+                المصروفات - Expenses
+              </h3>
+              <div className="space-y-2">
+                {expenses.map(b => (
+                  <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-red-50 transition-colors px-2 rounded print-item">
+                    <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                    <span className="text-red-600 font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-4 mt-2 border-t-2 border-red-600 bg-red-50 p-3 rounded print-total">
                 <span>إجمالي المصروفات</span>
-                <span>{totalExpenses.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+                <span className="text-red-600">{totalExpenses.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
 
-            <div className={`flex justify-between text-xl font-bold pt-4 border-t-2 ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              <span>{netIncome >= 0 ? 'صافي الربح' : 'صافي الخسارة'}</span>
-              <span>{Math.abs(netIncome).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ر.س</span>
+            <div className={`flex justify-between text-2xl font-bold pt-6 border-t-4 p-4 rounded-lg shadow-md print-net-income ${netIncome >= 0 ? 'bg-green-50 border-green-600 text-green-600' : 'bg-red-50 border-red-600 text-red-600'}`}>
+              <span>{netIncome >= 0 ? 'صافي الربح - Net Profit' : 'صافي الخسارة - Net Loss'}</span>
+              <span>{Math.abs(netIncome).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
             </div>
           </CardContent>
         </Card>
