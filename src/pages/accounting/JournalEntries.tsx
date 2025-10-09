@@ -69,12 +69,15 @@ const JournalEntries = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>("");
 
   
   useEffect(() => {
     fetchAccounts();
     fetchCostCenters();
     fetchProjects();
+    fetchBranches();
     fetchJournalEntries();
   }, []);
 
@@ -165,6 +168,21 @@ const JournalEntries = () => {
       setProjects(data || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('is_active', true)
+        .order('code');
+      
+      if (error) throw error;
+      setBranches(data || []);
+    } catch (error) {
+      console.error('Error fetching branches:', error);
     }
   };
 
@@ -533,7 +551,22 @@ const JournalEntries = () => {
 
         <main className="container mx-auto px-4 py-8">
           <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
+            <div className="grid grid-cols-4 gap-4 p-4 bg-accent/50 rounded-lg">
+              <div>
+                <Label className="text-sm">الفرع / Branch</Label>
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">اختر الفرع</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.code} - {branch.name_ar}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <Label className="text-sm">رقم القيد / Entry Number</Label>
                 <Input 
@@ -604,23 +637,19 @@ const JournalEntries = () => {
                             )
                           : level4Accounts;
                         
-                        // البحث في مراكز التكلفة
-                        const filteredCostCenters = searchState.costCenterSearch.length > 0
-                          ? costCenters.filter(cc =>
-                              cc.code.includes(searchState.costCenterSearch) ||
-                              cc.name_ar.includes(searchState.costCenterSearch) ||
-                              cc.name_en.toLowerCase().includes(searchState.costCenterSearch.toLowerCase())
-                            )
-                          : [];
+                        // تحسين البحث في مراكز التكلفة - يظهر النتائج فوراً
+                        const filteredCostCenters = costCenters.filter(cc =>
+                          cc.code.includes(searchState.costCenterSearch) ||
+                          cc.name_ar.includes(searchState.costCenterSearch) ||
+                          cc.name_en.toLowerCase().includes(searchState.costCenterSearch.toLowerCase())
+                        );
                         
-                        // البحث في المشاريع
-                        const filteredProjects = searchState.projectSearch.length > 0
-                          ? projects.filter(prj =>
-                              prj.code.includes(searchState.projectSearch) ||
-                              prj.name_ar.includes(searchState.projectSearch) ||
-                              prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
-                            )
-                          : [];
+                        // تحسين البحث في المشاريع - يظهر النتائج فوراً
+                        const filteredProjects = projects.filter(prj =>
+                          prj.code.includes(searchState.projectSearch) ||
+                          prj.name_ar.includes(searchState.projectSearch) ||
+                          prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
+                        );
 
                         return (
                           <TableRow key={line.id}>
