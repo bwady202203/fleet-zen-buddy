@@ -20,7 +20,9 @@ const CompaniesManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    email: ''
+    email: '',
+    tax_number: '',
+    address: ''
   });
   const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
@@ -58,7 +60,9 @@ const CompaniesManagement = () => {
           .update({
             name: formData.name,
             phone: formData.phone,
-            email: formData.email
+            email: formData.email,
+            tax_number: formData.tax_number,
+            address: formData.address
           })
           .eq('id', editingCompany.id);
 
@@ -72,7 +76,9 @@ const CompaniesManagement = () => {
         const { error } = await supabase.from('companies').insert({
           name: formData.name,
           phone: formData.phone,
-          email: formData.email
+          email: formData.email,
+          tax_number: formData.tax_number,
+          address: formData.address
         });
 
         if (error) throw error;
@@ -83,7 +89,7 @@ const CompaniesManagement = () => {
         });
       }
 
-      setFormData({ name: '', phone: '', email: '' });
+      setFormData({ name: '', phone: '', email: '', tax_number: '', address: '' });
       setEditingCompany(null);
       setDialogOpen(false);
       loadCompanies();
@@ -103,7 +109,9 @@ const CompaniesManagement = () => {
     setFormData({
       name: company.name,
       phone: company.phone || '',
-      email: company.email || ''
+      email: company.email || '',
+      tax_number: company.tax_number || '',
+      address: company.address || ''
     });
     setDialogOpen(true);
   };
@@ -151,7 +159,7 @@ const CompaniesManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '' }); }}>
+              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', address: '' }); }}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة شركة
               </Button>
@@ -188,6 +196,24 @@ const CompaniesManagement = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="أدخل البريد الإلكتروني"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tax_number">الرقم الضريبي</Label>
+                  <Input
+                    id="tax_number"
+                    value={formData.tax_number}
+                    onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
+                    placeholder="أدخل الرقم الضريبي"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">العنوان</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="أدخل العنوان"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -239,6 +265,16 @@ const CompaniesManagement = () => {
                   {company.email && (
                     <p className="text-sm">
                       <span className="font-semibold">البريد:</span> {company.email}
+                    </p>
+                  )}
+                  {company.tax_number && (
+                    <p className="text-sm">
+                      <span className="font-semibold">الرقم الضريبي:</span> {company.tax_number}
+                    </p>
+                  )}
+                  {company.address && (
+                    <p className="text-sm">
+                      <span className="font-semibold">العنوان:</span> {company.address}
                     </p>
                   )}
                   <div className="flex gap-2 mt-4 flex-wrap">
