@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string | null
+          code: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          manager_name: string | null
+          name_ar: string
+          name_en: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_name?: string | null
+          name_ar: string
+          name_en: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_name?: string | null
+          name_ar?: string
+          name_en?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chart_of_accounts: {
         Row: {
           balance: number

@@ -89,6 +89,13 @@ const Accounting = () => {
       color: "from-violet-500 to-violet-600"
     },
     {
+      title: "الفروع",
+      description: "إدارة الفروع",
+      icon: Target,
+      link: "/accounting/branches",
+      color: "from-sky-500 to-sky-600"
+    },
+    {
       title: "المشاريع",
       description: "إدارة المشاريع",
       icon: FolderKanban,

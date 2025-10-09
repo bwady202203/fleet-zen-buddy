@@ -9,7 +9,6 @@ import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -37,6 +36,7 @@ import PurchaseReturn from "./pages/accounting/PurchaseReturn";
 import BalanceSheet from "./pages/accounting/BalanceSheet";
 import IncomeStatement from "./pages/accounting/IncomeStatement";
 import CostCenters from "./pages/accounting/CostCenters";
+import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
@@ -73,14 +73,13 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <OrganizationProvider>
-          <EmployeeTransactionsProvider>
-            <PermissionsProvider>
-              <AccountingProvider>
-                <InvoicesProvider>
-                  <VehiclesProvider>
-                    <SparePartsProvider>
-                      <VehicleMileageProvider>
+        <EmployeeTransactionsProvider>
+          <PermissionsProvider>
+            <AccountingProvider>
+              <InvoicesProvider>
+                <VehiclesProvider>
+                  <SparePartsProvider>
+                    <VehicleMileageProvider>
                       <TooltipProvider>
                         <Toaster />
                         <Sonner />
@@ -109,6 +108,7 @@ const App = () => {
                                   <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
                                   <Route path="/accounting/income-statement" element={<IncomeStatement />} />
                                   <Route path="/accounting/cost-centers" element={<CostCenters />} />
+                                  <Route path="/accounting/branches" element={<Branches />} />
                                   <Route path="/accounting/projects" element={<Projects />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />
@@ -156,7 +156,6 @@ const App = () => {
               </AccountingProvider>
             </PermissionsProvider>
           </EmployeeTransactionsProvider>
-        </OrganizationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

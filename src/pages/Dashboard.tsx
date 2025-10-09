@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { OrganizationSelector } from "@/components/OrganizationSelector";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
@@ -69,17 +68,14 @@ const Dashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <OrganizationSelector />
-              <Button 
-                variant="outline" 
-                onClick={signOut}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                تسجيل الخروج
-              </Button>
-            </div>
+            <Button 
+              variant="outline" 
+              onClick={signOut}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              تسجيل الخروج
+            </Button>
           </div>
         </div>
       </header>
