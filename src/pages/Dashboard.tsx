@@ -1,10 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Shield, Wallet, Sparkles } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { OrganizationSelector } from "@/components/OrganizationSelector";
-import { BackupButton } from "@/components/BackupButton";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
@@ -71,8 +69,6 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <OrganizationSelector />
-              <BackupButton />
               <Button 
                 variant="outline" 
                 onClick={signOut}

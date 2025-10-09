@@ -9,7 +9,6 @@ import { VehiclesProvider } from "@/contexts/VehiclesContext";
 import { AccountingProvider } from "@/contexts/AccountingContext";
 import { InvoicesProvider } from "@/contexts/InvoicesContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -73,15 +72,14 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <OrganizationProvider>
-          <EmployeeTransactionsProvider>
-            <PermissionsProvider>
-              <AccountingProvider>
-                <InvoicesProvider>
-                  <VehiclesProvider>
-                    <SparePartsProvider>
-                      <VehicleMileageProvider>
-                        <TooltipProvider>
+        <EmployeeTransactionsProvider>
+          <PermissionsProvider>
+            <AccountingProvider>
+              <InvoicesProvider>
+                <VehiclesProvider>
+                  <SparePartsProvider>
+                    <VehicleMileageProvider>
+                      <TooltipProvider>
                         <Toaster />
                         <Sonner />
                         <BrowserRouter>
@@ -156,9 +154,8 @@ const App = () => {
               </AccountingProvider>
             </PermissionsProvider>
           </EmployeeTransactionsProvider>
-        </OrganizationProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+        </AuthProvider>
+      </QueryClientProvider>
   );
 };
 
