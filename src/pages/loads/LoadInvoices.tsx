@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw } from "lucide-react";
+import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -318,6 +318,72 @@ const LoadInvoices = () => {
     setQrCodeUrl(qrUrl);
     
     setViewDialogOpen(true);
+  };
+
+  const handleEditInvoice = async (invoice: any) => {
+    setFormData({
+      date: invoice.date,
+      issueDate: invoice.date,
+      dueDate: invoice.date,
+      companyId: invoice.company_id,
+      supplierId: invoice.supplier_id || '',
+      paymentType: invoice.payment_type,
+      notes: invoice.notes || ''
+    });
+
+    // Load invoice items
+    const invoiceItems = invoice.load_invoice_items?.map((item: any) => ({
+      loadId: item.load_id,
+      loadTypeId: null,
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      total: item.total,
+      loadIds: []
+    })) || [];
+    
+    setItems(invoiceItems);
+    setSelectedInvoice(invoice);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) return;
+
+    try {
+      setLoading(true);
+
+      // Delete invoice items first
+      const { error: itemsError } = await supabase
+        .from('load_invoice_items')
+        .delete()
+        .eq('invoice_id', invoiceId);
+
+      if (itemsError) throw itemsError;
+
+      // Delete invoice
+      const { error: invoiceError } = await supabase
+        .from('load_invoices')
+        .delete()
+        .eq('id', invoiceId);
+
+      if (invoiceError) throw invoiceError;
+
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف الفاتورة بنجاح"
+      });
+
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrint = () => {
@@ -719,6 +785,12 @@ const LoadInvoices = () => {
                         <div className="flex gap-2 justify-end">
                           <Button size="sm" variant="outline" onClick={() => handleViewInvoice(invoice)}>
                             <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleEditInvoice(invoice)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice.id)} className="hover:bg-destructive/10 hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
