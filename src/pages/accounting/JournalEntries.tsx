@@ -322,10 +322,10 @@ const JournalEntries = () => {
     // Filter out empty lines
     const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
 
-    if (validLines.length < 2) {
+    if (validLines.length === 0) {
       toast({
         title: "خطأ",
-        description: "يجب إضافة سطرين على الأقل مع حسابات ومبالغ",
+        description: "يجب إضافة سطر واحد على الأقل مع حساب ومبلغ",
         variant: "destructive",
       });
       return;
