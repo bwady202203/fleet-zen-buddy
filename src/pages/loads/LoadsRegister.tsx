@@ -363,6 +363,16 @@ const LoadsRegister = () => {
                     onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
                     required
                   />
+                  {isCommissionBased && formData.unitPrice !== '0' && (
+                    <p className="text-sm text-green-600 font-medium">
+                      السعر تم تحديده تلقائياً بناءً على الكمية ({parseFloat(formData.quantity)} طن)
+                    </p>
+                  )}
+                  {!isCommissionBased && formData.unitPrice !== '0' && formData.companyId && formData.loadTypeId && (
+                    <p className="text-sm text-blue-600 font-medium">
+                      السعر من قائمة أسعار الشركة
+                    </p>
+                  )}
                 </div>
               </div>
 
