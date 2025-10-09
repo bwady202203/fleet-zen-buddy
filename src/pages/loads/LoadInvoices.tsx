@@ -772,9 +772,11 @@ const LoadInvoices = () => {
 
                     {/* English Section - Supplier Info */}
                     <div className="flex-1 text-left" dir="ltr">
-                      <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
-                        {selectedSupplier?.name_en || selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}
-                      </h1>
+                      {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
+                        <p className="text-xs text-gray-700 mb-1">
+                          <span className="font-semibold">{selectedSupplier?.name_en || selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}</span>
+                        </p>
+                      )}
                       {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
                         <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">Tax Number:</span> {selectedSupplier?.tax_number || companySettings?.tax_number}
