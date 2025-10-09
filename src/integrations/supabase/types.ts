@@ -183,25 +183,31 @@ export type Database = {
       company_settings: {
         Row: {
           address: string | null
+          commercial_registration: string | null
           company_name: string
           created_at: string | null
           id: string
+          phone: string | null
           tax_number: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          commercial_registration?: string | null
           company_name?: string
           created_at?: string | null
           id?: string
+          phone?: string | null
           tax_number?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          commercial_registration?: string | null
           company_name?: string
           created_at?: string | null
           id?: string
+          phone?: string | null
           tax_number?: string | null
           updated_at?: string | null
         }

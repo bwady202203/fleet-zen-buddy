@@ -44,7 +44,7 @@ const LoadInvoices = () => {
     const [invoicesRes, companiesRes, settingsRes] = await Promise.all([
       supabase
         .from('load_invoices')
-        .select('*, companies(name, tax_number, address), load_invoice_items(*, loads(load_number, load_types(name)))')
+        .select('*, companies(name, tax_number, address, phone), load_invoice_items(*, loads(load_number, load_types(name)))')
         .order('created_at', { ascending: false }),
       supabase.from('companies').select('*').eq('is_active', true),
       supabase.from('company_settings').select('*').limit(1).maybeSingle()
@@ -74,11 +74,14 @@ const LoadInvoices = () => {
     }
   };
 
+  const [discountAmount, setDiscountAmount] = useState(0);
+  
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const taxAmount = subtotal * 0.15;
-    const totalAmount = subtotal + taxAmount;
-    return { subtotal, taxAmount, totalAmount };
+    const afterDiscount = subtotal - discountAmount;
+    const taxAmount = afterDiscount * 0.15;
+    const totalAmount = afterDiscount + taxAmount;
+    return { subtotal, taxAmount, totalAmount, afterDiscount };
   };
 
   const updateItem = (index: number, field: string, value: any) => {
@@ -547,7 +550,8 @@ const LoadInvoices = () => {
               <div ref={printRef} className="p-8 bg-white text-black print:p-12" style={{ minHeight: '297mm' }}>
                 {/* Invoice Header */}
                 <div className="border-b-2 pb-6 mb-6" style={{ borderColor: '#2563eb' }}>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-8">
+                    {/* Arabic Section */}
                     <div className="flex-1">
                       <h1 className="text-3xl font-bold mb-4" style={{ color: '#2563eb' }}>
                         {companySettings?.company_name || 'شركة الرمال الصناعية'}
@@ -555,6 +559,16 @@ const LoadInvoices = () => {
                       {companySettings?.tax_number && (
                         <p className="text-sm text-gray-700 mb-1">
                           <span className="font-semibold">الرقم الضريبي:</span> {companySettings.tax_number}
+                        </p>
+                      )}
+                      {companySettings?.commercial_registration && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-semibold">السجل التجاري:</span> {companySettings.commercial_registration}
+                        </p>
+                      )}
+                      {companySettings?.phone && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-semibold">الهاتف:</span> {companySettings.phone}
                         </p>
                       )}
                       {companySettings?.address && (
@@ -568,10 +582,44 @@ const LoadInvoices = () => {
                         <p className="text-sm text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
                       </div>
                     </div>
+
+                    {/* English Section */}
+                    <div className="flex-1 text-left" dir="ltr">
+                      <h1 className="text-3xl font-bold mb-4" style={{ color: '#2563eb' }}>
+                        {companySettings?.company_name || 'Al-Remal Industrial Company'}
+                      </h1>
+                      {companySettings?.tax_number && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-semibold">Tax Number:</span> {companySettings.tax_number}
+                        </p>
+                      )}
+                      {companySettings?.commercial_registration && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-semibold">Commercial Registration:</span> {companySettings.commercial_registration}
+                        </p>
+                      )}
+                      {companySettings?.phone && (
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-semibold">Phone:</span> {companySettings.phone}
+                        </p>
+                      )}
+                      {companySettings?.address && (
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold">Address:</span> {companySettings.address}
+                        </p>
+                      )}
+                      <div className="mt-4 pt-4 border-t">
+                        <h2 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>Simplified Tax Invoice</h2>
+                        <p className="text-sm text-gray-700">Invoice Number: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
+                        <p className="text-sm text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
+                      </div>
+                    </div>
+
                     {qrCodeUrl && (
                       <div className="text-center">
                         <img src={qrCodeUrl} alt="QR Code" className="w-40 h-40 border-2 p-2" style={{ borderColor: '#2563eb' }} />
                         <p className="text-xs text-gray-600 mt-2 font-semibold">رمز الاستجابة السريعة</p>
+                        <p className="text-xs text-gray-600 font-semibold">QR Code</p>
                       </div>
                     )}
                   </div>
@@ -580,28 +628,37 @@ const LoadInvoices = () => {
                 {/* Customer Info */}
                 <div className="mb-6">
                   <div className="p-4 rounded-lg border-2" style={{ backgroundColor: '#f1f5f9', borderColor: '#2563eb' }}>
-                    <h3 className="font-bold mb-3 text-lg" style={{ color: '#2563eb' }}>بيانات العميل</h3>
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-bold text-lg" style={{ color: '#2563eb' }}>بيانات العميل</h3>
+                      <h3 className="font-bold text-lg" style={{ color: '#2563eb' }}>Customer Information</h3>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">اسم العميل</p>
+                        <p className="text-sm text-gray-600 mb-1">اسم العميل / Customer Name</p>
                         <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies?.name}</p>
                       </div>
                       {selectedInvoice.companies?.tax_number && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">الرقم الضريبي</p>
+                          <p className="text-sm text-gray-600 mb-1">الرقم الضريبي / Tax Number</p>
                           <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.tax_number}</p>
+                        </div>
+                      )}
+                      {selectedInvoice.companies?.phone && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">الهاتف / Phone</p>
+                          <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.phone}</p>
                         </div>
                       )}
                       {selectedInvoice.companies?.address && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">العنوان</p>
+                          <p className="text-sm text-gray-600 mb-1">العنوان / Address</p>
                           <p className="text-base font-semibold text-gray-900">{selectedInvoice.companies.address}</p>
                         </div>
                       )}
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">طريقة الدفع</p>
+                        <p className="text-sm text-gray-600 mb-1">طريقة الدفع / Payment Method</p>
                         <p className="text-base font-semibold text-gray-900">
-                          {selectedInvoice.payment_type === 'cash' ? 'نقدي' : selectedInvoice.payment_type === 'credit' ? 'آجل' : 'بنك'}
+                          {selectedInvoice.payment_type === 'cash' ? 'نقدي / Cash' : selectedInvoice.payment_type === 'credit' ? 'آجل / Credit' : 'بنك / Bank'}
                         </p>
                       </div>
                     </div>
@@ -614,11 +671,11 @@ const LoadInvoices = () => {
                     <Table>
                       <TableHeader>
                         <TableRow style={{ backgroundColor: '#dbeafe' }}>
-                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>م</TableHead>
-                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>وصف الصنف</TableHead>
-                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>الكمية</TableHead>
-                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>سعر الوحدة</TableHead>
-                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>الإجمالي</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>م<br/>#</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>وصف الصنف<br/>Description</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>الكمية<br/>Quantity</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>سعر الوحدة<br/>Unit Price</TableHead>
+                          <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>الإجمالي<br/>Total</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -641,15 +698,23 @@ const LoadInvoices = () => {
                   <div className="w-96 border-2 rounded-lg p-4" style={{ borderColor: '#2563eb', backgroundColor: '#f8fafc' }}>
                     <div className="space-y-3">
                       <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-700">الإجمالي قبل الضريبة:</span>
+                        <span className="text-gray-700">الإجمالي قبل الخصم / Subtotal:</span>
                         <span className="font-bold">{selectedInvoice.subtotal?.toFixed(2)} ر.س</span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
-                        <span className="text-gray-700">ضريبة القيمة المضافة (15%):</span>
+                        <span className="text-gray-700">الخصم / Discount:</span>
+                        <span className="font-bold text-red-600">-{discountAmount.toFixed(2)} ر.س</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-700">الإجمالي بعد الخصم / After Discount:</span>
+                        <span className="font-bold">{(selectedInvoice.subtotal - discountAmount).toFixed(2)} ر.س</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-700">ضريبة القيمة المضافة (15%) / VAT:</span>
                         <span className="font-bold">{selectedInvoice.tax_amount?.toFixed(2)} ر.س</span>
                       </div>
                       <div className="flex justify-between py-3 pt-4" style={{ borderTop: '2px solid #2563eb' }}>
-                        <span className="text-xl font-bold" style={{ color: '#1e40af' }}>الإجمالي الكلي:</span>
+                        <span className="text-xl font-bold" style={{ color: '#1e40af' }}>الإجمالي الكلي / Grand Total:</span>
                         <span className="text-2xl font-bold" style={{ color: '#2563eb' }}>{selectedInvoice.total_amount?.toFixed(2)} ر.س</span>
                       </div>
                     </div>
