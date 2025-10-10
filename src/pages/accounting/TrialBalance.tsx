@@ -61,6 +61,7 @@ const TrialBalance = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
   const [displayLevel, setDisplayLevel] = useState<number>(4);
+  const [editingBalances, setEditingBalances] = useState<{[key: string]: { debit: string, credit: string }}>({});
   
   // Opening Balance Dialog
   const [openingBalanceDialog, setOpeningBalanceDialog] = useState(false);
@@ -72,6 +73,7 @@ const TrialBalance = () => {
   
   // Add Account Dialog
   const [addAccountDialog, setAddAccountDialog] = useState(false);
+  const [quickAddParentId, setQuickAddParentId] = useState<string>("");
   const [newAccountParent, setNewAccountParent] = useState("");
   const [newAccountType, setNewAccountType] = useState("");
   const [newAccountCode, setNewAccountCode] = useState("");
@@ -252,6 +254,7 @@ const TrialBalance = () => {
 
       toast.success("تم إضافة الحساب بنجاح");
       setAddAccountDialog(false);
+      setQuickAddParentId("");
       setNewAccountParent("");
       setNewAccountType("");
       setNewAccountCode("");
@@ -261,6 +264,65 @@ const TrialBalance = () => {
     } catch (error) {
       console.error('Error adding account:', error);
       toast.error("حدث خطأ في إضافة الحساب");
+    }
+  };
+
+  const handleQuickAddAccount = (parentAccount: Account) => {
+    setQuickAddParentId(parentAccount.id);
+    setNewAccountParent(parentAccount.id);
+    setNewAccountType(parentAccount.type);
+    setAddAccountDialog(true);
+  };
+
+  const handleUpdateBalance = async (accountId: string) => {
+    const balance = editingBalances[accountId];
+    if (!balance || (!balance.debit && !balance.credit)) {
+      toast.error("يرجى إدخال قيمة");
+      return;
+    }
+
+    const debit = parseFloat(balance.debit) || 0;
+    const credit = parseFloat(balance.credit) || 0;
+
+    try {
+      const account = accounts.find(a => a.id === accountId);
+      if (!account) return;
+
+      const { data: entry, error: entryError } = await supabase
+        .from('journal_entries')
+        .insert({
+          date: new Date().toISOString().split('T')[0],
+          entry_number: `OB-${Date.now()}`,
+          description: `رصيد افتتاحي - ${account.name_ar}`,
+          reference: "OPENING_BALANCE"
+        })
+        .select()
+        .single();
+
+      if (entryError) throw entryError;
+
+      const { error: lineError } = await supabase
+        .from('journal_entry_lines')
+        .insert({
+          journal_entry_id: entry.id,
+          account_id: accountId,
+          debit,
+          credit,
+          description: `رصيد افتتاحي - ${account.name_ar}`
+        });
+
+      if (lineError) throw lineError;
+
+      toast.success("تم تحديث الرصيد بنجاح");
+      setEditingBalances(prev => {
+        const updated = { ...prev };
+        delete updated[accountId];
+        return updated;
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating balance:', error);
+      toast.error("حدث خطأ في تحديث الرصيد");
     }
   };
 
@@ -740,40 +802,126 @@ const TrialBalance = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {trialBalanceData.map((account, index) => (
-                  <TableRow key={index} className="hover:bg-accent/50 transition-colors">
-                    <TableCell 
-                      className="font-medium text-primary cursor-pointer hover:underline"
-                      onClick={() => setSelectedAccountForLedger(account.account)}
-                    >
-                      {account.code}
-                    </TableCell>
-                    <TableCell 
-                      className="cursor-pointer hover:text-primary hover:underline"
-                      onClick={() => setSelectedAccountForLedger(account.account)}
-                    >
-                      {account.name}
-                    </TableCell>
-                    <TableCell className="text-left font-medium">
-                      {account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-left font-medium">
-                      {account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-left font-medium">
-                      {account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-left font-medium">
-                      {account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-left font-bold">
-                      {account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-left font-bold">
-                      {account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {trialBalanceData.map((account, index) => {
+                  const isEditing = editingBalances[account.account.id];
+                  const accountLevel = calculateLevel(account.account);
+                  
+                  return (
+                    <TableRow key={index} className="hover:bg-accent/10 transition-colors">
+                      <TableCell 
+                        className="font-medium text-primary cursor-pointer hover:underline"
+                        onClick={() => setSelectedAccountForLedger(account.account)}
+                      >
+                        {account.code}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer hover:text-primary hover:underline flex items-center gap-2"
+                        onClick={() => setSelectedAccountForLedger(account.account)}
+                      >
+                        <span>{account.name}</span>
+                        {accountLevel === 3 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickAddAccount(account.account);
+                            }}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-left font-medium">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            className="w-28 h-8 text-left no-print"
+                            value={isEditing.debit}
+                            onChange={(e) => setEditingBalances(prev => ({
+                              ...prev,
+                              [account.account.id]: { ...prev[account.account.id], debit: e.target.value }
+                            }))}
+                            placeholder="0.00"
+                          />
+                        ) : (
+                          <span
+                            className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors no-print"
+                            onClick={() => setEditingBalances(prev => ({
+                              ...prev,
+                              [account.account.id]: { debit: "", credit: "" }
+                            }))}
+                          >
+                            {account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                        <span className="print-only">{account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      </TableCell>
+                      <TableCell className="text-left font-medium">
+                        {isEditing ? (
+                          <div className="flex gap-1">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="w-28 h-8 text-left no-print"
+                              value={isEditing.credit}
+                              onChange={(e) => setEditingBalances(prev => ({
+                                ...prev,
+                                [account.account.id]: { ...prev[account.account.id], credit: e.target.value }
+                              }))}
+                              placeholder="0.00"
+                            />
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="h-8 w-8 p-0 no-print"
+                              onClick={() => handleUpdateBalance(account.account.id)}
+                            >
+                              ✓
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 no-print"
+                              onClick={() => setEditingBalances(prev => {
+                                const updated = { ...prev };
+                                delete updated[account.account.id];
+                                return updated;
+                              })}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        ) : (
+                          <span
+                            className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors no-print"
+                            onClick={() => setEditingBalances(prev => ({
+                              ...prev,
+                              [account.account.id]: { debit: "", credit: "" }
+                            }))}
+                          >
+                            {account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                        <span className="print-only">{account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      </TableCell>
+                      <TableCell className="text-left font-medium">
+                        {account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-left font-medium">
+                        {account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-left font-bold">
+                        {account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-left font-bold">
+                        {account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {trialBalanceData.length > 0 && (
                   <TableRow className="font-bold bg-accent/50 print-total">
                     <TableCell colSpan={2} className="text-right text-lg">الإجمالي</TableCell>
