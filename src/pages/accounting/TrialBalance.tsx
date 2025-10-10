@@ -406,9 +406,9 @@ const TrialBalance = () => {
       const childAccounts = getChildAccounts(account.id);
       const hasChildren = childAccounts.length > 0;
       
-      // When displaying all levels: show only own values to avoid duplication
-      // When displaying specific level: show aggregated values including children
-      const accountsToCalculate = (displayLevel === 'all') ? [account] : (hasChildren ? childAccounts : [account]);
+      // For accounts with children, only show aggregated balances
+      // For leaf accounts, show their own balances
+      const accountsToCalculate = hasChildren ? childAccounts : [account];
 
       // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
