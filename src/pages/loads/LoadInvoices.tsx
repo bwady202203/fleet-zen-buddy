@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,6 @@ import html2canvas from "html2canvas";
 
 const LoadInvoices = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
@@ -446,19 +444,16 @@ const LoadInvoices = () => {
             </div>
           </div>
           
-          <Tabs value="invoices" className="mt-4" dir="rtl">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="invoices">
-                الفواتير
-              </TabsTrigger>
-              <TabsTrigger 
-                value="prices" 
-                onClick={() => navigate('/loads/companies-management')}
-              >
+          <div className="mt-4 flex gap-2">
+            <Button variant="default" className="bg-primary">
+              الفواتير
+            </Button>
+            <Link to="/loads/companies-management">
+              <Button variant="outline">
                 أسعار الشركات
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
