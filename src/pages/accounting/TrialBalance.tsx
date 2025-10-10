@@ -403,6 +403,7 @@ const TrialBalance = () => {
 
       const childAccounts = getChildAccounts(account.id);
       const accountsToCalculate = [account, ...childAccounts];
+      const hasChildren = childAccounts.length > 0;
 
       // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
@@ -418,8 +419,13 @@ const TrialBalance = () => {
         return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
       });
 
-      const openingDebit = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
-      const openingCredit = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+      const openingDebitTotal = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+      const openingCreditTotal = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+      
+      // Calculate net opening balance
+      const openingNet = openingDebitTotal - openingCreditTotal;
+      const openingDebit = openingNet > 0 ? openingNet : 0;
+      const openingCredit = openingNet < 0 ? Math.abs(openingNet) : 0;
 
       // Calculate period movement - excludes opening balance entries
       const periodEntries = journalEntries.filter(entry => {
@@ -436,11 +442,18 @@ const TrialBalance = () => {
         return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
       });
 
-      const periodDebit = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
-      const periodCredit = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+      const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+      const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+      
+      // Calculate net period movement
+      const periodNet = periodDebitTotal - periodCreditTotal;
+      const periodDebit = periodNet > 0 ? periodNet : 0;
+      const periodCredit = periodNet < 0 ? Math.abs(periodNet) : 0;
 
-      const closingDebit = openingDebit + periodDebit;
-      const closingCredit = openingCredit + periodCredit;
+      // Calculate net closing balance
+      const closingNet = openingNet + periodNet;
+      const closingDebit = closingNet > 0 ? closingNet : 0;
+      const closingCredit = closingNet < 0 ? Math.abs(closingNet) : 0;
 
       return {
         account,
@@ -452,6 +465,7 @@ const TrialBalance = () => {
         periodCredit,
         closingDebit,
         closingCredit,
+        hasChildren,
       };
     });
   };
@@ -863,6 +877,7 @@ const TrialBalance = () => {
                 {trialBalanceData.map((account, index) => {
                   const isEditing = editingBalances[account.account.id];
                   const accountLevel = calculateLevel(account.account);
+                  const canEdit = !account.hasChildren; // Only allow editing if account has no children
                   
                   return (
                     <TableRow 
@@ -903,7 +918,7 @@ const TrialBalance = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-left">
-                        {isEditing ? (
+                        {canEdit && isEditing ? (
                           <Input
                             type="number"
                             step="0.01"
@@ -918,19 +933,20 @@ const TrialBalance = () => {
                           />
                         ) : (
                           <span
-                            className="cursor-pointer hover:bg-accent/50 px-3 py-1.5 rounded-md transition-all block no-print"
-                            onClick={() => setEditingBalances(prev => ({
+                            className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
+                            onClick={canEdit ? () => setEditingBalances(prev => ({
                               ...prev,
                               [account.account.id]: { debit: "", credit: "" }
-                            }))}
+                            })) : undefined}
+                            title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
                           >
-                            {account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                            {account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </span>
                         )}
-                        <span className="print-only">{account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                        <span className="print-only">{account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
                       </TableCell>
                       <TableCell className="text-left border-l">
-                        {isEditing ? (
+                        {canEdit && isEditing ? (
                           <div className="flex gap-1.5">
                             <Input
                               type="number"
@@ -968,28 +984,29 @@ const TrialBalance = () => {
                           </div>
                         ) : (
                           <span
-                            className="cursor-pointer hover:bg-accent/50 px-3 py-1.5 rounded-md transition-all block no-print"
-                            onClick={() => setEditingBalances(prev => ({
+                            className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
+                            onClick={canEdit ? () => setEditingBalances(prev => ({
                               ...prev,
                               [account.account.id]: { debit: "", credit: "" }
-                            }))}
+                            })) : undefined}
+                            title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
                           >
-                            {account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                            {account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </span>
                         )}
-                        <span className="print-only">{account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                        <span className="print-only">{account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
                       </TableCell>
                       <TableCell className="text-left font-medium">
-                        {account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        {account.periodDebit > 0 ? account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
                       <TableCell className="text-left font-medium border-l">
-                        {account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        {account.periodCredit > 0 ? account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
                       <TableCell className="text-left font-bold text-primary">
-                        {account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        {account.closingDebit > 0 ? account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
                       <TableCell className="text-left font-bold text-primary border-l">
-                        {account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                        {account.closingCredit > 0 ? account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
                     </TableRow>
                   );
