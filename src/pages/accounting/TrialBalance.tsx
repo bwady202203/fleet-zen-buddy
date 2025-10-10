@@ -40,6 +40,7 @@ interface JournalEntry {
   date: string;
   entry_number: string;
   description: string;
+  reference?: string;
 }
 
 interface JournalLine {
@@ -403,8 +404,11 @@ const TrialBalance = () => {
       const childAccounts = getChildAccounts(account.id);
       const accountsToCalculate = [account, ...childAccounts];
 
-      // Calculate opening balance
+      // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
+        // Include entries with OPENING_BALANCE reference regardless of date
+        if (entry.reference === 'OPENING_BALANCE') return true;
+        // Include entries before startDate
         if (startDate && entry.date < startDate) return true;
         return false;
       });
@@ -417,8 +421,11 @@ const TrialBalance = () => {
       const openingDebit = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
       const openingCredit = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
 
-      // Calculate period movement
+      // Calculate period movement - excludes opening balance entries
       const periodEntries = journalEntries.filter(entry => {
+        // Exclude opening balance entries
+        if (entry.reference === 'OPENING_BALANCE') return false;
+        // Only include entries within the date range
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
         return true;
