@@ -27,6 +27,56 @@ const IncomeStatement = () => {
   useEffect(() => {
     fetchData();
     fetchBranches();
+
+    // Subscribe to real-time updates
+    const journalChannel = supabase
+      .channel('income-statement-journal-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entries'
+        },
+        () => {
+          console.log('Journal entries changed - updating income statement');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entry_lines'
+        },
+        () => {
+          console.log('Journal lines changed - updating income statement');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    const accountsChannel = supabase
+      .channel('income-statement-accounts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chart_of_accounts'
+        },
+        () => {
+          console.log('Accounts changed - updating income statement');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(journalChannel);
+      supabase.removeChannel(accountsChannel);
+    };
   }, [fromDate, toDate]);
 
   const fetchBranches = async () => {

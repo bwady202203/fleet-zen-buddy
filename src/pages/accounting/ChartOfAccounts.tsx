@@ -71,6 +71,27 @@ const ChartOfAccounts = () => {
 
   useEffect(() => {
     fetchAccounts();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('chart-of-accounts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chart_of_accounts'
+        },
+        (payload) => {
+          console.log('Chart of accounts changed:', payload);
+          fetchAccounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Auto-expand all accounts after loading

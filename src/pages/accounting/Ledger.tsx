@@ -67,6 +67,56 @@ const Ledger = () => {
   useEffect(() => {
     fetchData();
     fetchBranches();
+
+    // Subscribe to real-time updates for journal entries and lines
+    const journalChannel = supabase
+      .channel('journal-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entries'
+        },
+        () => {
+          console.log('Journal entries changed');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entry_lines'
+        },
+        () => {
+          console.log('Journal lines changed');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    const accountsChannel = supabase
+      .channel('accounts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chart_of_accounts'
+        },
+        () => {
+          console.log('Accounts changed');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(journalChannel);
+      supabase.removeChannel(accountsChannel);
+    };
   }, []);
 
   const fetchData = async () => {

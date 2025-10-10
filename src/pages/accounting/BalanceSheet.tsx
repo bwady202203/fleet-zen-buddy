@@ -33,6 +33,56 @@ const BalanceSheet = () => {
   useEffect(() => {
     fetchData();
     fetchBranches();
+
+    // Subscribe to real-time updates
+    const journalChannel = supabase
+      .channel('balance-sheet-journal-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entries'
+        },
+        () => {
+          console.log('Journal entries changed - updating balance sheet');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entry_lines'
+        },
+        () => {
+          console.log('Journal lines changed - updating balance sheet');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    const accountsChannel = supabase
+      .channel('balance-sheet-accounts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chart_of_accounts'
+        },
+        () => {
+          console.log('Accounts changed - updating balance sheet');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(journalChannel);
+      supabase.removeChannel(accountsChannel);
+    };
   }, [asOfDate]);
 
   const fetchBranches = async () => {

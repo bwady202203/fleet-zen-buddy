@@ -83,6 +83,56 @@ const TrialBalance = () => {
   useEffect(() => {
     fetchData();
     fetchBranches();
+
+    // Subscribe to real-time updates
+    const journalChannel = supabase
+      .channel('trial-balance-journal-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entries'
+        },
+        () => {
+          console.log('Journal entries changed - updating trial balance');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entry_lines'
+        },
+        () => {
+          console.log('Journal lines changed - updating trial balance');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    const accountsChannel = supabase
+      .channel('trial-balance-accounts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chart_of_accounts'
+        },
+        () => {
+          console.log('Accounts changed - updating trial balance');
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(journalChannel);
+      supabase.removeChannel(accountsChannel);
+    };
   }, []);
 
   const fetchData = async () => {
