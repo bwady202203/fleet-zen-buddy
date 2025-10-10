@@ -1184,7 +1184,6 @@ const TrialBalance = () => {
                               {account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                             </span>
                           )}
-                          <span className="print-only">{account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
                         </TableCell>
                         <TableCell className="text-center border-l tabular-nums">
                           {canEdit && isEditing ? (
@@ -1235,7 +1234,6 @@ const TrialBalance = () => {
                               {account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                             </span>
                           )}
-                          <span className="print-only">{account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
                         </TableCell>
                         <TableCell className="text-center font-medium tabular-nums">
                           {account.periodDebit > 0 ? account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
