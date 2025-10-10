@@ -1036,7 +1036,9 @@ const TrialBalance = () => {
           {trialBalanceData.length > 0 && (
             <CardContent className="border-t bg-gradient-to-r from-background to-muted/20">
               <div className="print-balance-status py-4">
-                {Math.abs(totalPeriodDebit - totalPeriodCredit) < 0.01 ? (
+                {(Math.abs(totalOpeningDebit - totalOpeningCredit) < 0.01 && 
+                  Math.abs(totalPeriodDebit - totalPeriodCredit) < 0.01 && 
+                  Math.abs(totalClosingDebit - totalClosingCredit) < 0.01) ? (
                   <div className="flex items-center justify-center gap-3">
                     <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
                       <span className="text-2xl">✓</span>
@@ -1044,15 +1046,40 @@ const TrialBalance = () => {
                     <span className="text-accent font-bold text-xl">ميزان المراجعة متوازن</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-destructive/20 flex items-center justify-center">
-                      <span className="text-2xl text-destructive">✗</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-destructive font-bold text-xl">ميزان المراجعة غير متوازن</div>
-                      <div className="text-muted-foreground text-sm mt-1">
-                        الفرق: {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-destructive/20 flex items-center justify-center">
+                        <span className="text-2xl text-destructive">✗</span>
                       </div>
+                      <div className="text-center">
+                        <div className="text-destructive font-bold text-xl">الميزان غير متوازن</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-6 mt-2 text-sm">
+                      {Math.abs(totalOpeningDebit - totalOpeningCredit) >= 0.01 && (
+                        <div className="text-center">
+                          <div className="text-muted-foreground">فرق الأرصدة الافتتاحية</div>
+                          <div className="text-destructive font-semibold">
+                            {Math.abs(totalOpeningDebit - totalOpeningCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      )}
+                      {Math.abs(totalPeriodDebit - totalPeriodCredit) >= 0.01 && (
+                        <div className="text-center">
+                          <div className="text-muted-foreground">فرق حركة الفترة</div>
+                          <div className="text-destructive font-semibold">
+                            {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      )}
+                      {Math.abs(totalClosingDebit - totalClosingCredit) >= 0.01 && (
+                        <div className="text-center">
+                          <div className="text-muted-foreground">فرق الرصيد الختامي</div>
+                          <div className="text-destructive font-semibold">
+                            {Math.abs(totalClosingDebit - totalClosingCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
