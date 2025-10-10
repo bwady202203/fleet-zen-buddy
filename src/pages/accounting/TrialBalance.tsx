@@ -1007,7 +1007,7 @@ const TrialBalance = () => {
                 {trialBalanceData.map((account, index) => {
                   const accountLevel = calculateLevel(account.account);
                   const isEditing = editingBalances[account.account.id];
-                  const canEdit = !account.hasChildren;
+                  const canEdit = !account.hasChildren && account.level === 4; // Only allow editing for level 4 accounts
                   const isExpanded = expandedAccounts.has(account.account.id);
                   const canExpand = account.hasChildren && account.level <= 3;
                   
