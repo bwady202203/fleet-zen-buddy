@@ -1011,9 +1011,74 @@ const TrialBalance = () => {
                   const isExpanded = expandedAccounts.has(account.account.id);
                   const canExpand = account.hasChildren && account.level <= 3;
                   
-                  const childrenData = isExpanded ? trialBalanceData.filter(child => 
-                    child.account.parent_id === account.account.id
-                  ) : [];
+                  // Get direct children from accounts array
+                  const directChildren = accounts.filter(acc => acc.parent_id === account.account.id);
+                  
+                  // Calculate balances for each child
+                  const childrenData = isExpanded ? directChildren.map(childAcc => {
+                    const getChildAccounts = (parentId: string): Account[] => {
+                      const children = accounts.filter(acc => acc.parent_id === parentId);
+                      return [
+                        ...children,
+                        ...children.flatMap(child => getChildAccounts(child.id))
+                      ];
+                    };
+
+                    const childAccounts = getChildAccounts(childAcc.id);
+                    const hasChildren = childAccounts.length > 0;
+                    const accountsToCalculate = hasChildren ? childAccounts : [childAcc];
+
+                    const openingEntries = journalEntries.filter(entry => {
+                      if (entry.reference === 'OPENING_BALANCE') return true;
+                      if (startDate && entry.date < startDate) return true;
+                      return false;
+                    });
+
+                    const openingLines = journalLines.filter(line => {
+                      const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
+                      return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+                    });
+
+                    const openingDebitTotal = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+                    const openingCreditTotal = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+                    const openingNet = openingDebitTotal - openingCreditTotal;
+                    const openingDebit = openingNet > 0 ? openingNet : 0;
+                    const openingCredit = openingNet < 0 ? Math.abs(openingNet) : 0;
+
+                    const periodEntries = journalEntries.filter(entry => {
+                      if (entry.reference === 'OPENING_BALANCE') return false;
+                      if (startDate && entry.date < startDate) return false;
+                      if (endDate && entry.date > endDate) return false;
+                      return true;
+                    });
+
+                    const periodLines = journalLines.filter(line => {
+                      const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
+                      return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+                    });
+
+                    const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+                    const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+                    const periodNet = periodDebitTotal - periodCreditTotal;
+                    const periodDebit = periodNet > 0 ? periodNet : 0;
+                    const periodCredit = periodNet < 0 ? Math.abs(periodNet) : 0;
+
+                    const closingNet = openingNet + periodNet;
+                    const closingDebit = closingNet > 0 ? closingNet : 0;
+                    const closingCredit = closingNet < 0 ? Math.abs(closingNet) : 0;
+
+                    return {
+                      account: childAcc,
+                      code: childAcc.code,
+                      name: childAcc.name_ar,
+                      openingDebit,
+                      openingCredit,
+                      periodDebit,
+                      periodCredit,
+                      closingDebit,
+                      closingCredit,
+                    };
+                  }) : [];
                   
                   return (
                     <React.Fragment key={index}>
