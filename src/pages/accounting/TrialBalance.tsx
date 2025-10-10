@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -20,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -28,6 +31,7 @@ interface Account {
   code: string;
   name_ar: string;
   name_en: string;
+  type: string;
   parent_id: string | null;
 }
 
@@ -56,6 +60,23 @@ const TrialBalance = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
+  const [displayLevel, setDisplayLevel] = useState<number>(4);
+  
+  // Opening Balance Dialog
+  const [openingBalanceDialog, setOpeningBalanceDialog] = useState(false);
+  const [openingBalanceAccount, setOpeningBalanceAccount] = useState("");
+  const [openingBalanceDebit, setOpeningBalanceDebit] = useState("");
+  const [openingBalanceCredit, setOpeningBalanceCredit] = useState("");
+  const [openingBalanceDate, setOpeningBalanceDate] = useState("");
+  const [openingBalanceDescription, setOpeningBalanceDescription] = useState("");
+  
+  // Add Account Dialog
+  const [addAccountDialog, setAddAccountDialog] = useState(false);
+  const [newAccountParent, setNewAccountParent] = useState("");
+  const [newAccountType, setNewAccountType] = useState("");
+  const [newAccountCode, setNewAccountCode] = useState("");
+  const [newAccountNameAr, setNewAccountNameAr] = useState("");
+  const [newAccountNameEn, setNewAccountNameEn] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -125,54 +146,198 @@ const TrialBalance = () => {
     return calculateLevel(parent) + 1;
   };
 
-  const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
+  const getAccountLevel = (code: string): number => {
+    const parts = code.split('-').filter(p => p);
+    return parts.length;
+  };
 
-  const trialBalanceData = level4Accounts.map(account => {
-    // حساب الرصيد الافتتاحي (قبل تاريخ البداية)
-    const openingEntries = journalEntries.filter(entry => {
-      if (startDate && entry.date < startDate) return true;
-      return false;
+  const generateAccountCode = (parentId: string): string => {
+    if (parentId === "none") {
+      const rootAccounts = accounts.filter(acc => !acc.parent_id);
+      const maxCode = Math.max(0, ...rootAccounts.map(acc => parseInt(acc.code.split('-')[0]) || 0));
+      return (maxCode + 1).toString();
+    }
+
+    const parent = accounts.find(acc => acc.id === parentId);
+    if (!parent) return "1";
+
+    const siblings = accounts.filter(acc => acc.parent_id === parentId);
+    const parentCode = parent.code;
+    
+    if (siblings.length === 0) {
+      return `${parentCode}-1`;
+    }
+
+    const maxSubCode = Math.max(
+      ...siblings.map(acc => {
+        const parts = acc.code.split('-');
+        return parseInt(parts[parts.length - 1]) || 0;
+      })
+    );
+
+    return `${parentCode}-${maxSubCode + 1}`;
+  };
+
+  const handleAddOpeningBalance = async () => {
+    if (!openingBalanceAccount || (!openingBalanceDebit && !openingBalanceCredit) || !openingBalanceDate) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    try {
+      const debit = parseFloat(openingBalanceDebit) || 0;
+      const credit = parseFloat(openingBalanceCredit) || 0;
+
+      // Create journal entry for opening balance
+      const { data: entry, error: entryError } = await supabase
+        .from('journal_entries')
+        .insert({
+          date: openingBalanceDate,
+          entry_number: `OB-${Date.now()}`,
+          description: openingBalanceDescription || "رصيد افتتاحي",
+          reference: "OPENING_BALANCE"
+        })
+        .select()
+        .single();
+
+      if (entryError) throw entryError;
+
+      // Create journal entry line
+      const { error: lineError } = await supabase
+        .from('journal_entry_lines')
+        .insert({
+          journal_entry_id: entry.id,
+          account_id: openingBalanceAccount,
+          debit,
+          credit,
+          description: openingBalanceDescription || "رصيد افتتاحي"
+        });
+
+      if (lineError) throw lineError;
+
+      toast.success("تم إضافة الرصيد الافتتاحي بنجاح");
+      setOpeningBalanceDialog(false);
+      setOpeningBalanceAccount("");
+      setOpeningBalanceDebit("");
+      setOpeningBalanceCredit("");
+      setOpeningBalanceDate("");
+      setOpeningBalanceDescription("");
+      fetchData();
+    } catch (error) {
+      console.error('Error adding opening balance:', error);
+      toast.error("حدث خطأ في إضافة الرصيد الافتتاحي");
+    }
+  };
+
+  const handleAddAccount = async () => {
+    if (!newAccountCode || !newAccountNameAr || !newAccountType) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('chart_of_accounts')
+        .insert({
+          code: newAccountCode,
+          name_ar: newAccountNameAr,
+          name_en: newAccountNameEn,
+          type: newAccountType,
+          parent_id: newAccountParent === "none" ? null : newAccountParent,
+          balance: 0,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      toast.success("تم إضافة الحساب بنجاح");
+      setAddAccountDialog(false);
+      setNewAccountParent("");
+      setNewAccountType("");
+      setNewAccountCode("");
+      setNewAccountNameAr("");
+      setNewAccountNameEn("");
+      fetchData();
+    } catch (error) {
+      console.error('Error adding account:', error);
+      toast.error("حدث خطأ في إضافة الحساب");
+    }
+  };
+
+  useEffect(() => {
+    if (newAccountParent && newAccountParent !== "none") {
+      const code = generateAccountCode(newAccountParent);
+      setNewAccountCode(code);
+    } else if (newAccountParent === "none") {
+      const code = generateAccountCode("none");
+      setNewAccountCode(code);
+    }
+  }, [newAccountParent, accounts]);
+
+  // Filter accounts by display level and aggregate balances
+  const getDisplayAccounts = () => {
+    const accountsAtLevel = accounts.filter(acc => calculateLevel(acc) === displayLevel);
+    
+    return accountsAtLevel.map(account => {
+      // Get all child accounts recursively
+      const getChildAccounts = (parentId: string): Account[] => {
+        const children = accounts.filter(acc => acc.parent_id === parentId);
+        return [
+          ...children,
+          ...children.flatMap(child => getChildAccounts(child.id))
+        ];
+      };
+
+      const childAccounts = getChildAccounts(account.id);
+      const accountsToCalculate = [account, ...childAccounts];
+
+      // Calculate opening balance
+      const openingEntries = journalEntries.filter(entry => {
+        if (startDate && entry.date < startDate) return true;
+        return false;
+      });
+
+      const openingLines = journalLines.filter(line => {
+        const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
+        return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+      });
+
+      const openingDebit = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+      const openingCredit = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+
+      // Calculate period movement
+      const periodEntries = journalEntries.filter(entry => {
+        if (startDate && entry.date < startDate) return false;
+        if (endDate && entry.date > endDate) return false;
+        return true;
+      });
+
+      const periodLines = journalLines.filter(line => {
+        const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
+        return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+      });
+
+      const periodDebit = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+      const periodCredit = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+
+      const closingDebit = openingDebit + periodDebit;
+      const closingCredit = openingCredit + periodCredit;
+
+      return {
+        account,
+        code: account.code,
+        name: account.name_ar,
+        openingDebit,
+        openingCredit,
+        periodDebit,
+        periodCredit,
+        closingDebit,
+        closingCredit,
+      };
     });
+  };
 
-    const openingLines = journalLines.filter(line => {
-      const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
-      return lineEntry && line.account_id === account.id;
-    });
-
-    const openingDebit = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
-    const openingCredit = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
-
-    // حساب حركة الفترة (من تاريخ البداية إلى تاريخ النهاية)
-    const periodEntries = journalEntries.filter(entry => {
-      if (startDate && entry.date < startDate) return false;
-      if (endDate && entry.date > endDate) return false;
-      return true;
-    });
-
-    const periodLines = journalLines.filter(line => {
-      const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
-      return lineEntry && line.account_id === account.id;
-    });
-
-    const periodDebit = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
-    const periodCredit = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
-
-    // حساب الرصيد الختامي
-    const closingDebit = openingDebit + periodDebit;
-    const closingCredit = openingCredit + periodCredit;
-
-    return {
-      account,
-      code: account.code,
-      name: account.name_ar,
-      openingDebit,
-      openingCredit,
-      periodDebit,
-      periodCredit,
-      closingDebit,
-      closingCredit,
-    };
-  });
+  const trialBalanceData = getDisplayAccounts();
 
   const totalOpeningDebit = trialBalanceData.reduce((sum, acc) => sum + acc.openingDebit, 0);
   const totalOpeningCredit = trialBalanceData.reduce((sum, acc) => sum + acc.openingCredit, 0);
@@ -301,10 +466,152 @@ const TrialBalance = () => {
                 </p>
               </div>
             </div>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4 ml-2" />
-              طباعة
-            </Button>
+            <div className="flex gap-2">
+              <Dialog open={addAccountDialog} onOpenChange={setAddAccountDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة حساب
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>إضافة حساب فرعي</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label>نوع الحساب</Label>
+                      <Select value={newAccountType} onValueChange={setNewAccountType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر نوع الحساب" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="asset">أصول / Asset</SelectItem>
+                          <SelectItem value="liability">التزامات / Liability</SelectItem>
+                          <SelectItem value="equity">حقوق ملكية / Equity</SelectItem>
+                          <SelectItem value="revenue">إيرادات / Revenue</SelectItem>
+                          <SelectItem value="expense">مصروفات / Expense</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>الحساب الرئيسي</Label>
+                      <Select value={newAccountParent} onValueChange={setNewAccountParent}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الحساب الرئيسي" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">بدون حساب رئيسي</SelectItem>
+                          {accounts
+                            .filter(acc => {
+                              if (acc.type !== newAccountType) return false;
+                              const level = getAccountLevel(acc.code);
+                              return level < 4;
+                            })
+                            .map(acc => (
+                              <SelectItem key={acc.id} value={acc.id}>
+                                {acc.code} - {acc.name_ar}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>رمز الحساب</Label>
+                      <Input value={newAccountCode} onChange={(e) => setNewAccountCode(e.target.value)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>الاسم بالعربية *</Label>
+                      <Input value={newAccountNameAr} onChange={(e) => setNewAccountNameAr(e.target.value)} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>الاسم بالإنجليزية</Label>
+                      <Input value={newAccountNameEn} onChange={(e) => setNewAccountNameEn(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setAddAccountDialog(false)}>إلغاء</Button>
+                    <Button onClick={handleAddAccount}>إضافة</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={openingBalanceDialog} onOpenChange={setOpeningBalanceDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Layers className="h-4 w-4 ml-2" />
+                    رصيد افتتاحي
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>إضافة رصيد افتتاحي</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label>الحساب</Label>
+                      <Select value={openingBalanceAccount} onValueChange={setOpeningBalanceAccount}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الحساب" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map(acc => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.code} - {acc.name_ar}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>التاريخ</Label>
+                      <Input
+                        type="date"
+                        value={openingBalanceDate}
+                        onChange={(e) => setOpeningBalanceDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>مدين</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={openingBalanceDebit}
+                        onChange={(e) => setOpeningBalanceDebit(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>دائن</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={openingBalanceCredit}
+                        onChange={(e) => setOpeningBalanceCredit(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>الوصف</Label>
+                      <Textarea
+                        value={openingBalanceDescription}
+                        onChange={(e) => setOpeningBalanceDescription(e.target.value)}
+                        placeholder="رصيد افتتاحي"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpeningBalanceDialog(false)}>إلغاء</Button>
+                    <Button onClick={handleAddOpeningBalance}>إضافة</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer className="h-4 w-4 ml-2" />
+                طباعة
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -344,7 +651,21 @@ const TrialBalance = () => {
                 الشهر الحالي
               </Button>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <Label>مستوى العرض</Label>
+                <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">المستوى الأول</SelectItem>
+                    <SelectItem value="2">المستوى الثاني</SelectItem>
+                    <SelectItem value="3">المستوى الثالث</SelectItem>
+                    <SelectItem value="4">المستوى الرابع</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>الفرع</Label>
                 <Select value={selectedBranch} onValueChange={setSelectedBranch}>
