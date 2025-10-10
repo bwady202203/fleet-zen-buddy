@@ -987,20 +987,53 @@ const TrialBalance = () => {
             <div className="overflow-x-auto">
               <Table className="print-table">
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="text-right font-bold" rowSpan={2}>رمز الحساب</TableHead>
-                    <TableHead className="text-right font-bold" rowSpan={2}>اسم الحساب</TableHead>
-                    <TableHead className="text-center font-bold border-x" colSpan={2}>الرصيد الافتتاحي</TableHead>
-                    <TableHead className="text-center font-bold border-x" colSpan={2}>حركة الفترة</TableHead>
-                    <TableHead className="text-center font-bold border-x" colSpan={2}>الرصيد الختامي</TableHead>
+                  <TableRow className="bg-muted/50 border-b-2">
+                    <TableHead className="text-center font-bold w-[120px] border-r" rowSpan={2}>
+                      <div className="py-2">رمز الحساب</div>
+                      <div className="text-xs font-normal text-muted-foreground">Account Code</div>
+                    </TableHead>
+                    <TableHead className="text-center font-bold min-w-[200px] border-r" rowSpan={2}>
+                      <div className="py-2">اسم الحساب</div>
+                      <div className="text-xs font-normal text-muted-foreground">Account Name</div>
+                    </TableHead>
+                    <TableHead className="text-center font-bold border-x bg-blue-50/50" colSpan={2}>
+                      <div className="py-2">الرصيد الافتتاحي</div>
+                      <div className="text-xs font-normal text-muted-foreground">Opening Balance</div>
+                    </TableHead>
+                    <TableHead className="text-center font-bold border-x bg-green-50/50" colSpan={2}>
+                      <div className="py-2">حركة الفترة</div>
+                      <div className="text-xs font-normal text-muted-foreground">Period Movement</div>
+                    </TableHead>
+                    <TableHead className="text-center font-bold border-x bg-purple-50/50" colSpan={2}>
+                      <div className="py-2">الرصيد الختامي</div>
+                      <div className="text-xs font-normal text-muted-foreground">Closing Balance</div>
+                    </TableHead>
                   </TableRow>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="text-right font-semibold">مدين</TableHead>
-                    <TableHead className="text-right font-semibold border-l">دائن</TableHead>
-                    <TableHead className="text-right font-semibold">مدين</TableHead>
-                    <TableHead className="text-right font-semibold border-l">دائن</TableHead>
-                    <TableHead className="text-right font-semibold">مدين</TableHead>
-                    <TableHead className="text-right font-semibold border-l">دائن</TableHead>
+                  <TableRow className="bg-muted/30 border-b-2">
+                    <TableHead className="text-center font-semibold w-[110px] bg-blue-50/30">
+                      <div>مدين</div>
+                      <div className="text-xs font-normal">Debit</div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold w-[110px] border-l bg-blue-50/30">
+                      <div>دائن</div>
+                      <div className="text-xs font-normal">Credit</div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold w-[110px] bg-green-50/30">
+                      <div>مدين</div>
+                      <div className="text-xs font-normal">Debit</div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold w-[110px] border-l bg-green-50/30">
+                      <div>دائن</div>
+                      <div className="text-xs font-normal">Credit</div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold w-[110px] bg-purple-50/30">
+                      <div>مدين</div>
+                      <div className="text-xs font-normal">Debit</div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold w-[110px] border-l bg-purple-50/30">
+                      <div>دائن</div>
+                      <div className="text-xs font-normal">Credit</div>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
               <TableBody>
@@ -1089,7 +1122,7 @@ const TrialBalance = () => {
                         }`}
                       >
                         <TableCell 
-                          className="font-mono text-primary cursor-pointer hover:underline transition-all"
+                          className="font-mono text-primary cursor-pointer hover:underline transition-all text-center"
                           onClick={() => setSelectedAccountForLedger(account.account)}
                           title="عرض دفتر الأستاذ"
                         >
@@ -1125,12 +1158,12 @@ const TrialBalance = () => {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-left">
+                        <TableCell className="text-center tabular-nums">
                           {canEdit && isEditing ? (
                             <Input
                               type="number"
                               step="0.01"
-                              className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
+                              className="w-32 h-9 text-center no-print border-primary/50 focus:border-primary mx-auto"
                               value={isEditing.debit}
                               onChange={(e) => setEditingBalances(prev => ({
                                 ...prev,
@@ -1141,7 +1174,7 @@ const TrialBalance = () => {
                             />
                           ) : (
                             <span
-                              className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
+                              className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all inline-block`}
                               onClick={canEdit ? () => setEditingBalances(prev => ({
                                 ...prev,
                                 [account.account.id]: { debit: "", credit: "" }
@@ -1153,13 +1186,13 @@ const TrialBalance = () => {
                           )}
                           <span className="print-only">{account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
                         </TableCell>
-                        <TableCell className="text-left border-l">
+                        <TableCell className="text-center border-l tabular-nums">
                           {canEdit && isEditing ? (
-                            <div className="flex gap-1.5">
+                            <div className="flex gap-1.5 justify-center">
                               <Input
                                 type="number"
                                 step="0.01"
-                                className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
+                                className="w-32 h-9 text-center no-print border-primary/50 focus:border-primary"
                                 value={isEditing.credit}
                                 onChange={(e) => setEditingBalances(prev => ({
                                   ...prev,
@@ -1192,7 +1225,7 @@ const TrialBalance = () => {
                             </div>
                           ) : (
                             <span
-                              className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
+                              className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all inline-block`}
                               onClick={canEdit ? () => setEditingBalances(prev => ({
                                 ...prev,
                                 [account.account.id]: { debit: "", credit: "" }
@@ -1204,16 +1237,16 @@ const TrialBalance = () => {
                           )}
                           <span className="print-only">{account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
                         </TableCell>
-                        <TableCell className="text-left font-medium">
+                        <TableCell className="text-center font-medium tabular-nums">
                           {account.periodDebit > 0 ? account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                         </TableCell>
-                        <TableCell className="text-left font-medium border-l">
+                        <TableCell className="text-center font-medium border-l tabular-nums">
                           {account.periodCredit > 0 ? account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                         </TableCell>
-                        <TableCell className="text-left font-bold text-primary">
+                        <TableCell className="text-center font-bold text-primary tabular-nums">
                           {account.closingDebit > 0 ? account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                         </TableCell>
-                        <TableCell className="text-left font-bold text-primary border-l">
+                        <TableCell className="text-center font-bold text-primary border-l tabular-nums">
                           {account.closingCredit > 0 ? account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                         </TableCell>
                       </TableRow>
@@ -1224,7 +1257,7 @@ const TrialBalance = () => {
                           className="bg-accent/5 hover:bg-accent/10 transition-all border-b"
                         >
                           <TableCell 
-                            className="font-mono text-primary cursor-pointer hover:underline transition-all pl-8"
+                            className="font-mono text-primary cursor-pointer hover:underline transition-all pl-8 text-center"
                             onClick={() => setSelectedAccountForLedger(childAccount.account)}
                             title="عرض دفتر الأستاذ"
                           >
@@ -1237,22 +1270,22 @@ const TrialBalance = () => {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-left text-sm">
+                          <TableCell className="text-center text-sm tabular-nums">
                             {childAccount.openingDebit > 0 ? childAccount.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </TableCell>
-                          <TableCell className="text-left border-l text-sm">
+                          <TableCell className="text-center border-l text-sm tabular-nums">
                             {childAccount.openingCredit > 0 ? childAccount.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </TableCell>
-                          <TableCell className="text-left font-medium text-sm">
+                          <TableCell className="text-center font-medium text-sm tabular-nums">
                             {childAccount.periodDebit > 0 ? childAccount.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </TableCell>
-                          <TableCell className="text-left font-medium border-l text-sm">
+                          <TableCell className="text-center font-medium border-l text-sm tabular-nums">
                             {childAccount.periodCredit > 0 ? childAccount.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </TableCell>
-                          <TableCell className="text-left font-bold text-primary text-sm">
+                          <TableCell className="text-center font-bold text-primary text-sm tabular-nums">
                             {childAccount.closingDebit > 0 ? childAccount.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </TableCell>
-                          <TableCell className="text-left font-bold text-primary border-l text-sm">
+                          <TableCell className="text-center font-bold text-primary border-l text-sm tabular-nums">
                             {childAccount.closingCredit > 0 ? childAccount.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                           </TableCell>
                         </TableRow>
