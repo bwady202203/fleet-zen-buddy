@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import QRCode from "qrcode";
 import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
@@ -19,6 +20,7 @@ import html2canvas from "html2canvas";
 
 const LoadInvoices = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
@@ -438,11 +440,25 @@ const LoadInvoices = () => {
             <Link to="/loads" className="hover:text-primary transition-colors">
               <ArrowRight className="h-6 w-6" />
             </Link>
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold">فواتير المبيعات</h1>
               <p className="text-muted-foreground mt-1">إدارة فواتير الشحن</p>
             </div>
           </div>
+          
+          <Tabs value="invoices" className="mt-4" dir="rtl">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="invoices">
+                الفواتير
+              </TabsTrigger>
+              <TabsTrigger 
+                value="prices" 
+                onClick={() => navigate('/loads/companies-management')}
+              >
+                أسعار الشركات
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </header>
 
