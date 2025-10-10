@@ -211,7 +211,7 @@ const TrialBalance = () => {
   const generateAccountCode = (parentId: string): string => {
     if (parentId === "none") {
       const rootAccounts = accounts.filter(acc => !acc.parent_id);
-      const maxCode = Math.max(0, ...rootAccounts.map(acc => parseInt(acc.code.split('-')[0]) || 0));
+      const maxCode = Math.max(0, ...rootAccounts.map(acc => parseInt(acc.code.split('-').join('')) || 0));
       return (maxCode + 1).toString();
     }
 
@@ -222,17 +222,18 @@ const TrialBalance = () => {
     const parentCode = parent.code;
     
     if (siblings.length === 0) {
-      return `${parentCode}-1`;
+      return `${parentCode}1`;
     }
 
     const maxSubCode = Math.max(
       ...siblings.map(acc => {
-        const parts = acc.code.split('-');
-        return parseInt(parts[parts.length - 1]) || 0;
+        // Extract the last digit by removing parent code prefix
+        const codeWithoutParent = acc.code.replace(parentCode, '');
+        return parseInt(codeWithoutParent) || 0;
       })
     );
 
-    return `${parentCode}-${maxSubCode + 1}`;
+    return `${parentCode}${maxSubCode + 1}`;
   };
 
   const handleAddOpeningBalance = async () => {
