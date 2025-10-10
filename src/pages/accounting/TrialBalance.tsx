@@ -61,7 +61,7 @@ const TrialBalance = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
-  const [displayLevel, setDisplayLevel] = useState<number>(4);
+  const [displayLevel, setDisplayLevel] = useState<number | 'all'>(4);
   const [editingBalances, setEditingBalances] = useState<{[key: string]: { debit: string, credit: string }}>({});
   
   // Opening Balance Dialog
@@ -389,9 +389,11 @@ const TrialBalance = () => {
 
   // Filter accounts by display level and aggregate balances
   const getDisplayAccounts = () => {
-    const accountsAtLevel = accounts.filter(acc => calculateLevel(acc) === displayLevel);
+    const accountsToShow = displayLevel === 'all' 
+      ? accounts 
+      : accounts.filter(acc => calculateLevel(acc) === displayLevel);
     
-    return accountsAtLevel.map(account => {
+    return accountsToShow.map(account => {
       // Get all child accounts recursively
       const getChildAccounts = (parentId: string): Account[] => {
         const children = accounts.filter(acc => acc.parent_id === parentId);
@@ -402,8 +404,11 @@ const TrialBalance = () => {
       };
 
       const childAccounts = getChildAccounts(account.id);
-      const accountsToCalculate = [account, ...childAccounts];
       const hasChildren = childAccounts.length > 0;
+      
+      // For accounts with children, only show aggregated balances
+      // For leaf accounts, show their own balances
+      const accountsToCalculate = hasChildren ? childAccounts : [account];
 
       // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
@@ -787,11 +792,12 @@ const TrialBalance = () => {
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <Label>مستوى العرض</Label>
-                <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(parseInt(value))}>
+                <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">جميع المستويات</SelectItem>
                     <SelectItem value="1">المستوى الأول</SelectItem>
                     <SelectItem value="2">المستوى الثاني</SelectItem>
                     <SelectItem value="3">المستوى الثالث</SelectItem>
