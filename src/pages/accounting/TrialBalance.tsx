@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -95,6 +95,26 @@ const TrialBalance = () => {
       setBranches(data || []);
     } catch (error) {
       console.error('Error fetching branches:', error);
+    }
+  };
+
+  const setQuickFilter = (filterType: 'currentYear' | 'last3Months' | 'currentMonth') => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    
+    if (filterType === 'currentYear') {
+      setStartDate(`${year}-01-01`);
+      setEndDate(`${year}-12-31`);
+    } else if (filterType === 'last3Months') {
+      const threeMonthsAgo = new Date(year, month - 3, 1);
+      setStartDate(threeMonthsAgo.toISOString().split('T')[0]);
+      setEndDate(today.toISOString().split('T')[0]);
+    } else if (filterType === 'currentMonth') {
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(lastDay.toISOString().split('T')[0]);
     }
   };
 
@@ -295,6 +315,35 @@ const TrialBalance = () => {
             <CardTitle>فلترة الفترة</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setQuickFilter('currentYear')}
+                className="gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                السنة الحالية
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setQuickFilter('last3Months')}
+                className="gap-2"
+              >
+                <CalendarRange className="h-4 w-4" />
+                آخر 3 أشهر
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setQuickFilter('currentMonth')}
+                className="gap-2"
+              >
+                <CalendarClock className="h-4 w-4" />
+                الشهر الحالي
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label>الفرع</Label>
