@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -80,6 +80,10 @@ const TrialBalance = () => {
   const [newAccountCode, setNewAccountCode] = useState("");
   const [newAccountNameAr, setNewAccountNameAr] = useState("");
   const [newAccountNameEn, setNewAccountNameEn] = useState("");
+  
+  // Delete Level 4 Accounts Dialog
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [deleteSecretCode, setDeleteSecretCode] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -377,6 +381,55 @@ const TrialBalance = () => {
     }
   };
 
+  const handleDeleteLevel4AndJournals = async () => {
+    if (deleteSecretCode !== "6544743") {
+      toast.error("الرقم السري غير صحيح");
+      return;
+    }
+
+    try {
+      // Get all level 4 accounts
+      const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
+      const level4AccountIds = level4Accounts.map(acc => acc.id);
+
+      // Delete journal entry lines for level 4 accounts
+      if (level4AccountIds.length > 0) {
+        const { error: linesError } = await supabase
+          .from('journal_entry_lines')
+          .delete()
+          .in('account_id', level4AccountIds);
+
+        if (linesError) throw linesError;
+      }
+
+      // Delete all journal entries
+      const { error: entriesError } = await supabase
+        .from('journal_entries')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (entriesError) throw entriesError;
+
+      // Delete level 4 accounts
+      if (level4AccountIds.length > 0) {
+        const { error: accountsError } = await supabase
+          .from('chart_of_accounts')
+          .delete()
+          .in('id', level4AccountIds);
+
+        if (accountsError) throw accountsError;
+      }
+
+      toast.success("تم حذف حسابات المستوى الرابع والقيود اليومية بنجاح");
+      setDeleteDialog(false);
+      setDeleteSecretCode("");
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting data:', error);
+      toast.error("حدث خطأ في عملية الحذف");
+    }
+  };
+
   useEffect(() => {
     if (newAccountParent && newAccountParent !== "none") {
       const code = generateAccountCode(newAccountParent);
@@ -606,6 +659,61 @@ const TrialBalance = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="h-4 w-4 ml-2" />
+                    حذف البيانات
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>⚠️ تحذير: حذف البيانات</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="bg-destructive/10 p-4 rounded-lg">
+                      <p className="text-sm text-destructive font-medium">
+                        سيتم حذف:
+                      </p>
+                      <ul className="list-disc list-inside text-sm text-destructive mt-2 space-y-1">
+                        <li>جميع حسابات المستوى الرابع</li>
+                        <li>جميع القيود اليومية الحالية</li>
+                      </ul>
+                      <p className="text-sm text-destructive font-bold mt-3">
+                        ⚠️ هذا الإجراء لا يمكن التراجع عنه!
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>الرقم السري *</Label>
+                      <Input 
+                        type="password"
+                        placeholder="أدخل الرقم السري للتأكيد"
+                        value={deleteSecretCode} 
+                        onChange={(e) => setDeleteSecretCode(e.target.value)} 
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        أدخل الرقم السري المكون من 7 أرقام للمتابعة
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => {
+                      setDeleteDialog(false);
+                      setDeleteSecretCode("");
+                    }}>
+                      إلغاء
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteLevel4AndJournals}
+                      disabled={!deleteSecretCode}
+                    >
+                      تأكيد الحذف
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
               <Dialog open={addAccountDialog} onOpenChange={setAddAccountDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
