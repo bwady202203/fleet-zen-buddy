@@ -406,8 +406,9 @@ const TrialBalance = () => {
       const childAccounts = getChildAccounts(account.id);
       const hasChildren = childAccounts.length > 0;
       
-      // For accounts with children, only show aggregated balances
+      // For accounts with children, aggregate balances from all child accounts only
       // For leaf accounts, show their own balances
+      // This prevents duplication - balances should only be on leaf accounts
       const accountsToCalculate = hasChildren ? childAccounts : [account];
 
       // Calculate opening balance - includes entries before startDate AND opening balance entries
