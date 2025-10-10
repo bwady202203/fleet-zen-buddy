@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,7 @@ const TrialBalance = () => {
   const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
   const [displayLevel, setDisplayLevel] = useState<number | 'all'>(4);
   const [editingBalances, setEditingBalances] = useState<{[key: string]: { debit: string, credit: string }}>({});
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   
   // Opening Balance Dialog
   const [openingBalanceDialog, setOpeningBalanceDialog] = useState(false);
@@ -526,7 +527,20 @@ const TrialBalance = () => {
         closingDebit,
         closingCredit,
         hasChildren,
+        level: calculateLevel(account),
       };
+    });
+  };
+
+  const toggleAccountExpansion = (accountId: string) => {
+    setExpandedAccounts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(accountId)) {
+        newSet.delete(accountId);
+      } else {
+        newSet.add(accountId);
+      }
+      return newSet;
     });
   };
 
@@ -991,140 +1005,194 @@ const TrialBalance = () => {
                 </TableHeader>
               <TableBody>
                 {trialBalanceData.map((account, index) => {
-                  const isEditing = editingBalances[account.account.id];
                   const accountLevel = calculateLevel(account.account);
-                  const canEdit = !account.hasChildren; // Only allow editing if account has no children
+                  const isEditing = editingBalances[account.account.id];
+                  const canEdit = !account.hasChildren;
+                  const isExpanded = expandedAccounts.has(account.account.id);
+                  const canExpand = account.hasChildren && account.level <= 3;
+                  
+                  const childrenData = isExpanded ? trialBalanceData.filter(child => 
+                    child.account.parent_id === account.account.id
+                  ) : [];
                   
                   return (
-                    <TableRow 
-                      key={index} 
-                      className={`group hover:bg-primary/5 transition-all border-b ${
-                        accountLevel === 1 ? 'bg-muted/30 font-bold' : 
-                        accountLevel === 2 ? 'bg-muted/10' : ''
-                      }`}
-                    >
-                      <TableCell 
-                        className="font-mono text-primary cursor-pointer hover:underline transition-all"
-                        onClick={() => setSelectedAccountForLedger(account.account)}
+                    <React.Fragment key={index}>
+                      <TableRow 
+                        className={`group hover:bg-primary/5 transition-all border-b ${
+                          accountLevel === 1 ? 'bg-muted/30 font-bold' : 
+                          accountLevel === 2 ? 'bg-muted/10' : ''
+                        }`}
                       >
-                        {account.code}
-                      </TableCell>
-                      <TableCell 
-                        className="cursor-pointer hover:text-primary transition-all"
-                        onClick={() => setSelectedAccountForLedger(account.account)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={accountLevel === 1 ? 'font-bold text-lg' : accountLevel === 2 ? 'font-semibold' : ''}>
-                            {account.name}
-                          </span>
-                          {accountLevel === 3 && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent hover:text-accent-foreground no-print"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuickAddAccount(account.account);
-                              }}
-                              title="إضافة حساب فرعي"
+                        <TableCell 
+                          className="font-mono text-primary cursor-pointer hover:underline transition-all"
+                          onClick={() => setSelectedAccountForLedger(account.account)}
+                          title="عرض دفتر الأستاذ"
+                        >
+                          {account.code}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span 
+                              className={`${canExpand ? 'cursor-pointer hover:text-primary' : ''} ${accountLevel === 1 ? 'font-bold text-lg' : accountLevel === 2 ? 'font-semibold' : ''}`}
+                              onClick={canExpand ? () => toggleAccountExpansion(account.account.id) : undefined}
+                              title={canExpand ? 'عرض الحسابات الفرعية' : ''}
                             >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-left">
-                        {canEdit && isEditing ? (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
-                            value={isEditing.debit}
-                            onChange={(e) => setEditingBalances(prev => ({
-                              ...prev,
-                              [account.account.id]: { ...prev[account.account.id], debit: e.target.value }
-                            }))}
-                            placeholder="0.00"
-                            autoFocus
-                          />
-                        ) : (
-                          <span
-                            className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
-                            onClick={canEdit ? () => setEditingBalances(prev => ({
-                              ...prev,
-                              [account.account.id]: { debit: "", credit: "" }
-                            })) : undefined}
-                            title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
-                          >
-                            {account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                          </span>
-                        )}
-                        <span className="print-only">{account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
-                      </TableCell>
-                      <TableCell className="text-left border-l">
-                        {canEdit && isEditing ? (
-                          <div className="flex gap-1.5">
+                              {canExpand && (
+                                <span className="inline-block mr-1 transition-transform" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                                  ▶
+                                </span>
+                              )}
+                              {account.name}
+                            </span>
+                            {accountLevel === 3 && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent hover:text-accent-foreground no-print"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuickAddAccount(account.account);
+                                }}
+                                title="إضافة حساب فرعي"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-left">
+                          {canEdit && isEditing ? (
                             <Input
                               type="number"
                               step="0.01"
                               className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
-                              value={isEditing.credit}
+                              value={isEditing.debit}
                               onChange={(e) => setEditingBalances(prev => ({
                                 ...prev,
-                                [account.account.id]: { ...prev[account.account.id], credit: e.target.value }
+                                [account.account.id]: { ...prev[account.account.id], debit: e.target.value }
                               }))}
                               placeholder="0.00"
+                              autoFocus
                             />
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="h-9 w-9 p-0 no-print bg-accent hover:bg-accent/90"
-                              onClick={() => handleUpdateBalance(account.account.id)}
-                              title="حفظ"
+                          ) : (
+                            <span
+                              className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
+                              onClick={canEdit ? () => setEditingBalances(prev => ({
+                                ...prev,
+                                [account.account.id]: { debit: "", credit: "" }
+                              })) : undefined}
+                              title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
                             >
-                              ✓
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-9 w-9 p-0 no-print hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => setEditingBalances(prev => {
-                                const updated = { ...prev };
-                                delete updated[account.account.id];
-                                return updated;
-                              })}
-                              title="إلغاء"
+                              {account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            </span>
+                          )}
+                          <span className="print-only">{account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
+                        </TableCell>
+                        <TableCell className="text-left border-l">
+                          {canEdit && isEditing ? (
+                            <div className="flex gap-1.5">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
+                                value={isEditing.credit}
+                                onChange={(e) => setEditingBalances(prev => ({
+                                  ...prev,
+                                  [account.account.id]: { ...prev[account.account.id], credit: e.target.value }
+                                }))}
+                                placeholder="0.00"
+                              />
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="h-9 w-9 p-0 no-print bg-accent hover:bg-accent/90"
+                                onClick={() => handleUpdateBalance(account.account.id)}
+                                title="حفظ"
+                              >
+                                ✓
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-9 w-9 p-0 no-print hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => setEditingBalances(prev => {
+                                  const updated = { ...prev };
+                                  delete updated[account.account.id];
+                                  return updated;
+                                })}
+                                title="إلغاء"
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ) : (
+                            <span
+                              className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
+                              onClick={canEdit ? () => setEditingBalances(prev => ({
+                                ...prev,
+                                [account.account.id]: { debit: "", credit: "" }
+                              })) : undefined}
+                              title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
                             >
-                              ✕
-                            </Button>
-                          </div>
-                        ) : (
-                          <span
-                            className={`${canEdit ? 'cursor-pointer hover:bg-accent/50 no-print' : ''} px-3 py-1.5 rounded-md transition-all block`}
-                            onClick={canEdit ? () => setEditingBalances(prev => ({
-                              ...prev,
-                              [account.account.id]: { debit: "", credit: "" }
-                            })) : undefined}
-                            title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
+                              {account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            </span>
+                          )}
+                          <span className="print-only">{account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
+                        </TableCell>
+                        <TableCell className="text-left font-medium">
+                          {account.periodDebit > 0 ? account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                        <TableCell className="text-left font-medium border-l">
+                          {account.periodCredit > 0 ? account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                        <TableCell className="text-left font-bold text-primary">
+                          {account.closingDebit > 0 ? account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                        <TableCell className="text-left font-bold text-primary border-l">
+                          {account.closingCredit > 0 ? account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                        </TableCell>
+                      </TableRow>
+                      
+                      {isExpanded && childrenData.map((childAccount, childIndex) => (
+                        <TableRow 
+                          key={`child-${childIndex}`}
+                          className="bg-accent/5 hover:bg-accent/10 transition-all border-b"
+                        >
+                          <TableCell 
+                            className="font-mono text-primary cursor-pointer hover:underline transition-all pl-8"
+                            onClick={() => setSelectedAccountForLedger(childAccount.account)}
+                            title="عرض دفتر الأستاذ"
                           >
-                            {account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                          </span>
-                        )}
-                        <span className="print-only">{account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}</span>
-                      </TableCell>
-                      <TableCell className="text-left font-medium">
-                        {account.periodDebit > 0 ? account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                      </TableCell>
-                      <TableCell className="text-left font-medium border-l">
-                        {account.periodCredit > 0 ? account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                      </TableCell>
-                      <TableCell className="text-left font-bold text-primary">
-                        {account.closingDebit > 0 ? account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                      </TableCell>
-                      <TableCell className="text-left font-bold text-primary border-l">
-                        {account.closingCredit > 0 ? account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                      </TableCell>
-                    </TableRow>
+                            {childAccount.code}
+                          </TableCell>
+                          <TableCell className="pl-8">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">
+                                {childAccount.name}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-left text-sm">
+                            {childAccount.openingDebit > 0 ? childAccount.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-left border-l text-sm">
+                            {childAccount.openingCredit > 0 ? childAccount.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-left font-medium text-sm">
+                            {childAccount.periodDebit > 0 ? childAccount.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-left font-medium border-l text-sm">
+                            {childAccount.periodCredit > 0 ? childAccount.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-left font-bold text-primary text-sm">
+                            {childAccount.closingDebit > 0 ? childAccount.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          </TableCell>
+                          <TableCell className="text-left font-bold text-primary border-l text-sm">
+                            {childAccount.closingCredit > 0 ? childAccount.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </React.Fragment>
                   );
                 })}
                 {trialBalanceData.length > 0 && (
