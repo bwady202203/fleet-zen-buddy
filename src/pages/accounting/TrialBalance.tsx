@@ -783,72 +783,85 @@ const TrialBalance = () => {
             <CardTitle className="no-print">ميزان المراجعة</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table className="print-table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right" rowSpan={2}>رمز الحساب</TableHead>
-                  <TableHead className="text-right" rowSpan={2}>اسم الحساب</TableHead>
-                  <TableHead className="text-center" colSpan={2}>الرصيد الافتتاحي</TableHead>
-                  <TableHead className="text-center" colSpan={2}>حركة الفترة</TableHead>
-                  <TableHead className="text-center" colSpan={2}>الرصيد الختامي</TableHead>
-                </TableRow>
-                <TableRow>
-                  <TableHead className="text-right">مدين</TableHead>
-                  <TableHead className="text-right">دائن</TableHead>
-                  <TableHead className="text-right">مدين</TableHead>
-                  <TableHead className="text-right">دائن</TableHead>
-                  <TableHead className="text-right">مدين</TableHead>
-                  <TableHead className="text-right">دائن</TableHead>
-                </TableRow>
-              </TableHeader>
+            <div className="overflow-x-auto">
+              <Table className="print-table">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-right font-bold" rowSpan={2}>رمز الحساب</TableHead>
+                    <TableHead className="text-right font-bold" rowSpan={2}>اسم الحساب</TableHead>
+                    <TableHead className="text-center font-bold border-x" colSpan={2}>الرصيد الافتتاحي</TableHead>
+                    <TableHead className="text-center font-bold border-x" colSpan={2}>حركة الفترة</TableHead>
+                    <TableHead className="text-center font-bold border-x" colSpan={2}>الرصيد الختامي</TableHead>
+                  </TableRow>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-right font-semibold">مدين</TableHead>
+                    <TableHead className="text-right font-semibold border-l">دائن</TableHead>
+                    <TableHead className="text-right font-semibold">مدين</TableHead>
+                    <TableHead className="text-right font-semibold border-l">دائن</TableHead>
+                    <TableHead className="text-right font-semibold">مدين</TableHead>
+                    <TableHead className="text-right font-semibold border-l">دائن</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {trialBalanceData.map((account, index) => {
                   const isEditing = editingBalances[account.account.id];
                   const accountLevel = calculateLevel(account.account);
                   
                   return (
-                    <TableRow key={index} className="hover:bg-accent/10 transition-colors">
+                    <TableRow 
+                      key={index} 
+                      className={`group hover:bg-primary/5 transition-all border-b ${
+                        accountLevel === 1 ? 'bg-muted/30 font-bold' : 
+                        accountLevel === 2 ? 'bg-muted/10' : ''
+                      }`}
+                    >
                       <TableCell 
-                        className="font-medium text-primary cursor-pointer hover:underline"
+                        className="font-mono text-primary cursor-pointer hover:underline transition-all"
                         onClick={() => setSelectedAccountForLedger(account.account)}
                       >
                         {account.code}
                       </TableCell>
                       <TableCell 
-                        className="cursor-pointer hover:text-primary hover:underline flex items-center gap-2"
+                        className="cursor-pointer hover:text-primary transition-all"
                         onClick={() => setSelectedAccountForLedger(account.account)}
                       >
-                        <span>{account.name}</span>
-                        {accountLevel === 3 && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity no-print"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleQuickAddAccount(account.account);
-                            }}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <span className={accountLevel === 1 ? 'font-bold text-lg' : accountLevel === 2 ? 'font-semibold' : ''}>
+                            {account.name}
+                          </span>
+                          {accountLevel === 3 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent hover:text-accent-foreground no-print"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuickAddAccount(account.account);
+                              }}
+                              title="إضافة حساب فرعي"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-left font-medium">
+                      <TableCell className="text-left">
                         {isEditing ? (
                           <Input
                             type="number"
                             step="0.01"
-                            className="w-28 h-8 text-left no-print"
+                            className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
                             value={isEditing.debit}
                             onChange={(e) => setEditingBalances(prev => ({
                               ...prev,
                               [account.account.id]: { ...prev[account.account.id], debit: e.target.value }
                             }))}
                             placeholder="0.00"
+                            autoFocus
                           />
                         ) : (
                           <span
-                            className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors no-print"
+                            className="cursor-pointer hover:bg-accent/50 px-3 py-1.5 rounded-md transition-all block no-print"
                             onClick={() => setEditingBalances(prev => ({
                               ...prev,
                               [account.account.id]: { debit: "", credit: "" }
@@ -859,13 +872,13 @@ const TrialBalance = () => {
                         )}
                         <span className="print-only">{account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                       </TableCell>
-                      <TableCell className="text-left font-medium">
+                      <TableCell className="text-left border-l">
                         {isEditing ? (
-                          <div className="flex gap-1">
+                          <div className="flex gap-1.5">
                             <Input
                               type="number"
                               step="0.01"
-                              className="w-28 h-8 text-left no-print"
+                              className="w-32 h-9 text-left no-print border-primary/50 focus:border-primary"
                               value={isEditing.credit}
                               onChange={(e) => setEditingBalances(prev => ({
                                 ...prev,
@@ -876,27 +889,29 @@ const TrialBalance = () => {
                             <Button
                               size="sm"
                               variant="default"
-                              className="h-8 w-8 p-0 no-print"
+                              className="h-9 w-9 p-0 no-print bg-accent hover:bg-accent/90"
                               onClick={() => handleUpdateBalance(account.account.id)}
+                              title="حفظ"
                             >
                               ✓
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 w-8 p-0 no-print"
+                              className="h-9 w-9 p-0 no-print hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => setEditingBalances(prev => {
                                 const updated = { ...prev };
                                 delete updated[account.account.id];
                                 return updated;
                               })}
+                              title="إلغاء"
                             >
                               ✕
                             </Button>
                           </div>
                         ) : (
                           <span
-                            className="cursor-pointer hover:bg-muted/50 px-2 py-1 rounded transition-colors no-print"
+                            className="cursor-pointer hover:bg-accent/50 px-3 py-1.5 rounded-md transition-all block no-print"
                             onClick={() => setEditingBalances(prev => ({
                               ...prev,
                               [account.account.id]: { debit: "", credit: "" }
@@ -910,61 +925,78 @@ const TrialBalance = () => {
                       <TableCell className="text-left font-medium">
                         {account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-left font-medium">
+                      <TableCell className="text-left font-medium border-l">
                         {account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-left font-bold">
+                      <TableCell className="text-left font-bold text-primary">
                         {account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-left font-bold">
+                      <TableCell className="text-left font-bold text-primary border-l">
                         {account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
                     </TableRow>
                   );
                 })}
                 {trialBalanceData.length > 0 && (
-                  <TableRow className="font-bold bg-accent/50 print-total">
-                    <TableCell colSpan={2} className="text-right text-lg">الإجمالي</TableCell>
-                    <TableCell className="text-left text-lg">
-                      {totalOpeningDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                  <TableRow className="font-bold bg-gradient-to-r from-primary/10 to-primary/5 print-total border-t-2 border-primary/20">
+                    <TableCell colSpan={2} className="text-right text-lg py-4">
+                      <span className="text-primary">الإجمالي / Total</span>
                     </TableCell>
-                    <TableCell className="text-left text-lg">
-                      {totalOpeningCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-left text-lg py-4">
+                      <span className="text-primary">{totalOpeningDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
-                    <TableCell className="text-left text-lg">
-                      {totalPeriodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-left text-lg py-4 border-l">
+                      <span className="text-primary">{totalOpeningCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
-                    <TableCell className="text-left text-lg">
-                      {totalPeriodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-left text-lg py-4">
+                      <span className="text-primary">{totalPeriodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
-                    <TableCell className="text-left text-lg">
-                      {totalClosingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-left text-lg py-4 border-l">
+                      <span className="text-primary">{totalPeriodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
-                    <TableCell className="text-left text-lg">
-                      {totalClosingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    <TableCell className="text-left text-lg py-4">
+                      <span className="text-primary font-extrabold">{totalClosingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                    </TableCell>
+                    <TableCell className="text-left text-lg py-4 border-l">
+                      <span className="text-primary font-extrabold">{totalClosingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
                   </TableRow>
                 )}
                 {trialBalanceData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                      لا توجد حركات محاسبية في الفترة المحددة
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-lg">لا توجد حركات محاسبية في الفترة المحددة</span>
+                        <span className="text-sm">قم بإضافة قيود محاسبية أو اختر فترة أخرى</span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
           {trialBalanceData.length > 0 && (
-            <CardContent className="border-t">
-              <div className="print-balance-status">
+            <CardContent className="border-t bg-gradient-to-r from-background to-muted/20">
+              <div className="print-balance-status py-4">
                 {Math.abs(totalPeriodDebit - totalPeriodCredit) < 0.01 ? (
-                  <div className="text-green-600 font-bold text-xl">
-                    ✓ ميزان المراجعة متوازن
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
+                      <span className="text-2xl">✓</span>
+                    </div>
+                    <span className="text-accent font-bold text-xl">ميزان المراجعة متوازن</span>
                   </div>
                 ) : (
-                  <div className="text-destructive font-bold text-xl">
-                    ✗ ميزان المراجعة غير متوازن - الفرق: {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-destructive/20 flex items-center justify-center">
+                      <span className="text-2xl text-destructive">✗</span>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-destructive font-bold text-xl">ميزان المراجعة غير متوازن</div>
+                      <div className="text-muted-foreground text-sm mt-1">
+                        الفرق: {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
