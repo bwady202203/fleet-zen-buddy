@@ -21,6 +21,7 @@ import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp } from "lucide-react";
 import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -659,7 +660,7 @@ const JournalEntries = () => {
     const exportData = filteredEntries.flatMap((entry) => {
       return entry.lines.map((line: any) => ({
         'رقم القيد': entry.entryNumber,
-        'التاريخ': new Date(entry.date).toLocaleDateString('ar-SA'),
+        'التاريخ': format(new Date(entry.date), 'dd/MM/yyyy'),
         'البيان العام': entry.description,
         'رمز الحساب': line.accountCode,
         'اسم الحساب': line.accountName,
@@ -1189,7 +1190,7 @@ const JournalEntries = () => {
                             </Button>
                           </TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
-                          <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
+                          <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{entry.description}</TableCell>
                           <TableCell className="text-red-600 font-bold">
                             {entry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
@@ -1292,7 +1293,7 @@ const JournalEntries = () => {
                 <div>
                   <div className="text-sm text-gray-600">التاريخ / Date</div>
                   <div className="font-bold text-lg">
-                    {new Date(selectedEntry.date).toLocaleDateString('ar-SA')}
+                    {format(new Date(selectedEntry.date), 'dd/MM/yyyy')}
                   </div>
                 </div>
                 <div>
@@ -1371,7 +1372,7 @@ const JournalEntries = () => {
               </div>
 
               <div className="mt-8 text-center text-sm text-gray-500">
-                <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')} - {new Date().toLocaleTimeString('ar-SA')}</div>
+                <div>تاريخ الطباعة: {format(new Date(), 'dd/MM/yyyy')} - {new Date().toLocaleTimeString('en-US')}</div>
                 <div>Print Date: {new Date().toLocaleDateString('en-US')} - {new Date().toLocaleTimeString('en-US')}</div>
               </div>
             </div>
