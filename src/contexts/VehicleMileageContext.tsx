@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface MileageRecord {
   id: string;
@@ -29,8 +31,8 @@ export interface OilChangeRecord {
 interface VehicleMileageContextType {
   mileageRecords: MileageRecord[];
   oilChangeRecords: OilChangeRecord[];
-  addMileageRecord: (record: Omit<MileageRecord, 'id'>) => void;
-  addOilChangeRecord: (record: Omit<OilChangeRecord, 'id'>) => void;
+  addMileageRecord: (record: Omit<MileageRecord, 'id'>) => Promise<void>;
+  addOilChangeRecord: (record: Omit<OilChangeRecord, 'id'>) => Promise<void>;
   getMileageByVehicle: (vehicleId: string) => MileageRecord[];
   getOilChangesByVehicle: (vehicleId: string) => OilChangeRecord[];
   getLastOilChange: (vehicleId: string) => OilChangeRecord | undefined;
@@ -39,67 +41,179 @@ interface VehicleMileageContextType {
 const VehicleMileageContext = createContext<VehicleMileageContextType | undefined>(undefined);
 
 export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log('VehicleMileageProvider rendering...');
-  
-  const [mileageRecords, setMileageRecords] = useState<MileageRecord[]>(() => {
-    const saved = localStorage.getItem('mileageRecords');
-    console.log('Loading mileage records from localStorage:', saved);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [oilChangeRecords, setOilChangeRecords] = useState<OilChangeRecord[]>(() => {
-    const saved = localStorage.getItem('oilChangeRecords');
-    console.log('Loading oil change records from localStorage:', saved);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [mileageRecords, setMileageRecords] = useState<MileageRecord[]>([]);
+  const [oilChangeRecords, setOilChangeRecords] = useState<OilChangeRecord[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    localStorage.setItem('mileageRecords', JSON.stringify(mileageRecords));
-  }, [mileageRecords]);
+    loadMileageRecords();
+    loadOilChangeRecords();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('oilChangeRecords', JSON.stringify(oilChangeRecords));
-  }, [oilChangeRecords]);
+  const loadMileageRecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mileage_records')
+        .select('*, vehicles(model, license_plate)')
+        .order('date', { ascending: false });
 
-  const addMileageRecord = (record: Omit<MileageRecord, 'id'>) => {
-    const newRecord: MileageRecord = {
-      ...record,
-      id: Date.now().toString(),
-      type: record.type || 'regular',
-    };
-    setMileageRecords(prev => [...prev, newRecord]);
+      if (error) throw error;
+      
+      if (data) {
+        const mapped: MileageRecord[] = data.map(r => ({
+          id: r.id,
+          vehicleId: r.vehicle_id,
+          vehicleName: r.vehicles ? `${r.vehicles.model} - ${r.vehicles.license_plate}` : '',
+          date: r.date,
+          mileage: r.mileage,
+          driverName: r.notes || '',
+          notes: r.notes,
+          type: 'regular',
+        }));
+        setMileageRecords(mapped);
+      }
+    } catch (error) {
+      console.error('Error loading mileage records:', error);
+    }
   };
 
-  const addOilChangeRecord = (record: Omit<OilChangeRecord, 'id'>) => {
-    console.log('Adding oil change record:', record);
-    
-    const newRecord: OilChangeRecord = {
-      ...record,
-      id: Date.now().toString(),
-    };
-    
-    console.log('New oil change record:', newRecord);
-    setOilChangeRecords(prev => {
-      const updated = [...prev, newRecord];
-      console.log('Updated oil change records:', updated);
-      return updated;
-    });
+  const loadOilChangeRecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('oil_change_records')
+        .select('*, vehicles(model, license_plate)')
+        .order('date', { ascending: false });
 
-    // إضافة سجل كيلومترات لتغيير الزيت
-    if (record.resetMileage) {
-      const mileageRecord: MileageRecord = {
-        id: `${Date.now()}-mileage`,
+      if (error) throw error;
+      
+      if (data) {
+        const mapped: OilChangeRecord[] = data.map(r => ({
+          id: r.id,
+          vehicleId: r.vehicle_id,
+          vehicleName: r.vehicles ? `${r.vehicles.model} - ${r.vehicles.license_plate}` : '',
+          vehicleType: r.vehicles?.model || '',
+          date: r.date,
+          mileageAtChange: r.mileage,
+          nextOilChange: r.mileage + 5000,
+          oilType: r.performed_by || '',
+          cost: Number(r.cost) || 0,
+          notes: r.notes,
+          resetMileage: true,
+        }));
+        setOilChangeRecords(mapped);
+      }
+    } catch (error) {
+      console.error('Error loading oil change records:', error);
+    }
+  };
+
+  const addMileageRecord = async (record: Omit<MileageRecord, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('mileage_records')
+        .insert({
+          vehicle_id: record.vehicleId,
+          date: record.date,
+          mileage: record.mileage,
+          notes: record.notes || record.driverName,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newRecord: MileageRecord = {
+        id: data.id,
         vehicleId: record.vehicleId,
         vehicleName: record.vehicleName,
         date: record.date,
-        mileage: 0,
-        driverName: 'النظام',
-        notes: `تم تصفير العداد - تغيير زيت`,
-        type: 'oil-change',
-        resetMileage: true,
+        mileage: record.mileage,
+        driverName: record.driverName,
+        notes: record.notes,
+        type: record.type || 'regular',
       };
-      console.log('Adding reset mileage record:', mileageRecord);
-      setMileageRecords(prev => [...prev, mileageRecord]);
+      setMileageRecords(prev => [...prev, newRecord]);
+      
+      toast({
+        title: 'تم التسجيل / Recorded',
+        description: 'تم تسجيل الكيلومترات بنجاح / Mileage recorded successfully',
+      });
+    } catch (error) {
+      console.error('Error adding mileage record:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تسجيل الكيلومترات / Failed to record mileage',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const addOilChangeRecord = async (record: Omit<OilChangeRecord, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('oil_change_records')
+        .insert({
+          vehicle_id: record.vehicleId,
+          date: record.date,
+          mileage: record.mileageAtChange,
+          cost: record.cost,
+          performed_by: record.oilType,
+          notes: record.notes,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newRecord: OilChangeRecord = {
+        id: data.id,
+        vehicleId: record.vehicleId,
+        vehicleName: record.vehicleName,
+        vehicleType: record.vehicleType,
+        date: record.date,
+        mileageAtChange: record.mileageAtChange,
+        nextOilChange: record.nextOilChange,
+        oilType: record.oilType,
+        cost: record.cost,
+        notes: record.notes,
+        resetMileage: record.resetMileage,
+      };
+      setOilChangeRecords(prev => [...prev, newRecord]);
+
+      // تحديث تاريخ آخر تغيير زيت في المركبة
+      await supabase
+        .from('vehicles')
+        .update({
+          last_oil_change_date: record.date,
+          last_oil_change_mileage: record.mileageAtChange,
+        })
+        .eq('id', record.vehicleId);
+
+      // إضافة سجل كيلومترات لتغيير الزيت إذا كان هناك تصفير
+      if (record.resetMileage) {
+        await addMileageRecord({
+          vehicleId: record.vehicleId,
+          vehicleName: record.vehicleName,
+          date: record.date,
+          mileage: 0,
+          driverName: 'النظام',
+          notes: 'تم تصفير العداد - تغيير زيت',
+          type: 'oil-change',
+          resetMileage: true,
+        });
+      }
+      
+      toast({
+        title: 'تم التسجيل / Recorded',
+        description: 'تم تسجيل تغيير الزيت بنجاح / Oil change recorded successfully',
+      });
+    } catch (error) {
+      console.error('Error adding oil change record:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تسجيل تغيير الزيت / Failed to record oil change',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -134,11 +248,8 @@ export const VehicleMileageProvider: React.FC<{ children: React.ReactNode }> = (
 };
 
 export const useVehicleMileage = () => {
-  console.log('useVehicleMileage hook called');
   const context = useContext(VehicleMileageContext);
-  console.log('Context value:', context);
   if (!context) {
-    console.error('useVehicleMileage called outside of VehicleMileageProvider!');
     throw new Error('useVehicleMileage must be used within VehicleMileageProvider');
   }
   return context;

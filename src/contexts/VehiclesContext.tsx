@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export type VehicleStatus = "active" | "maintenance" | "warning" | "out-of-service";
 
@@ -14,85 +16,168 @@ export interface Vehicle {
 
 interface VehiclesContextType {
   vehicles: Vehicle[];
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => void;
-  updateVehicle: (id: string, updates: Partial<Vehicle>) => void;
-  updateVehicleStatus: (id: string, status: VehicleStatus) => void;
-  deleteVehicle: (id: string) => void;
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<void>;
+  updateVehicle: (id: string, updates: Partial<Vehicle>) => Promise<void>;
+  updateVehicleStatus: (id: string, status: VehicleStatus) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
 }
 
 const VehiclesContext = createContext<VehiclesContextType | undefined>(undefined);
 
-const initialVehicles: Vehicle[] = [
-  {
-    id: "1",
-    name: "شاحنة A-101",
-    type: "شاحنة ثقيلة",
-    status: "active",
-    lastService: "2024-09-15",
-    nextService: "2024-12-15",
-    mileage: 0
-  },
-  {
-    id: "2",
-    name: "فان B-205",
-    type: "فان توصيل",
-    status: "warning",
-    lastService: "2024-08-20",
-    nextService: "2024-11-20",
-    mileage: 0
-  },
-  {
-    id: "3",
-    name: "شاحنة C-340",
-    type: "شاحنة متوسطة",
-    status: "maintenance",
-    lastService: "2024-10-01",
-    nextService: "2024-10-15",
-    mileage: 0
-  },
-  {
-    id: "4",
-    name: "فان D-412",
-    type: "فان نقل",
-    status: "active",
-    lastService: "2024-09-10",
-    nextService: "2024-12-10",
-    mileage: 0
-  }
-];
-
 export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
-    const saved = localStorage.getItem('vehicles');
-    return saved ? JSON.parse(saved) : initialVehicles;
-  });
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    localStorage.setItem('vehicles', JSON.stringify(vehicles));
-  }, [vehicles]);
+    loadVehicles();
+  }, []);
 
-  const addVehicle = (vehicle: Omit<Vehicle, 'id'>) => {
-    const newVehicle: Vehicle = {
-      ...vehicle,
-      id: Date.now().toString(),
-    };
-    setVehicles(prev => [...prev, newVehicle]);
+  const loadVehicles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        const mappedVehicles: Vehicle[] = data.map(v => ({
+          id: v.id,
+          name: `${v.model} - ${v.license_plate}`,
+          type: v.model,
+          status: v.status as VehicleStatus || 'active',
+          lastService: v.last_oil_change_date || '',
+          nextService: '',
+          mileage: v.current_mileage || 0,
+        }));
+        setVehicles(mappedVehicles);
+      }
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تحميل بيانات المركبات / Failed to load vehicles',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
-    setVehicles(prev => prev.map(vehicle => 
-      vehicle.id === id ? { ...vehicle, ...updates } : vehicle
-    ));
+  const addVehicle = async (vehicle: Omit<Vehicle, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .insert({
+          license_plate: vehicle.name.split(' - ')[1] || vehicle.name,
+          model: vehicle.type,
+          year: new Date().getFullYear(),
+          status: vehicle.status,
+          current_mileage: vehicle.mileage || 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newVehicle: Vehicle = {
+          id: data.id,
+          name: `${data.model} - ${data.license_plate}`,
+          type: data.model,
+          status: data.status as VehicleStatus || 'active',
+          lastService: data.last_oil_change_date || '',
+          nextService: '',
+          mileage: data.current_mileage || 0,
+        };
+        setVehicles(prev => [...prev, newVehicle]);
+        
+        toast({
+          title: 'تم الإضافة / Added',
+          description: 'تم إضافة المركبة بنجاح / Vehicle added successfully',
+        });
+      }
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل إضافة المركبة / Failed to add vehicle',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const updateVehicleStatus = (id: string, status: VehicleStatus) => {
-    setVehicles(prev => prev.map(vehicle => 
-      vehicle.id === id ? { ...vehicle, status } : vehicle
-    ));
+  const updateVehicle = async (id: string, updates: Partial<Vehicle>) => {
+    try {
+      const dbUpdates: any = {};
+      if (updates.type) dbUpdates.model = updates.type;
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.mileage !== undefined) dbUpdates.current_mileage = updates.mileage;
+
+      const { error } = await supabase
+        .from('vehicles')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setVehicles(prev => prev.map(vehicle => 
+        vehicle.id === id ? { ...vehicle, ...updates } : vehicle
+      ));
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تحديث المركبة / Failed to update vehicle',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const deleteVehicle = (id: string) => {
-    setVehicles(prev => prev.filter(vehicle => vehicle.id !== id));
+  const updateVehicleStatus = async (id: string, status: VehicleStatus) => {
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setVehicles(prev => prev.map(vehicle => 
+        vehicle.id === id ? { ...vehicle, status } : vehicle
+      ));
+    } catch (error) {
+      console.error('Error updating vehicle status:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تحديث حالة المركبة / Failed to update vehicle status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteVehicle = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setVehicles(prev => prev.filter(vehicle => vehicle.id !== id));
+      
+      toast({
+        title: 'تم الحذف / Deleted',
+        description: 'تم حذف المركبة بنجاح / Vehicle deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل حذف المركبة / Failed to delete vehicle',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

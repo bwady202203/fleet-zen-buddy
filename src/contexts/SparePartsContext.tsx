@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface SparePart {
   id: string;
@@ -33,137 +35,330 @@ interface SparePartsContextType {
   spareParts: SparePart[];
   purchases: Purchase[];
   stockTransactions: StockTransaction[];
-  addSparePart: (part: Omit<SparePart, "id">) => void;
-  updateSparePart: (id: string, part: Partial<SparePart>) => void;
-  deleteSparePart: (id: string) => void;
-  addPurchase: (purchase: Omit<Purchase, "id">) => void;
-  deductQuantity: (sparePartId: string, quantity: number, reference: string, notes: string) => boolean;
+  addSparePart: (part: Omit<SparePart, "id">) => Promise<void>;
+  updateSparePart: (id: string, part: Partial<SparePart>) => Promise<void>;
+  deleteSparePart: (id: string) => Promise<void>;
+  addPurchase: (purchase: Omit<Purchase, "id">) => Promise<void>;
+  deductQuantity: (sparePartId: string, quantity: number, reference: string, notes: string) => Promise<boolean>;
 }
 
 const SparePartsContext = createContext<SparePartsContextType | undefined>(undefined);
 
 export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
-  const [spareParts, setSpareParts] = useState<SparePart[]>(() => {
-    const saved = localStorage.getItem("spareParts");
-    return saved ? JSON.parse(saved) : [
-      { id: "1", name: "فلتر زيت", price: 50, quantity: 25, minQuantity: 10, unit: "قطعة" },
-      { id: "2", name: "زيت محرك", price: 120, quantity: 30, minQuantity: 15, unit: "لتر" },
-      { id: "3", name: "إطارات", price: 800, quantity: 12, minQuantity: 8, unit: "قطعة" },
-      { id: "4", name: "فرامل", price: 300, quantity: 20, minQuantity: 10, unit: "طقم" },
-      { id: "5", name: "بطارية", price: 650, quantity: 8, minQuantity: 5, unit: "قطعة" },
-      { id: "6", name: "فلتر هواء", price: 80, quantity: 18, minQuantity: 10, unit: "قطعة" },
-      { id: "7", name: "شمعات", price: 45, quantity: 40, minQuantity: 20, unit: "قطعة" },
-      { id: "8", name: "مساحات", price: 120, quantity: 15, minQuantity: 8, unit: "زوج" },
-    ];
-  });
-
-  const [purchases, setPurchases] = useState<Purchase[]>(() => {
-    const saved = localStorage.getItem("purchases");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [stockTransactions, setStockTransactions] = useState<StockTransaction[]>(() => {
-    const saved = localStorage.getItem("stockTransactions");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [spareParts, setSpareParts] = useState<SparePart[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [stockTransactions, setStockTransactions] = useState<StockTransaction[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    localStorage.setItem("spareParts", JSON.stringify(spareParts));
-  }, [spareParts]);
+    loadSpareParts();
+    loadPurchases();
+    loadStockTransactions();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem("purchases", JSON.stringify(purchases));
-  }, [purchases]);
+  const loadSpareParts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('spare_parts')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  useEffect(() => {
-    localStorage.setItem("stockTransactions", JSON.stringify(stockTransactions));
-  }, [stockTransactions]);
-
-  const addSparePart = (part: Omit<SparePart, "id">) => {
-    const newPart: SparePart = {
-      ...part,
-      id: Date.now().toString(),
-    };
-    setSpareParts((prev) => [...prev, newPart]);
+      if (error) throw error;
+      
+      if (data) {
+        const mapped: SparePart[] = data.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: Number(p.unit_price) || 0,
+          quantity: p.quantity || 0,
+          minQuantity: p.min_quantity || 0,
+          unit: 'قطعة',
+        }));
+        setSpareParts(mapped);
+      }
+    } catch (error) {
+      console.error('Error loading spare parts:', error);
+    }
   };
 
-  const updateSparePart = (id: string, part: Partial<SparePart>) => {
-    setSpareParts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...part } : p))
-    );
-  };
+  const loadPurchases = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('spare_parts_purchases')
+        .select('*')
+        .order('purchase_date', { ascending: false });
 
-  const deleteSparePart = (id: string) => {
-    setSpareParts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const addPurchase = (purchase: Omit<Purchase, "id">) => {
-    const newPurchase: Purchase = {
-      ...purchase,
-      id: Date.now().toString(),
-    };
-    setPurchases((prev) => [...prev, newPurchase]);
-
-    // إضافة الكميات المشتراة إلى المخزون وتسجيل الحركة
-    purchase.spareParts.forEach((item) => {
-      setSpareParts((prev) => {
-        const updatedParts = prev.map((part) => {
-          if (part.id === item.sparePartId) {
-            const newQuantity = part.quantity + item.quantity;
-            
-            // تسجيل حركة الشراء
-            setStockTransactions((trans) => [
-              ...trans,
-              {
-                id: `${Date.now()}-${part.id}`,
-                date: purchase.date,
-                sparePartId: part.id,
-                type: "purchase",
-                quantity: item.quantity,
-                balanceAfter: newQuantity,
-                reference: newPurchase.id,
-                notes: `شراء من ${purchase.supplier}`,
-              },
-            ]);
-            
-            return { ...part, quantity: newQuantity };
+      if (error) throw error;
+      
+      if (data) {
+        const grouped = data.reduce((acc: any, purchase: any) => {
+          const date = purchase.purchase_date;
+          const supplier = purchase.supplier || 'غير محدد';
+          const key = `${date}-${supplier}`;
+          
+          if (!acc[key]) {
+            acc[key] = {
+              id: purchase.id,
+              date,
+              supplier,
+              totalCost: 0,
+              notes: '',
+              spareParts: [],
+            };
           }
-          return part;
-        });
-        return updatedParts;
-      });
-    });
+          
+          acc[key].spareParts.push({
+            sparePartId: purchase.spare_part_id,
+            quantity: purchase.quantity,
+            price: Number(purchase.unit_price),
+          });
+          acc[key].totalCost += Number(purchase.total_price);
+          
+          return acc;
+        }, {});
+        
+        setPurchases(Object.values(grouped));
+      }
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+    }
   };
 
-  const deductQuantity = (sparePartId: string, quantity: number, reference: string, notes: string): boolean => {
-    const part = spareParts.find((p) => p.id === sparePartId);
-    if (!part || part.quantity < quantity) {
+  const loadStockTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_transactions')
+        .select('*')
+        .order('transaction_date', { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        const mapped: StockTransaction[] = data.map(t => ({
+          id: t.id,
+          date: t.transaction_date,
+          sparePartId: t.spare_part_id,
+          type: t.type as 'purchase' | 'maintenance',
+          quantity: t.quantity,
+          balanceAfter: 0,
+          reference: t.reference_id || '',
+          notes: t.notes || '',
+        }));
+        setStockTransactions(mapped);
+      }
+    } catch (error) {
+      console.error('Error loading stock transactions:', error);
+    }
+  };
+
+  const addSparePart = async (part: Omit<SparePart, "id">) => {
+    try {
+      const { data, error } = await supabase
+        .from('spare_parts')
+        .insert({
+          name: part.name,
+          unit_price: part.price,
+          quantity: part.quantity,
+          min_quantity: part.minQuantity,
+          code: `SP-${Date.now()}`,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newPart: SparePart = {
+          id: data.id,
+          name: data.name,
+          price: Number(data.unit_price),
+          quantity: data.quantity,
+          minQuantity: data.min_quantity,
+          unit: part.unit,
+        };
+        setSpareParts((prev) => [...prev, newPart]);
+        
+        toast({
+          title: 'تم الإضافة / Added',
+          description: 'تم إضافة قطعة الغيار بنجاح / Spare part added successfully',
+        });
+      }
+    } catch (error) {
+      console.error('Error adding spare part:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل إضافة قطعة الغيار / Failed to add spare part',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const updateSparePart = async (id: string, part: Partial<SparePart>) => {
+    try {
+      const updates: any = {};
+      if (part.name) updates.name = part.name;
+      if (part.price !== undefined) updates.unit_price = part.price;
+      if (part.quantity !== undefined) updates.quantity = part.quantity;
+      if (part.minQuantity !== undefined) updates.min_quantity = part.minQuantity;
+
+      const { error } = await supabase
+        .from('spare_parts')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setSpareParts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...part } : p))
+      );
+      
+      toast({
+        title: 'تم التحديث / Updated',
+        description: 'تم تحديث قطعة الغيار بنجاح / Spare part updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating spare part:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تحديث قطعة الغيار / Failed to update spare part',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteSparePart = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('spare_parts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setSpareParts((prev) => prev.filter((p) => p.id !== id));
+      
+      toast({
+        title: 'تم الحذف / Deleted',
+        description: 'تم حذف قطعة الغيار بنجاح / Spare part deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting spare part:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل حذف قطعة الغيار / Failed to delete spare part',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const addPurchase = async (purchase: Omit<Purchase, "id">) => {
+    try {
+      // إضافة سجلات الشراء
+      const purchaseRecords = purchase.spareParts.map(item => ({
+        spare_part_id: item.sparePartId,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.quantity * item.price,
+        purchase_date: purchase.date,
+        supplier: purchase.supplier,
+        invoice_number: `INV-${Date.now()}`,
+      }));
+
+      const { error: purchaseError } = await supabase
+        .from('spare_parts_purchases')
+        .insert(purchaseRecords);
+
+      if (purchaseError) throw purchaseError;
+
+      // تحديث الكميات وإضافة حركات المخزون
+      for (const item of purchase.spareParts) {
+        const part = spareParts.find(p => p.id === item.sparePartId);
+        if (!part) continue;
+
+        const newQuantity = part.quantity + item.quantity;
+
+        // تحديث الكمية
+        await supabase
+          .from('spare_parts')
+          .update({ quantity: newQuantity })
+          .eq('id', item.sparePartId);
+
+        // إضافة حركة المخزون
+        await supabase
+          .from('stock_transactions')
+          .insert({
+            spare_part_id: item.sparePartId,
+            type: 'purchase',
+            quantity: item.quantity,
+            transaction_date: purchase.date,
+            reference_type: 'purchase',
+            notes: `شراء من ${purchase.supplier}`,
+          });
+      }
+
+      await loadSpareParts();
+      await loadPurchases();
+      await loadStockTransactions();
+
+      toast({
+        title: 'تم التسجيل / Recorded',
+        description: 'تم تسجيل عملية الشراء بنجاح / Purchase recorded successfully',
+      });
+    } catch (error) {
+      console.error('Error adding purchase:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تسجيل عملية الشراء / Failed to record purchase',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deductQuantity = async (sparePartId: string, quantity: number, reference: string, notes: string): Promise<boolean> => {
+    try {
+      const part = spareParts.find((p) => p.id === sparePartId);
+      if (!part || part.quantity < quantity) {
+        return false;
+      }
+
+      const newQuantity = part.quantity - quantity;
+
+      // تحديث الكمية
+      const { error: updateError } = await supabase
+        .from('spare_parts')
+        .update({ quantity: newQuantity })
+        .eq('id', sparePartId);
+
+      if (updateError) throw updateError;
+
+      // تسجيل حركة الصيانة
+      const { error: transError } = await supabase
+        .from('stock_transactions')
+        .insert({
+          spare_part_id: sparePartId,
+          type: 'maintenance',
+          quantity: -quantity,
+          transaction_date: new Date().toISOString().split('T')[0],
+          reference_id: reference,
+          reference_type: 'maintenance',
+          notes,
+        });
+
+      if (transError) throw transError;
+
+      setSpareParts((prev) =>
+        prev.map((p) =>
+          p.id === sparePartId ? { ...p, quantity: newQuantity } : p
+        )
+      );
+      
+      await loadStockTransactions();
+      
+      return true;
+    } catch (error) {
+      console.error('Error deducting quantity:', error);
       return false;
     }
-
-    const newQuantity = part.quantity - quantity;
-
-    // تسجيل حركة الصيانة
-    setStockTransactions((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}-${sparePartId}`,
-        date: new Date().toISOString().split('T')[0],
-        sparePartId,
-        type: "maintenance",
-        quantity: -quantity,
-        balanceAfter: newQuantity,
-        reference,
-        notes,
-      },
-    ]);
-
-    setSpareParts((prev) =>
-      prev.map((p) =>
-        p.id === sparePartId ? { ...p, quantity: newQuantity } : p
-      )
-    );
-    return true;
   };
 
   return (
