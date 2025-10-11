@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -61,7 +62,9 @@ const JournalEntries = () => {
   const location = useLocation();
   const isNewEntryPage = location.pathname === '/accounting/journal-entries/new';
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
@@ -510,6 +513,28 @@ const JournalEntries = () => {
     return true;
   });
 
+  const handleViewDetails = (entry: any) => {
+    setSelectedEntry(entry);
+    setEditingEntry({
+      id: entry.id,
+      entryNumber: entry.entryNumber,
+      date: entry.date,
+      description: entry.description,
+      lines: entry.lines.map((line: any) => ({
+        id: line.id,
+        accountId: line.accountId,
+        accountCode: line.accountCode,
+        accountName: line.accountName,
+        description: line.description,
+        debit: line.debit,
+        credit: line.credit,
+        costCenter: "",
+        projectName: "",
+      })),
+    });
+    setDetailDialogOpen(true);
+  };
+
   const handleEdit = (entry: any) => {
     setFormData({
       entryNumber: entry.entryNumber,
@@ -528,6 +553,141 @@ const JournalEntries = () => {
       })),
     });
     navigate('/accounting/journal-entries/new');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEntry) return;
+
+    const validLines = editingEntry.lines.filter((line: any) => line.accountId && (line.debit > 0 || line.credit > 0));
+    const validTotalDebit = validLines.reduce((sum: number, line: any) => sum + (line.debit || 0), 0);
+    const validTotalCredit = validLines.reduce((sum: number, line: any) => sum + (line.credit || 0), 0);
+
+    if (validTotalDebit !== validTotalCredit) {
+      toast({
+        title: "خطأ",
+        description: "القيد غير متوازن. يجب أن يكون مجموع المدين مساوياً لمجموع الدائن",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // تحديث القيد الرئيسي
+      const { error: updateError } = await supabase
+        .from('journal_entries')
+        .update({
+          date: editingEntry.date,
+          description: editingEntry.description,
+        })
+        .eq('id', editingEntry.id);
+
+      if (updateError) throw updateError;
+
+      // حذف السطور القديمة
+      const { error: deleteError } = await supabase
+        .from('journal_entry_lines')
+        .delete()
+        .eq('journal_entry_id', editingEntry.id);
+
+      if (deleteError) throw deleteError;
+
+      // إضافة السطور الجديدة
+      const lines = validLines.map((line: any) => ({
+        journal_entry_id: editingEntry.id,
+        account_id: line.accountId,
+        description: line.description,
+        debit: line.debit || 0,
+        credit: line.credit || 0,
+        cost_center_id: line.costCenter ? costCenters.find(cc => cc.code === line.costCenter)?.id : null,
+        project_id: line.projectName ? projects.find(p => p.code === line.projectName)?.id : null,
+      }));
+
+      const { error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .insert(lines);
+
+      if (linesError) throw linesError;
+
+      toast({
+        title: "تم التحديث بنجاح",
+        description: "تم تحديث القيد بنجاح",
+      });
+
+      setDetailDialogOpen(false);
+      fetchJournalEntries();
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث القيد",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportToExcel = () => {
+    const exportData = filteredEntries.flatMap((entry) => {
+      return entry.lines.map((line: any) => ({
+        'رقم القيد': entry.entryNumber,
+        'التاريخ': new Date(entry.date).toLocaleDateString('ar-SA'),
+        'البيان العام': entry.description,
+        'رمز الحساب': line.accountCode,
+        'اسم الحساب': line.accountName,
+        'البيان التفصيلي': line.description,
+        'المدين': line.debit,
+        'الدائن': line.credit,
+      }));
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'قيود اليومية');
+    
+    // تنسيق الأعمدة
+    const wscols = [
+      { wch: 15 }, // رقم القيد
+      { wch: 12 }, // التاريخ
+      { wch: 25 }, // البيان العام
+      { wch: 12 }, // رمز الحساب
+      { wch: 30 }, // اسم الحساب
+      { wch: 25 }, // البيان التفصيلي
+      { wch: 12 }, // المدين
+      { wch: 12 }, // الدائن
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.writeFile(wb, `قيود_اليومية_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "تم التصدير بنجاح",
+      description: "تم تصدير القيود إلى ملف Excel",
+    });
+  };
+
+  const updateEditingLine = (lineId: string, updates: Partial<any>) => {
+    setEditingEntry((prev: any) => ({
+      ...prev,
+      lines: prev.lines.map((line: any) => 
+        line.id === lineId ? { ...line, ...updates } : line
+      ),
+    }));
+  };
+
+  const addEditingLine = () => {
+    setEditingEntry((prev: any) => ({
+      ...prev,
+      lines: [...prev.lines, {
+        id: `line-${Date.now()}`,
+        accountId: "",
+        accountCode: "",
+        accountName: "",
+        description: "",
+        debit: 0,
+        credit: 0,
+        costCenter: "",
+        projectName: "",
+      }],
+    }));
   };
 
 
@@ -908,6 +1068,10 @@ const JournalEntries = () => {
                   <Filter className="h-5 w-5" />
                   تصفية القيود / Filter Entries
                 </CardTitle>
+                <Button variant="outline" onClick={handleExportToExcel}>
+                  <FileDown className="h-4 w-4 ml-2" />
+                  تصدير إلى Excel
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -972,18 +1136,10 @@ const JournalEntries = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handlePreview(entry)}
-                              title="معاينة / Preview"
+                              onClick={() => handleViewDetails(entry)}
+                              title="عرض تفصيلي / Detailed View"
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(entry)}
-                              title="تعديل / Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1116,66 +1272,168 @@ const JournalEntries = () => {
           </div>
         )}
 
-        {/* Preview Dialog */}
-        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+        {/* Detailed View & Edit Dialog */}
+        <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden" dir="rtl">
             <DialogHeader>
-              <DialogTitle>معاينة القيد / Entry Preview</DialogTitle>
+              <DialogTitle className="flex items-center justify-between">
+                <span>عرض تفصيلي للقيد / Entry Details</span>
+                <Button onClick={handleSaveEdit}>
+                  <Save className="h-4 w-4 ml-2" />
+                  حفظ التعديلات
+                </Button>
+              </DialogTitle>
             </DialogHeader>
-            {selectedEntry && (
-              <div className="space-y-4">
+            {editingEntry && (
+              <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)] px-2">
                 <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
                   <div>
                     <Label className="text-sm">رقم القيد / Entry No.</Label>
-                    <p className="font-medium">{selectedEntry.entryNumber}</p>
+                    <Input 
+                      value={editingEntry.entryNumber} 
+                      disabled
+                      className="bg-muted"
+                    />
                   </div>
                   <div>
                     <Label className="text-sm">التاريخ / Date</Label>
-                    <p className="font-medium">{new Date(selectedEntry.date).toLocaleDateString('ar-SA')}</p>
+                    <Input
+                      type="date"
+                      value={editingEntry.date}
+                      onChange={(e) => setEditingEntry({...editingEntry, date: e.target.value})}
+                    />
                   </div>
                   <div>
                     <Label className="text-sm">البيان / Description</Label>
-                    <p className="font-medium">{selectedEntry.description || '-'}</p>
+                    <Input
+                      value={editingEntry.description}
+                      onChange={(e) => setEditingEntry({...editingEntry, description: e.target.value})}
+                      placeholder="بيان القيد"
+                    />
                   </div>
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">رمز الحساب</TableHead>
-                      <TableHead className="text-right">اسم الحساب</TableHead>
-                      <TableHead className="text-right">البيان</TableHead>
-                      <TableHead className="text-right">المدين</TableHead>
-                      <TableHead className="text-right">الدائن</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedEntry.lines.map((line: any, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{line.accountCode}</TableCell>
-                        <TableCell>{line.accountName}</TableCell>
-                        <TableCell>{line.description}</TableCell>
-                        <TableCell className="text-red-600 font-bold">
-                          {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                        </TableCell>
-                        <TableCell className="text-green-600 font-bold">
-                          {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow className="bg-muted/50 font-bold">
-                      <TableCell colSpan={3} className="text-left">
-                        الإجمالي / Total
-                      </TableCell>
-                      <TableCell className="text-red-600">
-                        {selectedEntry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-green-600">
-                        {selectedEntry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <div className="border rounded-lg">
+                  <div className="flex items-center justify-between p-4 border-b bg-muted/50">
+                    <h3 className="font-semibold">سطور القيد / Entry Lines</h3>
+                    <Button variant="outline" size="sm" onClick={addEditingLine}>
+                      <Plus className="h-4 w-4 ml-2" />
+                      إضافة سطر
+                    </Button>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right min-w-[250px]">الحساب / Account</TableHead>
+                          <TableHead className="text-right min-w-[200px]">البيان / Description</TableHead>
+                          <TableHead className="text-right min-w-[120px]">المدين / Debit</TableHead>
+                          <TableHead className="text-right min-w-[120px]">الدائن / Credit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {editingEntry.lines.map((line: any) => {
+                          const searchState = getSearchState(line.id);
+                          const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
+                          const filteredAccounts = searchState.accountSearch.length > 0 
+                            ? level4Accounts.filter(acc => 
+                                acc.code.includes(searchState.accountSearch) || 
+                                acc.name_ar.includes(searchState.accountSearch)
+                              )
+                            : level4Accounts;
+
+                          return (
+                            <TableRow key={line.id}>
+                              <TableCell>
+                                <div className="relative">
+                                  <Input
+                                    value={searchState.accountSearch || (line.accountCode ? `${line.accountCode} - ${line.accountName}` : "")}
+                                    onChange={(e) => {
+                                      updateSearchState(line.id, {
+                                        accountSearch: e.target.value,
+                                        showAccountSearch: true,
+                                      });
+                                    }}
+                                    placeholder="ابحث بالرمز أو الاسم..."
+                                    onFocus={() => updateSearchState(line.id, { showAccountSearch: true })}
+                                    onBlur={() => setTimeout(() => updateSearchState(line.id, { showAccountSearch: false }), 200)}
+                                  />
+                                  {searchState.showAccountSearch && filteredAccounts.length > 0 && (
+                                    <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
+                                      <CardContent className="p-2">
+                                        {filteredAccounts.map(acc => (
+                                          <div
+                                            key={acc.id}
+                                            className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              updateEditingLine(line.id, {
+                                                accountId: acc.id,
+                                                accountCode: acc.code,
+                                                accountName: acc.name_ar,
+                                              });
+                                              updateSearchState(line.id, {
+                                                accountSearch: "",
+                                                showAccountSearch: false,
+                                              });
+                                            }}
+                                          >
+                                            <div className="font-medium">{acc.code} - {acc.name_ar}</div>
+                                          </div>
+                                        ))}
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={line.description}
+                                  onChange={(e) => updateEditingLine(line.id, { description: e.target.value })}
+                                  placeholder="البيان"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  value={line.debit || ""}
+                                  onChange={(e) => {
+                                    const debit = parseFloat(e.target.value) || 0;
+                                    updateEditingLine(line.id, { debit, credit: 0 });
+                                  }}
+                                  placeholder="0.00"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  value={line.credit || ""}
+                                  onChange={(e) => {
+                                    const credit = parseFloat(e.target.value) || 0;
+                                    updateEditingLine(line.id, { credit, debit: 0 });
+                                  }}
+                                  placeholder="0.00"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={2} className="text-left">
+                            الإجمالي / Total
+                          </TableCell>
+                          <TableCell className="text-red-600">
+                            {editingEntry.lines.reduce((sum: number, line: any) => sum + (line.debit || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-green-600">
+                            {editingEntry.lines.reduce((sum: number, line: any) => sum + (line.credit || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </div>
             )}
           </DialogContent>
