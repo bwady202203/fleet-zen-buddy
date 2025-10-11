@@ -248,6 +248,25 @@ const ChartOfAccounts = () => {
         return;
       }
 
+      // Check if account is used in journal entries
+      const { data: journalEntries, error: checkError } = await supabase
+        .from('journal_entry_lines')
+        .select('id')
+        .eq('account_id', accountToDelete.id)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (journalEntries && journalEntries.length > 0) {
+        toast({
+          title: "لا يمكن الحذف / Cannot Delete",
+          description: "لا يمكن حذف حساب مستخدم في قيود اليومية / Cannot delete account used in journal entries",
+          variant: "destructive",
+        });
+        setDeleteDialogOpen(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('chart_of_accounts')
         .delete()
