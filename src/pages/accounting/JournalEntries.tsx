@@ -526,6 +526,23 @@ const JournalEntries = () => {
     });
   };
 
+  const expandAllEntries = () => {
+    const allEntryIds = new Set(filteredEntries.map(entry => entry.id));
+    setExpandedEntries(allEntryIds);
+  };
+
+  const collapseAllEntries = () => {
+    setExpandedEntries(new Set());
+  };
+
+  const toggleAllEntries = () => {
+    if (expandedEntries.size === filteredEntries.length) {
+      collapseAllEntries();
+    } else {
+      expandAllEntries();
+    }
+  };
+
   const handleViewDetails = (entry: any) => {
     setSelectedEntry(entry);
     setEditingEntry({
@@ -1111,7 +1128,27 @@ const JournalEntries = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>سجل القيود اليومية / Journal Entries Register</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>سجل القيود اليومية / Journal Entries Register</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={toggleAllEntries}
+                  className="gap-2"
+                >
+                  {expandedEntries.size === filteredEntries.length ? (
+                    <>
+                      <ChevronUp className="h-4 w-4" />
+                      طي الكل / Collapse All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      عرض الكل تفصيلياً / Expand All
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {filteredEntries.length === 0 ? (
