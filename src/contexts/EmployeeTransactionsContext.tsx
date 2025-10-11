@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface EmployeeTransaction {
   id: string;
@@ -23,8 +25,8 @@ interface EmployeeTransactionsContextType {
     deductions: EmployeeTransaction[];
     advancesBalance: number;
   };
-  addTransaction: (transaction: Omit<EmployeeTransaction, "id">) => void;
-  updateTransactionBalance: (id: string, paidAmount: number) => void;
+  addTransaction: (transaction: Omit<EmployeeTransaction, "id">) => Promise<void>;
+  updateTransactionBalance: (id: string, paidAmount: number) => Promise<void>;
 }
 
 const EmployeeTransactionsContext = createContext<EmployeeTransactionsContextType | undefined>(undefined);
@@ -111,14 +113,43 @@ const initialTransactions: EmployeeTransaction[] = [
 ];
 
 export const EmployeeTransactionsProvider = ({ children }: { children: ReactNode }) => {
-  const [transactions, setTransactions] = useState<EmployeeTransaction[]>(() => {
-    const stored = localStorage.getItem("employeeTransactions");
-    return stored ? JSON.parse(stored) : initialTransactions;
-  });
+  const [transactions, setTransactions] = useState<EmployeeTransaction[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    localStorage.setItem("employeeTransactions", JSON.stringify(transactions));
-  }, [transactions]);
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employee_transactions')
+        .select('*, employees(name)')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mapped: EmployeeTransaction[] = data.map(t => ({
+          id: t.id,
+          employeeId: t.employee_id,
+          employeeName: t.employees?.name || '',
+          type: t.type as "advance" | "addition" | "deduction",
+          amount: Number(t.amount),
+          originalAmount: Number(t.amount),
+          remainingBalance: Number(t.remaining_balance) || 0,
+          date: t.date,
+          reason: t.description || '',
+          voucherNumber: `${t.type.toUpperCase()}-${t.id.substring(0, 8)}`,
+          status: 'approved',
+          category: t.type,
+        }));
+        setTransactions(mapped);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    }
+  };
 
   const getEmployeeTransactions = (employeeId: string) => {
     const employeeTransactions = transactions.filter(t => t.employeeId === employeeId);
@@ -133,22 +164,83 @@ export const EmployeeTransactionsProvider = ({ children }: { children: ReactNode
     };
   };
 
-  const addTransaction = (transaction: Omit<EmployeeTransaction, "id">) => {
-    const newTransaction: EmployeeTransaction = {
-      ...transaction,
-      id: `${transaction.type}-${Date.now()}`
-    };
-    setTransactions(prev => [...prev, newTransaction]);
+  const addTransaction = async (transaction: Omit<EmployeeTransaction, "id">) => {
+    try {
+      const { data, error } = await supabase
+        .from('employee_transactions')
+        .insert({
+          employee_id: transaction.employeeId,
+          type: transaction.type,
+          amount: transaction.amount,
+          remaining_balance: transaction.type === 'advance' ? transaction.amount : 0,
+          date: transaction.date,
+          description: transaction.reason,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newTransaction: EmployeeTransaction = {
+          id: data.id,
+          employeeId: transaction.employeeId,
+          employeeName: transaction.employeeName,
+          type: transaction.type,
+          amount: transaction.amount,
+          originalAmount: transaction.amount,
+          remainingBalance: transaction.type === 'advance' ? transaction.amount : 0,
+          date: transaction.date,
+          reason: transaction.reason,
+          voucherNumber: `${transaction.type.toUpperCase()}-${data.id.substring(0, 8)}`,
+          status: 'approved',
+          category: transaction.type,
+        };
+        setTransactions(prev => [...prev, newTransaction]);
+        
+        toast({
+          title: 'تم التسجيل / Recorded',
+          description: 'تم إضافة المعاملة بنجاح / Transaction added successfully',
+        });
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل إضافة المعاملة / Failed to add transaction',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const updateTransactionBalance = (id: string, paidAmount: number) => {
-    setTransactions(prev => prev.map(t => {
-      if (t.id === id && t.type === "advance") {
-        const newBalance = Math.max(0, t.remainingBalance - paidAmount);
-        return { ...t, remainingBalance: newBalance };
-      }
-      return t;
-    }));
+  const updateTransactionBalance = async (id: string, paidAmount: number) => {
+    try {
+      const transaction = transactions.find(t => t.id === id);
+      if (!transaction || transaction.type !== 'advance') return;
+
+      const newBalance = Math.max(0, transaction.remainingBalance - paidAmount);
+
+      const { error } = await supabase
+        .from('employee_transactions')
+        .update({ remaining_balance: newBalance })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.map(t => {
+        if (t.id === id && t.type === "advance") {
+          return { ...t, remainingBalance: newBalance };
+        }
+        return t;
+      }));
+    } catch (error) {
+      console.error('Error updating transaction balance:', error);
+      toast({
+        title: 'خطأ / Error',
+        description: 'فشل تحديث الرصيد / Failed to update balance',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
