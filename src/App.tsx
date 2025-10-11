@@ -27,6 +27,7 @@ import CustodyFilter from "./pages/custody/CustodyFilter";
 import CustodyJournalEntries from "./pages/custody/CustodyJournalEntries";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
+import JournalEntriesReports from "./pages/accounting/JournalEntriesReports";
 import Ledger from "./pages/accounting/Ledger";
 import TrialBalance from "./pages/accounting/TrialBalance";
 import SalesInvoice from "./pages/accounting/SalesInvoice";
@@ -99,6 +100,7 @@ const App = () => {
                                   <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                                   <Route path="/accounting/journal-entries" element={<JournalEntries />} />
                                   <Route path="/accounting/journal-entries/new" element={<JournalEntries />} />
+                                  <Route path="/accounting/journal-entries-reports" element={<JournalEntriesReports />} />
                                   <Route path="/accounting/ledger" element={<Ledger />} />
                                   <Route path="/accounting/trial-balance" element={<TrialBalance />} />
                                   <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />

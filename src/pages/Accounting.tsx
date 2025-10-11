@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart } from "lucide-react";
 
 const Accounting = () => {
   const sections = [
@@ -17,6 +17,13 @@ const Accounting = () => {
       icon: FileText,
       link: "/accounting/journal-entries",
       color: "from-blue-500 to-blue-600"
+    },
+    {
+      title: "تقارير القيود اليومية",
+      description: "تقارير تفصيلية مع فلاتر متقدمة",
+      icon: FileBarChart,
+      link: "/accounting/journal-entries-reports",
+      color: "from-slate-500 to-slate-600"
     },
     {
       title: "دفتر الأستاذ",
