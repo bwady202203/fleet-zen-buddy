@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,7 @@ const JournalEntries = () => {
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
   
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -512,6 +513,18 @@ const JournalEntries = () => {
     )) return false;
     return true;
   });
+
+  const toggleEntryExpand = (entryId: string) => {
+    setExpandedEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
 
   const handleViewDetails = (entry: any) => {
     setSelectedEntry(entry);
@@ -1111,6 +1124,7 @@ const JournalEntries = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="text-right w-12"></TableHead>
                       <TableHead className="text-right">رقم القيد / Entry No.</TableHead>
                       <TableHead className="text-right">التاريخ / Date</TableHead>
                       <TableHead className="text-right">البيان / Description</TableHead>
@@ -1121,46 +1135,101 @@ const JournalEntries = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredEntries.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.entryNumber}</TableCell>
-                        <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
-                        <TableCell>{entry.description}</TableCell>
-                        <TableCell className="text-red-600 font-bold">
-                          {entry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell className="text-green-600 font-bold">
-                          {entry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
-                        </TableCell>
-                        <TableCell className="text-center no-print">
-                          <div className="flex gap-2 justify-center">
+                      <>
+                        <TableRow key={entry.id} className="hover:bg-muted/50">
+                          <TableCell>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleViewDetails(entry)}
-                              title="عرض تفصيلي / Detailed View"
+                              onClick={() => toggleEntryExpand(entry.id)}
+                              className="h-8 w-8"
                             >
-                              <Eye className="h-4 w-4" />
+                              {expandedEntries.has(entry.id) ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handlePrintEntry(entry)}
-                              title="طباعة / Print"
-                            >
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(entry.id)}
-                              title="حذف / Delete"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                          <TableCell className="font-medium">{entry.entryNumber}</TableCell>
+                          <TableCell>{new Date(entry.date).toLocaleDateString('ar-SA')}</TableCell>
+                          <TableCell>{entry.description}</TableCell>
+                          <TableCell className="text-red-600 font-bold">
+                            {entry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-green-600 font-bold">
+                            {entry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-center no-print">
+                            <div className="flex gap-2 justify-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleViewDetails(entry)}
+                                title="تعديل / Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handlePrintEntry(entry)}
+                                title="طباعة / Print"
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(entry.id)}
+                                title="حذف / Delete"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {expandedEntries.has(entry.id) && (
+                          <TableRow key={`${entry.id}-details`}>
+                            <TableCell colSpan={7} className="bg-muted/20 p-0">
+                              <div className="p-4">
+                                <div className="bg-card rounded-lg border">
+                                  <div className="p-3 bg-muted/50 border-b">
+                                    <h4 className="font-semibold text-sm">تفاصيل سطور القيد / Entry Lines Details</h4>
+                                  </div>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="text-right">رمز الحساب / Code</TableHead>
+                                        <TableHead className="text-right">اسم الحساب / Account Name</TableHead>
+                                        <TableHead className="text-right">البيان / Description</TableHead>
+                                        <TableHead className="text-right">المدين / Debit</TableHead>
+                                        <TableHead className="text-right">الدائن / Credit</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {entry.lines.map((line: any, idx: number) => (
+                                        <TableRow key={idx}>
+                                          <TableCell className="font-mono text-sm">{line.accountCode}</TableCell>
+                                          <TableCell>{line.accountName}</TableCell>
+                                          <TableCell className="text-muted-foreground">{line.description}</TableCell>
+                                          <TableCell className="text-red-600 font-semibold">
+                                            {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                                          </TableCell>
+                                          <TableCell className="text-green-600 font-semibold">
+                                            {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     ))}
                   </TableBody>
                 </Table>
