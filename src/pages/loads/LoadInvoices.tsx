@@ -1061,13 +1061,7 @@ const LoadInvoices = () => {
                 {/* Footer */}
                 <div className="border-t-2 pt-3 mt-4 text-center" style={{ borderColor: '#2563eb' }}>
                   <p className="text-base font-bold mb-1" style={{ color: '#2563eb' }}>شكراً لتعاملكم معنا</p>
-                  <p className="text-xs text-gray-600 mb-2">نتطلع لخدمتكم دائماً</p>
-                  {companySettings?.tax_number && (
-                    <div className="mt-2 p-2 rounded-lg" style={{ backgroundColor: '#f1f5f9' }}>
-                      <p className="text-xs text-gray-600">هذه فاتورة ضريبية مبسطة صادرة إلكترونياً</p>
-                      <p className="text-xs text-gray-600 mt-1">الرقم الضريبي: {companySettings.tax_number}</p>
-                    </div>
-                  )}
+                  <p className="text-xs text-gray-600">نتطلع لخدمتكم دائماً</p>
                 </div>
               </div>
             )}
