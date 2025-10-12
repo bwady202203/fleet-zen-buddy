@@ -3,11 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Printer, Edit, Trash2, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowRight, Printer, Edit, Trash2, Filter, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 const LoadsList = () => {
   const { toast } = useToast();
@@ -23,6 +26,8 @@ const LoadsList = () => {
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [selectedLoadType, setSelectedLoadType] = useState<string>("all");
   const [selectedDriver, setSelectedDriver] = useState<string>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   useEffect(() => {
     loadData();
@@ -31,7 +36,7 @@ const LoadsList = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [loads, selectedCompany, selectedLoadType, selectedDriver]);
+  }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate]);
 
   const loadFilterData = async () => {
     try {
@@ -90,6 +95,14 @@ const LoadsList = () => {
       filtered = filtered.filter(load => load.driver_id === selectedDriver);
     }
 
+    if (startDate) {
+      filtered = filtered.filter(load => load.date >= startDate);
+    }
+
+    if (endDate) {
+      filtered = filtered.filter(load => load.date <= endDate);
+    }
+
     setFilteredLoads(filtered);
   };
 
@@ -97,6 +110,31 @@ const LoadsList = () => {
     setSelectedCompany("all");
     setSelectedLoadType("all");
     setSelectedDriver("all");
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const exportToExcel = () => {
+    const exportData = filteredLoads.map(load => ({
+      'التاريخ': format(new Date(load.date), 'yyyy-MM-dd'),
+      'رقم الشحنة': load.load_number,
+      'الشركة': load.companies?.name || '-',
+      'نوع الشحنة': load.load_types?.name || '-',
+      'السائق': load.drivers?.name || '-',
+      'رقم الشاحنة': load.truck_number || '-',
+      'الكمية': load.quantity,
+      'السعر': load.unit_price.toFixed(2),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Loads");
+    XLSX.writeFile(wb, `loads_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+
+    toast({
+      title: "تم التصدير",
+      description: "تم تصدير البيانات إلى Excel بنجاح"
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -143,10 +181,16 @@ const LoadsList = () => {
                 <p className="text-muted-foreground mt-1">عرض جميع الشحنات المسجلة / View All Registered Loads</p>
               </div>
             </div>
-            <Button onClick={handlePrint}>
-              <Printer className="h-4 w-4 ml-2" />
-              طباعة / Print
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={exportToExcel} variant="outline">
+                <FileDown className="h-4 w-4 ml-2" />
+                تصدير Excel / Export Excel
+              </Button>
+              <Button onClick={handlePrint}>
+                <Printer className="h-4 w-4 ml-2" />
+                طباعة / Print
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -160,9 +204,27 @@ const LoadsList = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">الشركة / Company</label>
+                <Label className="text-sm font-medium">من تاريخ / From Date</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">إلى تاريخ / To Date</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">الشركة / Company</Label>
                 <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                   <SelectTrigger>
                     <SelectValue placeholder="جميع الشركات / All companies" />
@@ -179,7 +241,7 @@ const LoadsList = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">نوع الحمولة / Load Type</label>
+                <Label className="text-sm font-medium">نوع الحمولة / Load Type</Label>
                 <Select value={selectedLoadType} onValueChange={setSelectedLoadType}>
                   <SelectTrigger>
                     <SelectValue placeholder="جميع الأنواع / All types" />
@@ -196,7 +258,7 @@ const LoadsList = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">السائق / Driver</label>
+                <Label className="text-sm font-medium">السائق / Driver</Label>
                 <Select value={selectedDriver} onValueChange={setSelectedDriver}>
                   <SelectTrigger>
                     <SelectValue placeholder="جميع السائقين / All drivers" />
@@ -211,41 +273,39 @@ const LoadsList = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="flex items-end">
-                <Button 
-                  variant="outline" 
-                  onClick={resetFilters}
-                  className="w-full"
-                >
-                  إعادة تعيين / Reset
-                </Button>
-              </div>
             </div>
 
-            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">عدد النتائج / Results:</span>
-                  <span className="font-semibold mr-2">{filteredLoads.length} من / of {loads.length}</span>
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={resetFilters}
+              >
+                إعادة تعيين / Reset
+              </Button>
+            </div>
+
+            <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
+                  <div className="text-sm text-muted-foreground mb-1">عدد النتائج / Results</div>
+                  <div className="text-3xl font-bold text-primary">{filteredLoads.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">من إجمالي / of {loads.length}</div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">إجمالي الكمية / Total Quantity:</span>
-                  <span className="font-semibold mr-2">
+                
+                <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
+                  <div className="text-sm text-muted-foreground mb-1">إجمالي الكمية / Total Quantity</div>
+                  <div className="text-3xl font-bold text-primary">
                     {filteredLoads.reduce((sum, load) => sum + (load.quantity || 0), 0).toFixed(2)}
-                  </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">طن / Tons</div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">إجمالي المبلغ / Total Amount:</span>
-                  <span className="font-semibold mr-2">
-                    {filteredLoads.reduce((sum, load) => sum + (load.total_amount || 0), 0).toFixed(2)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">إجمالي العمولات / Total Commission:</span>
-                  <span className="font-semibold mr-2">
-                    {filteredLoads.reduce((sum, load) => sum + (load.commission_amount || 0), 0).toFixed(2)}
-                  </span>
+                
+                <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
+                  <div className="text-sm text-muted-foreground mb-1">إجمالي المبلغ / Total Amount</div>
+                  <div className="text-3xl font-bold text-primary">
+                    {filteredLoads.reduce((sum, load) => sum + (load.total_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">ريال سعودي / SAR</div>
                 </div>
               </div>
             </div>
