@@ -248,8 +248,11 @@ const LoadsList = () => {
                 <ArrowRight className="h-6 w-6" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold">سجل الشحنات / Loads List</h1>
-                <p className="text-muted-foreground mt-1">عرض جميع الشحنات المسجلة / View All Registered Loads</p>
+                <h1 className="text-3xl font-bold print:text-2xl">سجل الشحنات / Loads List</h1>
+                <p className="text-muted-foreground mt-1 print:text-xs">عرض جميع الشحنات المسجلة / View All Registered Loads</p>
+                <p className="text-xs text-muted-foreground mt-1 hidden print:block">
+                  تاريخ الطباعة: {format(new Date(), 'yyyy-MM-dd HH:mm')}
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -362,25 +365,26 @@ const LoadsList = () => {
                   </Button>
                 </div>
 
-                <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
-                      <div className="text-sm text-muted-foreground mb-1">عدد النتائج / Results</div>
-                      <div className="text-3xl font-bold text-primary">{filteredLoads.length}</div>
+                <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20 print:bg-gray-50 print:border-gray-300">
+                  <h3 className="text-lg font-bold mb-4 print:text-base">الإجماليات / Totals Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:gap-3">
+                    <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm print:p-2 print:shadow-none">
+                      <div className="text-sm text-muted-foreground mb-1 print:text-xs">عدد النتائج / Results</div>
+                      <div className="text-3xl font-bold text-primary print:text-xl">{filteredLoads.length}</div>
                       <div className="text-xs text-muted-foreground mt-1">من إجمالي / of {loads.length}</div>
                     </div>
                     
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
-                      <div className="text-sm text-muted-foreground mb-1">إجمالي الكمية / Total Quantity</div>
-                      <div className="text-3xl font-bold text-primary">
+                    <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm print:p-2 print:shadow-none">
+                      <div className="text-sm text-muted-foreground mb-1 print:text-xs">إجمالي الكمية / Total Quantity</div>
+                      <div className="text-3xl font-bold text-primary print:text-xl">
                         {filteredLoads.reduce((sum, load) => sum + (load.quantity || 0), 0).toFixed(2)}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">طن / Tons</div>
                     </div>
                     
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
-                      <div className="text-sm text-muted-foreground mb-1">إجمالي المبلغ / Total Amount</div>
-                      <div className="text-3xl font-bold text-primary">
+                    <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm print:p-2 print:shadow-none">
+                      <div className="text-sm text-muted-foreground mb-1 print:text-xs">إجمالي المبلغ / Total Amount</div>
+                      <div className="text-3xl font-bold text-primary print:text-xl">
                         {filteredLoads.reduce((sum, load) => sum + (parseFloat(load.unit_price) || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">ريال سعودي / SAR</div>
@@ -585,9 +589,93 @@ const LoadsList = () => {
           .print\\:hidden {
             display: none !important;
           }
+          
           body {
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
+            margin: 0;
+            padding: 0;
+          }
+          
+          @page {
+            size: A4 landscape;
+            margin: 1cm;
+          }
+          
+          .container {
+            max-width: 100% !important;
+            padding: 0 !important;
+          }
+          
+          table {
+            font-size: 10px !important;
+            page-break-inside: auto;
+          }
+          
+          thead {
+            display: table-header-group;
+          }
+          
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          
+          th, td {
+            padding: 6px 8px !important;
+            border: 1px solid #ddd !important;
+          }
+          
+          th {
+            background-color: #f3f4f6 !important;
+            font-weight: bold !important;
+            color: #000 !important;
+          }
+          
+          .text-3xl {
+            font-size: 20px !important;
+          }
+          
+          .text-sm {
+            font-size: 9px !important;
+          }
+          
+          h1 {
+            font-size: 20px !important;
+            margin-bottom: 10px !important;
+          }
+          
+          .card {
+            border: 1px solid #ddd !important;
+            page-break-inside: avoid;
+          }
+          
+          /* Print summary boxes */
+          .bg-gradient-to-br {
+            background: #f9fafb !important;
+            border: 2px solid #e5e7eb !important;
+            padding: 10px !important;
+            margin-bottom: 15px !important;
+          }
+          
+          /* Header styling for print */
+          header.border-b {
+            border-bottom: 2px solid #000 !important;
+            padding-bottom: 10px !important;
+            margin-bottom: 15px !important;
+          }
+          
+          /* Tab content spacing */
+          .overflow-x-auto {
+            overflow: visible !important;
+          }
+        }
+        
+        /* RTL Print support */
+        @media print {
+          * {
+            direction: rtl !important;
+            text-align: right !important;
           }
         }
       `}</style>
