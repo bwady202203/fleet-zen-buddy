@@ -267,7 +267,7 @@ const LoadsList = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="list" className="w-full">
+        <Tabs defaultValue="list" className="w-full" dir="rtl">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
             <TabsTrigger value="list">قائمة الشحنات / Loads List</TabsTrigger>
             <TabsTrigger value="report">تقرير السائقين / Drivers Report</TabsTrigger>
