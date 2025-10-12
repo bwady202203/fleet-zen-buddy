@@ -3,20 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/StatsCard";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
+  const { hasPermission } = usePermissions();
   
-  const modules = [
+  const allModules = [
     {
       title: "المحاسبة المالية",
       description: "إدارة الحسابات والتقارير المالية",
       icon: Calculator,
       color: "from-blue-500 to-blue-600",
       link: "/accounting",
-      features: ["القيود اليومية", "دفتر الأستاذ", "الميزانية العمومية", "قائمة الدخل"]
+      features: ["القيود اليومية", "دفتر الأستاذ", "الميزانية العمومية", "قائمة الدخل"],
+      module: "accounting"
     },
     {
       title: "الموارد البشرية",
@@ -24,7 +27,8 @@ const Dashboard = () => {
       icon: Users,
       color: "from-green-500 to-green-600",
       link: "/hr",
-      features: ["بيانات الموظفين", "الرواتب", "الحضور والانصراف", "الإجازات"]
+      features: ["بيانات الموظفين", "الرواتب", "الحضور والانصراف", "الإجازات"],
+      module: "hr"
     },
     {
       title: "إدارة الأسطول",
@@ -32,7 +36,8 @@ const Dashboard = () => {
       icon: Truck,
       color: "from-purple-500 to-purple-600",
       link: "/fleet",
-      features: ["بيانات المركبات", "الصيانة", "الكيلومترات", "قطع الغيار"]
+      features: ["بيانات المركبات", "الصيانة", "الكيلومترات", "قطع الغيار"],
+      module: "fleet"
     },
     {
       title: "إدارة الحمولات",
@@ -40,7 +45,8 @@ const Dashboard = () => {
       icon: Package,
       color: "from-orange-500 to-orange-600",
       link: "/loads",
-      features: ["تسجيل الحمولات", "تتبع الشحنات", "التقارير", "الفواتير"]
+      features: ["تسجيل الحمولات", "تتبع الشحنات", "التقارير", "الفواتير"],
+      module: "loads"
     },
     {
       title: "إدارة العهد",
@@ -48,9 +54,13 @@ const Dashboard = () => {
       icon: Wallet,
       color: "from-teal-500 to-teal-600",
       link: "/custody",
-      features: ["المندوبين", "سندات التحويل", "العهد المستلمة", "القيود اليومية"]
+      features: ["المندوبين", "سندات التحويل", "العهد المستلمة", "القيود اليومية"],
+      module: "custody"
     }
   ];
+
+  // تصفية الأقسام حسب الصلاحيات
+  const modules = allModules.filter(module => hasPermission(module.module, 'view'));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">

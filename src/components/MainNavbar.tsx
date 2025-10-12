@@ -4,7 +4,7 @@ import { Home, Calculator, Users, Truck, Package, Wallet, LogOut, Shield, Menu, 
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/contexts/PermissionsContext';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,7 +14,27 @@ const MainNavbar = () => {
   const { hasPermission } = usePermissions();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [userName, setUserName] = useState<string>('');
   const { toast } = useToast();
+
+  // جلب اسم المستخدم من الملف الشخصي
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.full_name) {
+          setUserName(profile.full_name);
+        }
+      }
+    };
+    
+    fetchUserName();
+  }, [user]);
 
   const handleExportData = async () => {
     try {
@@ -141,9 +161,9 @@ const MainNavbar = () => {
             {user && (
               <>
                 <div className="hidden md:flex flex-col items-end ml-4">
-                  <span className="text-sm font-medium">{user.email}</span>
+                  <span className="text-sm font-bold">{userName || user.email}</span>
                   {userRole && (
-                    <span className="text-xs opacity-80">
+                    <span className="text-xs opacity-90 bg-white/20 px-2 py-0.5 rounded-full">
                       {userRole === 'admin' ? 'مسؤول' : 
                        userRole === 'manager' ? 'مدير' :
                        userRole === 'accountant' ? 'محاسب' : 'مستخدم'}
