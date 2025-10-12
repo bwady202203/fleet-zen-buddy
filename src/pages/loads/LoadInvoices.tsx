@@ -730,12 +730,12 @@ const LoadInvoices = () => {
         </div>
 
         {/* Invoice List */}
-        <Card>
+        <Card dir="rtl">
           <CardHeader>
             <CardTitle>سجل الفواتير</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" dir="rtl">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -755,20 +755,20 @@ const LoadInvoices = () => {
                       <TableCell className="text-right">{invoice.companies?.name}</TableCell>
                       <TableCell className="text-right font-semibold">{invoice.total_amount.toFixed(2)} ر.س</TableCell>
                       <TableCell className="text-right">
-                        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        <span className="inline-block px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                           {invoice.status === 'completed' ? 'مكتملة' : 'مسودة'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button size="sm" variant="outline" onClick={() => handleViewInvoice(invoice)}>
-                            <Eye className="h-4 w-4" />
+                        <div className="flex gap-2 justify-end" dir="ltr">
+                          <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice.id)} className="hover:bg-destructive/10 hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => handleEditInvoice(invoice)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice.id)} className="hover:bg-destructive/10 hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
+                          <Button size="sm" variant="outline" onClick={() => handleViewInvoice(invoice)}>
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
