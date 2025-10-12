@@ -49,7 +49,7 @@ const LoadInvoices = () => {
   // Filters state
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
-  const [filterCompanyId, setFilterCompanyId] = useState('');
+  const [filterCompanyId, setFilterCompanyId] = useState('all');
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const printPreviewRef = useRef<HTMLDivElement>(null);
 
@@ -156,7 +156,7 @@ const LoadInvoices = () => {
       matches = matches && new Date(invoice.date) <= new Date(filterEndDate);
     }
     
-    if (filterCompanyId) {
+    if (filterCompanyId && filterCompanyId !== 'all') {
       matches = matches && invoice.company_id === filterCompanyId;
     }
     
@@ -863,7 +863,7 @@ const LoadInvoices = () => {
                     <SelectValue placeholder="جميع الشركات" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع الشركات</SelectItem>
+                    <SelectItem value="all">جميع الشركات</SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
@@ -880,7 +880,7 @@ const LoadInvoices = () => {
                     onClick={() => {
                       setFilterStartDate('');
                       setFilterEndDate('');
-                      setFilterCompanyId('');
+                      setFilterCompanyId('all');
                     }}
                     className="flex-1"
                   >
