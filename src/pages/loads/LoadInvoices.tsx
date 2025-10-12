@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -443,21 +444,17 @@ const LoadInvoices = () => {
               <p className="text-muted-foreground mt-1">إدارة فواتير الشحن</p>
             </div>
           </div>
-          
-          <div className="mt-4 flex gap-2">
-            <Button variant="default" className="bg-primary">
-              الفواتير
-            </Button>
-            <Link to="/loads/companies-management">
-              <Button variant="outline">
-                أسعار الشركات
-              </Button>
-            </Link>
-          </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="invoices" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsTrigger value="invoices">الفواتير</TabsTrigger>
+            <TabsTrigger value="prices">أسعار الشركات</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="invoices" className="space-y-6">
         <div className="mb-6 flex justify-between items-center flex-wrap gap-4">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -732,56 +729,6 @@ const LoadInvoices = () => {
           </div>
         </div>
 
-        {/* Company Prices Management Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              إدارة أسعار الشركات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                قم بتحديد الأسعار لكل نوع شحنة لكل شركة. سيتم استخدام هذه الأسعار تلقائياً عند إنشاء فواتير جديدة.
-              </p>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">اسم الشركة</TableHead>
-                      <TableHead className="text-right">الهاتف</TableHead>
-                      <TableHead className="text-right">البريد الإلكتروني</TableHead>
-                      <TableHead className="text-right">الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {companies.map((company) => (
-                      <TableRow key={company.id}>
-                        <TableCell className="font-medium text-right">{company.name}</TableCell>
-                        <TableCell className="text-right">{company.phone || '-'}</TableCell>
-                        <TableCell className="text-right">{company.email || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedCompanyForPrices(company);
-                              setPricesDialogOpen(true);
-                            }}
-                          >
-                            <Settings className="h-4 w-4 ml-1" />
-                            إدارة الأسعار
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Invoice List */}
         <Card>
           <CardHeader>
@@ -832,6 +779,59 @@ const LoadInvoices = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="prices" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  إدارة أسعار الشركات
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    قم بتحديد الأسعار لكل نوع شحنة لكل شركة. سيتم استخدام هذه الأسعار تلقائياً عند إنشاء فواتير جديدة.
+                  </p>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">اسم الشركة</TableHead>
+                          <TableHead className="text-right">الهاتف</TableHead>
+                          <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                          <TableHead className="text-right">الإجراءات</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {companies.map((company) => (
+                          <TableRow key={company.id}>
+                            <TableCell className="font-medium text-right">{company.name}</TableCell>
+                            <TableCell className="text-right">{company.phone || '-'}</TableCell>
+                            <TableCell className="text-right">{company.email || '-'}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedCompanyForPrices(company);
+                                  setPricesDialogOpen(true);
+                                }}
+                              >
+                                <Settings className="h-4 w-4 ml-1" />
+                                إدارة الأسعار
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* View Invoice Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
