@@ -1,8 +1,77 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 const Accounting = () => {
+  const { userRole } = useAuth();
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleExportData = async () => {
+    try {
+      setIsExporting(true);
+      toast({
+        title: "جاري تصدير البيانات...",
+        description: "قد تستغرق هذه العملية بضع دقائق",
+      });
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("غير مصرح");
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-system-data`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "فشل تصدير البيانات");
+      }
+
+      const systemData = await response.json();
+      
+      const blob = new Blob([JSON.stringify(systemData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `system-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "تم التصدير بنجاح",
+        description: `تم تصدير ${systemData.summary?.total_records || 0} سجل من ${systemData.summary?.total_tables || 0} جدول`,
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "خطأ في التصدير",
+        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const sections = [
     {
       title: "شجرة الحسابات",
@@ -115,16 +184,29 @@ const Accounting = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="hover:text-primary transition-colors">
-              <ArrowRight className="h-6 w-6" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold">المحاسبة المالية</h1>
-              <p className="text-muted-foreground mt-1">
-                إدارة شاملة للعمليات المحاسبية والتقارير المالية
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link to="/" className="hover:text-primary transition-colors">
+                <ArrowRight className="h-6 w-6" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold">المحاسبة المالية</h1>
+                <p className="text-muted-foreground mt-1">
+                  إدارة شاملة للعمليات المحاسبية والتقارير المالية
+                </p>
+              </div>
             </div>
+            {userRole === 'admin' && (
+              <Button
+                onClick={handleExportData}
+                disabled={isExporting}
+                variant="outline"
+                className="gap-2"
+              >
+                <Download className={cn("h-4 w-4", isExporting && "animate-bounce")} />
+                {isExporting ? "جاري التصدير..." : "تصدير البيانات"}
+              </Button>
+            )}
           </div>
         </div>
       </header>
