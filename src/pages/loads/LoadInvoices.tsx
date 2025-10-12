@@ -664,10 +664,6 @@ const LoadInvoices = () => {
                     <span className="font-bold text-lg">{subtotal.toFixed(2)} ر.س</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-primary/20">
-                    <span className="text-muted-foreground">الضريبة (15%):</span>
-                    <span className="font-bold text-lg">{taxAmount.toFixed(2)} ر.س</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-primary/20">
                     <Label htmlFor="discount-amount" className="text-muted-foreground">الخصم:</Label>
                     <div className="flex items-center gap-2">
                       <Input
@@ -682,6 +678,14 @@ const LoadInvoices = () => {
                       />
                       <span className="font-bold">ر.س</span>
                     </div>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-primary/20">
+                    <span className="text-muted-foreground">المبلغ بعد الخصم:</span>
+                    <span className="font-bold text-lg">{(subtotal - discountAmount).toFixed(2)} ر.س</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-primary/20">
+                    <span className="text-muted-foreground">الضريبة (15%):</span>
+                    <span className="font-bold text-lg">{taxAmount.toFixed(2)} ر.س</span>
                   </div>
                   <div className="flex justify-between items-center pt-3">
                     <span className="text-lg font-semibold">الإجمالي الكلي:</span>
