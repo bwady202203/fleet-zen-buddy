@@ -43,6 +43,7 @@ import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import LoadsRegister from "./pages/loads/LoadsRegister";
 import LoadsList from "./pages/loads/LoadsList";
+import EditLoad from "./pages/loads/EditLoad";
 import DriversManagement from "./pages/loads/DriversManagement";
 import CompaniesManagement from "./pages/loads/CompaniesManagement";
 import LoadInvoices from "./pages/loads/LoadInvoices";
@@ -123,6 +124,7 @@ const App = () => {
                                   <Route path="/loads" element={<Loads />} />
                                   <Route path="/loads/register" element={<LoadsRegister />} />
                                   <Route path="/loads/list" element={<LoadsList />} />
+                                  <Route path="/loads/edit/:id" element={<EditLoad />} />
                                   <Route path="/loads/drivers" element={<DriversManagement />} />
                                   <Route path="/loads/companies" element={<CompaniesManagement />} />
                                   <Route path="/loads/companies-management" element={<CompaniesManagement />} />

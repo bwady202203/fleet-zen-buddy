@@ -223,8 +223,31 @@ const LoadsList = () => {
               </div>
             </div>
 
-            <div className="mt-4 text-sm text-muted-foreground">
-              عدد النتائج / Results: {filteredLoads.length} من / of {loads.length}
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">عدد النتائج / Results:</span>
+                  <span className="font-semibold mr-2">{filteredLoads.length} من / of {loads.length}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">إجمالي الكمية / Total Quantity:</span>
+                  <span className="font-semibold mr-2">
+                    {filteredLoads.reduce((sum, load) => sum + (load.quantity || 0), 0).toFixed(2)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">إجمالي المبلغ / Total Amount:</span>
+                  <span className="font-semibold mr-2">
+                    {filteredLoads.reduce((sum, load) => sum + (load.total_amount || 0), 0).toFixed(2)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">إجمالي العمولات / Total Commission:</span>
+                  <span className="font-semibold mr-2">
+                    {filteredLoads.reduce((sum, load) => sum + (load.commission_amount || 0), 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -253,7 +276,6 @@ const LoadsList = () => {
                   <TableHead className="text-right">رقم الشاحنة / Truck Number</TableHead>
                   <TableHead className="text-right">الكمية / Quantity</TableHead>
                   <TableHead className="text-right">السعر / Price</TableHead>
-                  <TableHead className="text-right">المجموع / Total</TableHead>
                   <TableHead className="text-right print:hidden">إجراءات / Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -270,7 +292,6 @@ const LoadsList = () => {
                         <TableCell className="text-right">{load.truck_number || '-'}</TableCell>
                         <TableCell className="text-right">{load.quantity}</TableCell>
                         <TableCell className="text-right">{load.unit_price.toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-semibold">{load.total_amount.toFixed(2)}</TableCell>
                         <TableCell className="text-right print:hidden">
                           <div className="flex gap-2 justify-end">
                             <Button
