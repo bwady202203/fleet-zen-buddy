@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Shield, ArrowRight, Settings } from 'lucide-react';
+import { UserPlus, Trash2, Shield, ArrowRight, Settings, Key } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface UserWithRole {
@@ -45,6 +45,11 @@ const UsersManagement = () => {
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<string | null>(null);
   const [userPermissions, setUserPermissions] = useState<ModulePermission[]>([]);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<string | null>(null);
+  const [masterPassword, setMasterPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
@@ -299,6 +304,54 @@ const UsersManagement = () => {
     );
   };
 
+  const handleOpenChangePassword = (userId: string) => {
+    setSelectedUserForPassword(userId);
+    setMasterPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setIsChangePasswordDialogOpen(true);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (masterPassword !== '6544743') {
+      toast.error('كلمة المرور السرية غير صحيحة');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('كلمتا المرور غير متطابقتين');
+      return;
+    }
+
+    if (!selectedUserForPassword) return;
+
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        selectedUserForPassword,
+        { password: newPassword }
+      );
+
+      if (error) throw error;
+
+      toast.success('تم تغيير كلمة المرور بنجاح');
+      setIsChangePasswordDialogOpen(false);
+      setMasterPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setSelectedUserForPassword(null);
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error('حدث خطأ أثناء تغيير كلمة المرور');
+    }
+  };
+
   if (userRole !== 'admin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
@@ -529,6 +582,14 @@ const UsersManagement = () => {
                             الصلاحيات
                           </Button>
                           <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenChangePassword(user.id)}
+                          >
+                            <Key className="h-4 w-4 ml-1" />
+                            كلمة المرور
+                          </Button>
+                          <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteUser(user.id)}
@@ -614,6 +675,68 @@ const UsersManagement = () => {
                 حفظ الصلاحيات
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog for changing password */}
+        <Dialog open={isChangePasswordDialogOpen} onOpenChange={setIsChangePasswordDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تغيير كلمة المرور</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="masterPassword">كلمة المرور السرية</Label>
+                <Input
+                  id="masterPassword"
+                  type="password"
+                  value={masterPassword}
+                  onChange={(e) => setMasterPassword(e.target.value)}
+                  placeholder="أدخل كلمة المرور السرية"
+                  required
+                  dir="ltr"
+                />
+                <p className="text-xs text-muted-foreground">
+                  يجب إدخال كلمة المرور السرية للمتابعة
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="أدخل كلمة المرور الجديدة"
+                  required
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="أعد إدخال كلمة المرور"
+                  required
+                  dir="ltr"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsChangePasswordDialogOpen(false)}
+                >
+                  إلغاء
+                </Button>
+                <Button type="submit">
+                  تغيير كلمة المرور
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </main>
