@@ -21,6 +21,7 @@ const CompaniesManagement = () => {
     phone: '',
     email: '',
     tax_number: '',
+    commercial_registration: '',
     address: ''
   });
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
@@ -60,6 +61,7 @@ const CompaniesManagement = () => {
             phone: formData.phone,
             email: formData.email,
             tax_number: formData.tax_number,
+            commercial_registration: formData.commercial_registration,
             address: formData.address
           })
           .eq('id', editingCompany.id);
@@ -76,6 +78,7 @@ const CompaniesManagement = () => {
           phone: formData.phone,
           email: formData.email,
           tax_number: formData.tax_number,
+          commercial_registration: formData.commercial_registration,
           address: formData.address
         });
 
@@ -87,7 +90,7 @@ const CompaniesManagement = () => {
         });
       }
 
-      setFormData({ name: '', phone: '', email: '', tax_number: '', address: '' });
+      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '' });
       setEditingCompany(null);
       setDialogOpen(false);
       loadCompanies();
@@ -109,6 +112,7 @@ const CompaniesManagement = () => {
       phone: company.phone || '',
       email: company.email || '',
       tax_number: company.tax_number || '',
+      commercial_registration: company.commercial_registration || '',
       address: company.address || ''
     });
     setDialogOpen(true);
@@ -157,7 +161,7 @@ const CompaniesManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', address: '' }); }}>
+              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '' }); }}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة شركة / Add Company
               </Button>
@@ -203,6 +207,15 @@ const CompaniesManagement = () => {
                     value={formData.tax_number}
                     onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
                     placeholder="أدخل الرقم الضريبي / Enter tax number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commercial_registration">رقم السجل التجاري / Commercial Registration</Label>
+                  <Input
+                    id="commercial_registration"
+                    value={formData.commercial_registration}
+                    onChange={(e) => setFormData({ ...formData, commercial_registration: e.target.value })}
+                    placeholder="أدخل رقم السجل التجاري / Enter commercial registration"
                   />
                 </div>
                 <div className="space-y-2">
@@ -268,6 +281,11 @@ const CompaniesManagement = () => {
                   {company.tax_number && (
                     <p className="text-sm">
                       <span className="font-semibold">الرقم الضريبي:</span> {company.tax_number}
+                    </p>
+                  )}
+                  {company.commercial_registration && (
+                    <p className="text-sm">
+                      <span className="font-semibold">السجل التجاري:</span> {company.commercial_registration}
                     </p>
                   )}
                   {company.address && (

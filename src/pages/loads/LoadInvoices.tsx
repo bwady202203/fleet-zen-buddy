@@ -52,7 +52,7 @@ const LoadInvoices = () => {
     const [invoicesRes, companiesRes, suppliersRes, settingsRes] = await Promise.all([
       supabase
         .from('load_invoices')
-        .select('*, companies(name, tax_number, address, phone), load_invoice_items(*, loads(load_number, load_types(name)))')
+        .select('*, companies(name, tax_number, commercial_registration, address, phone), load_invoice_items(*, loads(load_number, load_types(name)))')
         .order('created_at', { ascending: false }),
       supabase.from('companies').select('*').eq('is_active', true),
       supabase.from('suppliers').select('*, name_en').eq('is_active', true),
@@ -933,6 +933,12 @@ const LoadInvoices = () => {
                         <div>
                           <p className="text-xs text-gray-600 mb-1">الرقم الضريبي / Tax Number</p>
                           <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies.tax_number}</p>
+                        </div>
+                      )}
+                      {selectedInvoice.companies?.commercial_registration && (
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">السجل التجاري / Commercial Registration</p>
+                          <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies.commercial_registration}</p>
                         </div>
                       )}
                       {selectedInvoice.companies?.phone && (
