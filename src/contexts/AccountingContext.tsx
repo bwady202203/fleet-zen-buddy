@@ -43,7 +43,9 @@ export interface JournalEntryLine {
   debit: number;
   credit: number;
   costCenter?: string;
+  costCenterId?: string;
   projectName?: string;
+  projectId?: string;
 }
 
 export interface JournalEntry {

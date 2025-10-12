@@ -442,8 +442,8 @@ const JournalEntries = () => {
         description: line.description,
         debit: line.debit || 0,
         credit: line.credit || 0,
-        cost_center_id: line.costCenter ? costCenters.find(cc => cc.code === line.costCenter)?.id : null,
-        project_id: line.projectName ? projects.find(p => p.code === line.projectName)?.id : null,
+        cost_center_id: line.costCenterId || null,
+        project_id: line.projectId || null,
       }));
 
       const { error: linesError } = await supabase
@@ -979,7 +979,10 @@ const JournalEntries = () => {
                                                 className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
                                                 onMouseDown={(e) => {
                                                   e.preventDefault();
-                                                  updateLine(line.id, { costCenter: cc.code });
+                                                  updateLine(line.id, { 
+                                                    costCenter: cc.code,
+                                                    costCenterId: cc.id 
+                                                  });
                                                   updateSearchState(line.id, {
                                                     costCenterSearch: "",
                                                     showCostCenterSearch: false,
@@ -1018,7 +1021,10 @@ const JournalEntries = () => {
                                                 className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
                                                 onMouseDown={(e) => {
                                                   e.preventDefault();
-                                                  updateLine(line.id, { projectName: prj.code });
+                                                  updateLine(line.id, { 
+                                                    projectName: prj.code,
+                                                    projectId: prj.id 
+                                                  });
                                                   updateSearchState(line.id, {
                                                     projectSearch: "",
                                                     showProjectSearch: false,
