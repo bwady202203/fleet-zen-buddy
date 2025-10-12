@@ -129,7 +129,9 @@ const JournalEntries = () => {
           *,
           journal_entry_lines (
             *,
-            chart_of_accounts (code, name_ar)
+            chart_of_accounts (code, name_ar),
+            cost_centers (code, name_ar),
+            projects (code, name_ar)
           )
         `)
         .order('date', { ascending: false })
@@ -147,6 +149,12 @@ const JournalEntries = () => {
           accountId: line.account_id,
           accountCode: line.chart_of_accounts.code,
           accountName: line.chart_of_accounts.name_ar,
+          costCenterId: line.cost_center_id,
+          costCenterCode: line.cost_centers?.code,
+          costCenterName: line.cost_centers?.name_ar,
+          projectId: line.project_id,
+          projectCode: line.projects?.code,
+          projectName: line.projects?.name_ar,
           description: line.description,
           debit: Number(line.debit),
           credit: Number(line.credit),
