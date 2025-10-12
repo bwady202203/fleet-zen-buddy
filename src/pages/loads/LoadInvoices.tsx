@@ -667,6 +667,22 @@ const LoadInvoices = () => {
                     <span className="text-muted-foreground">الضريبة (15%):</span>
                     <span className="font-bold text-lg">{taxAmount.toFixed(2)} ر.س</span>
                   </div>
+                  <div className="flex justify-between items-center py-2 border-b border-primary/20">
+                    <Label htmlFor="discount-amount" className="text-muted-foreground">الخصم:</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="discount-amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={discountAmount}
+                        onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                        className="w-40 h-10 text-right"
+                        placeholder="0.00"
+                      />
+                      <span className="font-bold">ر.س</span>
+                    </div>
+                  </div>
                   <div className="flex justify-between items-center pt-3">
                     <span className="text-lg font-semibold">الإجمالي الكلي:</span>
                     <span className="font-bold text-2xl text-primary">{totalAmount.toFixed(2)} ر.س</span>
