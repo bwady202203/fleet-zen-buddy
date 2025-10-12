@@ -840,19 +840,23 @@ const JournalEntries = () => {
                             )
                           : level4Accounts;
                         
-                        // تحسين البحث في مراكز التكلفة - يظهر النتائج فوراً
-                        const filteredCostCenters = costCenters.filter(cc =>
-                          cc.code.includes(searchState.costCenterSearch) ||
-                          cc.name_ar.includes(searchState.costCenterSearch) ||
-                          cc.name_en.toLowerCase().includes(searchState.costCenterSearch.toLowerCase())
-                        );
+                        // تحسين البحث في مراكز التكلفة - يظهر النتائج فوراً من أول حرف
+                        const filteredCostCenters = searchState.costCenterSearch 
+                          ? costCenters.filter(cc =>
+                              cc.code.includes(searchState.costCenterSearch) ||
+                              cc.name_ar.includes(searchState.costCenterSearch) ||
+                              cc.name_en.toLowerCase().includes(searchState.costCenterSearch.toLowerCase())
+                            )
+                          : costCenters; // إظهار الكل عند الفوكس بدون بحث
                         
-                        // تحسين البحث في المشاريع - يظهر النتائج فوراً
-                        const filteredProjects = projects.filter(prj =>
-                          prj.code.includes(searchState.projectSearch) ||
-                          prj.name_ar.includes(searchState.projectSearch) ||
-                          prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
-                        );
+                        // تحسين البحث في المشاريع - يظهر النتائج فوراً من أول حرف
+                        const filteredProjects = searchState.projectSearch
+                          ? projects.filter(prj =>
+                              prj.code.includes(searchState.projectSearch) ||
+                              prj.name_ar.includes(searchState.projectSearch) ||
+                              prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
+                            )
+                          : projects; // إظهار الكل عند الفوكس بدون بحث
 
                         return (
                           <TableRow key={line.id}>
@@ -934,7 +938,7 @@ const JournalEntries = () => {
                                   <TableCell>
                                     <div className="relative">
                                       <Input
-                                        value={searchState.costCenterSearch || line.costCenter}
+                                        value={searchState.costCenterSearch || (line.costCenter ? `${line.costCenter}` : "")}
                                         onChange={(e) => {
                                           updateSearchState(line.id, {
                                             costCenterSearch: e.target.value,
@@ -973,7 +977,7 @@ const JournalEntries = () => {
                                   <TableCell>
                                     <div className="relative">
                                       <Input
-                                        value={searchState.projectSearch || line.projectName}
+                                        value={searchState.projectSearch || (line.projectName ? `${line.projectName}` : "")}
                                         onChange={(e) => {
                                           updateSearchState(line.id, {
                                             projectSearch: e.target.value,
