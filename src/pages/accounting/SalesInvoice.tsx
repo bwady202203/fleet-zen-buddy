@@ -336,8 +336,12 @@ const SalesInvoice = () => {
                   {/* الإجماليات */}
                   <div className="bg-accent/50 p-4 rounded-lg space-y-2">
                     <div className="flex justify-between text-lg">
-                      <span>الإجمالي قبل الخصم:</span>
+                      <span>الإجمالي قبل الضريبة:</span>
                       <span className="font-bold">{subtotal.toFixed(2)} ريال</span>
+                    </div>
+                    <div className="flex justify-between text-lg">
+                      <span>الضريبة (15%):</span>
+                      <span className="font-bold">{taxTotal.toFixed(2)} ريال</span>
                     </div>
                     <div className="flex justify-between items-center text-lg">
                       <Label htmlFor="discount" className="text-base">الخصم:</Label>
@@ -353,14 +357,6 @@ const SalesInvoice = () => {
                         />
                         <span className="font-bold">ريال</span>
                       </div>
-                    </div>
-                    <div className="flex justify-between text-lg">
-                      <span>الإجمالي بعد الخصم:</span>
-                      <span className="font-bold">{afterDiscount.toFixed(2)} ريال</span>
-                    </div>
-                    <div className="flex justify-between text-lg">
-                      <span>الضريبة (15%):</span>
-                      <span className="font-bold">{taxTotal.toFixed(2)} ريال</span>
                     </div>
                     <div className="flex justify-between text-2xl font-bold border-t pt-2">
                       <span>الإجمالي الكلي:</span>
