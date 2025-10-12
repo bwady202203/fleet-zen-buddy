@@ -402,11 +402,31 @@ const JournalEntries = () => {
     }
 
     try {
+      // توليد رقم قيد جديد فريد قبل الحفظ
+      const { data: lastEntryData, error: fetchError } = await supabase
+        .from('journal_entries')
+        .select('entry_number')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      let nextNumber = 1;
+      if (lastEntryData && lastEntryData.length > 0) {
+        const lastEntry = lastEntryData[0].entry_number;
+        const match = lastEntry.match(/(\d+)$/);
+        if (match) {
+          nextNumber = parseInt(match[1]) + 1;
+        }
+      }
+
+      const uniqueEntryNumber = `JE-${new Date().getFullYear()}${nextNumber.toString().padStart(6, '0')}`;
+
       // حفظ القيد في جدول journal_entries
       const { data: journalEntry, error: entryError } = await supabase
         .from('journal_entries')
         .insert({
-          entry_number: formData.entryNumber,
+          entry_number: uniqueEntryNumber,
           date: formData.date,
           description: formData.description,
         })
