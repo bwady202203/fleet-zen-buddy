@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Account {
   id: string;
@@ -120,10 +122,67 @@ const initialAccounts: Account[] = [
 ];
 
 export const AccountingProvider = ({ children }: { children: ReactNode }) => {
+  const { toast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+
+  // Load cost centers from database on mount
+  useEffect(() => {
+    loadCostCenters();
+    loadProjects();
+  }, []);
+
+  const loadCostCenters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cost_centers')
+        .select('*')
+        .order('code');
+      
+      if (error) throw error;
+      
+      const mappedData: CostCenter[] = (data || []).map(item => ({
+        id: item.id,
+        code: item.code,
+        name: item.name_ar,
+        nameEn: item.name_en,
+        isActive: item.is_active,
+        createdAt: item.created_at,
+      }));
+      
+      setCostCenters(mappedData);
+    } catch (error) {
+      console.error('Error loading cost centers:', error);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('code');
+      
+      if (error) throw error;
+      
+      const mappedData: Project[] = (data || []).map(item => ({
+        id: item.id,
+        code: item.code,
+        name: item.name_ar,
+        nameEn: item.name_en,
+        isActive: item.is_active,
+        startDate: item.start_date,
+        endDate: item.end_date,
+        createdAt: item.created_at,
+      }));
+      
+      setProjects(mappedData);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
 
   const addAccount = (account: Omit<Account, 'id' | 'balance' | 'debit' | 'credit'>) => {
     const newAccount: Account = {
@@ -212,21 +271,73 @@ export const AccountingProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const addCostCenter = (costCenter: Omit<CostCenter, 'id' | 'createdAt'>) => {
-    const newCostCenter: CostCenter = {
-      ...costCenter,
-      id: `cc${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    setCostCenters([...costCenters, newCostCenter]);
+  const addCostCenter = async (costCenter: Omit<CostCenter, 'id' | 'createdAt'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('cost_centers')
+        .insert({
+          code: costCenter.code,
+          name_ar: costCenter.name,
+          name_en: costCenter.nameEn,
+          is_active: costCenter.isActive,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newCostCenter: CostCenter = {
+        id: data.id,
+        code: data.code,
+        name: data.name_ar,
+        nameEn: data.name_en,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+      };
+      
+      setCostCenters([...costCenters, newCostCenter]);
+      return newCostCenter;
+    } catch (error) {
+      console.error('Error adding cost center:', error);
+      throw error;
+    }
   };
 
-  const updateCostCenter = (id: string, updatedCostCenter: Partial<CostCenter>) => {
-    setCostCenters(costCenters.map(cc => cc.id === id ? { ...cc, ...updatedCostCenter } : cc));
+  const updateCostCenter = async (id: string, updatedCostCenter: Partial<CostCenter>) => {
+    try {
+      const { error } = await supabase
+        .from('cost_centers')
+        .update({
+          code: updatedCostCenter.code,
+          name_ar: updatedCostCenter.name,
+          name_en: updatedCostCenter.nameEn,
+          is_active: updatedCostCenter.isActive,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setCostCenters(costCenters.map(cc => cc.id === id ? { ...cc, ...updatedCostCenter } : cc));
+    } catch (error) {
+      console.error('Error updating cost center:', error);
+      throw error;
+    }
   };
 
-  const deleteCostCenter = (id: string) => {
-    setCostCenters(costCenters.filter(cc => cc.id !== id));
+  const deleteCostCenter = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('cost_centers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setCostCenters(costCenters.filter(cc => cc.id !== id));
+    } catch (error) {
+      console.error('Error deleting cost center:', error);
+      throw error;
+    }
   };
 
   const searchCostCenters = (query: string, caseSensitive: boolean = true) => {
@@ -244,21 +355,79 @@ export const AccountingProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const addProject = (project: Omit<Project, 'id' | 'createdAt'>) => {
-    const newProject: Project = {
-      ...project,
-      id: `prj${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    setProjects([...projects, newProject]);
+  const addProject = async (project: Omit<Project, 'id' | 'createdAt'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          code: project.code,
+          name_ar: project.name,
+          name_en: project.nameEn,
+          is_active: project.isActive,
+          start_date: project.startDate,
+          end_date: project.endDate,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newProject: Project = {
+        id: data.id,
+        code: data.code,
+        name: data.name_ar,
+        nameEn: data.name_en,
+        isActive: data.is_active,
+        startDate: data.start_date,
+        endDate: data.end_date,
+        createdAt: data.created_at,
+      };
+      
+      setProjects([...projects, newProject]);
+      return newProject;
+    } catch (error) {
+      console.error('Error adding project:', error);
+      throw error;
+    }
   };
 
-  const updateProject = (id: string, updatedProject: Partial<Project>) => {
-    setProjects(projects.map(prj => prj.id === id ? { ...prj, ...updatedProject } : prj));
+  const updateProject = async (id: string, updatedProject: Partial<Project>) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          code: updatedProject.code,
+          name_ar: updatedProject.name,
+          name_en: updatedProject.nameEn,
+          is_active: updatedProject.isActive,
+          start_date: updatedProject.startDate,
+          end_date: updatedProject.endDate,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProjects(projects.map(prj => prj.id === id ? { ...prj, ...updatedProject } : prj));
+    } catch (error) {
+      console.error('Error updating project:', error);
+      throw error;
+    }
   };
 
-  const deleteProject = (id: string) => {
-    setProjects(projects.filter(prj => prj.id !== id));
+  const deleteProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProjects(projects.filter(prj => prj.id !== id));
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      throw error;
+    }
   };
 
   const searchProjects = (query: string, caseSensitive: boolean = true) => {
