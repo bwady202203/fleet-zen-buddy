@@ -130,7 +130,7 @@ const LoadsList = () => {
       'السائق': load.drivers?.name || '-',
       'رقم الشاحنة': load.truck_number || '-',
       'الكمية': load.quantity,
-      'السعر': load.unit_price.toFixed(2),
+      'السعر': parseFloat(load.unit_price).toFixed(2),
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -176,7 +176,7 @@ const LoadsList = () => {
       }
 
       driverData[driverId].quantity += parseFloat(load.quantity) || 0;
-      driverData[driverId].totalAmount += parseFloat(load.total_amount) || 0;
+      driverData[driverId].totalAmount += parseFloat(load.unit_price) || 0;
       driverData[driverId].count += 1;
     });
 
@@ -381,7 +381,7 @@ const LoadsList = () => {
                     <div className="bg-background/80 backdrop-blur p-4 rounded-lg border border-border shadow-sm">
                       <div className="text-sm text-muted-foreground mb-1">إجمالي المبلغ / Total Amount</div>
                       <div className="text-3xl font-bold text-primary">
-                        {filteredLoads.reduce((sum, load) => sum + (load.total_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {filteredLoads.reduce((sum, load) => sum + (parseFloat(load.unit_price) || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">ريال سعودي / SAR</div>
                     </div>
