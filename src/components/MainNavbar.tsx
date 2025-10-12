@@ -1,16 +1,80 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Calculator, Users, Truck, Package, Wallet, LogOut, Shield, Menu, X } from 'lucide-react';
+import { Home, Calculator, Users, Truck, Package, Wallet, LogOut, Shield, Menu, X, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/contexts/PermissionsContext';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const MainNavbar = () => {
   const location = useLocation();
   const { signOut, user, userRole } = useAuth();
   const { hasPermission } = usePermissions();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleExportData = async () => {
+    try {
+      setIsExporting(true);
+      toast({
+        title: "جاري تصدير البيانات...",
+        description: "قد تستغرق هذه العملية بضع دقائق",
+      });
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("غير مصرح");
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-system-data`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "فشل تصدير البيانات");
+      }
+
+      const systemData = await response.json();
+      
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(systemData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `system-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "تم التصدير بنجاح",
+        description: `تم تصدير ${systemData.summary?.total_records || 0} سجل من ${systemData.summary?.total_tables || 0} جدول`,
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "خطأ في التصدير",
+        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const allNavItems = [
     { title: 'الرئيسية', path: '/', icon: Home, module: null },
@@ -88,16 +152,32 @@ const MainNavbar = () => {
                 </div>
 
                 {userRole === 'admin' && (
-                  <Link to="/users">
+                  <>
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={handleExportData}
+                      disabled={isExporting}
                       className="gap-2 text-primary-foreground hover:bg-white/20"
+                      title="تصدير بيانات النظام (JSON)"
                     >
-                      <Shield className="h-4 w-4" />
-                      <span className="hidden md:inline">المستخدمين</span>
+                      <Download className={cn("h-4 w-4", isExporting && "animate-bounce")} />
+                      <span className="hidden md:inline">
+                        {isExporting ? "جاري التصدير..." : "تصدير"}
+                      </span>
                     </Button>
-                  </Link>
+                    
+                    <Link to="/users">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 text-primary-foreground hover:bg-white/20"
+                      >
+                        <Shield className="h-4 w-4" />
+                        <span className="hidden md:inline">المستخدمين</span>
+                      </Button>
+                    </Link>
+                  </>
                 )}
 
                 <Button
