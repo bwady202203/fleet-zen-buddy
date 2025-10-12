@@ -244,16 +244,19 @@ const JournalEntries = () => {
       if (error) throw error;
 
       let nextNumber = 1;
+      const currentYear = new Date().getFullYear();
+      
       if (data && data.length > 0) {
         const lastEntry = data[0].entry_number;
-        // استخراج الرقم من نهاية رقم القيد (مثال: JE-2025000007 -> 7)
-        const match = lastEntry.match(/(\d+)$/);
+        // استخراج الرقم التسلسلي من نهاية رقم القيد بعد السنة
+        // مثال: JE-2025000007 -> نستخرج 7
+        const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
         if (match) {
-          nextNumber = parseInt(match[1]) + 1;
+          nextNumber = parseInt(match[1], 10) + 1;
         }
       }
 
-      const newEntryNumber = `JE-${new Date().getFullYear()}${nextNumber.toString().padStart(6, '0')}`;
+      const newEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
       setFormData(prev => ({ ...prev, entryNumber: newEntryNumber }));
     } catch (error) {
       console.error('Error generating entry number:', error);
@@ -426,15 +429,19 @@ const JournalEntries = () => {
       }
 
       let nextNumber = 1;
+      const currentYear = new Date().getFullYear();
+      
       if (lastEntryData && lastEntryData.length > 0) {
         const lastEntry = lastEntryData[0].entry_number;
-        const match = lastEntry.match(/(\d+)$/);
+        // استخراج الرقم التسلسلي من نهاية رقم القيد بعد السنة
+        // مثال: JE-2025000007 -> نستخرج 7
+        const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
         if (match) {
-          nextNumber = parseInt(match[1]) + 1;
+          nextNumber = parseInt(match[1], 10) + 1;
         }
       }
 
-      const uniqueEntryNumber = `JE-${new Date().getFullYear()}${nextNumber.toString().padStart(6, '0')}`;
+      const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
       console.log('رقم القيد المولد:', uniqueEntryNumber);
 
       // حفظ القيد في جدول journal_entries
