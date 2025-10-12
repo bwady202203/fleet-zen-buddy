@@ -673,6 +673,8 @@ const JournalEntries = () => {
         'رمز الحساب': line.accountCode,
         'اسم الحساب': line.accountName,
         'البيان التفصيلي': line.description,
+        'مركز التكلفة': line.costCenterName || '-',
+        'المشروع': line.projectName || '-',
         'المدين': line.debit,
         'الدائن': line.credit,
       }));
@@ -690,6 +692,8 @@ const JournalEntries = () => {
       { wch: 12 }, // رمز الحساب
       { wch: 30 }, // اسم الحساب
       { wch: 25 }, // البيان التفصيلي
+      { wch: 20 }, // مركز التكلفة
+      { wch: 20 }, // المشروع
       { wch: 12 }, // المدين
       { wch: 12 }, // الدائن
     ];
@@ -1250,6 +1254,8 @@ const JournalEntries = () => {
                                         <TableHead className="text-right">رمز الحساب / Code</TableHead>
                                         <TableHead className="text-right">اسم الحساب / Account Name</TableHead>
                                         <TableHead className="text-right">البيان / Description</TableHead>
+                                        <TableHead className="text-right">مركز التكلفة / Cost Center</TableHead>
+                                        <TableHead className="text-right">المشروع / Project</TableHead>
                                         <TableHead className="text-right">المدين / Debit</TableHead>
                                         <TableHead className="text-right">الدائن / Credit</TableHead>
                                       </TableRow>
@@ -1260,6 +1266,8 @@ const JournalEntries = () => {
                                           <TableCell className="font-mono text-sm">{line.accountCode}</TableCell>
                                           <TableCell>{line.accountName}</TableCell>
                                           <TableCell className="text-muted-foreground">{line.description}</TableCell>
+                                          <TableCell className="text-muted-foreground">{line.costCenterName || '-'}</TableCell>
+                                          <TableCell className="text-muted-foreground">{line.projectName || '-'}</TableCell>
                                           <TableCell className="text-red-600 font-semibold">
                                             {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                                           </TableCell>
