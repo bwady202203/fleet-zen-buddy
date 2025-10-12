@@ -163,8 +163,8 @@ const LoadsList = () => {
     const driverData: Record<string, { name: string; quantity: number; totalAmount: number; count: number }> = {};
 
     filtered.forEach(load => {
-      const driverId = load.driver_id;
-      const driverName = load.drivers?.name || 'غير محدد';
+      const driverId = load.driver_id || 'unknown';
+      const driverName = load.drivers?.name || 'غير محدد / Unknown';
       
       if (!driverData[driverId]) {
         driverData[driverId] = {
@@ -175,13 +175,18 @@ const LoadsList = () => {
         };
       }
 
-      driverData[driverId].quantity += load.quantity || 0;
-      driverData[driverId].totalAmount += load.total_amount || 0;
+      driverData[driverId].quantity += parseFloat(load.quantity) || 0;
+      driverData[driverId].totalAmount += parseFloat(load.total_amount) || 0;
       driverData[driverId].count += 1;
     });
 
     const report = Object.values(driverData).sort((a, b) => b.totalAmount - a.totalAmount);
     setDriverReport(report);
+
+    toast({
+      title: "تم إنشاء التقرير",
+      description: `تم إنشاء تقرير لـ ${report.length} سائق`
+    });
   };
 
   const exportDriverReport = () => {
