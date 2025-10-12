@@ -26,15 +26,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3 } from "lucide-react";
+import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const Purchases = () => {
-  const { spareParts, purchases, addPurchase } = useSpareParts();
+  const { spareParts, purchases, addPurchase, addSparePart } = useSpareParts();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [addPartDialogOpen, setAddPartDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     supplier: "",
@@ -43,6 +58,14 @@ const Purchases = () => {
   const [selectedParts, setSelectedParts] = useState<
     { sparePartId: string; quantity: number; price: number }[]
   >([]);
+  const [newPartForm, setNewPartForm] = useState({
+    name: "",
+    code: "",
+    price: 0,
+    category: "",
+    location: "",
+    minQuantity: 0,
+  });
 
   const handleAddPart = () => {
     setSelectedParts([
@@ -74,6 +97,51 @@ const Purchases = () => {
       updated[index] = { ...updated[index], price: Number(value) };
     }
     setSelectedParts(updated);
+  };
+
+  const handleAddNewPart = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPartForm.name) {
+      toast({
+        title: "خطأ",
+        description: "يجب إدخال اسم القطعة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await addSparePart({
+        name: newPartForm.name,
+        price: newPartForm.price,
+        quantity: 0,
+        minQuantity: newPartForm.minQuantity,
+        unit: "قطعة",
+      });
+
+      toast({
+        title: "تمت الإضافة",
+        description: "تم إضافة قطعة الغيار بنجاح",
+      });
+
+      setNewPartForm({
+        name: "",
+        code: "",
+        price: 0,
+        category: "",
+        location: "",
+        minQuantity: 0,
+      });
+
+      setAddPartDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة القطعة",
+        variant: "destructive",
+      });
+    }
   };
 
   const totalCost = selectedParts.reduce(
@@ -269,24 +337,113 @@ const Purchases = () => {
                             className="flex gap-2 items-end p-3 border rounded-lg"
                           >
                             <div className="flex-1">
-                              <Label className="text-xs">القطعة</Label>
-                              <Select
-                                value={item.sparePartId}
-                                onValueChange={(value) =>
-                                  handlePartChange(index, "sparePartId", value)
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="اختر قطعة الغيار" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {spareParts.map((part) => (
-                                    <SelectItem key={part.id} value={part.id}>
-                                      {part.name} ({part.price} ر.س)
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="text-xs">القطعة</Label>
+                                <Dialog open={addPartDialogOpen} onOpenChange={setAddPartDialogOpen}>
+                                  <DialogTrigger asChild>
+                                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2">
+                                      <PackagePlus className="h-3 w-3 ml-1" />
+                                      إضافة قطعة جديدة
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="sm:max-w-md" dir="rtl">
+                                    <DialogHeader>
+                                      <DialogTitle>إضافة قطعة غيار جديدة</DialogTitle>
+                                    </DialogHeader>
+                                    <form onSubmit={handleAddNewPart} className="space-y-4">
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                          <Label htmlFor="new-name">اسم القطعة *</Label>
+                                          <Input
+                                            id="new-name"
+                                            value={newPartForm.name}
+                                            onChange={(e) => setNewPartForm({ ...newPartForm, name: e.target.value })}
+                                            required
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label htmlFor="new-price">السعر</Label>
+                                          <Input
+                                            id="new-price"
+                                            type="number"
+                                            step="0.01"
+                                            value={newPartForm.price}
+                                            onChange={(e) => setNewPartForm({ ...newPartForm, price: parseFloat(e.target.value) || 0 })}
+                                          />
+                                        </div>
+                                        <div className="col-span-2">
+                                          <Label htmlFor="new-min">الحد الأدنى للكمية</Label>
+                                          <Input
+                                            id="new-min"
+                                            type="number"
+                                            value={newPartForm.minQuantity}
+                                            onChange={(e) => setNewPartForm({ ...newPartForm, minQuantity: parseInt(e.target.value) || 0 })}
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2 justify-end">
+                                        <Button type="submit">
+                                          <Plus className="h-4 w-4 ml-1" />
+                                          إضافة
+                                        </Button>
+                                        <Button type="button" variant="outline" onClick={() => setAddPartDialogOpen(false)}>
+                                          إلغاء
+                                        </Button>
+                                      </div>
+                                    </form>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn(
+                                      "w-full justify-between",
+                                      !item.sparePartId && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {item.sparePartId
+                                      ? spareParts.find((p) => p.id === item.sparePartId)?.name
+                                      : "ابحث عن قطعة الغيار..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0" align="start">
+                                  <Command>
+                                    <CommandInput placeholder="ابحث عن قطعة الغيار..." />
+                                    <CommandList>
+                                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                                      <CommandGroup>
+                                        {spareParts.map((part) => (
+                                          <CommandItem
+                                            key={part.id}
+                                            value={part.name}
+                                            onSelect={() => {
+                                              handlePartChange(index, "sparePartId", part.id);
+                                            }}
+                                          >
+                                            <Check
+                                              className={cn(
+                                                "mr-2 h-4 w-4",
+                                                item.sparePartId === part.id ? "opacity-100" : "opacity-0"
+                                              )}
+                                            />
+                                            <div className="flex-1">
+                                              <div className="font-medium">{part.name}</div>
+                                              <div className="text-xs text-muted-foreground">
+                                                السعر: {part.price} ر.س • الكمية: {part.quantity}
+                                              </div>
+                                            </div>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                             <div className="w-24">
                               <Label className="text-xs">الكمية</Label>
