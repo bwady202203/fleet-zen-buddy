@@ -389,6 +389,15 @@ const JournalEntries = () => {
     // Filter out empty lines
     const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
 
+    if (validLines.length === 0) {
+      toast({
+        title: "تنبيه / Warning",
+        description: "يجب إضافة سطر واحد على الأقل / Must add at least one line",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validTotalDebit = validLines.reduce((sum, line) => sum + (line.debit || 0), 0);
     const validTotalCredit = validLines.reduce((sum, line) => sum + (line.credit || 0), 0);
 
@@ -402,6 +411,8 @@ const JournalEntries = () => {
     }
 
     try {
+      console.log('بدء حفظ القيد...', { validLines: validLines.length });
+
       // توليد رقم قيد جديد فريد قبل الحفظ
       const { data: lastEntryData, error: fetchError } = await supabase
         .from('journal_entries')
@@ -409,7 +420,10 @@ const JournalEntries = () => {
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('خطأ في جلب آخر قيد:', fetchError);
+        throw fetchError;
+      }
 
       let nextNumber = 1;
       if (lastEntryData && lastEntryData.length > 0) {
@@ -421,6 +435,7 @@ const JournalEntries = () => {
       }
 
       const uniqueEntryNumber = `JE-${new Date().getFullYear()}${nextNumber.toString().padStart(6, '0')}`;
+      console.log('رقم القيد المولد:', uniqueEntryNumber);
 
       // حفظ القيد في جدول journal_entries
       const { data: journalEntry, error: entryError } = await supabase
@@ -433,7 +448,12 @@ const JournalEntries = () => {
         .select()
         .single();
 
-      if (entryError) throw entryError;
+      if (entryError) {
+        console.error('خطأ في حفظ القيد:', entryError);
+        throw entryError;
+      }
+
+      console.log('تم حفظ القيد:', journalEntry);
 
       // حفظ سطور القيد في جدول journal_entry_lines
       const lines = validLines.map(line => ({
@@ -446,25 +466,32 @@ const JournalEntries = () => {
         project_id: line.projectId || null,
       }));
 
+      console.log('سطور القيد للحفظ:', lines);
+
       const { error: linesError } = await supabase
         .from('journal_entry_lines')
         .insert(lines);
 
-      if (linesError) throw linesError;
+      if (linesError) {
+        console.error('خطأ في حفظ سطور القيد:', linesError);
+        throw linesError;
+      }
+
+      console.log('تم حفظ جميع السطور بنجاح');
 
       toast({
         title: "تم الحفظ بنجاح / Saved Successfully",
-        description: `تم حفظ القيد رقم ${formData.entryNumber} / Entry #${formData.entryNumber} saved`,
+        description: `تم حفظ القيد رقم ${uniqueEntryNumber} / Entry #${uniqueEntryNumber} saved`,
       });
 
       resetForm();
       fetchJournalEntries();
       navigate('/accounting/journal-entries');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving journal entry:', error);
       toast({
         title: "خطأ / Error",
-        description: "فشل في حفظ القيد / Failed to save entry",
+        description: error?.message || "فشل في حفظ القيد / Failed to save entry",
         variant: "destructive",
       });
     }
