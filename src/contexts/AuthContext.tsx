@@ -56,15 +56,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
       
       if (error) {
         console.error('Error fetching user role:', error);
         setUserRole(null);
+      } else if (data && data.length > 0) {
+        // If user has multiple roles, prioritize: admin > manager > accountant > user
+        const rolePriority: Record<string, number> = {
+          'admin': 4,
+          'manager': 3,
+          'accountant': 2,
+          'user': 1
+        };
+        
+        const highestRole = data.reduce((highest, current) => {
+          const currentPriority = rolePriority[current.role] || 0;
+          const highestPriority = rolePriority[highest.role] || 0;
+          return currentPriority > highestPriority ? current : highest;
+        });
+        
+        setUserRole(highestRole.role);
+        console.log('User role fetched:', highestRole.role);
       } else {
-        setUserRole(data?.role || null);
-        console.log('User role fetched:', data?.role);
+        setUserRole(null);
       }
     } catch (error) {
       console.error('Error fetching user role:', error);
