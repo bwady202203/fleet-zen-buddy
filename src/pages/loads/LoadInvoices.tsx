@@ -863,7 +863,6 @@ const LoadInvoices = () => {
                         </p>
                       )}
                       <div className="mt-3 pt-3 border-t">
-                        <h2 className="text-lg font-bold mb-1" style={{ color: '#2563eb' }}>فاتورة ضريبية مبسطة</h2>
                         <p className="text-xs text-gray-700">رقم الفاتورة: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
                         <p className="text-xs text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
                         <p className="text-xs text-gray-700">تاريخ الإصدار: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
@@ -874,8 +873,8 @@ const LoadInvoices = () => {
                     {/* QR Code in the center */}
                     {qrCodeUrl && (
                       <div className="text-center flex-shrink-0">
+                        <h2 className="text-base font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية</h2>
                         <img src={qrCodeUrl} alt="QR Code" className="w-28 h-28 border-2 p-1" style={{ borderColor: '#2563eb' }} />
-                        <p className="text-xs text-gray-600 mt-1 font-semibold">QR Code</p>
                       </div>
                     )}
 
@@ -907,7 +906,6 @@ const LoadInvoices = () => {
                         </p>
                       )}
                       <div className="mt-3 pt-3 border-t">
-                        <h2 className="text-lg font-bold mb-1" style={{ color: '#2563eb' }}>Simplified Tax Invoice</h2>
                         <p className="text-xs text-gray-700">Invoice Number: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
                         <p className="text-xs text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
                         <p className="text-xs text-gray-700">Issue Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
