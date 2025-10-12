@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
 import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 
 const LoadInvoices = () => {
   const { toast } = useToast();
@@ -44,6 +45,13 @@ const LoadInvoices = () => {
     notes: ''
   });
   const [items, setItems] = useState<any[]>([]);
+  
+  // Filters state
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [filterCompanyId, setFilterCompanyId] = useState('');
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const printPreviewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -135,6 +143,32 @@ const LoadInvoices = () => {
   };
 
   const [discountAmount, setDiscountAmount] = useState(0);
+  
+  // Filter invoices based on filters
+  const filteredInvoices = invoices.filter(invoice => {
+    let matches = true;
+    
+    if (filterStartDate) {
+      matches = matches && new Date(invoice.date) >= new Date(filterStartDate);
+    }
+    
+    if (filterEndDate) {
+      matches = matches && new Date(invoice.date) <= new Date(filterEndDate);
+    }
+    
+    if (filterCompanyId) {
+      matches = matches && invoice.company_id === filterCompanyId;
+    }
+    
+    return matches;
+  });
+  
+  // Calculate statistics
+  const statsData = {
+    totalInvoices: filteredInvoices.length,
+    totalAmount: filteredInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
+    totalTax: filteredInvoices.reduce((sum, inv) => sum + (inv.tax_amount || 0), 0)
+  };
   
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
@@ -427,6 +461,51 @@ const LoadInvoices = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handlePrintPreview = () => {
+    setShowPrintPreview(true);
+  };
+
+  const handlePrintFromPreview = () => {
+    window.print();
+  };
+
+  const handleExportToExcel = () => {
+    const exportData = filteredInvoices.map(invoice => ({
+      'رقم الفاتورة': invoice.invoice_number,
+      'التاريخ': new Date(invoice.date).toLocaleDateString('ar-SA'),
+      'العميل': invoice.companies?.name || '',
+      'المبلغ قبل الضريبة': (invoice.subtotal || 0).toFixed(2),
+      'الضريبة': (invoice.tax_amount || 0).toFixed(2),
+      'المبلغ الإجمالي': (invoice.total_amount || 0).toFixed(2),
+      'الحالة': invoice.status === 'completed' ? 'مكتملة' : 'مسودة',
+      'نوع الدفع': invoice.payment_type === 'cash' ? 'نقدي' : invoice.payment_type === 'credit' ? 'آجل' : 'بنك'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'الفواتير');
+    
+    // Set column widths
+    const colWidths = [
+      { wch: 15 }, // رقم الفاتورة
+      { wch: 15 }, // التاريخ
+      { wch: 25 }, // العميل
+      { wch: 18 }, // المبلغ قبل الضريبة
+      { wch: 15 }, // الضريبة
+      { wch: 18 }, // المبلغ الإجمالي
+      { wch: 12 }, // الحالة
+      { wch: 12 }  // نوع الدفع
+    ];
+    ws['!cols'] = colWidths;
+
+    XLSX.writeFile(wb, `فواتير_المبيعات_${new Date().toLocaleDateString('ar-SA')}.xlsx`);
+    
+    toast({
+      title: "تم التصدير",
+      description: "تم تصدير الفواتير إلى ملف Excel بنجاح"
+    });
   };
 
   const { subtotal, taxAmount, totalAmount } = calculateTotals();
@@ -729,6 +808,106 @@ const LoadInvoices = () => {
           </div>
         </div>
 
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">إجمالي الفواتير</p>
+                <p className="text-3xl font-bold text-primary">{statsData.totalInvoices}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">إجمالي المبالغ</p>
+                <p className="text-3xl font-bold text-green-600">{statsData.totalAmount.toFixed(2)} ر.س</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">إجمالي الضرائب</p>
+                <p className="text-3xl font-bold text-blue-600">{statsData.totalTax.toFixed(2)} ر.س</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>من تاريخ</Label>
+                <Input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>إلى تاريخ</Label>
+                <Input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>الشركة</Label>
+                <Select value={filterCompanyId} onValueChange={setFilterCompanyId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="جميع الشركات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">جميع الشركات</SelectItem>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="opacity-0">إجراءات</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setFilterStartDate('');
+                      setFilterEndDate('');
+                      setFilterCompanyId('');
+                    }}
+                    className="flex-1"
+                  >
+                    إعادة تعيين
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportToExcel}
+                    className="flex-1"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 ml-2" />
+                    Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handlePrintPreview}
+                    className="flex-1"
+                  >
+                    <Printer className="h-4 w-4 ml-2" />
+                    طباعة
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Invoice List */}
         <Card dir="rtl">
           <CardHeader>
@@ -748,7 +927,7 @@ const LoadInvoices = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((invoice) => (
+                  {filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium text-right">{invoice.invoice_number}</TableCell>
                       <TableCell className="text-right">{new Date(invoice.date).toLocaleDateString('ar-SA')}</TableCell>
@@ -1098,6 +1277,77 @@ const LoadInvoices = () => {
           />
         )}
       </main>
+
+      {/* Print Preview Dialog */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>معاينة الطباعة</DialogTitle>
+          </DialogHeader>
+          <div ref={printPreviewRef} className="p-6 bg-white" dir="rtl">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold mb-2">تقرير فواتير المبيعات</h2>
+              {(filterStartDate || filterEndDate) && (
+                <p className="text-sm text-muted-foreground">
+                  {filterStartDate && `من ${new Date(filterStartDate).toLocaleDateString('ar-SA')}`}
+                  {filterEndDate && ` إلى ${new Date(filterEndDate).toLocaleDateString('ar-SA')}`}
+                </p>
+              )}
+            </div>
+
+            {/* Statistics Summary */}
+            <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">إجمالي الفواتير</p>
+                <p className="text-xl font-bold">{statsData.totalInvoices}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">إجمالي المبالغ</p>
+                <p className="text-xl font-bold">{statsData.totalAmount.toFixed(2)} ر.س</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">إجمالي الضرائب</p>
+                <p className="text-xl font-bold">{statsData.totalTax.toFixed(2)} ر.س</p>
+              </div>
+            </div>
+
+            {/* Invoices Table */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">رقم الفاتورة</TableHead>
+                  <TableHead className="text-right">التاريخ</TableHead>
+                  <TableHead className="text-right">العميل</TableHead>
+                  <TableHead className="text-right">المبلغ قبل الضريبة</TableHead>
+                  <TableHead className="text-right">الضريبة</TableHead>
+                  <TableHead className="text-right">المبلغ الإجمالي</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="text-right">{invoice.invoice_number}</TableCell>
+                    <TableCell className="text-right">{new Date(invoice.date).toLocaleDateString('ar-SA')}</TableCell>
+                    <TableCell className="text-right">{invoice.companies?.name}</TableCell>
+                    <TableCell className="text-right">{(invoice.subtotal || 0).toFixed(2)} ر.س</TableCell>
+                    <TableCell className="text-right">{(invoice.tax_amount || 0).toFixed(2)} ر.س</TableCell>
+                    <TableCell className="text-right font-semibold">{invoice.total_amount.toFixed(2)} ر.س</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex gap-2 justify-end pt-4 border-t">
+            <Button onClick={handlePrintFromPreview}>
+              <Printer className="h-4 w-4 ml-2" />
+              طباعة
+            </Button>
+            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
+              إغلاق
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
