@@ -21,6 +21,7 @@ export interface Invoice {
   customerSupplierAccount: string;
   items: InvoiceItem[];
   subtotal: number;
+  discount?: number;
   taxTotal: number;
   total: number;
   notes: string;

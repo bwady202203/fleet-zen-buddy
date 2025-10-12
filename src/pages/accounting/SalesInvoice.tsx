@@ -26,6 +26,7 @@ const SalesInvoice = () => {
     customerSupplierName: "",
     customerSupplierAccount: "",
     notes: "",
+    discount: 0,
     items: [] as InvoiceItem[],
   });
 
@@ -85,9 +86,11 @@ const SalesInvoice = () => {
 
   const calculateTotals = () => {
     const subtotal = formData.items.reduce((sum, item) => sum + item.total, 0);
+    const discount = formData.discount || 0;
+    const afterDiscount = subtotal - discount;
     const taxTotal = formData.items.reduce((sum, item) => sum + item.taxAmount, 0);
-    const total = subtotal + taxTotal;
-    return { subtotal, taxTotal, total };
+    const total = afterDiscount + taxTotal;
+    return { subtotal, discount, afterDiscount, taxTotal, total };
   };
 
   const handleSubmit = () => {
@@ -100,12 +103,13 @@ const SalesInvoice = () => {
       return;
     }
 
-    const { subtotal, taxTotal, total } = calculateTotals();
+    const { subtotal, discount, taxTotal, total } = calculateTotals();
 
     addInvoice({
       ...formData,
       type: 'sales',
       subtotal,
+      discount,
       taxTotal,
       total,
     });
@@ -126,6 +130,7 @@ const SalesInvoice = () => {
       customerSupplierName: "",
       customerSupplierAccount: "",
       notes: "",
+      discount: 0,
       items: [],
     });
     setAccountSearch("");
@@ -135,7 +140,7 @@ const SalesInvoice = () => {
     window.print();
   };
 
-  const { subtotal, taxTotal, total } = calculateTotals();
+  const { subtotal, discount, afterDiscount, taxTotal, total } = calculateTotals();
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -331,8 +336,25 @@ const SalesInvoice = () => {
                   {/* الإجماليات */}
                   <div className="bg-accent/50 p-4 rounded-lg space-y-2">
                     <div className="flex justify-between text-lg">
-                      <span>الإجمالي قبل الضريبة:</span>
+                      <span>الإجمالي قبل الخصم:</span>
                       <span className="font-bold">{subtotal.toFixed(2)} ريال</span>
+                    </div>
+                    <div className="flex justify-between text-lg">
+                      <span>الخصم:</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={formData.discount}
+                          onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                          className="w-32 h-8 text-left"
+                          min="0"
+                        />
+                        <span className="font-bold">ريال</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-lg">
+                      <span>الإجمالي بعد الخصم:</span>
+                      <span className="font-bold">{afterDiscount.toFixed(2)} ريال</span>
                     </div>
                     <div className="flex justify-between text-lg">
                       <span>الضريبة:</span>
