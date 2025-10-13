@@ -65,6 +65,7 @@ const TrialBalance = () => {
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("all");
+  const [showOnlyNoBranch, setShowOnlyNoBranch] = useState(false);
   const [branchesTabBranch, setBranchesTabBranch] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -595,6 +596,11 @@ const TrialBalance = () => {
         // Include opening balance entries regardless of date
         if (entry.reference === 'OPENING_BALANCE') {
           const entryLines = journalLines.filter(line => {
+            // Apply no branch filter
+            if (showOnlyNoBranch && line.branch_id !== null) {
+              return false;
+            }
+            
             // Apply branch filter
             if (selectedBranch && selectedBranch !== 'all') {
               // Show lines for the selected branch OR lines with no branch (old entries)
@@ -611,6 +617,11 @@ const TrialBalance = () => {
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
         const entryLines = journalLines.filter(line => {
+          // Apply no branch filter
+          if (showOnlyNoBranch && line.branch_id !== null) {
+            return false;
+          }
+          
           // Apply branch filter
           if (selectedBranch && selectedBranch !== 'all') {
             // Show lines for the selected branch OR lines with no branch (old entries)
@@ -1020,6 +1031,19 @@ const TrialBalance = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pt-6">
+                    <input
+                      type="checkbox"
+                      id="noBranch"
+                      checked={showOnlyNoBranch}
+                      onChange={(e) => setShowOnlyNoBranch(e.target.checked)}
+                      className="rounded border-border"
+                    />
+                    <label htmlFor="noBranch" className="text-sm">
+                      قيود بدون فرع فقط
+                    </label>
                   </div>
                   <div>
                     <Label>من تاريخ</Label>
