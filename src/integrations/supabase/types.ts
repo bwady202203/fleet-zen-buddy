@@ -393,6 +393,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "custody_expenses_expense_type_fkey"
+            columns: ["expense_type"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "custody_expenses_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -403,7 +410,7 @@ export type Database = {
             foreignKeyName: "custody_expenses_representative_id_fkey"
             columns: ["representative_id"]
             isOneToOne: false
-            referencedRelation: "custody_representatives"
+            referencedRelation: "chart_of_accounts"
             referencedColumns: ["id"]
           },
         ]
