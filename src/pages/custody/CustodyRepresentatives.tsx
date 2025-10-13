@@ -37,11 +37,11 @@ const CustodyRepresentatives = () => {
     try {
       setLoading(true);
       
-      // Find the custody parent account (العهد)
+      // Find the custody parent account (العهد) by code 1111
       const { data: custodyAccount, error: custodyError } = await supabase
         .from('chart_of_accounts')
         .select('id')
-        .eq('name_ar', 'العهد')
+        .eq('code', '1111')
         .maybeSingle();
 
       if (custodyError) throw custodyError;
