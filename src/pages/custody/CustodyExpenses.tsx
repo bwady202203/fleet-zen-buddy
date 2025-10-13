@@ -218,11 +218,11 @@ const CustodyExpenses = () => {
         return;
       }
 
-      // Get tax account (ضريبة القيمة المضافة)
+      // Get tax account by code 110801
       const { data: taxAccounts, error: taxAccError } = await supabase
         .from('chart_of_accounts')
         .select('id')
-        .ilike('name_ar', '%ضريبة%القيمة%المضافة%')
+        .eq('code', '110801')
         .limit(1);
 
       if (taxAccError) throw taxAccError;
