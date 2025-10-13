@@ -50,6 +50,12 @@ interface JournalLine {
   debit: number;
   credit: number;
   description: string;
+  branch_id?: string | null;
+  branches?: {
+    id: string;
+    code: string;
+    name_ar: string;
+  };
 }
 
 const TrialBalance = () => {
@@ -57,7 +63,7 @@ const TrialBalance = () => {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
@@ -146,7 +152,10 @@ const TrialBalance = () => {
       const [accountsRes, entriesRes, linesRes] = await Promise.all([
         supabase.from('chart_of_accounts').select('*').eq('is_active', true),
         supabase.from('journal_entries').select('*').order('date', { ascending: true }),
-        supabase.from('journal_entry_lines').select('*')
+        supabase.from('journal_entry_lines').select(`
+          *,
+          branches (id, code, name_ar)
+        `)
       ]);
 
       if (accountsRes.error) throw accountsRes.error;
@@ -478,10 +487,15 @@ const TrialBalance = () => {
       const openingLines = journalLines.filter(line => {
         const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
         const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
-        // Apply branch filter
-        if (selectedBranch && selectedBranch !== '' && (line as any).branch_id !== selectedBranch) {
-          return false;
+        
+        // Apply branch filter - check if specific branch is selected
+        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+          // Only include lines that match the selected branch OR have no branch assigned
+          if (line.branch_id && line.branch_id !== selectedBranch) {
+            return false;
+          }
         }
+        
         return matchesAccount;
       });
 
@@ -506,10 +520,15 @@ const TrialBalance = () => {
       const periodLines = journalLines.filter(line => {
         const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
         const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
-        // Apply branch filter
-        if (selectedBranch && selectedBranch !== '' && (line as any).branch_id !== selectedBranch) {
-          return false;
+        
+        // Apply branch filter - check if specific branch is selected
+        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+          // Only include lines that match the selected branch OR have no branch assigned
+          if (line.branch_id && line.branch_id !== selectedBranch) {
+            return false;
+          }
         }
+        
         return matchesAccount;
       });
 
