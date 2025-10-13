@@ -159,31 +159,33 @@ const BalanceSheet = () => {
         }
       });
 
-      // Filter parent accounts by level and sum child balances
-      const parentAccounts = accountsData?.filter(acc => {
+      // Get accounts at the selected level only
+      const levelAccounts = accountsData?.filter(acc => {
         const parts = acc.code.split('/');
         return parts.length === accountLevel;
       }) || [];
 
       const resultBalances: AccountBalance[] = [];
 
-      parentAccounts.forEach(parent => {
+      levelAccounts.forEach(levelAccount => {
         let totalBalance = 0;
         
-        // Sum all child accounts that start with parent code
+        // Sum balance of this account and all its children (lower levels)
         Array.from(allBalances.values()).forEach(childBalance => {
-          if (childBalance.accountCode === parent.code || 
-              childBalance.accountCode.startsWith(parent.code + '/')) {
+          // Include exact match or any child that starts with this code
+          if (childBalance.accountCode === levelAccount.code || 
+              childBalance.accountCode.startsWith(levelAccount.code + '/')) {
             totalBalance += childBalance.balance;
           }
         });
 
+        // Only include if there's a balance
         if (totalBalance !== 0) {
           resultBalances.push({
-            accountId: parent.id,
-            accountCode: parent.code,
-            accountName: parent.name_ar,
-            accountType: parent.type,
+            accountId: levelAccount.id,
+            accountCode: levelAccount.code,
+            accountName: levelAccount.name_ar,
+            accountType: levelAccount.type,
             balance: totalBalance
           });
         }
