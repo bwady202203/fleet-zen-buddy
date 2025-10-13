@@ -96,22 +96,10 @@ const CustodyTransfers = () => {
 
       if (transferError) throw transferError;
 
-      // Generate entry number
-      const { data: lastEntry } = await supabase
-        .from('journal_entries')
-        .select('entry_number')
-        .order('entry_number', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      let nextNumber = 1;
-      if (lastEntry?.entry_number) {
-        const match = lastEntry.entry_number.match(/\d+/);
-        if (match) {
-          nextNumber = parseInt(match[0]) + 1;
-        }
-      }
-      const entryNumber = `JE-${nextNumber.toString().padStart(6, '0')}`;
+      // Generate unique entry number with timestamp
+      const timestamp = Date.now();
+      const randomPart = Math.floor(Math.random() * 1000);
+      const entryNumber = `JE-${timestamp}-${randomPart}`;
 
       // Insert journal entry
       const { data: journalEntry, error: journalError } = await supabase
