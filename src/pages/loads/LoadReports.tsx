@@ -643,27 +643,27 @@ const LoadReports = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {filteredReports.map((report) => (
-              <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50" dir="ltr">
+              <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                   <div className="flex-1 w-full">
-                    <h3 className="text-2xl font-bold mb-4 text-left">{report.driverName}</h3>
+                    <h3 className="text-2xl font-bold mb-4">{report.driverName}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                        <p className="text-sm text-muted-foreground mb-1 text-left">Total Due</p>
-                        <p className="text-2xl font-bold text-primary text-left">
-                          SAR {report.totalCommission.toFixed(2)}
+                        <p className="text-sm text-muted-foreground mb-1">إجمالي المستحقات</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {report.totalCommission.toFixed(2)} ر.س
                         </p>
                       </div>
                       <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
-                        <p className="text-sm text-muted-foreground mb-1 text-left">Paid</p>
-                        <p className="text-2xl font-bold text-green-600 text-left">
-                          SAR {report.totalPaid.toFixed(2)}
+                        <p className="text-sm text-muted-foreground mb-1">المدفوع</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {report.totalPaid.toFixed(2)} ر.س
                         </p>
                       </div>
                       <div className="bg-orange-500/10 p-4 rounded-lg border border-orange-500/20">
-                        <p className="text-sm text-muted-foreground mb-1 text-left">Remaining</p>
-                        <p className="text-2xl font-bold text-orange-600 text-left">
-                          SAR {report.remaining.toFixed(2)}
+                        <p className="text-sm text-muted-foreground mb-1">المتبقي</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {report.remaining.toFixed(2)} ر.س
                         </p>
                       </div>
                     </div>
@@ -681,23 +681,23 @@ const LoadReports = () => {
                         }}
                         className="w-full lg:w-auto"
                       >
-                        <Send className="h-5 w-5 mr-2" />
-                        Payment Voucher
+                        <Send className="h-5 w-5 ml-2" />
+                        سند تحويل
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md" dir="ltr">
+                    <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Payment Voucher for Driver: {report.driverName}</DialogTitle>
+                        <DialogTitle>سند تحويل للسائق: {report.driverName}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="bg-primary/10 p-4 rounded-lg">
-                          <Label className="text-sm text-muted-foreground">Remaining Amount Due</Label>
+                          <Label className="text-sm text-muted-foreground">المبلغ المتبقي المستحق</Label>
                           <div className="text-3xl font-bold text-primary mt-2">
-                            SAR {report.remaining.toFixed(2)}
+                            {report.remaining.toFixed(2)} ر.س
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="payment-amount">Transfer Amount *</Label>
+                          <Label htmlFor="payment-amount">المبلغ المحول *</Label>
                           <Input
                             id="payment-amount"
                             type="number"
@@ -709,70 +709,70 @@ const LoadReports = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="payment-notes">Notes</Label>
+                          <Label htmlFor="payment-notes">ملاحظات</Label>
                           <Textarea
                             id="payment-notes"
-                            placeholder="Enter additional notes..."
+                            placeholder="أدخل ملاحظات إضافية..."
                             value={paymentNotes}
                             onChange={(e) => setPaymentNotes(e.target.value)}
                             rows={3}
                           />
                         </div>
                         <Button onClick={handleAddPayment} className="w-full" size="lg">
-                          <Send className="h-4 w-4 mr-2" />
-                          Confirm Transfer
+                          <Send className="h-4 w-4 ml-2" />
+                          تأكيد التحويل
                         </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
                 </div>
 
-                <div className="rounded-lg border overflow-hidden bg-background" dir="ltr">
+                <div className="rounded-lg border overflow-hidden bg-background">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="font-bold text-left">Load Number</TableHead>
-                        <TableHead className="font-bold text-left">Date</TableHead>
-                        <TableHead className="font-bold text-left">Customer</TableHead>
-                        <TableHead className="font-bold text-left">Load Type</TableHead>
-                        <TableHead className="font-bold text-left">Quantity</TableHead>
-                        <TableHead className="font-bold text-left">Amount Due</TableHead>
-                        <TableHead className="font-bold text-center">Actions</TableHead>
-                      </TableRow>
+                       <TableRow className="bg-muted/50">
+                         <TableHead className="font-bold">رقم الشحنة</TableHead>
+                         <TableHead className="font-bold">التاريخ</TableHead>
+                         <TableHead className="font-bold">العميل</TableHead>
+                         <TableHead className="font-bold">نوع الحمولة</TableHead>
+                         <TableHead className="font-bold">الكمية</TableHead>
+                         <TableHead className="font-bold">المبلغ المستحق</TableHead>
+                         <TableHead className="font-bold text-center">إجراءات</TableHead>
+                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {report.loads.map((load: any) => (
-                        <TableRow key={load.id}>
-                          <TableCell className="font-medium text-left">{load.load_number}</TableCell>
-                          <TableCell className="text-left">{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
-                          <TableCell className="text-left">{load.companies?.name || '-'}</TableCell>
-                          <TableCell className="text-left">{load.load_types?.name || '-'}</TableCell>
-                          <TableCell className="text-left">{load.quantity}</TableCell>
-                          <TableCell className="font-bold text-primary text-left">
-                            {load.total_amount.toFixed(2)} SAR
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2 justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePrintLoad(load)}
-                                title="Print"
-                              >
-                                <Printer className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteLoad(load.id)}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                       {report.loads.map((load: any) => (
+                         <TableRow key={load.id}>
+                           <TableCell className="font-medium">{load.load_number}</TableCell>
+                           <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
+                           <TableCell>{load.companies?.name || '-'}</TableCell>
+                           <TableCell>{load.load_types?.name || '-'}</TableCell>
+                           <TableCell>{load.quantity}</TableCell>
+                           <TableCell className="font-bold text-primary">
+                             {load.total_amount.toFixed(2)} ر.س
+                           </TableCell>
+                           <TableCell>
+                             <div className="flex gap-2 justify-center">
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handlePrintLoad(load)}
+                                 title="طباعة"
+                               >
+                                 <Printer className="h-4 w-4" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handleDeleteLoad(load.id)}
+                                 title="حذف"
+                               >
+                                 <Trash2 className="h-4 w-4 text-destructive" />
+                               </Button>
+                             </div>
+                           </TableCell>
+                         </TableRow>
+                       ))}
                     </TableBody>
                   </Table>
                 </div>
