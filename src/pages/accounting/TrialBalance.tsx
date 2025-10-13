@@ -592,6 +592,22 @@ const TrialBalance = () => {
   // معاينة دفتر الأستاذ
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
+        // Include opening balance entries regardless of date
+        if (entry.reference === 'OPENING_BALANCE') {
+          const entryLines = journalLines.filter(line => {
+            // Apply branch filter
+            if (selectedBranch && selectedBranch !== 'all') {
+              // Show lines for the selected branch OR lines with no branch (old entries)
+              if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+                return false;
+              }
+            }
+            return line.journal_entry_id === entry.id;
+          });
+          return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
+        }
+        
+        // For regular entries, apply date filter
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
         const entryLines = journalLines.filter(line => {
