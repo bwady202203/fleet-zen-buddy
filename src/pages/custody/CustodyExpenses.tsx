@@ -213,15 +213,15 @@ const CustodyExpenses = () => {
       }
 
       // Get tax account (ضريبة القيمة المضافة)
-      const { data: taxAccount, error: taxAccError } = await supabase
+      const { data: taxAccounts, error: taxAccError } = await supabase
         .from('chart_of_accounts')
         .select('id')
         .ilike('name_ar', '%ضريبة%القيمة%المضافة%')
-        .maybeSingle();
+        .limit(1);
 
       if (taxAccError) throw taxAccError;
 
-      let taxAccountId = taxAccount?.id;
+      let taxAccountId = taxAccounts && taxAccounts.length > 0 ? taxAccounts[0].id : null;
 
       // Create journal entry
       if (repAccount && expenseAccount) {
