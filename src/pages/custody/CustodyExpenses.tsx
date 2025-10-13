@@ -53,6 +53,8 @@ const CustodyExpenses = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [expenseType, setExpenseType] = useState('');
   const [amount, setAmount] = useState('');
+  const [taxAmount, setTaxAmount] = useState('');
+  const [totalAmount, setTotalAmount] = useState('');
   const [description, setDescription] = useState('');
 
   useEffect(() => {
@@ -146,6 +148,10 @@ const CustodyExpenses = () => {
     }
 
     try {
+      const baseAmount = parseFloat(amount);
+      const tax = parseFloat(taxAmount) || 0;
+      const total = parseFloat(totalAmount) || baseAmount;
+
       // Insert the expense
       const { data: expenseData, error: expenseError } = await supabase
         .from('custody_expenses')
@@ -153,7 +159,7 @@ const CustodyExpenses = () => {
           representative_id: selectedRepId,
           expense_date: format(date, 'yyyy-MM-dd'),
           expense_type: expenseType,
-          amount: parseFloat(amount),
+          amount: total,
           description: description,
           created_by: user?.id
         }])
@@ -243,7 +249,7 @@ const CustodyExpenses = () => {
             {
               journal_entry_id: journalEntry.id,
               account_id: expenseAccountId,
-              debit: parseFloat(amount),
+              debit: total,
               credit: 0,
               description: description || `مصروف ${expenseType}`
             },
@@ -251,7 +257,7 @@ const CustodyExpenses = () => {
               journal_entry_id: journalEntry.id,
               account_id: repAccount.id,
               debit: 0,
-              credit: parseFloat(amount),
+              credit: total,
               description: description || `مصروف ${expenseType}`
             }
           ]);
@@ -264,6 +270,8 @@ const CustodyExpenses = () => {
       // Reset form
       setExpenseType('');
       setAmount('');
+      setTaxAmount('');
+      setTotalAmount('');
       setDescription('');
       setDate(new Date());
       
@@ -416,9 +424,47 @@ const CustodyExpenses = () => {
                       type="number"
                       step="0.01"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAmount(val);
+                        const base = parseFloat(val) || 0;
+                        const tax = parseFloat(taxAmount) || 0;
+                        setTotalAmount((base + tax).toFixed(2));
+                      }}
                       placeholder="0.00"
                       required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="taxAmount">الضريبة</Label>
+                    <Input
+                      id="taxAmount"
+                      type="number"
+                      step="0.01"
+                      value={taxAmount}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setTaxAmount(val);
+                        const base = parseFloat(amount) || 0;
+                        const tax = parseFloat(val) || 0;
+                        setTotalAmount((base + tax).toFixed(2));
+                      }}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="totalAmount">الإجمالي</Label>
+                    <Input
+                      id="totalAmount"
+                      type="number"
+                      step="0.01"
+                      value={totalAmount}
+                      onChange={(e) => setTotalAmount(e.target.value)}
+                      placeholder="0.00"
+                      readOnly
+                      className="bg-muted"
                     />
                   </div>
                 </div>
