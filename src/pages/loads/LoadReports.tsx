@@ -245,6 +245,301 @@ const LoadReports = () => {
     return `${hijri.hy}-${String(hijri.hm).padStart(2, '0')}-${String(hijri.hd).padStart(2, '0')}`;
   };
 
+  const handlePrintDriverReport = (report: DriverReport) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const today = new Date();
+      const hijriDate = toHijri(today.getFullYear(), today.getMonth() + 1, today.getDate());
+      const hijriString = `${hijriDate.hd}/${hijriDate.hm}/${hijriDate.hy}`;
+      
+      const tableRows = report.loads.map((load: any) => {
+        const loadHijri = toHijri(new Date(load.date).getFullYear(), new Date(load.date).getMonth() + 1, new Date(load.date).getDate());
+        const loadHijriStr = `${loadHijri.hd}/${loadHijri.hm}/${loadHijri.hy}`;
+        
+        let invoiceHijriStr = '-';
+        if (load.invoice_date) {
+          const invHijri = toHijri(new Date(load.invoice_date).getFullYear(), new Date(load.invoice_date).getMonth() + 1, new Date(load.invoice_date).getDate());
+          invoiceHijriStr = `${invHijri.hd}/${invHijri.hm}/${invHijri.hy}`;
+        }
+        
+        return `
+          <tr>
+            <td>${load.load_number}</td>
+            <td>${new Date(load.date).toLocaleDateString('ar-SA')}<br><span style="color: #666; font-size: 0.85em;">${loadHijriStr} هـ</span></td>
+            <td>${load.invoice_date ? new Date(load.invoice_date).toLocaleDateString('ar-SA') : '-'}<br><span style="color: #666; font-size: 0.85em;">${invoiceHijriStr}</span></td>
+            <td>${load.companies?.name || '-'}</td>
+            <td>${load.load_types?.name || '-'}</td>
+            <td style="font-weight: bold;">${load.quantity}</td>
+            <td style="font-weight: bold; color: #2563eb;">${parseFloat(load.unit_price).toFixed(2)} ر.س</td>
+          </tr>
+        `;
+      }).join('');
+
+      printWindow.document.write(`
+        <html dir="rtl">
+          <head>
+            <title>تقرير السائق - ${report.driverName}</title>
+            <meta charset="UTF-8">
+            <style>
+              * { 
+                margin: 0; 
+                padding: 0; 
+                box-sizing: border-box; 
+                direction: rtl;
+              }
+              body { 
+                font-family: 'Arial', 'Tahoma', sans-serif; 
+                padding: 40px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+              }
+              .container {
+                background: white;
+                border-radius: 20px;
+                padding: 40px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 40px;
+                padding-bottom: 30px;
+                border-bottom: 3px solid #667eea;
+              }
+              .logo {
+                font-size: 2.5em;
+                font-weight: bold;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 10px;
+              }
+              .report-title {
+                font-size: 1.8em;
+                color: #1e293b;
+                margin-bottom: 10px;
+                font-weight: 600;
+              }
+              .report-subtitle {
+                color: #64748b;
+                font-size: 1.1em;
+              }
+              .driver-info {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 15px;
+                margin-bottom: 30px;
+                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+              }
+              .driver-name {
+                font-size: 2em;
+                font-weight: bold;
+                margin-bottom: 20px;
+                text-align: center;
+              }
+              .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                margin-top: 20px;
+              }
+              .summary-card {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                border-radius: 12px;
+                text-align: center;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+              }
+              .summary-label {
+                font-size: 0.9em;
+                opacity: 0.95;
+                margin-bottom: 10px;
+                font-weight: 500;
+              }
+              .summary-value {
+                font-size: 1.8em;
+                font-weight: bold;
+              }
+              table { 
+                width: 100%; 
+                border-collapse: separate;
+                border-spacing: 0;
+                margin: 30px 0;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+                border-radius: 12px;
+                overflow: hidden;
+              }
+              thead {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              }
+              th { 
+                color: white;
+                padding: 18px 15px;
+                text-align: right;
+                font-weight: 600;
+                font-size: 0.95em;
+                letter-spacing: 0.5px;
+              }
+              td { 
+                padding: 15px;
+                text-align: right;
+                border-bottom: 1px solid #e2e8f0;
+                color: #334155;
+              }
+              tbody tr {
+                transition: background-color 0.2s;
+              }
+              tbody tr:hover {
+                background-color: #f8fafc;
+              }
+              tbody tr:last-child td {
+                border-bottom: none;
+              }
+              .footer {
+                margin-top: 50px;
+                padding-top: 30px;
+                border-top: 2px solid #e2e8f0;
+                text-align: center;
+              }
+              .date-info {
+                display: flex;
+                justify-content: space-between;
+                color: #64748b;
+                font-size: 0.95em;
+                margin-bottom: 15px;
+              }
+              .signature-section {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 40px;
+                margin-top: 60px;
+              }
+              .signature-box {
+                text-align: center;
+                padding: 20px;
+                border: 2px dashed #cbd5e1;
+                border-radius: 10px;
+              }
+              .signature-label {
+                color: #64748b;
+                font-weight: 600;
+                margin-bottom: 10px;
+              }
+              .signature-line {
+                margin-top: 40px;
+                border-top: 2px solid #94a3b8;
+                padding-top: 10px;
+                color: #64748b;
+              }
+              @media print {
+                body {
+                  background: white;
+                  padding: 0;
+                }
+                .container {
+                  box-shadow: none;
+                }
+              }
+              .watermark {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-45deg);
+                font-size: 8em;
+                color: rgba(102, 126, 234, 0.05);
+                font-weight: bold;
+                z-index: -1;
+                pointer-events: none;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="watermark">تقرير السائق</div>
+            <div class="container">
+              <div class="header">
+                <div class="logo">🚛 نظام إدارة الشحنات</div>
+                <div class="report-title">تقرير السائق والعمولات</div>
+                <div class="report-subtitle">كشف حساب مفصل</div>
+              </div>
+
+              <div class="driver-info">
+                <div class="driver-name">👤 ${report.driverName}</div>
+                <div class="summary-grid">
+                  <div class="summary-card">
+                    <div class="summary-label">💰 إجمالي المستحقات</div>
+                    <div class="summary-value">${report.totalCommission.toFixed(2)}</div>
+                    <div style="font-size: 0.9em; margin-top: 5px;">ريال سعودي</div>
+                  </div>
+                  <div class="summary-card">
+                    <div class="summary-label">✅ المبلغ المدفوع</div>
+                    <div class="summary-value">${report.totalPaid.toFixed(2)}</div>
+                    <div style="font-size: 0.9em; margin-top: 5px;">ريال سعودي</div>
+                  </div>
+                  <div class="summary-card">
+                    <div class="summary-label">⏳ المتبقي</div>
+                    <div class="summary-value">${report.remaining.toFixed(2)}</div>
+                    <div style="font-size: 0.9em; margin-top: 5px;">ريال سعودي</div>
+                  </div>
+                </div>
+              </div>
+
+              <h3 style="color: #1e293b; font-size: 1.4em; margin-bottom: 20px; font-weight: 600;">📋 تفاصيل الشحنات</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>رقم الشحنة</th>
+                    <th>التاريخ</th>
+                    <th>تاريخ الفاتورة</th>
+                    <th>العميل</th>
+                    <th>نوع الحمولة</th>
+                    <th>الكمية</th>
+                    <th>السعر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+
+              <div class="footer">
+                <div class="date-info">
+                  <div>
+                    <strong>📅 تاريخ الطباعة (ميلادي):</strong> ${today.toLocaleDateString('ar-SA')}
+                  </div>
+                  <div>
+                    <strong>📅 تاريخ الطباعة (هجري):</strong> ${hijriString} هـ
+                  </div>
+                </div>
+                
+                <div class="signature-section">
+                  <div class="signature-box">
+                    <div class="signature-label">توقيع المحاسب</div>
+                    <div class="signature-line">.....................</div>
+                  </div>
+                  <div class="signature-box">
+                    <div class="signature-label">توقيع السائق</div>
+                    <div class="signature-line">.....................</div>
+                  </div>
+                </div>
+                
+                <p style="margin-top: 30px; color: #94a3b8; font-size: 0.9em;">
+                  هذا التقرير تم إنشاؤه آلياً من نظام إدارة الشحنات
+                </p>
+              </div>
+            </div>
+            <script>
+              window.onload = function() {
+                window.print();
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   const handlePrintLoad = (load: any) => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -720,7 +1015,7 @@ const LoadReports = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {filteredReports.map((report) => (
-              <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50" dir="rtl">
+                <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50" dir="rtl">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                   <div className="flex-1 w-full">
                     <h3 className="text-2xl font-bold mb-4">{report.driverName}</h3>
@@ -745,24 +1040,33 @@ const LoadReports = () => {
                       </div>
                     </div>
                   </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="default"
-                        size="lg"
-                        disabled={report.remaining <= 0}
-                        onClick={() => {
-                          setSelectedDriverForPayment(report);
-                          setPaymentAmount("");
-                          setPaymentNotes("");
-                        }}
-                        className="w-full lg:w-auto"
-                      >
-                        <Send className="h-5 w-5 ml-2" />
-                        سند تحويل
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    onClick={() => handlePrintDriverReport(report)}
+                    className="w-full lg:w-auto"
+                  >
+                    <Eye className="h-5 w-5 ml-2" />
+                    معاينة وطباعة التقرير
+                  </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="default"
+                          size="lg"
+                          disabled={report.remaining <= 0}
+                          onClick={() => {
+                            setSelectedDriverForPayment(report);
+                            setPaymentAmount("");
+                            setPaymentNotes("");
+                          }}
+                          className="w-full lg:w-auto"
+                        >
+                          <Send className="h-5 w-5 ml-2" />
+                          سند تحويل
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle>سند تحويل للسائق: {report.driverName}</DialogTitle>
                       </DialogHeader>
@@ -800,9 +1104,9 @@ const LoadReports = () => {
                           تأكيد التحويل
                         </Button>
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                      </DialogContent>
+                    </Dialog>
+                   </div>
 
                 <div className="rounded-lg border overflow-hidden bg-background" dir="rtl">
                   <Table>
@@ -853,9 +1157,9 @@ const LoadReports = () => {
                          </TableRow>
                        ))}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </div>
                 </div>
-              </div>
                 ))}
               </CardContent>
             </Card>
