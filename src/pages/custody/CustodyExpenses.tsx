@@ -32,6 +32,9 @@ interface Expense {
   expense_type: string;
   amount: number;
   description: string;
+  chart_of_accounts?: {
+    name_ar: string;
+  };
 }
 
 interface ExpenseType {
@@ -158,7 +161,10 @@ const CustodyExpenses = () => {
     try {
       const { data, error } = await supabase
         .from('custody_expenses')
-        .select('*')
+        .select(`
+          *,
+          chart_of_accounts!custody_expenses_expense_type_fkey(name_ar)
+        `)
         .eq('representative_id', repId)
         .order('expense_date', { ascending: false });
 
@@ -540,7 +546,7 @@ const CustodyExpenses = () => {
                       <TableCell>
                         {format(new Date(expense.expense_date), 'PPP', { locale: ar })}
                       </TableCell>
-                      <TableCell>{expense.expense_type}</TableCell>
+                      <TableCell>{expense.chart_of_accounts?.name_ar || expense.expense_type}</TableCell>
                       <TableCell className="font-medium">
                         {expense.amount.toLocaleString('ar-SA')} ريال
                       </TableCell>
