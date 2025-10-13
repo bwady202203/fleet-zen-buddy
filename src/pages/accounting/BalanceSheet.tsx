@@ -84,7 +84,7 @@ const BalanceSheet = () => {
       supabase.removeChannel(journalChannel);
       supabase.removeChannel(accountsChannel);
     };
-  }, [asOfDate]);
+  }, [asOfDate, selectedBranch, accountLevel]);
 
   const fetchBranches = async () => {
     try {
@@ -126,7 +126,8 @@ const BalanceSheet = () => {
 
       if (entriesError) throw entriesError;
 
-      const balanceMap = new Map<string, AccountBalance>();
+      // First, calculate all account balances
+      const allBalances = new Map<string, AccountBalance>();
 
       entriesData?.forEach((line: any) => {
         const account = accountsData?.find(acc => acc.id === line.account_id);
@@ -137,8 +138,8 @@ const BalanceSheet = () => {
           return;
         }
 
-        if (!balanceMap.has(line.account_id)) {
-          balanceMap.set(line.account_id, {
+        if (!allBalances.has(line.account_id)) {
+          allBalances.set(line.account_id, {
             accountId: line.account_id,
             accountCode: account.code,
             accountName: account.name_ar,
@@ -147,7 +148,7 @@ const BalanceSheet = () => {
           });
         }
 
-        const bal = balanceMap.get(line.account_id)!;
+        const bal = allBalances.get(line.account_id)!;
         const debit = Number(line.debit);
         const credit = Number(line.credit);
 
@@ -158,7 +159,37 @@ const BalanceSheet = () => {
         }
       });
 
-      setBalances(Array.from(balanceMap.values()));
+      // Filter parent accounts by level and sum child balances
+      const parentAccounts = accountsData?.filter(acc => {
+        const parts = acc.code.split('/');
+        return parts.length === accountLevel;
+      }) || [];
+
+      const resultBalances: AccountBalance[] = [];
+
+      parentAccounts.forEach(parent => {
+        let totalBalance = 0;
+        
+        // Sum all child accounts that start with parent code
+        Array.from(allBalances.values()).forEach(childBalance => {
+          if (childBalance.accountCode === parent.code || 
+              childBalance.accountCode.startsWith(parent.code + '/')) {
+            totalBalance += childBalance.balance;
+          }
+        });
+
+        if (totalBalance !== 0) {
+          resultBalances.push({
+            accountId: parent.id,
+            accountCode: parent.code,
+            accountName: parent.name_ar,
+            accountType: parent.type,
+            balance: totalBalance
+          });
+        }
+      });
+
+      setBalances(resultBalances);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -166,44 +197,9 @@ const BalanceSheet = () => {
     }
   };
 
-  // Filter accounts based on level
-  const getAccountLevel = (code: string): number => {
-    const parts = code.split('/');
-    return parts.length;
-  };
-
-  const filterByLevel = (items: AccountBalance[]): AccountBalance[] => {
-    if (accountLevel === 3) {
-      return items.filter(b => b.balance !== 0);
-    }
-    
-    // Group by level
-    const groupedMap = new Map<string, AccountBalance>();
-    
-    items.forEach(item => {
-      const parts = item.accountCode.split('/');
-      const levelCode = parts.slice(0, accountLevel).join('/');
-      
-      if (!groupedMap.has(levelCode)) {
-        groupedMap.set(levelCode, {
-          accountId: levelCode,
-          accountCode: levelCode,
-          accountName: `${parts.slice(0, accountLevel).join(' / ')}`,
-          accountType: item.accountType,
-          balance: 0
-        });
-      }
-      
-      const grouped = groupedMap.get(levelCode)!;
-      grouped.balance += item.balance;
-    });
-    
-    return Array.from(groupedMap.values()).filter(b => b.balance !== 0);
-  };
-
-  const assets = filterByLevel(balances.filter(b => b.accountType === 'asset'));
-  const liabilities = filterByLevel(balances.filter(b => b.accountType === 'liability'));
-  const equity = filterByLevel(balances.filter(b => b.accountType === 'equity'));
+  const assets = balances.filter(b => b.accountType === 'asset');
+  const liabilities = balances.filter(b => b.accountType === 'liability');
+  const equity = balances.filter(b => b.accountType === 'equity');
 
   const totalAssets = assets.reduce((sum, b) => sum + b.balance, 0);
   const totalLiabilities = liabilities.reduce((sum, b) => sum + b.balance, 0);
