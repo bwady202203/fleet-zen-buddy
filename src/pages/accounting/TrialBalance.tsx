@@ -538,15 +538,16 @@ const TrialBalance = () => {
         return true;
       });
 
+
       const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
       const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
       
-      // Calculate net period movement
-      const periodNet = periodDebitTotal - periodCreditTotal;
-      const periodDebit = periodNet > 0 ? periodNet : 0;
-      const periodCredit = periodNet < 0 ? Math.abs(periodNet) : 0;
+      // Period movement shows TOTAL debit and TOTAL credit (not net)
+      const periodDebit = periodDebitTotal;
+      const periodCredit = periodCreditTotal;
 
       // Calculate net closing balance
+      const periodNet = periodDebitTotal - periodCreditTotal;
       const closingNet = openingNet + periodNet;
       const closingDebit = closingNet > 0 ? closingNet : 0;
       const closingCredit = closingNet < 0 ? Math.abs(closingNet) : 0;
