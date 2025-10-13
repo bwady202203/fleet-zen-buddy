@@ -51,6 +51,12 @@ interface JournalLine {
   debit: number;
   credit: number;
   description: string;
+  branch_id?: string | null;
+  branches?: {
+    id: string;
+    code: string;
+    name_ar: string;
+  };
 }
 
 const Ledger = () => {
@@ -124,7 +130,10 @@ const Ledger = () => {
       const [accountsRes, entriesRes, linesRes] = await Promise.all([
         supabase.from('chart_of_accounts').select('*').eq('is_active', true),
         supabase.from('journal_entries').select('*').order('date', { ascending: true }),
-        supabase.from('journal_entry_lines').select('*')
+        supabase.from('journal_entry_lines').select(`
+          *,
+          branches (id, code, name_ar)
+        `)
       ]);
 
       if (accountsRes.error) throw accountsRes.error;
@@ -169,14 +178,24 @@ const Ledger = () => {
   const filteredEntries = journalEntries.filter(entry => {
     if (startDate && entry.date < startDate) return false;
     if (endDate && entry.date > endDate) return false;
-    const entryLines = journalLines.filter(line => line.journal_entry_id === entry.id);
+    const entryLines = journalLines.filter(line => {
+      // Filter by branch first
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id;
+    });
     return entryLines.some(line => line.account_id === selectedAccount);
   });
 
   const ledgerEntries = filteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(
-      line => line.journal_entry_id === entry.id && line.account_id === selectedAccount
-    );
+    const entryLines = journalLines.filter(line => {
+      // Apply branch filter
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
+    });
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
