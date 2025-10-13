@@ -488,15 +488,21 @@ const TrialBalance = () => {
         const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
         const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
         
+        if (!matchesAccount) return false;
+        
         // Apply branch filter - check if specific branch is selected
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // Only include lines that match the selected branch OR have no branch assigned
-          if (line.branch_id && line.branch_id !== selectedBranch) {
+          console.log('Filtering by branch:', selectedBranch);
+          console.log('Line branch_id:', line.branch_id);
+          console.log('Line account:', line.account_id);
+          
+          // Only include lines that match the selected branch
+          if (!line.branch_id || line.branch_id !== selectedBranch) {
             return false;
           }
         }
         
-        return matchesAccount;
+        return true;
       });
 
       const openingDebitTotal = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
@@ -521,15 +527,20 @@ const TrialBalance = () => {
         const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
         const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
         
+        if (!matchesAccount) return false;
+        
         // Apply branch filter - check if specific branch is selected
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // Only include lines that match the selected branch OR have no branch assigned
-          if (line.branch_id && line.branch_id !== selectedBranch) {
+          console.log('Period: Filtering by branch:', selectedBranch);
+          console.log('Period: Line branch_id:', line.branch_id);
+          
+          // Only include lines that match the selected branch
+          if (!line.branch_id || line.branch_id !== selectedBranch) {
             return false;
           }
         }
         
-        return matchesAccount;
+        return true;
       });
 
       const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
