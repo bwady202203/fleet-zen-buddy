@@ -19,10 +19,11 @@ import CustodyNavbar from '@/components/CustodyNavbar';
 
 interface Representative {
   id: string;
-  name: string;
-  current_custody: number;
-  received_custody: number;
-  total_expenses: number;
+  name_ar: string;
+  code: string;
+  balance: number;
+  debit_total: number;
+  credit_total: number;
 }
 
 interface Expense {
@@ -68,39 +69,53 @@ const CustodyExpenses = () => {
 
   const fetchRepresentatives = async () => {
     try {
-      const { data: reps, error: repsError } = await supabase
-        .from('custody_representatives')
-        .select('*')
-        .order('name');
+      // Find the custody parent account (العهد) by code 1111
+      const { data: custodyAccount, error: custodyError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('code', '1111')
+        .maybeSingle();
 
-      if (repsError) throw repsError;
+      if (custodyError) throw custodyError;
+      
+      if (!custodyAccount) {
+        toast.error('لم يتم العثور على حساب العهد (1111)');
+        return;
+      }
 
-      const repsWithData = await Promise.all((reps || []).map(async (rep) => {
-        // Get received custody (total transfers)
-        const { data: transfers } = await supabase
-          .from('custody_transfers')
-          .select('amount')
-          .eq('recipient_name', rep.name);
-        
-        const received_custody = transfers?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      // Fetch all sub-accounts under custody account
+      const { data: subAccounts, error: subAccountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('id, name_ar, code, balance')
+        .eq('parent_id', custodyAccount.id)
+        .order('code');
 
-        // Get total expenses
-        const { data: expenses } = await supabase
-          .from('custody_expenses')
-          .select('amount')
-          .eq('representative_id', rep.id);
-        
-        const total_expenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+      if (subAccountsError) throw subAccountsError;
 
-        return {
-          ...rep,
-          received_custody,
-          total_expenses,
-          current_custody: received_custody - total_expenses
-        };
-      }));
+      // Fetch journal entry lines for each account to calculate debit/credit totals
+      const accountsWithBalances = await Promise.all(
+        (subAccounts || []).map(async (account) => {
+          const { data: entries, error: entriesError } = await supabase
+            .from('journal_entry_lines')
+            .select('debit, credit')
+            .eq('account_id', account.id);
 
-      setRepresentatives(repsWithData);
+          if (entriesError) throw entriesError;
+
+          const debit_total = entries?.reduce((sum, e) => sum + Number(e.debit || 0), 0) || 0;
+          const credit_total = entries?.reduce((sum, e) => sum + Number(e.credit || 0), 0) || 0;
+          const balance = debit_total - credit_total;
+
+          return {
+            ...account,
+            debit_total,
+            credit_total,
+            balance,
+          };
+        })
+      );
+
+      setRepresentatives(accountsWithBalances);
     } catch (error) {
       console.error('Error fetching representatives:', error);
       toast.error('حدث خطأ في تحميل البيانات');
@@ -147,13 +162,8 @@ const CustodyExpenses = () => {
 
       if (expenseError) throw expenseError;
 
-      // Get the representative's account in chart of accounts
-      const repName = representatives.find(r => r.id === selectedRepId)?.name;
-      const { data: repAccount } = await supabase
-        .from('chart_of_accounts')
-        .select('id, code, name_ar')
-        .ilike('name_ar', `%عهدة ${repName}%`)
-        .maybeSingle();
+      // Get the representative's account (already have it)
+      const repAccount = representatives.find(r => r.id === selectedRepId);
 
       // Get or create expense account
       let expenseAccountId;
@@ -218,7 +228,7 @@ const CustodyExpenses = () => {
           .insert([{
             entry_number: entryNumber,
             date: format(date, 'yyyy-MM-dd'),
-            description: `مصروف ${expenseType} - ${repName}`,
+            description: `مصروف ${expenseType} - ${repAccount?.name_ar}`,
             created_by: user?.id
           }])
           .select()
@@ -315,7 +325,7 @@ const CustodyExpenses = () => {
                 <SelectContent>
                   {representatives.map((rep) => (
                     <SelectItem key={rep.id} value={rep.id}>
-                      {rep.name}
+                      {rep.name_ar} ({rep.code})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -325,21 +335,21 @@ const CustodyExpenses = () => {
             {selectedRep && (
               <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
                 <div>
-                  <p className="text-sm text-muted-foreground">العهدة المستلمة</p>
+                  <p className="text-sm text-muted-foreground">إجمالي المدين</p>
                   <p className="text-lg font-bold text-green-600">
-                    {(selectedRep.received_custody || 0).toLocaleString('ar-SA')} ريال
+                    {(selectedRep.debit_total || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
+                  <p className="text-sm text-muted-foreground">إجمالي الدائن</p>
                   <p className="text-lg font-bold text-red-600">
-                    {(selectedRep.total_expenses || 0).toLocaleString('ar-SA')} ريال
+                    {(selectedRep.credit_total || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">العهدة الحالية</p>
-                  <p className="text-lg font-bold text-blue-600">
-                    {(selectedRep.current_custody || 0).toLocaleString('ar-SA')} ريال
+                  <p className="text-sm text-muted-foreground">الرصيد الختامي</p>
+                  <p className={`text-lg font-bold ${selectedRep.balance >= 0 ? 'text-primary' : 'text-orange-600'}`}>
+                    {(selectedRep.balance || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال
                   </p>
                 </div>
               </div>
