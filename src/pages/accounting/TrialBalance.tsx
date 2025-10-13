@@ -605,21 +605,32 @@ const TrialBalance = () => {
     ? journalEntries.filter(entry => {
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        const entryLines = journalLines.filter(line => line.journal_entry_id === entry.id);
+        const entryLines = journalLines.filter(line => {
+          // Apply branch filter
+          if (selectedBranch && selectedBranch !== 'all') {
+            if (line.branch_id !== selectedBranch) return false;
+          }
+          return line.journal_entry_id === entry.id;
+        });
         return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
       })
     : [];
 
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(
-      line => line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
-    );
+    const entryLines = journalLines.filter(line => {
+      // Apply branch filter
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id;
+    });
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
       description: line.description || entry.description,
       debit: Number(line.debit) || 0,
       credit: Number(line.credit) || 0,
+      branchName: line.branches?.name_ar || '-',
     }));
   });
 
@@ -1585,6 +1596,7 @@ const TrialBalance = () => {
                     <TableRow>
                       <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">رقم القيد</TableHead>
+                      <TableHead className="text-right">الفرع</TableHead>
                       <TableHead className="text-right">البيان</TableHead>
                       <TableHead className="text-right">المدين</TableHead>
                       <TableHead className="text-right">الدائن</TableHead>
@@ -1596,6 +1608,7 @@ const TrialBalance = () => {
                       <TableRow key={index}>
                         <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
                         <TableCell className="font-medium">{entry.entryNumber}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{entry.branchName}</TableCell>
                         <TableCell>{entry.description}</TableCell>
                         <TableCell className="text-left font-medium">
                           {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
@@ -1610,7 +1623,7 @@ const TrialBalance = () => {
                     ))}
                     {ledgerWithBalance.length > 0 && (
                       <TableRow className="font-bold bg-accent/50">
-                        <TableCell colSpan={3} className="text-right">الإجمالي</TableCell>
+                        <TableCell colSpan={4} className="text-right">الإجمالي</TableCell>
                         <TableCell className="text-left">
                           {ledgerTotalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                         </TableCell>
@@ -1624,7 +1637,7 @@ const TrialBalance = () => {
                     )}
                     {ledgerWithBalance.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                           لا توجد حركات على هذا الحساب في الفترة المحددة
                         </TableCell>
                       </TableRow>
