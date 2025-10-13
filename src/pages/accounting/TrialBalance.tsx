@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2 } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -64,6 +65,7 @@ const TrialBalance = () => {
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("all");
+  const [branchesTabBranch, setBranchesTabBranch] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedAccountForLedger, setSelectedAccountForLedger] = useState<Account | null>(null);
@@ -918,91 +920,210 @@ const TrialBalance = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Card className="mb-6 no-print">
-          <CardHeader>
-            <CardTitle>فلترة الفترة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 flex gap-2 justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setQuickFilter('currentYear')}
-                className="gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                السنة الحالية
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setQuickFilter('last3Months')}
-                className="gap-2"
-              >
-                <CalendarRange className="h-4 w-4" />
-                آخر 3 أشهر
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setQuickFilter('currentMonth')}
-                className="gap-2"
-              >
-                <CalendarClock className="h-4 w-4" />
-                الشهر الحالي
-              </Button>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <div>
-                <Label>مستوى العرض</Label>
-                <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع المستويات</SelectItem>
-                    <SelectItem value="1">المستوى الأول</SelectItem>
-                    <SelectItem value="2">المستوى الثاني</SelectItem>
-                    <SelectItem value="3">المستوى الثالث</SelectItem>
-                    <SelectItem value="4">المستوى الرابع</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>الفرع</Label>
-                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الفرع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع الفروع</SelectItem>
-                    {branches.map(branch => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.code} - {branch.name_ar}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>من تاريخ</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>إلى تاريخ</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="general">ميزان المراجعة العام</TabsTrigger>
+            <TabsTrigger value="branches">ميزان الفروع</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general">
+            <Card className="mb-6 no-print">
+              <CardHeader>
+                <CardTitle>فلترة الفترة</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex gap-2 justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickFilter('currentYear')}
+                    className="gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    السنة الحالية
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickFilter('last3Months')}
+                    className="gap-2"
+                  >
+                    <CalendarRange className="h-4 w-4" />
+                    آخر 3 أشهر
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickFilter('currentMonth')}
+                    className="gap-2"
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    الشهر الحالي
+                  </Button>
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                  <div>
+                    <Label>مستوى العرض</Label>
+                    <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع المستويات</SelectItem>
+                        <SelectItem value="1">المستوى الأول</SelectItem>
+                        <SelectItem value="2">المستوى الثاني</SelectItem>
+                        <SelectItem value="3">المستوى الثالث</SelectItem>
+                        <SelectItem value="4">المستوى الرابع</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>الفرع</Label>
+                    <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر الفرع" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">جميع الفروع</SelectItem>
+                        {branches.map(branch => (
+                          <SelectItem key={branch.id} value={branch.id}>
+                            {branch.code} - {branch.name_ar}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>من تاريخ</Label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>إلى تاريخ</Label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="branches">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>اختر الفرع</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {branches.map((branch, index) => (
+                    <Card
+                      key={branch.id}
+                      className={`cursor-pointer transition-all hover:shadow-lg ${
+                        branchesTabBranch === branch.id ? 'border-primary border-2 bg-primary/5' : 'hover:border-primary/50'
+                      }`}
+                      onClick={() => {
+                        setBranchesTabBranch(branch.id);
+                        setSelectedBranch(branch.id);
+                      }}
+                    >
+                      <CardContent className="p-6 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          {index % 2 === 0 ? (
+                            <Building2 className="h-12 w-12 text-primary" />
+                          ) : (
+                            <Store className="h-12 w-12 text-primary" />
+                          )}
+                          <div>
+                            <div className="font-bold text-lg">{branch.name_ar}</div>
+                            <div className="text-sm text-muted-foreground">{branch.code}</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {branchesTabBranch && (
+              <Card className="mb-6 no-print">
+                <CardHeader>
+                  <CardTitle>فلترة الفترة</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 flex gap-2 justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuickFilter('currentYear')}
+                      className="gap-2"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      السنة الحالية
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuickFilter('last3Months')}
+                      className="gap-2"
+                    >
+                      <CalendarRange className="h-4 w-4" />
+                      آخر 3 أشهر
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuickFilter('currentMonth')}
+                      className="gap-2"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                      الشهر الحالي
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>مستوى العرض</Label>
+                      <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">جميع المستويات</SelectItem>
+                          <SelectItem value="1">المستوى الأول</SelectItem>
+                          <SelectItem value="2">المستوى الثاني</SelectItem>
+                          <SelectItem value="3">المستوى الثالث</SelectItem>
+                          <SelectItem value="4">المستوى الرابع</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>من تاريخ</Label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>إلى تاريخ</Label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
 
         <Card className="print-content">
           <CardHeader>
