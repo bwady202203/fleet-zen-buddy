@@ -107,9 +107,9 @@ const JournalEntriesReports = () => {
             debit,
             credit,
             chart_of_accounts (code, name_ar),
-            cost_centers (code, name_ar),
-            projects (code, name_ar),
-            branches (code, name_ar)
+            cost_centers (id, code, name_ar),
+            projects (id, code, name_ar),
+            branches (id, code, name_ar)
           )
         `)
         .order('date', { ascending: true })
