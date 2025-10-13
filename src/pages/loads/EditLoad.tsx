@@ -19,6 +19,7 @@ const EditLoad = () => {
   
   const [formData, setFormData] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
+    invoice_date: "",
     company_id: "",
     load_type_id: "",
     driver_id: "",
@@ -51,6 +52,7 @@ const EditLoad = () => {
       if (loadData) {
         setFormData({
           date: loadData.date,
+          invoice_date: loadData.invoice_date || "",
           company_id: loadData.company_id || "",
           load_type_id: loadData.load_type_id || "",
           driver_id: loadData.driver_id || "",
@@ -106,6 +108,7 @@ const EditLoad = () => {
         .from('loads')
         .update({
           date: formData.date,
+          invoice_date: formData.invoice_date || null,
           company_id: formData.company_id,
           load_type_id: formData.load_type_id,
           driver_id: formData.driver_id,
@@ -176,6 +179,16 @@ const EditLoad = () => {
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invoice_date">تاريخ الفاتورة / Invoice Date</Label>
+                  <Input
+                    id="invoice_date"
+                    type="date"
+                    value={formData.invoice_date}
+                    onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
                   />
                 </div>
 

@@ -1189,6 +1189,7 @@ export type Database = {
           date: string
           driver_id: string | null
           id: string
+          invoice_date: string | null
           invoice_number: string | null
           load_number: string
           load_type_id: string | null
@@ -1209,6 +1210,7 @@ export type Database = {
           date?: string
           driver_id?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_number?: string | null
           load_number: string
           load_type_id?: string | null
@@ -1229,6 +1231,7 @@ export type Database = {
           date?: string
           driver_id?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_number?: string | null
           load_number?: string
           load_type_id?: string | null

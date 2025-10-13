@@ -21,6 +21,7 @@ const LoadsRegister = () => {
     date: new Date().toISOString().split('T')[0],
     loadNumber: '',
     invoiceNumber: '',
+    invoiceDate: '',
     companyId: '',
     loadTypeId: '',
     driverId: '',
@@ -148,6 +149,7 @@ const LoadsRegister = () => {
       const { error } = await supabase.from('loads').insert({
         load_number: formData.loadNumber,
         invoice_number: formData.invoiceNumber || null,
+        invoice_date: formData.invoiceDate || null,
         date: formData.date,
         company_id: formData.companyId || null,
         load_type_id: formData.loadTypeId || null,
@@ -172,6 +174,7 @@ const LoadsRegister = () => {
         date: new Date().toISOString().split('T')[0],
         loadNumber: '',
         invoiceNumber: '',
+        invoiceDate: '',
         companyId: '',
         loadTypeId: '',
         driverId: '',
@@ -244,6 +247,16 @@ const LoadsRegister = () => {
                     value={formData.invoiceNumber}
                     onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
                     placeholder="اختياري / Optional"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invoiceDate">تاريخ الفاتورة / Invoice Date</Label>
+                  <Input
+                    id="invoiceDate"
+                    type="date"
+                    value={formData.invoiceDate}
+                    onChange={(e) => setFormData({ ...formData, invoiceDate: e.target.value })}
                   />
                 </div>
 
