@@ -137,6 +137,7 @@ const LoadsList = () => {
     const exportData = filteredLoads.map(load => ({
       'التاريخ': format(new Date(load.date), 'yyyy-MM-dd'),
       'رقم الشحنة': load.load_number,
+      'تاريخ الفاتورة': load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : '-',
       'الشركة': load.companies?.name || '-',
       'نوع الشحنة': load.load_types?.name || '-',
       'السائق': load.drivers?.name || '-',
@@ -439,51 +440,55 @@ const LoadsList = () => {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-right">التاريخ / Date</TableHead>
-                          <TableHead className="text-right">رقم الشحنة / Load Number</TableHead>
-                          <TableHead className="text-right">الشركة / Company</TableHead>
-                          <TableHead className="text-right">نوع الشحنة / Load Type</TableHead>
-                          <TableHead className="text-right">السائق / Driver</TableHead>
-                          <TableHead className="text-right">رقم الشاحنة / Truck Number</TableHead>
-                          <TableHead className="text-right">الكمية / Quantity</TableHead>
-                          <TableHead className="text-right">السعر / Price</TableHead>
-                          <TableHead className="text-right print:hidden">إجراءات / Actions</TableHead>
-                        </TableRow>
+                         <TableRow>
+                           <TableHead className="text-right">التاريخ / Date</TableHead>
+                           <TableHead className="text-right">رقم الشحنة / Load Number</TableHead>
+                           <TableHead className="text-right">تاريخ الفاتورة / Invoice Date</TableHead>
+                           <TableHead className="text-right">الشركة / Company</TableHead>
+                           <TableHead className="text-right">نوع الشحنة / Load Type</TableHead>
+                           <TableHead className="text-right">السائق / Driver</TableHead>
+                           <TableHead className="text-right">رقم الشاحنة / Truck Number</TableHead>
+                           <TableHead className="text-right">الكمية / Quantity</TableHead>
+                           <TableHead className="text-right">السعر / Price</TableHead>
+                           <TableHead className="text-right print:hidden">إجراءات / Actions</TableHead>
+                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredLoads.map((load) => (
-                          <TableRow key={load.id} className="hover:bg-muted/50">
-                            <TableCell className="text-right">
-                              {format(new Date(load.date), 'yyyy-MM-dd')}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">{load.load_number}</TableCell>
-                            <TableCell className="text-right">{load.companies?.name || '-'}</TableCell>
-                            <TableCell className="text-right">{load.load_types?.name || '-'}</TableCell>
-                            <TableCell className="text-right">{load.drivers?.name || '-'}</TableCell>
-                            <TableCell className="text-right">{load.truck_number || '-'}</TableCell>
-                            <TableCell className="text-right">{load.quantity}</TableCell>
-                            <TableCell className="text-right">{load.unit_price.toFixed(2)}</TableCell>
-                            <TableCell className="text-right print:hidden">
-                              <div className="flex gap-2 justify-end">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => navigate(`/loads/edit/${load.id}`)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(load.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                         {filteredLoads.map((load) => (
+                           <TableRow key={load.id} className="hover:bg-muted/50">
+                             <TableCell className="text-right">
+                               {format(new Date(load.date), 'yyyy-MM-dd')}
+                             </TableCell>
+                             <TableCell className="text-right font-medium">{load.load_number}</TableCell>
+                             <TableCell className="text-right">
+                               {load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : '-'}
+                             </TableCell>
+                             <TableCell className="text-right">{load.companies?.name || '-'}</TableCell>
+                             <TableCell className="text-right">{load.load_types?.name || '-'}</TableCell>
+                             <TableCell className="text-right">{load.drivers?.name || '-'}</TableCell>
+                             <TableCell className="text-right">{load.truck_number || '-'}</TableCell>
+                             <TableCell className="text-right">{load.quantity}</TableCell>
+                             <TableCell className="text-right">{load.unit_price.toFixed(2)}</TableCell>
+                             <TableCell className="text-right print:hidden">
+                               <div className="flex gap-2 justify-end">
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={() => navigate(`/loads/edit/${load.id}`)}
+                                 >
+                                   <Edit className="h-4 w-4" />
+                                 </Button>
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={() => handleDelete(load.id)}
+                                 >
+                                   <Trash2 className="h-4 w-4 text-destructive" />
+                                 </Button>
+                               </div>
+                             </TableCell>
+                           </TableRow>
+                         ))}
                       </TableBody>
                     </Table>
                   </div>
