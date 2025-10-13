@@ -4,31 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Calculator } from 'lucide-react';
 import CustodyNavbar from '@/components/CustodyNavbar';
 
-interface Representative {
+interface RepresentativeAccount {
   id: string;
-  name: string;
-  total_custody: number;
-  current_custody: number;
-  remaining_custody: number;
-}
-
-interface RepresentativeWithTransfers extends Representative {
-  received_custody: number;
+  name_ar: string;
+  code: string;
+  balance: number;
+  debit_total: number;
+  credit_total: number;
 }
 
 const CustodyRepresentatives = () => {
-  const [representatives, setRepresentatives] = useState<RepresentativeWithTransfers[]>([]);
+  const [representatives, setRepresentatives] = useState<RepresentativeAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newRep, setNewRep] = useState({
-    name: '',
-    total_custody: 0
-  });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<RepresentativeAccount | null>(null);
+  const [newRepName, setNewRepName] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editCode, setEditCode] = useState('');
+  const [custodyParentId, setCustodyParentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRepresentatives();
@@ -36,49 +35,61 @@ const CustodyRepresentatives = () => {
 
   const fetchRepresentatives = async () => {
     try {
-      const { data, error } = await supabase
-        .from('custody_representatives')
-        .select('*')
-        .order('created_at', { ascending: false });
+      setLoading(true);
+      
+      // Find the custody parent account (العهد)
+      const { data: custodyAccount, error: custodyError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('name_ar', 'العهد')
+        .maybeSingle();
 
-      if (error) throw error;
+      if (custodyError) throw custodyError;
+      
+      if (!custodyAccount) {
+        toast.error('لم يتم العثور على حساب العهد في الدليل المحاسبي');
+        setLoading(false);
+        return;
+      }
 
-      // Fetch transfer amounts and expenses for each representative
-      const repsWithTransfers = await Promise.all(
-        (data || []).map(async (rep) => {
-          // Get received custody (total transfers)
-          const { data: transfers } = await supabase
-            .from('custody_transfers')
-            .select('amount')
-            .eq('recipient_name', rep.name);
+      setCustodyParentId(custodyAccount.id);
 
-          const received_custody = transfers?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      // Fetch all sub-accounts under custody account
+      const { data: subAccounts, error: subAccountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('id, name_ar, code, balance')
+        .eq('parent_id', custodyAccount.id)
+        .order('code');
 
-          // Get total expenses
-          const { data: expenses } = await supabase
-            .from('custody_expenses')
-            .select('amount')
-            .eq('representative_id', rep.id);
-          
-          const total_expenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+      if (subAccountsError) throw subAccountsError;
 
-          // Calculate current custody (received - expenses)
-          const current_custody = received_custody - total_expenses;
-          const remaining_custody = rep.total_custody - current_custody;
+      // Fetch journal entry lines for each account to calculate debit/credit totals
+      const accountsWithBalances = await Promise.all(
+        (subAccounts || []).map(async (account) => {
+          const { data: entries, error: entriesError } = await supabase
+            .from('journal_entry_lines')
+            .select('debit, credit')
+            .eq('account_id', account.id);
+
+          if (entriesError) throw entriesError;
+
+          const debit_total = entries?.reduce((sum, e) => sum + Number(e.debit || 0), 0) || 0;
+          const credit_total = entries?.reduce((sum, e) => sum + Number(e.credit || 0), 0) || 0;
+          const balance = debit_total - credit_total;
 
           return {
-            ...rep,
-            received_custody,
-            current_custody,
-            remaining_custody
+            ...account,
+            debit_total,
+            credit_total,
+            balance,
           };
         })
       );
 
-      setRepresentatives(repsWithTransfers);
-    } catch (error) {
+      setRepresentatives(accountsWithBalances);
+    } catch (error: any) {
       console.error('Error fetching representatives:', error);
-      toast.error('حدث خطأ أثناء جلب البيانات');
+      toast.error('حدث خطأ في جلب بيانات المندوبين');
     } finally {
       setLoading(false);
     }
@@ -86,268 +97,133 @@ const CustodyRepresentatives = () => {
 
   const handleAddRepresentative = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!newRep.name) {
+    
+    if (!newRepName.trim()) {
       toast.error('الرجاء إدخال اسم المندوب');
       return;
     }
 
+    if (!custodyParentId) {
+      toast.error('لم يتم العثور على حساب العهد الرئيسي');
+      return;
+    }
+
     try {
-      // First, ensure we have the basic account structure
-      // Find or create "الأصول" (Assets)
-      let assetsAccountId;
-      const { data: assetsAccount } = await supabase
+      // Get the next account code
+      const { data: existingAccounts, error: existingError } = await supabase
         .from('chart_of_accounts')
-        .select('id')
-        .eq('name_ar', 'الأصول')
-        .maybeSingle();
+        .select('code')
+        .eq('parent_id', custodyParentId)
+        .order('code', { ascending: false })
+        .limit(1);
 
-      if (assetsAccount) {
-        assetsAccountId = assetsAccount.id;
-      } else {
-        // Create Assets account
-        const { data: newAssets, error: assetsError } = await supabase
-          .from('chart_of_accounts')
-          .insert([{
-            code: '1',
-            name_ar: 'الأصول',
-            name_en: 'Assets',
-            type: 'asset',
-            parent_id: null,
-            is_active: true
-          }])
-          .select()
-          .single();
+      if (existingError) throw existingError;
 
-        if (assetsError) throw assetsError;
-        assetsAccountId = newAssets.id;
+      let nextCode = '110201';
+      if (existingAccounts && existingAccounts.length > 0) {
+        const lastCode = parseInt(existingAccounts[0].code);
+        nextCode = (lastCode + 1).toString();
       }
 
-      // Find or create "الأصول المتداولة" (Current Assets)
-      let currentAssetsAccountId;
-      const { data: currentAssetsAccount } = await supabase
+      // Create account in chart of accounts
+      const { error: insertError } = await supabase
         .from('chart_of_accounts')
-        .select('id')
-        .eq('name_ar', 'الأصول المتداولة')
-        .maybeSingle();
-
-      if (currentAssetsAccount) {
-        currentAssetsAccountId = currentAssetsAccount.id;
-      } else {
-        // Create Current Assets account
-        const { data: newCurrentAssets, error: currentAssetsError } = await supabase
-          .from('chart_of_accounts')
-          .insert([{
-            code: '11',
-            name_ar: 'الأصول المتداولة',
-            name_en: 'Current Assets',
-            type: 'asset',
-            parent_id: assetsAccountId,
-            is_active: true
-          }])
-          .select()
-          .single();
-
-        if (currentAssetsError) throw currentAssetsError;
-        currentAssetsAccountId = newCurrentAssets.id;
-      }
-
-      // Find or create "العهد" (Custody) account
-      let custodyAccountId;
-      const { data: custodyAccount } = await supabase
-        .from('chart_of_accounts')
-        .select('id')
-        .eq('name_ar', 'العهد')
-        .maybeSingle();
-
-      if (custodyAccount) {
-        custodyAccountId = custodyAccount.id;
-      } else {
-        // Create Custody account
-        const { data: newCustody, error: custodyError } = await supabase
-          .from('chart_of_accounts')
-          .insert([{
-            code: '1102',
-            name_ar: 'العهد',
-            name_en: 'Custody',
-            type: 'asset',
-            parent_id: currentAssetsAccountId,
-            is_active: true
-          }])
-          .select()
-          .single();
-
-        if (custodyError) throw custodyError;
-        custodyAccountId = newCustody.id;
-      }
-
-      // Create account for the specific representative
-      const accountCode = `110201${Math.floor(Math.random() * 1000)}`;
-      
-      const { data: newRepAccount, error: accountError } = await supabase
-        .from('chart_of_accounts')
-        .insert([{
-          code: accountCode,
-          name_ar: `عهدة ${newRep.name}`,
-          name_en: `Custody ${newRep.name}`,
+        .insert({
+          code: nextCode,
+          name_ar: `عهدة ${newRepName}`,
+          name_en: `${newRepName} Custody`,
           type: 'asset',
-          parent_id: custodyAccountId,
-          is_active: true
-        }])
-        .select()
-        .single();
+          parent_id: custodyParentId,
+          balance: 0
+        });
 
-      if (accountError) throw accountError;
-      const repAccountId = newRepAccount.id;
+      if (insertError) throw insertError;
 
-      // Create the representative
-      const { error } = await supabase
-        .from('custody_representatives')
-        .insert([{
-          name: newRep.name,
-          total_custody: newRep.total_custody,
-          current_custody: 0,
-          remaining_custody: newRep.total_custody
-        }]);
-
-      if (error) throw error;
-
-      // Create opening journal entry for the total custody if amount > 0
-      if (newRep.total_custody > 0 && repAccountId) {
-        // Find or create "حقوق الملكية" (Equity)
-        let equityAccountId;
-        const { data: equityAccount } = await supabase
-          .from('chart_of_accounts')
-          .select('id')
-          .eq('name_ar', 'حقوق الملكية')
-          .maybeSingle();
-
-        if (!equityAccount) {
-          // Create Equity account
-          const { data: newEquity } = await supabase
-            .from('chart_of_accounts')
-            .insert([{
-              code: '3',
-              name_ar: 'حقوق الملكية',
-              name_en: 'Equity',
-              type: 'equity',
-              parent_id: null,
-              is_active: true
-            }])
-            .select()
-            .single();
-          
-          equityAccountId = newEquity?.id;
-        } else {
-          equityAccountId = equityAccount.id;
-        }
-
-        // Find or create "رأس المال"
-        let capitalAccountId;
-        const { data: capitalAccount } = await supabase
-          .from('chart_of_accounts')
-          .select('id')
-          .eq('name_ar', 'رأس المال')
-          .maybeSingle();
-
-        if (capitalAccount) {
-          capitalAccountId = capitalAccount.id;
-        } else if (equityAccountId) {
-          const { data: newCapital } = await supabase
-            .from('chart_of_accounts')
-            .insert([{
-              code: '31',
-              name_ar: 'رأس المال',
-              name_en: 'Capital',
-              type: 'equity',
-              parent_id: equityAccountId,
-              is_active: true
-            }])
-            .select()
-            .single();
-          
-          capitalAccountId = newCapital?.id;
-        }
-
-        if (capitalAccountId) {
-          // Generate entry number
-          const { data: lastEntry } = await supabase
-            .from('journal_entries')
-            .select('entry_number')
-            .order('entry_number', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          let nextNumber = 1;
-          if (lastEntry?.entry_number) {
-            const match = lastEntry.entry_number.match(/\d+/);
-            if (match) {
-              nextNumber = parseInt(match[0]) + 1;
-            }
-          }
-          const entryNumber = `JE-${nextNumber.toString().padStart(6, '0')}`;
-
-          // Insert journal entry
-          const { data: journalEntry, error: journalError } = await supabase
-            .from('journal_entries')
-            .insert([{
-              entry_number: entryNumber,
-              date: new Date().toISOString().split('T')[0],
-              description: `قيد افتتاحي - عهدة ${newRep.name}`
-            }])
-            .select()
-            .single();
-
-          if (!journalError && journalEntry) {
-            // Insert journal entry lines (debit custody, credit capital)
-            await supabase
-              .from('journal_entry_lines')
-              .insert([
-                {
-                  journal_entry_id: journalEntry.id,
-                  account_id: repAccountId,
-                  debit: newRep.total_custody,
-                  credit: 0,
-                  description: `قيد افتتاحي - إجمالي العهدة المخصصة`
-                },
-                {
-                  journal_entry_id: journalEntry.id,
-                  account_id: capitalAccountId,
-                  debit: 0,
-                  credit: newRep.total_custody,
-                  description: `قيد افتتاحي - إجمالي العهدة المخصصة`
-                }
-              ]);
-          }
-        }
-      }
-
-      toast.success('تم إضافة المندوب وحسابه في شجرة الحسابات والقيد الافتتاحي بنجاح');
+      toast.success('تم إضافة المندوب بنجاح');
       setIsAddDialogOpen(false);
-      setNewRep({ name: '', total_custody: 0 });
+      setNewRepName('');
       fetchRepresentatives();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding representative:', error);
-      toast.error('حدث خطأ أثناء إضافة المندوب');
+      toast.error('حدث خطأ في إضافة المندوب');
     }
   };
 
-  const handleDeleteRepresentative = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المندوب؟')) return;
+  const handleEditAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingAccount) return;
+
+    if (!editName.trim()) {
+      toast.error('الرجاء إدخال اسم الحساب');
+      return;
+    }
+
+    if (!editCode.trim()) {
+      toast.error('الرجاء إدخال رمز الحساب');
+      return;
+    }
 
     try {
+      const { error: updateError } = await supabase
+        .from('chart_of_accounts')
+        .update({
+          name_ar: editName,
+          code: editCode,
+        })
+        .eq('id', editingAccount.id);
+
+      if (updateError) throw updateError;
+
+      toast.success('تم تحديث الحساب بنجاح');
+      setIsEditDialogOpen(false);
+      setEditingAccount(null);
+      setEditName('');
+      setEditCode('');
+      fetchRepresentatives();
+    } catch (error: any) {
+      console.error('Error updating account:', error);
+      toast.error('حدث خطأ في تحديث الحساب');
+    }
+  };
+
+  const openEditDialog = (account: RepresentativeAccount) => {
+    setEditingAccount(account);
+    setEditName(account.name_ar);
+    setEditCode(account.code);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteAccount = async (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الحساب؟')) return;
+
+    try {
+      // Check if account has any journal entries
+      const { data: entries, error: entriesError } = await supabase
+        .from('journal_entry_lines')
+        .select('id')
+        .eq('account_id', id)
+        .limit(1);
+
+      if (entriesError) throw entriesError;
+
+      if (entries && entries.length > 0) {
+        toast.error('لا يمكن حذف الحساب لوجود قيود محاسبية مرتبطة به');
+        return;
+      }
+
       const { error } = await supabase
-        .from('custody_representatives')
+        .from('chart_of_accounts')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
 
-      toast.success('تم حذف المندوب بنجاح');
+      toast.success('تم حذف الحساب بنجاح');
       fetchRepresentatives();
-    } catch (error) {
-      console.error('Error deleting representative:', error);
-      toast.error('حدث خطأ أثناء حذف المندوب');
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      toast.error('حدث خطأ في حذف الحساب');
     }
   };
 
@@ -366,7 +242,7 @@ const CustodyRepresentatives = () => {
           <div>
             <h1 className="text-3xl font-bold">إدارة العهد - المندوبين</h1>
             <p className="text-muted-foreground mt-1">
-              عرض وإدارة المندوبين وعهدهم
+              عرض وإدارة المندوبين وعهدهم من الدليل المحاسبي
             </p>
           </div>
         </div>
@@ -392,21 +268,10 @@ const CustodyRepresentatives = () => {
                   <Label htmlFor="name">اسم المندوب</Label>
                   <Input
                     id="name"
-                    value={newRep.name}
-                    onChange={(e) => setNewRep({ ...newRep, name: e.target.value })}
+                    value={newRepName}
+                    onChange={(e) => setNewRepName(e.target.value)}
                     placeholder="أدخل اسم المندوب"
                     required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="total">إجمالي العهدة</Label>
-                  <Input
-                    id="total"
-                    type="number"
-                    step="0.01"
-                    value={newRep.total_custody}
-                    onChange={(e) => setNewRep({ ...newRep, total_custody: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
                   />
                 </div>
                 <Button type="submit" className="w-full">
@@ -417,59 +282,99 @@ const CustodyRepresentatives = () => {
           </Dialog>
         </div>
 
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تعديل بيانات الحساب</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditAccount} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">اسم الحساب</Label>
+                <Input
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="أدخل اسم الحساب"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-code">رمز الحساب</Label>
+                <Input
+                  id="edit-code"
+                  value={editCode}
+                  onChange={(e) => setEditCode(e.target.value)}
+                  placeholder="أدخل رمز الحساب"
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full">
+                  حفظ التعديلات
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {representatives.map((rep) => (
             <Card key={rep.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{rep.name}</CardTitle>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteRepresentative(rep.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex-1">
+                    <CardTitle className="text-xl">{rep.name_ar}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">كود: {rep.code}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(rep)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteAccount(rep.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="h-5 w-5 text-primary" />
-                    <span className="font-medium">إجمالي العهدة</span>
-                  </div>
-                  <span className="text-lg font-bold">
-                    {(rep.total_custody || 0).toLocaleString('ar-SA')} ريال
-                  </span>
-                </div>
-
                 <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">العهدة المستلمة</span>
+                    <Calculator className="h-5 w-5 text-green-600" />
+                    <span className="font-medium">إجمالي المدين</span>
                   </div>
                   <span className="text-lg font-bold text-green-600">
-                    {(rep.received_custody || 0).toLocaleString('ar-SA')} ريال
+                    {rep.debit_total.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium">العهدة الحالية</span>
+                    <Calculator className="h-5 w-5 text-red-600" />
+                    <span className="font-medium">إجمالي الدائن</span>
                   </div>
-                  <span className="text-lg font-bold text-blue-600">
-                    {(rep.current_custody || 0).toLocaleString('ar-SA')} ريال
+                  <span className="text-lg font-bold text-red-600">
+                    {rep.credit_total.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-orange-500/10 rounded-lg">
+                <div className={`flex items-center justify-between p-3 rounded-lg ${
+                  rep.balance >= 0 ? 'bg-primary/10' : 'bg-orange-500/10'
+                }`}>
                   <div className="flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5 text-orange-600" />
-                    <span className="font-medium">المتبقي</span>
+                    <Calculator className={`h-5 w-5 ${rep.balance >= 0 ? 'text-primary' : 'text-orange-600'}`} />
+                    <span className="font-medium">الرصيد الختامي</span>
                   </div>
-                  <span className="text-lg font-bold text-orange-600">
-                    {(rep.remaining_custody || 0).toLocaleString('ar-SA')} ريال
+                  <span className={`text-lg font-bold ${rep.balance >= 0 ? 'text-primary' : 'text-orange-600'}`}>
+                    {rep.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ريال
                   </span>
                 </div>
               </CardContent>
