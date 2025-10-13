@@ -491,15 +491,16 @@ const TrialBalance = () => {
         if (!matchesAccount) return false;
         
         // Apply branch filter
-        // When "all" is selected or no branch is selected: show everything
-        // When a specific branch is selected: show only lines with that branch_id
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // For specific branch selection, only show exact matches
-          // This means null/empty branch_id lines won't show when filtering by branch
-          return line.branch_id === selectedBranch;
+          // When a specific branch is selected:
+          // Include lines that match the branch OR have no branch (null)
+          // This shows old entries (null) and new entries for this branch
+          const hasNoBranch = !line.branch_id || line.branch_id === null;
+          const matchesBranch = line.branch_id === selectedBranch;
+          return hasNoBranch || matchesBranch;
         }
         
-        // For "all" or no selection: show everything including null branch_id
+        // For "all": show everything
         return true;
       });
 
@@ -528,15 +529,16 @@ const TrialBalance = () => {
         if (!matchesAccount) return false;
         
         // Apply branch filter
-        // When "all" is selected or no branch is selected: show everything
-        // When a specific branch is selected: show only lines with that branch_id
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // For specific branch selection, only show exact matches
-          // This means null/empty branch_id lines won't show when filtering by branch
-          return line.branch_id === selectedBranch;
+          // When a specific branch is selected:
+          // Include lines that match the branch OR have no branch (null)
+          // This shows old entries (null) and new entries for this branch
+          const hasNoBranch = !line.branch_id || line.branch_id === null;
+          const matchesBranch = line.branch_id === selectedBranch;
+          return hasNoBranch || matchesBranch;
         }
         
-        // For "all" or no selection: show everything including null branch_id
+        // For "all": show everything
         return true;
       });
 
