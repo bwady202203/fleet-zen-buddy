@@ -28,6 +28,7 @@ const BalanceSheet = () => {
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("");
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
+  const [accountLevel, setAccountLevel] = useState<number>(3); // 1, 2, or 3
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -165,9 +166,44 @@ const BalanceSheet = () => {
     }
   };
 
-  const assets = balances.filter(b => b.accountType === 'asset' && b.balance !== 0);
-  const liabilities = balances.filter(b => b.accountType === 'liability' && b.balance !== 0);
-  const equity = balances.filter(b => b.accountType === 'equity' && b.balance !== 0);
+  // Filter accounts based on level
+  const getAccountLevel = (code: string): number => {
+    const parts = code.split('/');
+    return parts.length;
+  };
+
+  const filterByLevel = (items: AccountBalance[]): AccountBalance[] => {
+    if (accountLevel === 3) {
+      return items.filter(b => b.balance !== 0);
+    }
+    
+    // Group by level
+    const groupedMap = new Map<string, AccountBalance>();
+    
+    items.forEach(item => {
+      const parts = item.accountCode.split('/');
+      const levelCode = parts.slice(0, accountLevel).join('/');
+      
+      if (!groupedMap.has(levelCode)) {
+        groupedMap.set(levelCode, {
+          accountId: levelCode,
+          accountCode: levelCode,
+          accountName: `${parts.slice(0, accountLevel).join(' / ')}`,
+          accountType: item.accountType,
+          balance: 0
+        });
+      }
+      
+      const grouped = groupedMap.get(levelCode)!;
+      grouped.balance += item.balance;
+    });
+    
+    return Array.from(groupedMap.values()).filter(b => b.balance !== 0);
+  };
+
+  const assets = filterByLevel(balances.filter(b => b.accountType === 'asset'));
+  const liabilities = filterByLevel(balances.filter(b => b.accountType === 'liability'));
+  const equity = filterByLevel(balances.filter(b => b.accountType === 'equity'));
 
   const totalAssets = assets.reduce((sum, b) => sum + b.balance, 0);
   const totalLiabilities = liabilities.reduce((sum, b) => sum + b.balance, 0);
@@ -290,9 +326,9 @@ const BalanceSheet = () => {
 
         <Card className="mb-6 no-print">
           <CardHeader>
-            <CardTitle>التاريخ</CardTitle>
+            <CardTitle>الفلاتر</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-3 gap-4">
             <div>
               <Label>الفرع</Label>
               <Select value={selectedBranch} onValueChange={setSelectedBranch}>
@@ -317,6 +353,19 @@ const BalanceSheet = () => {
                 onChange={(e) => setAsOfDate(e.target.value)}
                 className="max-w-xs"
               />
+            </div>
+            <div>
+              <Label>مستوى العرض</Label>
+              <Select value={accountLevel.toString()} onValueChange={(v) => setAccountLevel(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">المستوى الأول</SelectItem>
+                  <SelectItem value="2">المستوى الثاني</SelectItem>
+                  <SelectItem value="3">المستوى الثالث (تفصيلي)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
