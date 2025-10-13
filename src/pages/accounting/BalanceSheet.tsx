@@ -29,7 +29,8 @@ const BalanceSheet = () => {
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("");
-  const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +87,7 @@ const BalanceSheet = () => {
       supabase.removeChannel(journalChannel);
       supabase.removeChannel(accountsChannel);
     };
-  }, [asOfDate, selectedBranch]);
+  }, [startDate, endDate, selectedBranch]);
 
   const fetchBranches = async () => {
     try {
@@ -115,7 +116,8 @@ const BalanceSheet = () => {
 
       if (accountsError) throw accountsError;
 
-      const { data: entriesData, error: entriesError } = await supabase
+      // Build query for journal entry lines with date filter
+      let query = supabase
         .from('journal_entry_lines')
         .select(`
           account_id,
@@ -123,8 +125,16 @@ const BalanceSheet = () => {
           credit,
           branch_id,
           journal_entries!inner (date)
-        `)
-        .lte('journal_entries.date', asOfDate);
+        `);
+
+      if (startDate) {
+        query = query.gte('journal_entries.date', startDate);
+      }
+      if (endDate) {
+        query = query.lte('journal_entries.date', endDate);
+      }
+
+      const { data: entriesData, error: entriesError } = await query;
 
       if (entriesError) throw entriesError;
 
@@ -370,7 +380,8 @@ const BalanceSheet = () => {
           <div className="print-title">الميزانية العمومية</div>
           <div className="print-subtitle">Balance Sheet - قائمة المركز المالي</div>
           <div className="print-date">
-            <strong>كما في:</strong> {new Date(asOfDate).toLocaleDateString('en-GB')} | 
+            {startDate && <><strong>من:</strong> {new Date(startDate).toLocaleDateString('en-GB')} - </>}
+            <strong>إلى:</strong> {new Date(endDate).toLocaleDateString('en-GB')} | 
             <strong className="mr-4">تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-GB')}
           </div>
         </div>
@@ -379,7 +390,7 @@ const BalanceSheet = () => {
           <CardHeader>
             <CardTitle>الفلاتر</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-3 gap-4">
             <div>
               <Label>الفرع</Label>
               <Select value={selectedBranch} onValueChange={setSelectedBranch}>
@@ -397,11 +408,20 @@ const BalanceSheet = () => {
               </Select>
             </div>
             <div>
-              <Label>كما في</Label>
+              <Label>من تاريخ</Label>
               <Input
                 type="date"
-                value={asOfDate}
-                onChange={(e) => setAsOfDate(e.target.value)}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="max-w-xs"
+              />
+            </div>
+            <div>
+              <Label>إلى تاريخ</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="max-w-xs"
               />
             </div>
