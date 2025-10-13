@@ -57,6 +57,7 @@ import Advances from "./pages/hr/Advances";
 import Additions from "./pages/hr/Additions";
 import Deductions from "./pages/hr/Deductions";
 import Leaves from "./pages/hr/Leaves";
+import Attendance from "./pages/hr/Attendance";
 import BulkEmployees from "./pages/BulkEmployees";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
@@ -119,8 +120,9 @@ const App = () => {
                                   <Route path="/hr/advances" element={<Advances />} />
                                   <Route path="/hr/additions" element={<Additions />} />
                                   <Route path="/hr/deductions" element={<Deductions />} />
-                                  <Route path="/hr/leaves" element={<Leaves />} />
-                                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
+                  <Route path="/hr/leaves" element={<Leaves />} />
+                  <Route path="/hr/attendance" element={<Attendance />} />
+                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
                                   <Route path="/loads" element={<Loads />} />
                                   <Route path="/loads/register" element={<LoadsRegister />} />
                                   <Route path="/loads/list" element={<LoadsList />} />
