@@ -730,51 +730,49 @@ const LoadReports = () => {
                 <div className="rounded-lg border overflow-hidden bg-background">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="font-bold">رقم الشحنة</TableHead>
-                        <TableHead className="font-bold">التاريخ الميلادي</TableHead>
-                        <TableHead className="font-bold">التاريخ الهجري</TableHead>
-                        <TableHead className="font-bold">العميل</TableHead>
-                        <TableHead className="font-bold">نوع الحمولة</TableHead>
-                        <TableHead className="font-bold">الكمية</TableHead>
-                        <TableHead className="font-bold">المبلغ المستحق</TableHead>
-                        <TableHead className="font-bold text-center">إجراءات</TableHead>
-                      </TableRow>
+                       <TableRow className="bg-muted/50">
+                         <TableHead className="font-bold">رقم الشحنة</TableHead>
+                         <TableHead className="font-bold">التاريخ</TableHead>
+                         <TableHead className="font-bold">العميل</TableHead>
+                         <TableHead className="font-bold">نوع الحمولة</TableHead>
+                         <TableHead className="font-bold">الكمية</TableHead>
+                         <TableHead className="font-bold">المبلغ المستحق</TableHead>
+                         <TableHead className="font-bold text-center">إجراءات</TableHead>
+                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {report.loads.map((load: any) => (
-                        <TableRow key={load.id}>
-                          <TableCell className="font-medium">{load.load_number}</TableCell>
-                          <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
-                          <TableCell>{convertToHijri(load.date)}</TableCell>
-                          <TableCell>{load.companies?.name || '-'}</TableCell>
-                          <TableCell>{load.load_types?.name || '-'}</TableCell>
-                          <TableCell>{load.quantity}</TableCell>
-                          <TableCell className="font-bold text-primary">
-                            {load.total_amount.toFixed(2)} ر.س
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2 justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePrintLoad(load)}
-                                title="طباعة"
-                              >
-                                <Printer className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteLoad(load.id)}
-                                title="حذف"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                       {report.loads.map((load: any) => (
+                         <TableRow key={load.id}>
+                           <TableCell className="font-medium">{load.load_number}</TableCell>
+                           <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
+                           <TableCell>{load.companies?.name || '-'}</TableCell>
+                           <TableCell>{load.load_types?.name || '-'}</TableCell>
+                           <TableCell>{load.quantity}</TableCell>
+                           <TableCell className="font-bold text-primary">
+                             {load.total_amount.toFixed(2)} ر.س
+                           </TableCell>
+                           <TableCell>
+                             <div className="flex gap-2 justify-center">
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handlePrintLoad(load)}
+                                 title="طباعة"
+                               >
+                                 <Printer className="h-4 w-4" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handleDeleteLoad(load.id)}
+                                 title="حذف"
+                               >
+                                 <Trash2 className="h-4 w-4 text-destructive" />
+                               </Button>
+                             </div>
+                           </TableCell>
+                         </TableRow>
+                       ))}
                     </TableBody>
                   </Table>
                 </div>
