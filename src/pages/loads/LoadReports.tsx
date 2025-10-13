@@ -269,7 +269,7 @@ const LoadReports = () => {
               <tr><th>العميل</th><td>${load.companies?.name || '-'}</td></tr>
               <tr><th>نوع الحمولة</th><td>${load.load_types?.name || '-'}</td></tr>
               <tr><th>الكمية</th><td>${load.quantity}</td></tr>
-              <tr><th>المبلغ المستحق</th><td>${((parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0)).toFixed(2)} ر.س</td></tr>
+              <tr><th>السعر</th><td>${parseFloat(load.unit_price).toFixed(2)} ر.س</td></tr>
             </table>
             <script>window.print(); window.close();</script>
           </body>
@@ -808,7 +808,7 @@ const LoadReports = () => {
 
                 <div className="rounded-lg border overflow-hidden bg-background" dir="rtl">
                   <Table>
-                    <TableHeader>
+                     <TableHeader>
                        <TableRow className="bg-muted/50">
                          <TableHead className="font-bold text-right">رقم الشحنة</TableHead>
                          <TableHead className="font-bold text-right">التاريخ</TableHead>
@@ -816,10 +816,10 @@ const LoadReports = () => {
                          <TableHead className="font-bold text-right">العميل</TableHead>
                          <TableHead className="font-bold text-right">نوع الحمولة</TableHead>
                          <TableHead className="font-bold text-right">الكمية</TableHead>
-                         <TableHead className="font-bold text-right">المبلغ المستحق</TableHead>
+                         <TableHead className="font-bold text-right">السعر</TableHead>
                          <TableHead className="font-bold text-center">إجراءات</TableHead>
                        </TableRow>
-                    </TableHeader>
+                     </TableHeader>
                     <TableBody>
                        {report.loads.map((load: any) => (
                          <TableRow key={load.id}>
@@ -830,7 +830,7 @@ const LoadReports = () => {
                            <TableCell className="text-right">{load.load_types?.name || '-'}</TableCell>
                            <TableCell className="text-right">{load.quantity}</TableCell>
                            <TableCell className="font-bold text-primary text-right">
-                             {((parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0)).toFixed(2)} ر.س
+                             {parseFloat(load.unit_price).toFixed(2)} ر.س
                            </TableCell>
                            <TableCell>
                              <div className="flex gap-2 justify-center">
