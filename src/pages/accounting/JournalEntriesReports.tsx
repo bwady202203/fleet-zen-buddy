@@ -68,9 +68,9 @@ const JournalEntriesReports = () => {
   const [filters, setFilters] = useState({
     fromDate: "",
     toDate: "",
-    costCenterId: "",
-    projectId: "",
-    branchId: "",
+    costCenterId: "all",
+    projectId: "all",
+    branchId: "all",
   });
 
   useEffect(() => {
@@ -132,17 +132,17 @@ const JournalEntriesReports = () => {
       entries?.forEach((entry: any) => {
         entry.journal_entry_lines?.forEach((line: any) => {
           // Apply cost center filter
-          if (filters.costCenterId && line.cost_centers?.id !== filters.costCenterId) {
+          if (filters.costCenterId && filters.costCenterId !== 'all' && line.cost_center_id !== filters.costCenterId) {
             return;
           }
 
           // Apply project filter
-          if (filters.projectId && line.projects?.id !== filters.projectId) {
+          if (filters.projectId && filters.projectId !== 'all' && line.project_id !== filters.projectId) {
             return;
           }
 
           // Apply branch filter
-          if (filters.branchId && filters.branchId !== 'all' && line.branches?.id !== filters.branchId) {
+          if (filters.branchId && filters.branchId !== 'all' && line.branch_id !== filters.branchId) {
             return;
           }
 
