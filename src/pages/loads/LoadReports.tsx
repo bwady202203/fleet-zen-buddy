@@ -106,7 +106,10 @@ const LoadReports = () => {
       }, {});
 
       const reports: DriverReport[] = Object.values(grouped).map((group: any) => {
-        const totalCommission = group.loads.reduce((sum: number, load: any) => sum + (load.total_amount || 0), 0);
+        const totalCommission = group.loads.reduce((sum: number, load: any) => {
+          const amount = (parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0);
+          return sum + amount;
+        }, 0);
         const driverPayments = payments?.filter((p: any) => p.driver_id === group.driverId) || [];
         const totalPaid = driverPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
         
@@ -266,7 +269,7 @@ const LoadReports = () => {
               <tr><th>العميل</th><td>${load.companies?.name || '-'}</td></tr>
               <tr><th>نوع الحمولة</th><td>${load.load_types?.name || '-'}</td></tr>
               <tr><th>الكمية</th><td>${load.quantity}</td></tr>
-              <tr><th>المبلغ المستحق</th><td>${load.total_amount.toFixed(2)} ر.س</td></tr>
+              <tr><th>المبلغ المستحق</th><td>${((parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0)).toFixed(2)} ر.س</td></tr>
             </table>
             <script>window.print(); window.close();</script>
           </body>
@@ -315,7 +318,10 @@ const LoadReports = () => {
       })
     }))
     .map(report => {
-      const totalCommission = report.loads.reduce((sum: number, load: any) => sum + (load.total_amount || 0), 0);
+      const totalCommission = report.loads.reduce((sum: number, load: any) => {
+        const amount = (parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0);
+        return sum + amount;
+      }, 0);
       const driverPayments = report.loads.length > 0 ? 
         driverReports.find(r => r.driverId === report.driverId)?.totalPaid || 0 : 0;
       return {
@@ -824,7 +830,7 @@ const LoadReports = () => {
                            <TableCell className="text-right">{load.load_types?.name || '-'}</TableCell>
                            <TableCell className="text-right">{load.quantity}</TableCell>
                            <TableCell className="font-bold text-primary text-right">
-                             {load.total_amount.toFixed(2)} ر.س
+                             {((parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0)).toFixed(2)} ر.س
                            </TableCell>
                            <TableCell>
                              <div className="flex gap-2 justify-center">
