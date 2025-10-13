@@ -131,7 +131,8 @@ const JournalEntries = () => {
             *,
             chart_of_accounts (code, name_ar),
             cost_centers (code, name_ar),
-            projects (code, name_ar)
+            projects (code, name_ar),
+            branches (code, name_ar)
           )
         `)
         .order('date', { ascending: false })
@@ -155,6 +156,9 @@ const JournalEntries = () => {
           projectId: line.project_id,
           projectCode: line.projects?.code,
           projectName: line.projects?.name_ar,
+          branchId: line.branch_id,
+          branchCode: line.branches?.code,
+          branchName: line.branches?.name_ar,
           description: line.description,
           debit: Number(line.debit),
           credit: Number(line.credit),
@@ -471,6 +475,7 @@ const JournalEntries = () => {
         credit: line.credit || 0,
         cost_center_id: line.costCenterId || null,
         project_id: line.projectId || null,
+        branch_id: selectedBranch || null,
       }));
 
       console.log('سطور القيد للحفظ:', lines);
@@ -621,8 +626,12 @@ const JournalEntries = () => {
         description: line.description,
         debit: line.debit,
         credit: line.credit,
-        costCenter: "",
-        projectName: "",
+        costCenterId: line.costCenterId,
+        costCenterName: line.costCenterName,
+        projectId: line.projectId,
+        projectName: line.projectName,
+        branchId: line.branchId,
+        branchName: line.branchName,
       })),
     });
     setDetailDialogOpen(true);
@@ -691,8 +700,9 @@ const JournalEntries = () => {
         description: line.description,
         debit: line.debit || 0,
         credit: line.credit || 0,
-        cost_center_id: line.costCenter ? costCenters.find(cc => cc.code === line.costCenter)?.id : null,
-        project_id: line.projectName ? projects.find(p => p.code === line.projectName)?.id : null,
+        cost_center_id: line.costCenterId || null,
+        project_id: line.projectId || null,
+        branch_id: line.branchId || null,
       }));
 
       const { error: linesError } = await supabase
@@ -729,6 +739,7 @@ const JournalEntries = () => {
         'البيان التفصيلي': line.description,
         'مركز التكلفة': line.costCenterName || '-',
         'المشروع': line.projectName || '-',
+        'الفرع': line.branchName || '-',
         'المدين': line.debit,
         'الدائن': line.credit,
       }));
@@ -748,6 +759,7 @@ const JournalEntries = () => {
       { wch: 25 }, // البيان التفصيلي
       { wch: 20 }, // مركز التكلفة
       { wch: 20 }, // المشروع
+      { wch: 20 }, // الفرع
       { wch: 12 }, // المدين
       { wch: 12 }, // الدائن
     ];
@@ -1320,6 +1332,7 @@ const JournalEntries = () => {
                                         <TableHead className="text-right">البيان / Description</TableHead>
                                         <TableHead className="text-right">مركز التكلفة / Cost Center</TableHead>
                                         <TableHead className="text-right">المشروع / Project</TableHead>
+                                        <TableHead className="text-right">الفرع / Branch</TableHead>
                                         <TableHead className="text-right">المدين / Debit</TableHead>
                                         <TableHead className="text-right">الدائن / Credit</TableHead>
                                       </TableRow>
@@ -1332,6 +1345,7 @@ const JournalEntries = () => {
                                           <TableCell className="text-muted-foreground">{line.description}</TableCell>
                                           <TableCell className="text-muted-foreground">{line.costCenterName || '-'}</TableCell>
                                           <TableCell className="text-muted-foreground">{line.projectName || '-'}</TableCell>
+                                          <TableCell className="text-muted-foreground">{line.branchName || '-'}</TableCell>
                                           <TableCell className="text-red-600 font-semibold">
                                             {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                                           </TableCell>
@@ -1395,6 +1409,9 @@ const JournalEntries = () => {
                       البيان<br/>Description
                     </th>
                     <th className="border border-gray-800 p-3 text-right">
+                      الفرع<br/>Branch
+                    </th>
+                    <th className="border border-gray-800 p-3 text-right">
                       المدين<br/>Debit
                     </th>
                     <th className="border border-gray-800 p-3 text-right">
@@ -1408,6 +1425,7 @@ const JournalEntries = () => {
                       <td className="border border-gray-300 p-3">{line.accountCode}</td>
                       <td className="border border-gray-300 p-3">{line.accountName}</td>
                       <td className="border border-gray-300 p-3">{line.description}</td>
+                      <td className="border border-gray-300 p-3">{line.branchName || '-'}</td>
                       <td className="border border-gray-300 p-3 text-red-600 font-bold">
                         {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </td>
@@ -1417,7 +1435,7 @@ const JournalEntries = () => {
                     </tr>
                   ))}
                   <tr className="bg-gray-100 font-bold text-lg">
-                    <td colSpan={3} className="border border-gray-800 p-3 text-left">
+                    <td colSpan={4} className="border border-gray-800 p-3 text-left">
                       الإجمالي / Total
                     </td>
                     <td className="border border-gray-800 p-3 text-red-600">
