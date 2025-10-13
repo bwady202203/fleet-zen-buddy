@@ -53,6 +53,8 @@ const LoadReports = () => {
   const [filterDriver, setFilterDriver] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [invoiceDateFrom, setInvoiceDateFrom] = useState<Date | undefined>(undefined);
+  const [invoiceDateTo, setInvoiceDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     loadDrivers();
@@ -290,6 +292,25 @@ const LoadReports = () => {
           toDate.setHours(23, 59, 59, 999);
           if (loadDate > toDate) return false;
         }
+        
+        // Invoice date filter
+        if (load.invoice_date) {
+          const invoiceDate = new Date(load.invoice_date);
+          if (invoiceDateFrom) {
+            const fromDate = new Date(invoiceDateFrom);
+            fromDate.setHours(0, 0, 0, 0);
+            if (invoiceDate < fromDate) return false;
+          }
+          if (invoiceDateTo) {
+            const toDate = new Date(invoiceDateTo);
+            toDate.setHours(23, 59, 59, 999);
+            if (invoiceDate > toDate) return false;
+          }
+        } else if (invoiceDateFrom || invoiceDateTo) {
+          // If invoice date filter is set but load has no invoice date, exclude it
+          return false;
+        }
+        
         return true;
       })
     }))
@@ -570,9 +591,9 @@ const LoadReports = () => {
                     تقرير السائقين والعمولات
                   </CardTitle>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
-                    <Label>من تاريخ</Label>
+                    <Label>من تاريخ الشحنة</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -598,7 +619,7 @@ const LoadReports = () => {
                     </Popover>
                   </div>
                   <div>
-                    <Label>إلى تاريخ</Label>
+                    <Label>إلى تاريخ الشحنة</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -617,6 +638,58 @@ const LoadReports = () => {
                           mode="single"
                           selected={dateTo}
                           onSelect={setDateTo}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>من تاريخ الفاتورة</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !invoiceDateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {invoiceDateFrom ? format(invoiceDateFrom, "yyyy-MM-dd") : <span>اختر التاريخ</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={invoiceDateFrom}
+                          onSelect={setInvoiceDateFrom}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>إلى تاريخ الفاتورة</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !invoiceDateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {invoiceDateTo ? format(invoiceDateTo, "yyyy-MM-dd") : <span>اختر التاريخ</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={invoiceDateTo}
+                          onSelect={setInvoiceDateTo}
                           initialFocus
                           className={cn("p-3 pointer-events-auto")}
                         />
