@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_records: {
+        Row: {
+          attendance_date: string
+          check_in_location: string | null
+          check_in_time: string | null
+          check_out_location: string | null
+          check_out_time: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          attendance_date?: string
+          check_in_location?: string | null
+          check_in_time?: string | null
+          check_out_location?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          check_in_location?: string | null
+          check_in_time?: string | null
+          check_out_location?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
