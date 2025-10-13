@@ -34,19 +34,16 @@ interface Expense {
   description: string;
 }
 
-const EXPENSE_TYPES = [
-  'وقود',
-  'صيانة',
-  'رواتب',
-  'مشتريات',
-  'إيجار',
-  'مصاريف إدارية',
-  'أخرى'
-];
+interface ExpenseType {
+  id: string;
+  name_ar: string;
+  code: string;
+}
 
 const CustodyExpenses = () => {
   const { user } = useAuth();
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
   const [selectedRepId, setSelectedRepId] = useState('');
   const [selectedRep, setSelectedRep] = useState<Representative | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -59,6 +56,7 @@ const CustodyExpenses = () => {
 
   useEffect(() => {
     fetchRepresentatives();
+    fetchExpenseTypes();
   }, []);
 
   useEffect(() => {
@@ -124,6 +122,38 @@ const CustodyExpenses = () => {
     }
   };
 
+  const fetchExpenseTypes = async () => {
+    try {
+      // Find operating expenses account (مصروفات التشغيل) by code 5104
+      const { data: operatingExpensesAccount, error: opExpError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('code', '5104')
+        .maybeSingle();
+
+      if (opExpError) throw opExpError;
+      
+      if (!operatingExpensesAccount) {
+        toast.error('لم يتم العثور على حساب مصروفات التشغيل (5104)');
+        return;
+      }
+
+      // Fetch all sub-accounts under operating expenses
+      const { data: subAccounts, error: subAccountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('id, name_ar, code')
+        .eq('parent_id', operatingExpensesAccount.id)
+        .eq('is_active', true)
+        .order('code');
+
+      if (subAccountsError) throw subAccountsError;
+      setExpenseTypes(subAccounts || []);
+    } catch (error) {
+      console.error('Error fetching expense types:', error);
+      toast.error('حدث خطأ في تحميل أنواع المصروفات');
+    }
+  };
+
   const fetchExpenses = async (repId: string) => {
     try {
       const { data, error } = await supabase
@@ -170,69 +200,23 @@ const CustodyExpenses = () => {
 
       // Get the representative's account
       const repAccount = representatives.find(r => r.id === selectedRepId);
-
-      // Get operating expenses account (مصروفات التشغيل)
-      const { data: operatingExpensesAccount, error: opExpError } = await supabase
-        .from('chart_of_accounts')
-        .select('id')
-        .eq('name_ar', 'مصروفات التشغيل')
-        .maybeSingle();
-
-      if (opExpError) throw opExpError;
-
-      if (!operatingExpensesAccount) {
-        toast.error('لم يتم العثور على حساب مصروفات التشغيل في الدليل المحاسبي');
+      if (!repAccount) {
+        toast.error('المندوب غير موجود');
         return;
       }
 
-      // Get or create specific expense type account under operating expenses
-      let expenseAccountId;
-      const { data: expenseAccount } = await supabase
-        .from('chart_of_accounts')
-        .select('id')
-        .eq('name_ar', `مصروف ${expenseType}`)
-        .eq('parent_id', operatingExpensesAccount.id)
-        .maybeSingle();
-
-      if (expenseAccount) {
-        expenseAccountId = expenseAccount.id;
-      } else {
-        // Create expense account under operating expenses
-        const { data: existingAccounts } = await supabase
-          .from('chart_of_accounts')
-          .select('code')
-          .eq('parent_id', operatingExpensesAccount.id)
-          .order('code', { ascending: false })
-          .limit(1);
-
-        let newCode = '5101';
-        if (existingAccounts && existingAccounts.length > 0) {
-          const lastCode = parseInt(existingAccounts[0].code);
-          newCode = (lastCode + 1).toString();
-        }
-
-        const { data: newExpenseAccount, error: newExpError } = await supabase
-          .from('chart_of_accounts')
-          .insert([{
-            code: newCode,
-            name_ar: `مصروف ${expenseType}`,
-            name_en: `${expenseType} Expense`,
-            type: 'expense',
-            parent_id: operatingExpensesAccount.id,
-            is_active: true
-          }])
-          .select()
-          .single();
-
-        if (newExpError) throw newExpError;
-        expenseAccountId = newExpenseAccount.id;
+      // Get the selected expense type account
+      const expenseAccount = expenseTypes.find(e => e.id === expenseType);
+      if (!expenseAccount) {
+        toast.error('نوع المصروف غير موجود');
+        return;
       }
 
       // Get tax account (ضريبة القيمة المضافة)
       const { data: taxAccount, error: taxAccError } = await supabase
         .from('chart_of_accounts')
         .select('id')
-        .ilike('name_ar', '%ضريبة%')
+        .ilike('name_ar', '%ضريبة%القيمة%المضافة%')
         .maybeSingle();
 
       if (taxAccError) throw taxAccError;
@@ -240,7 +224,7 @@ const CustodyExpenses = () => {
       let taxAccountId = taxAccount?.id;
 
       // Create journal entry
-      if (repAccount && expenseAccountId) {
+      if (repAccount && expenseAccount) {
         // Generate entry number
         const { data: lastEntry } = await supabase
           .from('journal_entries')
@@ -264,7 +248,7 @@ const CustodyExpenses = () => {
           .insert([{
             entry_number: entryNumber,
             date: format(date, 'yyyy-MM-dd'),
-            description: `مصروف ${expenseType} - ${repAccount?.name_ar}`,
+            description: `مصروف ${expenseAccount.name_ar} - ${repAccount?.name_ar}`,
             created_by: user?.id
           }])
           .select()
@@ -276,17 +260,17 @@ const CustodyExpenses = () => {
         const journalLines = [
           {
             journal_entry_id: journalEntry.id,
-            account_id: expenseAccountId,
+            account_id: expenseAccount.id,
             debit: baseAmount,
             credit: 0,
-            description: description || `مصروف ${expenseType}`
+            description: description || expenseAccount.name_ar
           },
           {
             journal_entry_id: journalEntry.id,
             account_id: repAccount.id,
             debit: 0,
             credit: total,
-            description: description || `مصروف ${expenseType}`
+            description: description || expenseAccount.name_ar
           }
         ];
 
@@ -451,11 +435,17 @@ const CustodyExpenses = () => {
                         <SelectValue placeholder="اختر نوع المصروف" />
                       </SelectTrigger>
                       <SelectContent>
-                        {EXPENSE_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
+                        {expenseTypes.length === 0 ? (
+                          <SelectItem value="no-data" disabled>
+                            لا يوجد أنواع مصروفات (تحقق من حساب 5104)
                           </SelectItem>
-                        ))}
+                        ) : (
+                          expenseTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name_ar} ({type.code})
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
