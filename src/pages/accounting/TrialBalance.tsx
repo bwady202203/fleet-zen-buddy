@@ -490,14 +490,16 @@ const TrialBalance = () => {
         
         if (!matchesAccount) return false;
         
-        // Apply branch filter - check if specific branch is selected
+        // Apply branch filter
+        // When "all" is selected or no branch is selected: show everything
+        // When a specific branch is selected: show only lines with that branch_id
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // Only include lines that exactly match the selected branch
-          if (line.branch_id !== selectedBranch) {
-            return false;
-          }
+          // For specific branch selection, only show exact matches
+          // This means null/empty branch_id lines won't show when filtering by branch
+          return line.branch_id === selectedBranch;
         }
         
+        // For "all" or no selection: show everything including null branch_id
         return true;
       });
 
@@ -525,14 +527,16 @@ const TrialBalance = () => {
         
         if (!matchesAccount) return false;
         
-        // Apply branch filter - check if specific branch is selected
+        // Apply branch filter
+        // When "all" is selected or no branch is selected: show everything
+        // When a specific branch is selected: show only lines with that branch_id
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // Only include lines that exactly match the selected branch
-          if (line.branch_id !== selectedBranch) {
-            return false;
-          }
+          // For specific branch selection, only show exact matches
+          // This means null/empty branch_id lines won't show when filtering by branch
+          return line.branch_id === selectedBranch;
         }
         
+        // For "all" or no selection: show everything including null branch_id
         return true;
       });
 
