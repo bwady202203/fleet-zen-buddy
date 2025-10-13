@@ -7,13 +7,23 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import CustodyNavbar from '@/components/CustodyNavbar';
 
+interface JournalEntryLine {
+  id: string;
+  debit: number;
+  credit: number;
+  description: string;
+  chart_of_accounts: {
+    name_ar: string;
+    code: string;
+  };
+}
+
 interface JournalEntry {
   id: string;
-  entry_date: string;
-  from_account: string;
-  to_account: string;
-  amount: number;
+  entry_number: string;
+  date: string;
   description: string;
+  journal_entry_lines: JournalEntryLine[];
 }
 
 const CustodyJournalEntries = () => {
@@ -26,13 +36,59 @@ const CustodyJournalEntries = () => {
 
   const fetchJournalEntries = async () => {
     try {
-      const { data, error } = await supabase
-        .from('custody_journal_entries')
-        .select('*')
-        .order('entry_date', { ascending: false });
+      // First, get the custody account (1111)
+      const { data: custodyAccount, error: custodyError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('code', '1111')
+        .maybeSingle();
 
-      if (error) throw error;
-      setEntries(data || []);
+      if (custodyError) throw custodyError;
+      
+      if (!custodyAccount) {
+        console.error('Custody account 1111 not found');
+        setLoading(false);
+        return;
+      }
+
+      // Get all sub-accounts under custody
+      const { data: custodySubAccounts, error: subAccountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('parent_id', custodyAccount.id);
+
+      if (subAccountsError) throw subAccountsError;
+
+      const custodyAccountIds = custodySubAccounts?.map(acc => acc.id) || [];
+
+      // Fetch journal entries that have lines with custody accounts
+      const { data: journalData, error: journalError } = await supabase
+        .from('journal_entries')
+        .select(`
+          id,
+          entry_number,
+          date,
+          description,
+          journal_entry_lines(
+            id,
+            debit,
+            credit,
+            description,
+            chart_of_accounts(name_ar, code)
+          )
+        `)
+        .order('date', { ascending: false });
+
+      if (journalError) throw journalError;
+
+      // Filter entries that contain custody accounts in their lines
+      const custodyEntries = (journalData || []).filter(entry => 
+        entry.journal_entry_lines?.some((line: any) => 
+          custodyAccountIds.includes(line.account_id)
+        )
+      );
+
+      setEntries(custodyEntries as any);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
     } finally {
@@ -41,10 +97,19 @@ const CustodyJournalEntries = () => {
   };
 
   const calculateTotals = () => {
-    const totalDebit = entries.reduce((sum, entry) => sum + entry.amount, 0);
+    let totalDebit = 0;
+    let totalCredit = 0;
+
+    entries.forEach(entry => {
+      entry.journal_entry_lines?.forEach(line => {
+        totalDebit += Number(line.debit || 0);
+        totalCredit += Number(line.credit || 0);
+      });
+    });
+
     return {
       debit: totalDebit,
-      credit: totalDebit
+      credit: totalCredit
     };
   };
 
@@ -90,46 +155,56 @@ const CustodyJournalEntries = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="text-right">رقم القيد</TableHead>
                       <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">من حساب</TableHead>
-                      <TableHead className="text-right">إلى حساب</TableHead>
-                      <TableHead className="text-right">المبلغ (مدين)</TableHead>
-                      <TableHead className="text-right">المبلغ (دائن)</TableHead>
+                      <TableHead className="text-right">الحساب</TableHead>
                       <TableHead className="text-right">البيان</TableHead>
+                      <TableHead className="text-right">مدين</TableHead>
+                      <TableHead className="text-right">دائن</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {entries.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>
-                          {format(new Date(entry.entry_date), 'PPP', { locale: ar })}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {entry.from_account}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {entry.to_account}
-                        </TableCell>
-                        <TableCell className="text-red-600">
-                          {entry.amount.toLocaleString('ar-SA')} ريال
-                        </TableCell>
-                        <TableCell className="text-green-600">
-                          {entry.amount.toLocaleString('ar-SA')} ريال
-                        </TableCell>
-                        <TableCell>{entry.description || '-'}</TableCell>
-                      </TableRow>
+                      <>
+                        {entry.journal_entry_lines?.map((line, index) => (
+                          <TableRow key={`${entry.id}-${line.id}`}>
+                            {index === 0 && (
+                              <>
+                                <TableCell rowSpan={entry.journal_entry_lines.length} className="font-medium border-l">
+                                  {entry.entry_number}
+                                </TableCell>
+                                <TableCell rowSpan={entry.journal_entry_lines.length} className="border-l">
+                                  {format(new Date(entry.date), 'PPP', { locale: ar })}
+                                </TableCell>
+                              </>
+                            )}
+                            <TableCell className="font-medium">
+                              {line.chart_of_accounts?.name_ar} ({line.chart_of_accounts?.code})
+                            </TableCell>
+                            <TableCell>{line.description || entry.description || '-'}</TableCell>
+                            <TableCell className="text-red-600 font-medium">
+                              {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            </TableCell>
+                            <TableCell className="text-green-600 font-medium">
+                              {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/30">
+                          <TableCell colSpan={6}></TableCell>
+                        </TableRow>
+                      </>
                     ))}
                     <TableRow className="bg-muted/50 font-bold">
-                      <TableCell colSpan={3} className="text-left">
+                      <TableCell colSpan={4} className="text-left">
                         الإجمالي
                       </TableCell>
                       <TableCell className="text-red-600">
-                        {totals.debit.toLocaleString('ar-SA')} ريال
+                        {totals.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                       </TableCell>
                       <TableCell className="text-green-600">
-                        {totals.credit.toLocaleString('ar-SA')} ريال
+                        {totals.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                       </TableCell>
-                      <TableCell></TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -139,13 +214,13 @@ const CustodyJournalEntries = () => {
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي المدين</p>
                       <p className="text-2xl font-bold text-red-600">
-                        {totals.debit.toLocaleString('ar-SA')} ريال
+                        {totals.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي الدائن</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {totals.credit.toLocaleString('ar-SA')} ريال
+                        {totals.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                       </p>
                     </div>
                   </div>
