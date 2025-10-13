@@ -21,6 +21,8 @@ interface AccountBalance {
   accountName: string;
   accountType: string;
   balance: number;
+  children?: AccountBalance[]; // For hierarchical display
+  isParent?: boolean;
 }
 
 const BalanceSheet = () => {
@@ -126,7 +128,7 @@ const BalanceSheet = () => {
 
       if (entriesError) throw entriesError;
 
-      // First, calculate all account balances
+      // Calculate all account balances
       const allBalances = new Map<string, AccountBalance>();
 
       entriesData?.forEach((line: any) => {
@@ -159,37 +161,88 @@ const BalanceSheet = () => {
         }
       });
 
-      // Get accounts at the selected level only
-      const levelAccounts = accountsData?.filter(acc => {
-        const parts = acc.code.split('/');
-        return parts.length === accountLevel;
-      }) || [];
-
       const resultBalances: AccountBalance[] = [];
 
-      levelAccounts.forEach(levelAccount => {
-        let totalBalance = 0;
+      if (accountLevel === 2) {
+        // Show level 2 accounts with their level 3 children
+        const level2Accounts = accountsData?.filter(acc => acc.code.split('/').length === 2) || [];
         
-        // Sum balance of this account and all its children (lower levels)
-        Array.from(allBalances.values()).forEach(childBalance => {
-          // Include exact match or any child that starts with this code
-          if (childBalance.accountCode === levelAccount.code || 
-              childBalance.accountCode.startsWith(levelAccount.code + '/')) {
-            totalBalance += childBalance.balance;
+        level2Accounts.forEach(level2Account => {
+          let totalBalance = 0;
+          const children: AccountBalance[] = [];
+          
+          // Find all child accounts (level 3)
+          Array.from(allBalances.values()).forEach(childBalance => {
+            if (childBalance.accountCode === level2Account.code) {
+              totalBalance += childBalance.balance;
+            } else if (childBalance.accountCode.startsWith(level2Account.code + '/')) {
+              const childParts = childBalance.accountCode.split('/');
+              // Only direct children (level 3)
+              if (childParts.length === 3) {
+                totalBalance += childBalance.balance;
+                if (childBalance.balance !== 0) {
+                  children.push({...childBalance});
+                }
+              } else if (childParts.length > 3) {
+                // Sum deeper levels into their parent level 3
+                totalBalance += childBalance.balance;
+                const level3Code = childParts.slice(0, 3).join('/');
+                const existingChild = children.find(c => c.accountCode === level3Code);
+                if (existingChild) {
+                  existingChild.balance += childBalance.balance;
+                } else {
+                  const level3Account = accountsData?.find(a => a.code === level3Code);
+                  if (level3Account) {
+                    children.push({
+                      accountId: level3Account.id,
+                      accountCode: level3Account.code,
+                      accountName: level3Account.name_ar,
+                      accountType: level3Account.type,
+                      balance: childBalance.balance
+                    });
+                  }
+                }
+              }
+            }
+          });
+
+          if (totalBalance !== 0) {
+            resultBalances.push({
+              accountId: level2Account.id,
+              accountCode: level2Account.code,
+              accountName: level2Account.name_ar,
+              accountType: level2Account.type,
+              balance: totalBalance,
+              children: children.sort((a, b) => a.accountCode.localeCompare(b.accountCode)),
+              isParent: true
+            });
           }
         });
-
-        // Only include if there's a balance
-        if (totalBalance !== 0) {
-          resultBalances.push({
-            accountId: levelAccount.id,
-            accountCode: levelAccount.code,
-            accountName: levelAccount.name_ar,
-            accountType: levelAccount.type,
-            balance: totalBalance
+      } else {
+        // For level 1 or 3, show only that level with aggregated values
+        const levelAccounts = accountsData?.filter(acc => acc.code.split('/').length === accountLevel) || [];
+        
+        levelAccounts.forEach(levelAccount => {
+          let totalBalance = 0;
+          
+          Array.from(allBalances.values()).forEach(childBalance => {
+            if (childBalance.accountCode === levelAccount.code || 
+                childBalance.accountCode.startsWith(levelAccount.code + '/')) {
+              totalBalance += childBalance.balance;
+            }
           });
-        }
-      });
+
+          if (totalBalance !== 0) {
+            resultBalances.push({
+              accountId: levelAccount.id,
+              accountCode: levelAccount.code,
+              accountName: levelAccount.name_ar,
+              accountType: levelAccount.type,
+              balance: totalBalance
+            });
+          }
+        });
+      }
 
       setBalances(resultBalances);
     } catch (error) {
@@ -376,9 +429,21 @@ const BalanceSheet = () => {
             <CardContent className="p-6">
               <div className="space-y-2">
                 {assets.map(b => (
-                  <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item">
-                    <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                    <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                  <div key={b.accountId}>
+                    <div className={`flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item ${b.isParent ? 'font-bold bg-accent/20' : ''}`}>
+                      <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                      <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    {b.children && b.children.length > 0 && (
+                      <div className="mr-6 space-y-1">
+                        {b.children.map(child => (
+                          <div key={child.accountId} className="flex justify-between py-2 border-b border-dashed hover:bg-accent/30 transition-colors px-2 rounded text-sm print-item">
+                            <span>{child.accountCode} - {child.accountName}</span>
+                            <span>{child.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -399,9 +464,21 @@ const BalanceSheet = () => {
                   <h3 className="font-bold text-lg mb-3 text-primary print-section-title">الخصوم - Liabilities</h3>
                   <div className="space-y-2">
                     {liabilities.map(b => (
-                      <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item">
-                        <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                        <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <div key={b.accountId}>
+                        <div className={`flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item ${b.isParent ? 'font-bold bg-accent/20' : ''}`}>
+                          <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                          <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        {b.children && b.children.length > 0 && (
+                          <div className="mr-6 space-y-1">
+                            {b.children.map(child => (
+                              <div key={child.accountId} className="flex justify-between py-2 border-b border-dashed hover:bg-accent/30 transition-colors px-2 rounded text-sm print-item">
+                                <span>{child.accountCode} - {child.accountName}</span>
+                                <span>{child.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -416,9 +493,21 @@ const BalanceSheet = () => {
                   <h3 className="font-bold text-lg mb-3 text-primary print-section-title">حقوق الملكية - Equity</h3>
                   <div className="space-y-2">
                     {equity.map(b => (
-                      <div key={b.accountId} className="flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item">
-                        <span className="font-medium">{b.accountCode} - {b.accountName}</span>
-                        <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <div key={b.accountId}>
+                        <div className={`flex justify-between py-3 border-b hover:bg-accent/50 transition-colors px-2 rounded print-item ${b.isParent ? 'font-bold bg-accent/20' : ''}`}>
+                          <span className="font-medium">{b.accountCode} - {b.accountName}</span>
+                          <span className="font-semibold">{b.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        {b.children && b.children.length > 0 && (
+                          <div className="mr-6 space-y-1">
+                            {b.children.map(child => (
+                              <div key={child.accountId} className="flex justify-between py-2 border-b border-dashed hover:bg-accent/30 transition-colors px-2 rounded text-sm print-item">
+                                <span>{child.accountCode} - {child.accountName}</span>
+                                <span>{child.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
