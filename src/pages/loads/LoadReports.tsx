@@ -107,8 +107,7 @@ const LoadReports = () => {
 
       const reports: DriverReport[] = Object.values(grouped).map((group: any) => {
         const totalCommission = group.loads.reduce((sum: number, load: any) => {
-          const amount = (parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0);
-          return sum + amount;
+          return sum + (parseFloat(load.unit_price) || 0);
         }, 0);
         const driverPayments = payments?.filter((p: any) => p.driver_id === group.driverId) || [];
         const totalPaid = driverPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
@@ -319,8 +318,7 @@ const LoadReports = () => {
     }))
     .map(report => {
       const totalCommission = report.loads.reduce((sum: number, load: any) => {
-        const amount = (parseFloat(load.quantity) || 0) * (parseFloat(load.unit_price) || 0);
-        return sum + amount;
+        return sum + (parseFloat(load.unit_price) || 0);
       }, 0);
       const driverPayments = report.loads.length > 0 ? 
         driverReports.find(r => r.driverId === report.driverId)?.totalPaid || 0 : 0;
