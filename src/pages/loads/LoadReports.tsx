@@ -806,6 +806,7 @@ const LoadReports = () => {
                        <TableRow className="bg-muted/50">
                          <TableHead className="font-bold">رقم الشحنة</TableHead>
                          <TableHead className="font-bold">التاريخ</TableHead>
+                         <TableHead className="font-bold">تاريخ الفاتورة</TableHead>
                          <TableHead className="font-bold">العميل</TableHead>
                          <TableHead className="font-bold">نوع الحمولة</TableHead>
                          <TableHead className="font-bold">الكمية</TableHead>
@@ -818,6 +819,7 @@ const LoadReports = () => {
                          <TableRow key={load.id}>
                            <TableCell className="font-medium">{load.load_number}</TableCell>
                            <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
+                           <TableCell>{load.invoice_date ? format(new Date(load.invoice_date), "yyyy-MM-dd") : '-'}</TableCell>
                            <TableCell>{load.companies?.name || '-'}</TableCell>
                            <TableCell>{load.load_types?.name || '-'}</TableCell>
                            <TableCell>{load.quantity}</TableCell>
