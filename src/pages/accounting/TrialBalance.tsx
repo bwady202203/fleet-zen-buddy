@@ -494,12 +494,8 @@ const TrialBalance = () => {
         
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // When a specific branch is selected:
-          // Include lines that match the branch OR have no branch (null)
-          // This shows old entries (null) and new entries for this branch
-          const hasNoBranch = !line.branch_id || line.branch_id === null;
-          const matchesBranch = line.branch_id === selectedBranch;
-          return hasNoBranch || matchesBranch;
+          // When a specific branch is selected, show only lines for that branch
+          return line.branch_id === selectedBranch;
         }
         
         // For "all": show everything
@@ -532,12 +528,8 @@ const TrialBalance = () => {
         
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // When a specific branch is selected:
-          // Include lines that match the branch OR have no branch (null)
-          // This shows old entries (null) and new entries for this branch
-          const hasNoBranch = !line.branch_id || line.branch_id === null;
-          const matchesBranch = line.branch_id === selectedBranch;
-          return hasNoBranch || matchesBranch;
+          // When a specific branch is selected, show only lines for that branch
+          return line.branch_id === selectedBranch;
         }
         
         // For "all": show everything
