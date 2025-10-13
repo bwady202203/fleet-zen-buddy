@@ -168,46 +168,76 @@ const CustodyExpenses = () => {
 
       if (expenseError) throw expenseError;
 
-      // Get the representative's account (already have it)
+      // Get the representative's account
       const repAccount = representatives.find(r => r.id === selectedRepId);
 
-      // Get or create expense account
+      // Get operating expenses account (مصروفات التشغيل)
+      const { data: operatingExpensesAccount, error: opExpError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('name_ar', 'مصروفات التشغيل')
+        .maybeSingle();
+
+      if (opExpError) throw opExpError;
+
+      if (!operatingExpensesAccount) {
+        toast.error('لم يتم العثور على حساب مصروفات التشغيل في الدليل المحاسبي');
+        return;
+      }
+
+      // Get or create specific expense type account under operating expenses
       let expenseAccountId;
       const { data: expenseAccount } = await supabase
         .from('chart_of_accounts')
-        .select('id, code, name_ar')
+        .select('id')
         .eq('name_ar', `مصروف ${expenseType}`)
+        .eq('parent_id', operatingExpensesAccount.id)
         .maybeSingle();
 
       if (expenseAccount) {
         expenseAccountId = expenseAccount.id;
       } else {
-        // Create expense account under expenses
-        const { data: expensesParent } = await supabase
+        // Create expense account under operating expenses
+        const { data: existingAccounts } = await supabase
           .from('chart_of_accounts')
-          .select('id')
-          .eq('name_ar', 'المصروفات')
-          .maybeSingle();
+          .select('code')
+          .eq('parent_id', operatingExpensesAccount.id)
+          .order('code', { ascending: false })
+          .limit(1);
 
-        if (expensesParent) {
-          const newExpenseCode = `5${Math.floor(Math.random() * 1000)}`;
-          const { data: newExpenseAccount, error: newExpError } = await supabase
-            .from('chart_of_accounts')
-            .insert([{
-              code: newExpenseCode,
-              name_ar: `مصروف ${expenseType}`,
-              name_en: `${expenseType} Expense`,
-              type: 'expense',
-              parent_id: expensesParent.id,
-              is_active: true
-            }])
-            .select()
-            .single();
-
-          if (newExpError) throw newExpError;
-          expenseAccountId = newExpenseAccount.id;
+        let newCode = '5101';
+        if (existingAccounts && existingAccounts.length > 0) {
+          const lastCode = parseInt(existingAccounts[0].code);
+          newCode = (lastCode + 1).toString();
         }
+
+        const { data: newExpenseAccount, error: newExpError } = await supabase
+          .from('chart_of_accounts')
+          .insert([{
+            code: newCode,
+            name_ar: `مصروف ${expenseType}`,
+            name_en: `${expenseType} Expense`,
+            type: 'expense',
+            parent_id: operatingExpensesAccount.id,
+            is_active: true
+          }])
+          .select()
+          .single();
+
+        if (newExpError) throw newExpError;
+        expenseAccountId = newExpenseAccount.id;
       }
+
+      // Get tax account (ضريبة القيمة المضافة)
+      const { data: taxAccount, error: taxAccError } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .ilike('name_ar', '%ضريبة%')
+        .maybeSingle();
+
+      if (taxAccError) throw taxAccError;
+
+      let taxAccountId = taxAccount?.id;
 
       // Create journal entry
       if (repAccount && expenseAccountId) {
@@ -242,25 +272,38 @@ const CustodyExpenses = () => {
 
         if (journalError) throw journalError;
 
-        // Insert journal entry lines (debit expense, credit representative)
+        // Insert journal entry lines (debit: expense + tax, credit: representative)
+        const journalLines = [
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: expenseAccountId,
+            debit: baseAmount,
+            credit: 0,
+            description: description || `مصروف ${expenseType}`
+          },
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: repAccount.id,
+            debit: 0,
+            credit: total,
+            description: description || `مصروف ${expenseType}`
+          }
+        ];
+
+        // Add tax line if tax account exists
+        if (taxAccountId && tax > 0) {
+          journalLines.splice(1, 0, {
+            journal_entry_id: journalEntry.id,
+            account_id: taxAccountId,
+            debit: tax,
+            credit: 0,
+            description: 'ضريبة القيمة المضافة 15%'
+          });
+        }
+
         const { error: linesError } = await supabase
           .from('journal_entry_lines')
-          .insert([
-            {
-              journal_entry_id: journalEntry.id,
-              account_id: expenseAccountId,
-              debit: total,
-              credit: 0,
-              description: description || `مصروف ${expenseType}`
-            },
-            {
-              journal_entry_id: journalEntry.id,
-              account_id: repAccount.id,
-              debit: 0,
-              credit: total,
-              description: description || `مصروف ${expenseType}`
-            }
-          ]);
+          .insert(journalLines);
 
         if (linesError) throw linesError;
       }
@@ -418,7 +461,7 @@ const CustodyExpenses = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount">المبلغ *</Label>
+                    <Label htmlFor="amount">المبلغ (قبل الضريبة) *</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -428,7 +471,8 @@ const CustodyExpenses = () => {
                         const val = e.target.value;
                         setAmount(val);
                         const base = parseFloat(val) || 0;
-                        const tax = parseFloat(taxAmount) || 0;
+                        const tax = base * 0.15; // 15% tax
+                        setTaxAmount(tax.toFixed(2));
                         setTotalAmount((base + tax).toFixed(2));
                       }}
                       placeholder="0.00"
@@ -437,20 +481,15 @@ const CustodyExpenses = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="taxAmount">الضريبة</Label>
+                    <Label htmlFor="taxAmount">الضريبة (15%)</Label>
                     <Input
                       id="taxAmount"
                       type="number"
                       step="0.01"
                       value={taxAmount}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTaxAmount(val);
-                        const base = parseFloat(amount) || 0;
-                        const tax = parseFloat(val) || 0;
-                        setTotalAmount((base + tax).toFixed(2));
-                      }}
                       placeholder="0.00"
+                      readOnly
+                      className="bg-muted"
                     />
                   </div>
 
@@ -461,7 +500,6 @@ const CustodyExpenses = () => {
                       type="number"
                       step="0.01"
                       value={totalAmount}
-                      onChange={(e) => setTotalAmount(e.target.value)}
                       placeholder="0.00"
                       readOnly
                       className="bg-muted"
