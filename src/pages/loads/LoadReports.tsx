@@ -345,7 +345,6 @@ const LoadReports = () => {
         <tr>
           <td>${load.load_number}</td>
           <td>${new Date(load.date).toLocaleDateString('ar-SA')}</td>
-          <td>${convertToHijri(load.date)}</td>
           <td>${load.invoice_date ? new Date(load.invoice_date).toLocaleDateString('ar-SA') : '-'}</td>
           <td>${load.companies?.name || '-'}</td>
           <td>${load.load_types?.name || '-'}</td>
@@ -356,7 +355,7 @@ const LoadReports = () => {
 
       const totalRowsByType = Object.entries(totalsByLoadType).map(([typeName, total]: [string, any]) => `
         <tr class="subtotal-row">
-          <td colspan="5" style="text-align: center;">إجمالي ${typeName}</td>
+          <td colspan="4" style="text-align: center;">إجمالي ${typeName}</td>
           <td style="font-weight: bold;">${typeName}</td>
           <td style="font-weight: bold;">${total.toFixed(2)}</td>
           <td></td>
@@ -441,8 +440,7 @@ const LoadReports = () => {
               <thead>
                  <tr>
                    <th>رقم الشحنة</th>
-                   <th>التاريخ الميلادي</th>
-                   <th>التاريخ الهجري</th>
+                   <th>التاريخ</th>
                    <th>تاريخ الفاتورة</th>
                    <th>اسم الشركة</th>
                    <th>نوع الحمولة</th>
@@ -454,7 +452,7 @@ const LoadReports = () => {
                  ${tableRows}
                  ${totalRowsByType}
                  <tr class="total-row">
-                   <td colspan="6" style="text-align: center;">الإجمالي الكلي</td>
+                   <td colspan="5" style="text-align: center;">الإجمالي الكلي</td>
                    <td>${totalQuantity.toFixed(2)}</td>
                    <td></td>
                  </tr>
@@ -489,8 +487,7 @@ const LoadReports = () => {
   const handleExportToExcel = () => {
     const excelData = filteredCompanyLoads.map(load => ({
       'رقم الشحنة': load.load_number,
-      'التاريخ الميلادي': new Date(load.date).toLocaleDateString('ar-SA'),
-      'التاريخ الهجري': convertToHijri(load.date),
+      'التاريخ': new Date(load.date).toLocaleDateString('ar-SA'),
       'تاريخ الفاتورة': load.invoice_date ? new Date(load.invoice_date).toLocaleDateString('ar-SA') : '-',
       'اسم الشركة': load.companies?.name || '-',
       'نوع الحمولة': load.load_types?.name || '-',
@@ -502,8 +499,7 @@ const LoadReports = () => {
     Object.entries(totalsByLoadType).forEach(([typeName, total]: [string, any]) => {
       excelData.push({
         'رقم الشحنة': '',
-        'التاريخ الميلادي': '',
-        'التاريخ الهجري': '',
+        'التاريخ': '',
         'تاريخ الفاتورة': '',
         'اسم الشركة': '',
         'نوع الحمولة': `إجمالي ${typeName}`,
@@ -515,8 +511,7 @@ const LoadReports = () => {
     // Add total row
     excelData.push({
       'رقم الشحنة': '',
-      'التاريخ الميلادي': '',
-      'التاريخ الهجري': '',
+      'التاريخ': '',
       'تاريخ الفاتورة': '',
       'اسم الشركة': '',
       'نوع الحمولة': 'الإجمالي الكلي',
@@ -917,8 +912,7 @@ const LoadReports = () => {
                     <TableHeader>
                        <TableRow className="bg-muted/50">
                          <TableHead className="font-bold">رقم الشحنة</TableHead>
-                         <TableHead className="font-bold">التاريخ الميلادي</TableHead>
-                         <TableHead className="font-bold">التاريخ الهجري</TableHead>
+                         <TableHead className="font-bold">التاريخ</TableHead>
                          <TableHead className="font-bold">تاريخ الفاتورة</TableHead>
                          <TableHead className="font-bold">اسم الشركة</TableHead>
                          <TableHead className="font-bold">نوع الحمولة</TableHead>
@@ -929,7 +923,7 @@ const LoadReports = () => {
                     <TableBody>
                        {filteredCompanyLoads.length === 0 ? (
                          <TableRow>
-                           <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                           <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                              لا توجد شحنات
                            </TableCell>
                          </TableRow>
@@ -939,7 +933,6 @@ const LoadReports = () => {
                              <TableRow key={load.id}>
                                <TableCell className="font-medium">{load.load_number}</TableCell>
                                <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
-                               <TableCell>{convertToHijri(load.date)}</TableCell>
                                <TableCell>{load.invoice_date ? format(new Date(load.invoice_date), "yyyy-MM-dd") : '-'}</TableCell>
                                <TableCell>{load.companies?.name || '-'}</TableCell>
                                <TableCell>{load.load_types?.name || '-'}</TableCell>
@@ -949,7 +942,7 @@ const LoadReports = () => {
                            ))}
                            {Object.entries(totalsByLoadType).map(([typeName, total]: [string, any]) => (
                              <TableRow key={typeName} className="bg-blue-50 dark:bg-blue-950/30">
-                               <TableCell colSpan={5} className="text-center font-semibold">
+                               <TableCell colSpan={4} className="text-center font-semibold">
                                  إجمالي {typeName}
                                </TableCell>
                                <TableCell className="font-bold text-blue-600 dark:text-blue-400">
@@ -962,7 +955,7 @@ const LoadReports = () => {
                              </TableRow>
                            ))}
                            <TableRow className="bg-primary/10 font-bold">
-                             <TableCell colSpan={6} className="text-center text-lg">
+                             <TableCell colSpan={5} className="text-center text-lg">
                                الإجمالي الكلي
                              </TableCell>
                              <TableCell className="text-lg text-primary">
