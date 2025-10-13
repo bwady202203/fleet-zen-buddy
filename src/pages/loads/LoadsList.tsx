@@ -35,6 +35,8 @@ const LoadsList = () => {
   // Report states
   const [reportStartDate, setReportStartDate] = useState<string>("");
   const [reportEndDate, setReportEndDate] = useState<string>("");
+  const [reportInvoiceStartDate, setReportInvoiceStartDate] = useState<string>("");
+  const [reportInvoiceEndDate, setReportInvoiceEndDate] = useState<string>("");
   const [reportCompany, setReportCompany] = useState<string>("all");
   const [driverReport, setDriverReport] = useState<any[]>([]);
 
@@ -170,6 +172,14 @@ const LoadsList = () => {
 
     if (reportEndDate) {
       filtered = filtered.filter(load => load.date <= reportEndDate);
+    }
+
+    if (reportInvoiceStartDate) {
+      filtered = filtered.filter(load => load.invoice_date && load.invoice_date >= reportInvoiceStartDate);
+    }
+
+    if (reportInvoiceEndDate) {
+      filtered = filtered.filter(load => load.invoice_date && load.invoice_date <= reportInvoiceEndDate);
     }
 
     // Group by driver
@@ -512,9 +522,9 @@ const LoadsList = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">من تاريخ / From Date</Label>
+                    <Label className="text-sm font-medium">من تاريخ الشحنة / From Load Date</Label>
                     <Input
                       type="date"
                       value={reportStartDate}
@@ -523,11 +533,29 @@ const LoadsList = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">إلى تاريخ / To Date</Label>
+                    <Label className="text-sm font-medium">إلى تاريخ الشحنة / To Load Date</Label>
                     <Input
                       type="date"
                       value={reportEndDate}
                       onChange={(e) => setReportEndDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">من تاريخ الفاتورة / From Invoice Date</Label>
+                    <Input
+                      type="date"
+                      value={reportInvoiceStartDate}
+                      onChange={(e) => setReportInvoiceStartDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">إلى تاريخ الفاتورة / To Invoice Date</Label>
+                    <Input
+                      type="date"
+                      value={reportInvoiceEndDate}
+                      onChange={(e) => setReportInvoiceEndDate(e.target.value)}
                     />
                   </div>
 
