@@ -118,6 +118,7 @@ const BalanceSheet = () => {
           account_id,
           debit,
           credit,
+          branch_id,
           journal_entries!inner (date)
         `)
         .lte('journal_entries.date', asOfDate);
@@ -129,6 +130,11 @@ const BalanceSheet = () => {
       entriesData?.forEach((line: any) => {
         const account = accountsData?.find(acc => acc.id === line.account_id);
         if (!account) return;
+
+        // Apply branch filter
+        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '' && line.branch_id !== selectedBranch) {
+          return;
+        }
 
         if (!balanceMap.has(line.account_id)) {
           balanceMap.set(line.account_id, {

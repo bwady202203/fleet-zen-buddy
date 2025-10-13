@@ -899,6 +899,7 @@ export type Database = {
       journal_entry_lines: {
         Row: {
           account_id: string
+          branch_id: string | null
           cost_center_id: string | null
           created_at: string | null
           credit: number | null
@@ -910,6 +911,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          branch_id?: string | null
           cost_center_id?: string | null
           created_at?: string | null
           credit?: number | null
@@ -921,6 +923,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          branch_id?: string | null
           cost_center_id?: string | null
           created_at?: string | null
           credit?: number | null
@@ -936,6 +939,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {

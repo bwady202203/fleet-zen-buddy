@@ -108,7 +108,8 @@ const JournalEntriesReports = () => {
             credit,
             chart_of_accounts (code, name_ar),
             cost_centers (code, name_ar),
-            projects (code, name_ar)
+            projects (code, name_ar),
+            branches (code, name_ar)
           )
         `)
         .order('date', { ascending: true })
@@ -140,6 +141,11 @@ const JournalEntriesReports = () => {
             return;
           }
 
+          // Apply branch filter
+          if (filters.branchId && filters.branchId !== 'all' && line.branches?.id !== filters.branchId) {
+            return;
+          }
+
           lines.push({
             entryNumber: entry.entry_number,
             entryDate: entry.date,
@@ -151,7 +157,7 @@ const JournalEntriesReports = () => {
             credit: Number(line.credit) || 0,
             costCenter: line.cost_centers?.name_ar || '-',
             project: line.projects?.name_ar || '-',
-            branch: '-', // You can add branch info if needed
+            branch: line.branches?.name_ar || '-',
           });
         });
       });

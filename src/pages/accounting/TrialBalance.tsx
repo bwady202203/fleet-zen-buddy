@@ -477,7 +477,12 @@ const TrialBalance = () => {
 
       const openingLines = journalLines.filter(line => {
         const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
-        return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+        const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+        // Apply branch filter
+        if (selectedBranch && selectedBranch !== '' && (line as any).branch_id !== selectedBranch) {
+          return false;
+        }
+        return matchesAccount;
       });
 
       const openingDebitTotal = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
@@ -500,7 +505,12 @@ const TrialBalance = () => {
 
       const periodLines = journalLines.filter(line => {
         const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
-        return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+        const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+        // Apply branch filter
+        if (selectedBranch && selectedBranch !== '' && (line as any).branch_id !== selectedBranch) {
+          return false;
+        }
+        return matchesAccount;
       });
 
       const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
