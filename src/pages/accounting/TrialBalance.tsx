@@ -494,8 +494,9 @@ const TrialBalance = () => {
         
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // When a specific branch is selected, show only lines for that branch
-          return line.branch_id === selectedBranch;
+          // When a specific branch is selected:
+          // Show lines for the selected branch OR lines with no branch (old entries)
+          return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
         }
         
         // For "all": show everything
@@ -528,8 +529,9 @@ const TrialBalance = () => {
         
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          // When a specific branch is selected, show only lines for that branch
-          return line.branch_id === selectedBranch;
+          // When a specific branch is selected:
+          // Show lines for the selected branch OR lines with no branch (old entries)
+          return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
         }
         
         // For "all": show everything
@@ -594,7 +596,10 @@ const TrialBalance = () => {
         const entryLines = journalLines.filter(line => {
           // Apply branch filter
           if (selectedBranch && selectedBranch !== 'all') {
-            if (line.branch_id !== selectedBranch) return false;
+            // Show lines for the selected branch OR lines with no branch (old entries)
+            if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+              return false;
+            }
           }
           return line.journal_entry_id === entry.id;
         });
@@ -606,7 +611,10 @@ const TrialBalance = () => {
     const entryLines = journalLines.filter(line => {
       // Apply branch filter
       if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
+        // Show lines for the selected branch OR lines with no branch (old entries)
+        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+          return false;
+        }
       }
       return line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id;
     });
