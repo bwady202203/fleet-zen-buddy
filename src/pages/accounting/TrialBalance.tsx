@@ -494,6 +494,13 @@ const TrialBalance = () => {
         
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+          // Debug log
+          console.log('Filtering opening line:', {
+            lineId: line.id,
+            lineBranchId: line.branch_id,
+            selectedBranch,
+            matches: line.branch_id === selectedBranch
+          });
           // When a specific branch is selected, show only lines for that branch
           return line.branch_id === selectedBranch;
         }
@@ -528,6 +535,13 @@ const TrialBalance = () => {
         
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+          // Debug log
+          console.log('Filtering period line:', {
+            lineId: line.id,
+            lineBranchId: line.branch_id,
+            selectedBranch,
+            matches: line.branch_id === selectedBranch
+          });
           // When a specific branch is selected, show only lines for that branch
           return line.branch_id === selectedBranch;
         }
