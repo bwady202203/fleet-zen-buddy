@@ -583,7 +583,7 @@ const LoadReports = () => {
           </TabsList>
 
           <TabsContent value="drivers">
-            <Card>
+            <Card dir="rtl">
               <CardHeader>
                 <div className="flex items-center justify-between mb-4">
                   <CardTitle className="flex items-center gap-2">
@@ -716,7 +716,7 @@ const LoadReports = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {filteredReports.map((report) => (
-              <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50">
+              <div key={report.driverId} className="space-y-6 border rounded-lg p-6 bg-card/50" dir="rtl">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                   <div className="flex-1 w-full">
                     <h3 className="text-2xl font-bold mb-4">{report.driverName}</h3>
@@ -800,30 +800,30 @@ const LoadReports = () => {
                   </Dialog>
                 </div>
 
-                <div className="rounded-lg border overflow-hidden bg-background">
+                <div className="rounded-lg border overflow-hidden bg-background" dir="rtl">
                   <Table>
                     <TableHeader>
                        <TableRow className="bg-muted/50">
-                         <TableHead className="font-bold">رقم الشحنة</TableHead>
-                         <TableHead className="font-bold">التاريخ</TableHead>
-                         <TableHead className="font-bold">تاريخ الفاتورة</TableHead>
-                         <TableHead className="font-bold">العميل</TableHead>
-                         <TableHead className="font-bold">نوع الحمولة</TableHead>
-                         <TableHead className="font-bold">الكمية</TableHead>
-                         <TableHead className="font-bold">المبلغ المستحق</TableHead>
+                         <TableHead className="font-bold text-right">رقم الشحنة</TableHead>
+                         <TableHead className="font-bold text-right">التاريخ</TableHead>
+                         <TableHead className="font-bold text-right">تاريخ الفاتورة</TableHead>
+                         <TableHead className="font-bold text-right">العميل</TableHead>
+                         <TableHead className="font-bold text-right">نوع الحمولة</TableHead>
+                         <TableHead className="font-bold text-right">الكمية</TableHead>
+                         <TableHead className="font-bold text-right">المبلغ المستحق</TableHead>
                          <TableHead className="font-bold text-center">إجراءات</TableHead>
                        </TableRow>
                     </TableHeader>
                     <TableBody>
                        {report.loads.map((load: any) => (
                          <TableRow key={load.id}>
-                           <TableCell className="font-medium">{load.load_number}</TableCell>
-                           <TableCell>{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
-                           <TableCell>{load.invoice_date ? format(new Date(load.invoice_date), "yyyy-MM-dd") : '-'}</TableCell>
-                           <TableCell>{load.companies?.name || '-'}</TableCell>
-                           <TableCell>{load.load_types?.name || '-'}</TableCell>
-                           <TableCell>{load.quantity}</TableCell>
-                           <TableCell className="font-bold text-primary">
+                           <TableCell className="font-medium text-right">{load.load_number}</TableCell>
+                           <TableCell className="text-right">{format(new Date(load.date), "yyyy-MM-dd")}</TableCell>
+                           <TableCell className="text-right">{load.invoice_date ? format(new Date(load.invoice_date), "yyyy-MM-dd") : '-'}</TableCell>
+                           <TableCell className="text-right">{load.companies?.name || '-'}</TableCell>
+                           <TableCell className="text-right">{load.load_types?.name || '-'}</TableCell>
+                           <TableCell className="text-right">{load.quantity}</TableCell>
+                           <TableCell className="font-bold text-primary text-right">
                              {load.total_amount.toFixed(2)} ر.س
                            </TableCell>
                            <TableCell>
