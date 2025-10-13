@@ -132,18 +132,24 @@ const JournalEntriesReports = () => {
       entries?.forEach((entry: any) => {
         entry.journal_entry_lines?.forEach((line: any) => {
           // Apply cost center filter
-          if (filters.costCenterId && filters.costCenterId !== 'all' && line.cost_centers?.id !== filters.costCenterId) {
-            return;
+          if (filters.costCenterId && filters.costCenterId !== 'all') {
+            if (!line.cost_centers || line.cost_centers.id !== filters.costCenterId) {
+              return;
+            }
           }
 
           // Apply project filter
-          if (filters.projectId && filters.projectId !== 'all' && line.projects?.id !== filters.projectId) {
-            return;
+          if (filters.projectId && filters.projectId !== 'all') {
+            if (!line.projects || line.projects.id !== filters.projectId) {
+              return;
+            }
           }
 
-          // Apply branch filter
-          if (filters.branchId && filters.branchId !== 'all' && line.branches?.id !== filters.branchId) {
-            return;
+          // Apply branch filter - only filter when a specific branch is selected
+          if (filters.branchId && filters.branchId !== 'all') {
+            if (!line.branches || line.branches.id !== filters.branchId) {
+              return;
+            }
           }
 
           lines.push({
