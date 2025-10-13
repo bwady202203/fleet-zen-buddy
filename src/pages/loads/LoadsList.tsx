@@ -39,6 +39,7 @@ const LoadsList = () => {
   const [reportInvoiceEndDate, setReportInvoiceEndDate] = useState<string>("");
   const [reportCompany, setReportCompany] = useState<string>("all");
   const [driverReport, setDriverReport] = useState<any[]>([]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     loadData();
@@ -47,7 +48,7 @@ const LoadsList = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, invoiceStartDate, invoiceEndDate]);
+  }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, invoiceStartDate, invoiceEndDate, sortOrder]);
 
   const loadFilterData = async () => {
     try {
@@ -122,7 +123,20 @@ const LoadsList = () => {
       filtered = filtered.filter(load => load.invoice_date && load.invoice_date <= invoiceEndDate);
     }
 
+    // Sort by driver name
+    filtered.sort((a, b) => {
+      const nameA = (a.drivers?.name || '').toLowerCase();
+      const nameB = (b.drivers?.name || '').toLowerCase();
+      return sortOrder === 'asc' 
+        ? nameA.localeCompare(nameB, 'ar')
+        : nameB.localeCompare(nameA, 'ar');
+    });
+
     setFilteredLoads(filtered);
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
   };
 
   const resetFilters = () => {
@@ -449,20 +463,30 @@ const LoadsList = () => {
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
-                      <TableHeader>
+                       <TableHeader>
                          <TableRow>
                            <TableHead className="text-right">التاريخ / Date</TableHead>
                            <TableHead className="text-right">رقم الشحنة / Load Number</TableHead>
                            <TableHead className="text-right">تاريخ الفاتورة / Invoice Date</TableHead>
                            <TableHead className="text-right">الشركة / Company</TableHead>
                            <TableHead className="text-right">نوع الشحنة / Load Type</TableHead>
-                           <TableHead className="text-right">السائق / Driver</TableHead>
+                           <TableHead className="text-right">
+                             <button 
+                               onClick={toggleSortOrder} 
+                               className="flex items-center gap-2 hover:text-primary transition-colors print:pointer-events-none"
+                             >
+                               السائق / Driver
+                               <span className="text-xs print:hidden">
+                                 {sortOrder === 'asc' ? '↑' : '↓'}
+                               </span>
+                             </button>
+                           </TableHead>
                            <TableHead className="text-right">رقم الشاحنة / Truck Number</TableHead>
                            <TableHead className="text-right">الكمية / Quantity</TableHead>
                            <TableHead className="text-right">السعر / Price</TableHead>
                            <TableHead className="text-right print:hidden">إجراءات / Actions</TableHead>
                          </TableRow>
-                      </TableHeader>
+                       </TableHeader>
                       <TableBody>
                          {filteredLoads.map((load) => (
                            <TableRow key={load.id} className="hover:bg-muted/50">
