@@ -243,6 +243,7 @@ const CustodyExpenses = () => {
             entry_number: entryNumber,
             date: format(date, 'yyyy-MM-dd'),
             description: `مصروف ${expenseAccount.name_ar} - ${repAccount?.name_ar}`,
+            reference: `custody_expense_${expenseData.id}`,
             created_by: user?.id
           }])
           .select()

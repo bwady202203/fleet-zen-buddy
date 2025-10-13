@@ -108,6 +108,7 @@ const CustodyTransfers = () => {
           entry_number: entryNumber,
           date: format(date, 'yyyy-MM-dd'),
           description: `تحويل عهدة - ${repAccount.name_ar}`,
+          reference: `custody_transfer_${transfer.id}`,
           created_by: user?.id
         }])
         .select()
