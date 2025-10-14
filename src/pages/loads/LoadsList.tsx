@@ -275,6 +275,303 @@ const LoadsList = () => {
     window.print();
   };
 
+  const handlePrintLoad = (load: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const companyName = load.companies?.name || '-';
+    const loadType = load.load_types?.name || '-';
+    const driverName = load.drivers?.name || '-';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>شحنة ${load.load_number}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              direction: rtl;
+              padding: 40px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              min-height: 100vh;
+            }
+            
+            .container {
+              max-width: 900px;
+              margin: 0 auto;
+              background: white;
+              border-radius: 20px;
+              overflow: hidden;
+              box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+            
+            .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 40px;
+              text-align: center;
+            }
+            
+            .company-name {
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 10px;
+              text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            }
+            
+            .document-title {
+              font-size: 24px;
+              opacity: 0.95;
+              margin-top: 15px;
+              border-top: 2px solid rgba(255,255,255,0.3);
+              padding-top: 15px;
+            }
+            
+            .content {
+              padding: 40px;
+            }
+            
+            .load-number-section {
+              background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+              color: white;
+              padding: 25px;
+              border-radius: 15px;
+              margin-bottom: 30px;
+              text-align: center;
+              box-shadow: 0 10px 25px rgba(240, 147, 251, 0.3);
+            }
+            
+            .load-number-label {
+              font-size: 16px;
+              opacity: 0.9;
+              margin-bottom: 8px;
+            }
+            
+            .load-number {
+              font-size: 36px;
+              font-weight: bold;
+              letter-spacing: 2px;
+            }
+            
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 20px;
+              margin-top: 30px;
+            }
+            
+            .info-item {
+              background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+              padding: 20px;
+              border-radius: 12px;
+              border-right: 5px solid #667eea;
+              transition: transform 0.2s;
+            }
+            
+            .info-item:hover {
+              transform: translateX(-5px);
+            }
+            
+            .info-label {
+              color: #667eea;
+              font-size: 14px;
+              font-weight: 600;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            
+            .info-value {
+              color: #2d3748;
+              font-size: 20px;
+              font-weight: bold;
+            }
+            
+            .highlight-section {
+              background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+              padding: 25px;
+              border-radius: 15px;
+              margin-top: 30px;
+              box-shadow: 0 10px 25px rgba(252, 182, 159, 0.3);
+            }
+            
+            .highlight-title {
+              color: #c7502e;
+              font-size: 18px;
+              font-weight: bold;
+              margin-bottom: 15px;
+              text-align: center;
+            }
+            
+            .highlight-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+            }
+            
+            .highlight-item {
+              background: white;
+              padding: 15px;
+              border-radius: 10px;
+              text-align: center;
+            }
+            
+            .highlight-label {
+              color: #c7502e;
+              font-size: 12px;
+              margin-bottom: 5px;
+              font-weight: 600;
+            }
+            
+            .highlight-value {
+              color: #2d3748;
+              font-size: 24px;
+              font-weight: bold;
+            }
+            
+            .notes-section {
+              margin-top: 30px;
+              padding: 20px;
+              background: #f7fafc;
+              border-radius: 12px;
+              border: 2px dashed #cbd5e0;
+            }
+            
+            .notes-label {
+              color: #4a5568;
+              font-size: 14px;
+              font-weight: 600;
+              margin-bottom: 10px;
+            }
+            
+            .notes-value {
+              color: #2d3748;
+              font-size: 16px;
+              line-height: 1.6;
+            }
+            
+            .footer {
+              background: #f7fafc;
+              padding: 25px;
+              text-align: center;
+              border-top: 3px solid #e2e8f0;
+              margin-top: 40px;
+            }
+            
+            .print-date {
+              color: #718096;
+              font-size: 14px;
+            }
+            
+            @media print {
+              body {
+                background: white;
+                padding: 0;
+              }
+              
+              .container {
+                box-shadow: none;
+                border-radius: 0;
+              }
+              
+              .info-item:hover {
+                transform: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="company-name">شركة الرمال الناعمة الصناعية</div>
+              <div class="document-title">سند شحنة</div>
+            </div>
+            
+            <div class="content">
+              <div class="load-number-section">
+                <div class="load-number-label">رقم الشحنة</div>
+                <div class="load-number">${load.load_number}</div>
+              </div>
+              
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">تاريخ الشحنة</div>
+                  <div class="info-value">${format(new Date(load.date), 'yyyy-MM-dd')}</div>
+                </div>
+                
+                <div class="info-item">
+                  <div class="info-label">تاريخ الفاتورة</div>
+                  <div class="info-value">${load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : 'لم يحدد'}</div>
+                </div>
+                
+                <div class="info-item">
+                  <div class="info-label">الشركة</div>
+                  <div class="info-value">${companyName}</div>
+                </div>
+                
+                <div class="info-item">
+                  <div class="info-label">نوع الشحنة</div>
+                  <div class="info-value">${loadType}</div>
+                </div>
+                
+                <div class="info-item">
+                  <div class="info-label">السائق</div>
+                  <div class="info-value">${driverName}</div>
+                </div>
+                
+                <div class="info-item">
+                  <div class="info-label">رقم الشاحنة</div>
+                  <div class="info-value">${load.truck_number || 'غير محدد'}</div>
+                </div>
+              </div>
+              
+              <div class="highlight-section">
+                <div class="highlight-title">تفاصيل الكمية والسعر</div>
+                <div class="highlight-grid">
+                  <div class="highlight-item">
+                    <div class="highlight-label">الكمية (طن)</div>
+                    <div class="highlight-value">${load.quantity}</div>
+                  </div>
+                  
+                  <div class="highlight-item">
+                    <div class="highlight-label">السعر (ريال)</div>
+                    <div class="highlight-value">${parseFloat(load.unit_price).toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+              
+              ${load.notes ? `
+                <div class="notes-section">
+                  <div class="notes-label">ملاحظات:</div>
+                  <div class="notes-value">${load.notes}</div>
+                </div>
+              ` : ''}
+              
+              <div class="footer">
+                <div class="print-date">تاريخ الطباعة: ${format(new Date(), 'yyyy-MM-dd HH:mm')}</div>
+              </div>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
@@ -503,24 +800,32 @@ const LoadsList = () => {
                              <TableCell className="text-right">{load.truck_number || '-'}</TableCell>
                              <TableCell className="text-right">{load.quantity}</TableCell>
                              <TableCell className="text-right">{load.unit_price.toFixed(2)}</TableCell>
-                             <TableCell className="text-right print:hidden">
-                               <div className="flex gap-2 justify-end">
-                                 <Button
-                                   variant="ghost"
-                                   size="sm"
-                                   onClick={() => navigate(`/loads/edit/${load.id}`)}
-                                 >
-                                   <Edit className="h-4 w-4" />
-                                 </Button>
-                                 <Button
-                                   variant="ghost"
-                                   size="sm"
-                                   onClick={() => handleDelete(load.id)}
-                                 >
-                                   <Trash2 className="h-4 w-4 text-destructive" />
-                                 </Button>
-                               </div>
-                             </TableCell>
+                              <TableCell className="text-right print:hidden">
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handlePrintLoad(load)}
+                                    title="طباعة الشحنة"
+                                  >
+                                    <Printer className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/loads/edit/${load.id}`)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(load.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
                            </TableRow>
                          ))}
                       </TableBody>
