@@ -20,6 +20,7 @@ interface VehiclesContextType {
   updateVehicle: (id: string, updates: Partial<Vehicle>) => Promise<void>;
   updateVehicleStatus: (id: string, status: VehicleStatus) => Promise<void>;
   deleteVehicle: (id: string) => Promise<void>;
+  refreshVehicles: () => Promise<void>;
 }
 
 const VehiclesContext = createContext<VehiclesContextType | undefined>(undefined);
@@ -30,6 +31,26 @@ export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     loadVehicles();
+    
+    // إعداد realtime subscription للاستماع للتغييرات
+    const channel = supabase
+      .channel('vehicles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vehicles'
+        },
+        () => {
+          loadVehicles();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadVehicles = async () => {
@@ -181,7 +202,7 @@ export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <VehiclesContext.Provider value={{ vehicles, addVehicle, updateVehicle, updateVehicleStatus, deleteVehicle }}>
+    <VehiclesContext.Provider value={{ vehicles, addVehicle, updateVehicle, updateVehicleStatus, deleteVehicle, refreshVehicles: loadVehicles }}>
       {children}
     </VehiclesContext.Provider>
   );
