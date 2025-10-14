@@ -26,17 +26,20 @@ import { ar } from "date-fns/locale";
 import { CalendarIcon, Check, ChevronsUpDown, PackagePlus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSpareParts } from "@/contexts/SparePartsContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MaintenanceRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehicleName: string;
+  vehicleId: string;
 }
 
 export const MaintenanceRequestDialog = ({
   open,
   onOpenChange,
   vehicleName,
+  vehicleId,
 }: MaintenanceRequestDialogProps) => {
   const { spareParts, deductQuantity, addSparePart } = useSpareParts();
   const [date, setDate] = useState<Date>();
@@ -101,7 +104,7 @@ export const MaintenanceRequestDialog = ({
     setAddPartDialogOpen(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!date) {
       toast({
         title: "خطأ",
@@ -129,28 +132,52 @@ export const MaintenanceRequestDialog = ({
       return;
     }
 
-    // خصم الكميات من المخزون
-    const maintenanceId = `M-${Date.now()}`;
-    for (const [partId, quantity] of Object.entries(selectedParts)) {
-      const part = spareParts.find(p => p.id === partId);
-      deductQuantity(
-        partId, 
-        quantity, 
-        maintenanceId,
-        `صيانة ${vehicleName} - ${part?.name}`
-      );
+    try {
+      // حفظ طلب الصيانة في قاعدة البيانات
+      const totalCost = calculateTotal();
+      const { data: maintenanceData, error: maintenanceError } = await supabase
+        .from('maintenance_requests')
+        .insert({
+          vehicle_id: vehicleId,
+          description: description || `صيانة ${vehicleName}`,
+          cost: totalCost,
+          status: 'pending',
+          priority: 'medium',
+        })
+        .select()
+        .single();
+
+      if (maintenanceError) throw maintenanceError;
+
+      // خصم الكميات من المخزون
+      for (const [partId, quantity] of Object.entries(selectedParts)) {
+        const part = spareParts.find(p => p.id === partId);
+        await deductQuantity(
+          partId, 
+          quantity, 
+          maintenanceData.id,
+          `صيانة ${vehicleName} - ${part?.name}`
+        );
+      }
+
+      toast({
+        title: "تم إنشاء طلب الصيانة",
+        description: `تم إنشاء طلب صيانة للمركبة ${vehicleName} بتاريخ ${format(date, "PPP", { locale: ar })} وخصم قطع الغيار من المخزون`,
+      });
+
+      // Reset form
+      setDate(undefined);
+      setSelectedParts({});
+      setDescription("");
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error creating maintenance request:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إنشاء طلب الصيانة",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "تم إنشاء طلب الصيانة",
-      description: `تم إنشاء طلب صيانة للمركبة ${vehicleName} بتاريخ ${format(date, "PPP", { locale: ar })} وخصم قطع الغيار من المخزون`,
-    });
-
-    // Reset form
-    setDate(undefined);
-    setSelectedParts({});
-    setDescription("");
-    onOpenChange(false);
   };
 
   return (

@@ -180,6 +180,7 @@ export const VehicleCard = ({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         vehicleName={name}
+        vehicleId={id}
       />
 
       <AddMileageDialog

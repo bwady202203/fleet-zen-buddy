@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,69 +22,88 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, Filter, Download, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
+interface MaintenanceRequest {
+  id: string;
+  vehicle_id: string;
+  vehicle_name: string;
+  description: string;
+  status: string;
+  cost: number | null;
+  created_at: string;
+  completed_date: string | null;
+}
+
 const MaintenanceReports = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [vehicleFilter, setVehicleFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // بيانات تجريبية لطلبات الصيانة
-  const maintenanceRequests = [
-    {
-      id: "REQ-001",
-      vehicle: "شاحنة A-101",
-      date: "2024-10-15",
-      status: "قيد التنفيذ",
-      spareParts: ["فلتر زيت", "زيت محرك"],
-      totalCost: 850,
-      description: "صيانة دورية شاملة"
-    },
-    {
-      id: "REQ-002",
-      vehicle: "فان B-205",
-      date: "2024-10-10",
-      status: "مكتمل",
-      spareParts: ["إطارات", "فرامل"],
-      totalCost: 2400,
-      description: "تغيير الإطارات والفرامل"
-    },
-    {
-      id: "REQ-003",
-      vehicle: "شاحنة C-340",
-      date: "2024-10-12",
-      status: "قيد الانتظار",
-      spareParts: ["بطارية"],
-      totalCost: 650,
-      description: "استبدال البطارية"
-    },
-    {
-      id: "REQ-004",
-      vehicle: "فان D-412",
-      date: "2024-10-08",
-      status: "مكتمل",
-      spareParts: ["فلتر هواء", "شمعات"],
-      totalCost: 450,
-      description: "صيانة روتينية"
-    },
-    {
-      id: "REQ-005",
-      vehicle: "شاحنة A-101",
-      date: "2024-10-05",
-      status: "ملغي",
-      spareParts: ["مساحات"],
-      totalCost: 120,
-      description: "تغيير المساحات - تم الإلغاء"
-    },
-  ];
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // جلب المركبات
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('id, license_plate, model');
+
+      if (vehiclesError) throw vehiclesError;
+      
+      const vehiclesList = (vehiclesData || []).map(v => ({
+        id: v.id,
+        name: `${v.model} - ${v.license_plate}`
+      }));
+      setVehicles(vehiclesList);
+
+      // جلب طلبات الصيانة
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('maintenance_requests')
+        .select(`
+          id,
+          vehicle_id,
+          description,
+          status,
+          cost,
+          created_at,
+          completed_date
+        `)
+        .order('created_at', { ascending: false });
+
+      if (requestsError) throw requestsError;
+
+      // دمج بيانات المركبات مع طلبات الصيانة
+      const requestsWithVehicles = (requestsData || []).map(request => {
+        const vehicle = vehiclesList.find(v => v.id === request.vehicle_id);
+        return {
+          ...request,
+          vehicle_name: vehicle?.name || 'مركبة غير معروفة',
+        };
+      });
+
+      setMaintenanceRequests(requestsWithVehicles);
+    } catch (error) {
+      console.error('Error loading maintenance data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "مكتمل":
+      case "completed":
         return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
-      case "قيد التنفيذ":
+      case "in_progress":
         return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20";
-      case "قيد الانتظار":
+      case "pending":
         return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
-      case "ملغي":
+      case "cancelled":
         return "bg-red-500/10 text-red-500 hover:bg-red-500/20";
       default:
         return "bg-muted";
@@ -92,18 +112,28 @@ const MaintenanceReports = () => {
 
   const filteredRequests = maintenanceRequests.filter((request) => {
     const matchesStatus = statusFilter === "all" || request.status === statusFilter;
-    const matchesVehicle = vehicleFilter === "all" || request.vehicle === vehicleFilter;
+    const matchesVehicle = vehicleFilter === "all" || request.vehicle_id === vehicleFilter;
     const matchesSearch = 
       request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.vehicle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.vehicle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.description.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesVehicle && matchesSearch;
   });
 
-  const totalCost = filteredRequests.reduce((sum, req) => sum + req.totalCost, 0);
-  const completedCount = filteredRequests.filter(r => r.status === "مكتمل").length;
-  const pendingCount = filteredRequests.filter(r => r.status === "قيد الانتظار").length;
+  const totalCost = filteredRequests.reduce((sum, req) => sum + (req.cost || 0), 0);
+  const completedCount = filteredRequests.filter(r => r.status === "completed").length;
+  const pendingCount = filteredRequests.filter(r => r.status === "pending").length;
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "completed": return "مكتمل";
+      case "in_progress": return "قيد التنفيذ";
+      case "pending": return "قيد الانتظار";
+      case "cancelled": return "ملغي";
+      default: return status;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -196,10 +226,10 @@ const MaintenanceReports = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">كل الحالات</SelectItem>
-                    <SelectItem value="مكتمل">مكتمل</SelectItem>
-                    <SelectItem value="قيد التنفيذ">قيد التنفيذ</SelectItem>
-                    <SelectItem value="قيد الانتظار">قيد الانتظار</SelectItem>
-                    <SelectItem value="ملغي">ملغي</SelectItem>
+                    <SelectItem value="completed">مكتمل</SelectItem>
+                    <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                    <SelectItem value="pending">قيد الانتظار</SelectItem>
+                    <SelectItem value="cancelled">ملغي</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -211,10 +241,11 @@ const MaintenanceReports = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">كل المركبات</SelectItem>
-                    <SelectItem value="شاحنة A-101">شاحنة A-101</SelectItem>
-                    <SelectItem value="فان B-205">فان B-205</SelectItem>
-                    <SelectItem value="شاحنة C-340">شاحنة C-340</SelectItem>
-                    <SelectItem value="فان D-412">فان D-412</SelectItem>
+                    {vehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -247,7 +278,13 @@ const MaintenanceReports = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      جاري التحميل...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRequests.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       لا توجد طلبات صيانة تطابق معايير البحث
@@ -256,30 +293,26 @@ const MaintenanceReports = () => {
                 ) : (
                   filteredRequests.map((request) => (
                     <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.id}</TableCell>
-                      <TableCell>{request.vehicle}</TableCell>
+                      <TableCell className="font-medium">{request.id.slice(0, 8)}</TableCell>
+                      <TableCell>{request.vehicle_name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {request.date}
+                          {new Date(request.created_at).toLocaleDateString('ar-SA')}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {request.spareParts.map((part, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {part}
-                            </Badge>
-                          ))}
-                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          قطع غيار
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(request.status)}>
-                          {request.status}
+                          {getStatusText(request.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-semibold">
-                        {request.totalCost.toLocaleString()} ر.س
+                        {request.cost ? request.cost.toLocaleString() : '0'} ر.س
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
                         {request.description}
