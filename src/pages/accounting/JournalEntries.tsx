@@ -420,80 +420,95 @@ const JournalEntries = () => {
     try {
       console.log('بدء حفظ القيد...', { validLines: validLines.length });
 
-      // توليد رقم قيد جديد فريد قبل الحفظ
-      const { data: lastEntryData, error: fetchError } = await supabase
-        .from('journal_entries')
-        .select('entry_number')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // استخدام transaction لتوليد رقم فريد والحفظ بشكل آمن
+      const maxRetries = 3;
+      let retryCount = 0;
+      let success = false;
+      let savedEntryNumber = '';
 
-      if (fetchError) {
-        console.error('خطأ في جلب آخر قيد:', fetchError);
-        throw fetchError;
-      }
+      while (!success && retryCount < maxRetries) {
+        try {
+          // توليد رقم قيد جديد
+          const { data: lastEntryData, error: fetchError } = await supabase
+            .from('journal_entries')
+            .select('entry_number')
+            .order('entry_number', { ascending: false })
+            .limit(1);
 
-      let nextNumber = 1;
-      const currentYear = new Date().getFullYear();
-      
-      if (lastEntryData && lastEntryData.length > 0) {
-        const lastEntry = lastEntryData[0].entry_number;
-        // استخراج الرقم التسلسلي من نهاية رقم القيد بعد السنة
-        // مثال: JE-2025000007 -> نستخرج 7
-        const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
-        if (match) {
-          nextNumber = parseInt(match[1], 10) + 1;
+          if (fetchError) throw fetchError;
+
+          let nextNumber = 1;
+          const currentYear = new Date().getFullYear();
+          
+          if (lastEntryData && lastEntryData.length > 0) {
+            const lastEntry = lastEntryData[0].entry_number;
+            const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
+            if (match) {
+              nextNumber = parseInt(match[1], 10) + 1;
+            }
+          }
+
+          const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
+          console.log('محاولة الحفظ برقم:', uniqueEntryNumber);
+
+          // حفظ القيد
+          const { data: journalEntry, error: entryError } = await supabase
+            .from('journal_entries')
+            .insert({
+              entry_number: uniqueEntryNumber,
+              date: formData.date,
+              description: formData.description,
+            })
+            .select()
+            .single();
+
+          if (entryError) {
+            // إذا كان خطأ التكرار، أعد المحاولة
+            if (entryError.code === '23505') {
+              retryCount++;
+              console.log('رقم مكرر، إعادة المحاولة...', retryCount);
+              await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+              continue;
+            }
+            throw entryError;
+          }
+
+          console.log('تم حفظ القيد:', journalEntry);
+
+          // حفظ سطور القيد
+          const lines = validLines.map(line => ({
+            journal_entry_id: journalEntry.id,
+            account_id: line.accountId,
+            description: line.description,
+            debit: line.debit || 0,
+            credit: line.credit || 0,
+            cost_center_id: line.costCenterId || null,
+            project_id: line.projectId || null,
+            branch_id: selectedBranch || null,
+          }));
+
+          const { error: linesError } = await supabase
+            .from('journal_entry_lines')
+            .insert(lines);
+
+          if (linesError) throw linesError;
+
+          savedEntryNumber = uniqueEntryNumber;
+          success = true;
+          console.log('تم حفظ جميع السطور بنجاح');
+
+        } catch (error) {
+          if (retryCount >= maxRetries - 1) throw error;
         }
       }
 
-      const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
-      console.log('رقم القيد المولد:', uniqueEntryNumber);
-
-      // حفظ القيد في جدول journal_entries
-      const { data: journalEntry, error: entryError } = await supabase
-        .from('journal_entries')
-        .insert({
-          entry_number: uniqueEntryNumber,
-          date: formData.date,
-          description: formData.description,
-        })
-        .select()
-        .single();
-
-      if (entryError) {
-        console.error('خطأ في حفظ القيد:', entryError);
-        throw entryError;
+      if (!success) {
+        throw new Error('فشل الحفظ بعد عدة محاولات');
       }
-
-      console.log('تم حفظ القيد:', journalEntry);
-
-      // حفظ سطور القيد في جدول journal_entry_lines
-      const lines = validLines.map(line => ({
-        journal_entry_id: journalEntry.id,
-        account_id: line.accountId,
-        description: line.description,
-        debit: line.debit || 0,
-        credit: line.credit || 0,
-        cost_center_id: line.costCenterId || null,
-        project_id: line.projectId || null,
-        branch_id: selectedBranch || null,
-      }));
-
-      console.log('سطور القيد للحفظ:', lines);
-
-      const { error: linesError } = await supabase
-        .from('journal_entry_lines')
-        .insert(lines);
-
-      if (linesError) {
-        console.error('خطأ في حفظ سطور القيد:', linesError);
-        throw linesError;
-      }
-
-      console.log('تم حفظ جميع السطور بنجاح');
 
       toast({
         title: "تم الحفظ بنجاح / Saved Successfully",
-        description: `تم حفظ القيد رقم ${uniqueEntryNumber} / Entry #${uniqueEntryNumber} saved`,
+        description: `تم حفظ القيد رقم ${savedEntryNumber} / Entry #${savedEntryNumber} saved`,
       });
 
       resetForm();
