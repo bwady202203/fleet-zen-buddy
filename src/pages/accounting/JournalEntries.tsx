@@ -303,6 +303,9 @@ const JournalEntries = () => {
       showCostCenterSearch: boolean;
       projectSearch: string;
       showProjectSearch: boolean;
+      selectedAccountIndex: number;
+      selectedCostCenterIndex: number;
+      selectedProjectIndex: number;
     };
   }>({});
 
@@ -314,6 +317,9 @@ const JournalEntries = () => {
       showCostCenterSearch: false,
       projectSearch: "",
       showProjectSearch: false,
+      selectedAccountIndex: -1,
+      selectedCostCenterIndex: -1,
+      selectedProjectIndex: -1,
     };
   };
 
@@ -947,7 +953,38 @@ const JournalEntries = () => {
                                           updateSearchState(line.id, {
                                             accountSearch: e.target.value,
                                             showAccountSearch: true,
+                                            selectedAccountIndex: -1,
                                           });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (!searchState.showAccountSearch || filteredAccounts.length === 0) return;
+                                          
+                                          if (e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                            const newIndex = searchState.selectedAccountIndex < filteredAccounts.length - 1 
+                                              ? searchState.selectedAccountIndex + 1 
+                                              : 0;
+                                            updateSearchState(line.id, { selectedAccountIndex: newIndex });
+                                          } else if (e.key === 'ArrowUp') {
+                                            e.preventDefault();
+                                            const newIndex = searchState.selectedAccountIndex > 0 
+                                              ? searchState.selectedAccountIndex - 1 
+                                              : filteredAccounts.length - 1;
+                                            updateSearchState(line.id, { selectedAccountIndex: newIndex });
+                                          } else if (e.key === 'Enter' && searchState.selectedAccountIndex >= 0) {
+                                            e.preventDefault();
+                                            const selectedAccount = filteredAccounts[searchState.selectedAccountIndex];
+                                            updateLine(line.id, {
+                                              accountId: selectedAccount.id,
+                                              accountCode: selectedAccount.code,
+                                              accountName: selectedAccount.name_ar,
+                                            });
+                                            updateSearchState(line.id, {
+                                              accountSearch: "",
+                                              showAccountSearch: false,
+                                              selectedAccountIndex: -1,
+                                            });
+                                          }
                                         }}
                                         placeholder="ابحث بالرمز أو الاسم..."
                                         onFocus={() => updateSearchState(line.id, { showAccountSearch: true })}
@@ -957,10 +994,12 @@ const JournalEntries = () => {
                                       {searchState.showAccountSearch && filteredAccounts.length > 0 && (
                                         <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
                                           <CardContent className="p-2">
-                                            {filteredAccounts.map(acc => (
+                                            {filteredAccounts.map((acc, index) => (
                                               <div
                                                 key={acc.id}
-                                                className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                                className={`p-2 hover:bg-accent cursor-pointer rounded text-sm ${
+                                                  index === searchState.selectedAccountIndex ? 'bg-accent' : ''
+                                                }`}
                                                 onMouseDown={(e) => {
                                                   e.preventDefault();
                                                   updateLine(line.id, {
@@ -971,6 +1010,7 @@ const JournalEntries = () => {
                                                   updateSearchState(line.id, {
                                                     accountSearch: "",
                                                     showAccountSearch: false,
+                                                    selectedAccountIndex: -1,
                                                   });
                                                 }}
                                               >
@@ -1022,7 +1062,37 @@ const JournalEntries = () => {
                                           updateSearchState(line.id, {
                                             costCenterSearch: e.target.value,
                                             showCostCenterSearch: true,
+                                            selectedCostCenterIndex: -1,
                                           });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (!searchState.showCostCenterSearch || filteredCostCenters.length === 0) return;
+                                          
+                                          if (e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                            const newIndex = searchState.selectedCostCenterIndex < filteredCostCenters.length - 1 
+                                              ? searchState.selectedCostCenterIndex + 1 
+                                              : 0;
+                                            updateSearchState(line.id, { selectedCostCenterIndex: newIndex });
+                                          } else if (e.key === 'ArrowUp') {
+                                            e.preventDefault();
+                                            const newIndex = searchState.selectedCostCenterIndex > 0 
+                                              ? searchState.selectedCostCenterIndex - 1 
+                                              : filteredCostCenters.length - 1;
+                                            updateSearchState(line.id, { selectedCostCenterIndex: newIndex });
+                                          } else if (e.key === 'Enter' && searchState.selectedCostCenterIndex >= 0) {
+                                            e.preventDefault();
+                                            const selectedCostCenter = filteredCostCenters[searchState.selectedCostCenterIndex];
+                                            updateLine(line.id, { 
+                                              costCenter: selectedCostCenter.code,
+                                              costCenterId: selectedCostCenter.id 
+                                            });
+                                            updateSearchState(line.id, {
+                                              costCenterSearch: "",
+                                              showCostCenterSearch: false,
+                                              selectedCostCenterIndex: -1,
+                                            });
+                                          }
                                         }}
                                         placeholder="مركز التكلفة"
                                         onFocus={() => updateSearchState(line.id, { showCostCenterSearch: true })}
@@ -1032,10 +1102,12 @@ const JournalEntries = () => {
                                       {searchState.showCostCenterSearch && filteredCostCenters.length > 0 && (
                                         <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
                                           <CardContent className="p-2">
-                                            {filteredCostCenters.map(cc => (
+                                            {filteredCostCenters.map((cc, index) => (
                                               <div
                                                 key={cc.id}
-                                                className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                                className={`p-2 hover:bg-accent cursor-pointer rounded text-sm ${
+                                                  index === searchState.selectedCostCenterIndex ? 'bg-accent' : ''
+                                                }`}
                                                 onMouseDown={(e) => {
                                                   e.preventDefault();
                                                   updateLine(line.id, { 
@@ -1045,6 +1117,7 @@ const JournalEntries = () => {
                                                   updateSearchState(line.id, {
                                                     costCenterSearch: "",
                                                     showCostCenterSearch: false,
+                                                    selectedCostCenterIndex: -1,
                                                   });
                                                 }}
                                               >
@@ -1064,7 +1137,37 @@ const JournalEntries = () => {
                                           updateSearchState(line.id, {
                                             projectSearch: e.target.value,
                                             showProjectSearch: true,
+                                            selectedProjectIndex: -1,
                                           });
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (!searchState.showProjectSearch || filteredProjects.length === 0) return;
+                                          
+                                          if (e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                            const newIndex = searchState.selectedProjectIndex < filteredProjects.length - 1 
+                                              ? searchState.selectedProjectIndex + 1 
+                                              : 0;
+                                            updateSearchState(line.id, { selectedProjectIndex: newIndex });
+                                          } else if (e.key === 'ArrowUp') {
+                                            e.preventDefault();
+                                            const newIndex = searchState.selectedProjectIndex > 0 
+                                              ? searchState.selectedProjectIndex - 1 
+                                              : filteredProjects.length - 1;
+                                            updateSearchState(line.id, { selectedProjectIndex: newIndex });
+                                          } else if (e.key === 'Enter' && searchState.selectedProjectIndex >= 0) {
+                                            e.preventDefault();
+                                            const selectedProject = filteredProjects[searchState.selectedProjectIndex];
+                                            updateLine(line.id, { 
+                                              projectName: selectedProject.code,
+                                              projectId: selectedProject.id 
+                                            });
+                                            updateSearchState(line.id, {
+                                              projectSearch: "",
+                                              showProjectSearch: false,
+                                              selectedProjectIndex: -1,
+                                            });
+                                          }
                                         }}
                                         placeholder="المشروع"
                                         onFocus={() => updateSearchState(line.id, { showProjectSearch: true })}
@@ -1074,10 +1177,12 @@ const JournalEntries = () => {
                                       {searchState.showProjectSearch && filteredProjects.length > 0 && (
                                         <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
                                           <CardContent className="p-2">
-                                            {filteredProjects.map(prj => (
+                                            {filteredProjects.map((prj, index) => (
                                               <div
                                                 key={prj.id}
-                                                className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                                className={`p-2 hover:bg-accent cursor-pointer rounded text-sm ${
+                                                  index === searchState.selectedProjectIndex ? 'bg-accent' : ''
+                                                }`}
                                                 onMouseDown={(e) => {
                                                   e.preventDefault();
                                                   updateLine(line.id, { 
@@ -1087,6 +1192,7 @@ const JournalEntries = () => {
                                                   updateSearchState(line.id, {
                                                     projectSearch: "",
                                                     showProjectSearch: false,
+                                                    selectedProjectIndex: -1,
                                                   });
                                                 }}
                                               >
