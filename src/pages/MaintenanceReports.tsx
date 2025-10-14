@@ -17,10 +17,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, FileText, Filter, Download, ArrowRight } from "lucide-react";
+import { Calendar, FileText, Filter, Download, ArrowRight, Eye, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { MaintenanceRequestDialog } from "@/components/MaintenanceRequestDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface MaintenanceRequest {
   id: string;
@@ -40,9 +52,34 @@ const MaintenanceReports = () => {
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [vehicles, setVehicles] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
+  const [dialogMode, setDialogMode] = useState<'view' | 'edit'>('view');
+  const [showDialog, setShowDialog] = useState(false);
+  const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadData();
+
+    // Setup realtime subscription
+    const channel = supabase
+      .channel('maintenance-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'maintenance_requests'
+        },
+        () => {
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadData = async () => {
@@ -132,6 +169,50 @@ const MaintenanceReports = () => {
       case "pending": return "قيد الانتظار";
       case "cancelled": return "ملغي";
       default: return status;
+    }
+  };
+
+  const handleView = (request: MaintenanceRequest) => {
+    setSelectedRequest(request);
+    setDialogMode('view');
+    setShowDialog(true);
+  };
+
+  const handleEdit = (request: MaintenanceRequest) => {
+    setSelectedRequest(request);
+    setDialogMode('edit');
+    setShowDialog(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setDeleteRequestId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteRequestId) return;
+
+    try {
+      const { error } = await supabase
+        .from('maintenance_requests')
+        .delete()
+        .eq('id', deleteRequestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف بنجاح",
+        description: "تم حذف طلب الصيانة بنجاح",
+      });
+
+      setDeleteRequestId(null);
+      loadData();
+    } catch (error: any) {
+      console.error('Error deleting maintenance request:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف طلب الصيانة",
+        variant: "destructive",
+      });
     }
   };
 
@@ -275,18 +356,19 @@ const MaintenanceReports = () => {
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">التكلفة</TableHead>
                   <TableHead className="text-right">الوصف</TableHead>
+                  <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       جاري التحميل...
                     </TableCell>
                   </TableRow>
                 ) : filteredRequests.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       لا توجد طلبات صيانة تطابق معايير البحث
                     </TableCell>
                   </TableRow>
@@ -317,6 +399,35 @@ const MaintenanceReports = () => {
                       <TableCell className="max-w-xs truncate">
                         {request.description}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleView(request)}
+                            title="عرض"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(request)}
+                            title="تعديل"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(request.id)}
+                            title="حذف"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -325,6 +436,38 @@ const MaintenanceReports = () => {
           </CardContent>
         </Card>
       </main>
+
+      {selectedRequest && (
+        <MaintenanceRequestDialog
+          open={showDialog}
+          onOpenChange={(open) => {
+            setShowDialog(open);
+            if (!open) {
+              setSelectedRequest(null);
+              loadData();
+            }
+          }}
+          maintenanceRequest={selectedRequest}
+          mode={dialogMode}
+        />
+      )}
+
+      <AlertDialog open={!!deleteRequestId} onOpenChange={(open) => !open && setDeleteRequestId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف طلب الصيانة هذا؟ لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
