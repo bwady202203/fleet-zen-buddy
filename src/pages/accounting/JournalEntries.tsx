@@ -442,14 +442,19 @@ const JournalEntries = () => {
       console.log('بدء حفظ القيد...', { validLines: validLines.length });
 
       // استخدام transaction لتوليد رقم فريد والحفظ بشكل آمن
-      const maxRetries = 3;
+      const maxRetries = 5; // زيادة عدد المحاولات
       let retryCount = 0;
       let success = false;
       let savedEntryNumber = '';
 
       while (!success && retryCount < maxRetries) {
         try {
-          // توليد رقم قيد جديد
+          // إضافة delay عشوائي صغير لتقليل احتمالية التعارض
+          if (retryCount > 0) {
+            await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+          }
+
+          // توليد رقم قيد جديد بطريقة أكثر أماناً
           const { data: lastEntryData, error: fetchError } = await supabase
             .from('journal_entries')
             .select('entry_number')
@@ -463,14 +468,16 @@ const JournalEntries = () => {
           
           if (lastEntryData && lastEntryData.length > 0) {
             const lastEntry = lastEntryData[0].entry_number;
+            // استخراج الرقم التسلسلي من نهاية رقم القيد بعد السنة
             const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
             if (match) {
               nextNumber = parseInt(match[1], 10) + 1;
             }
           }
 
-          const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
-          console.log('محاولة الحفظ برقم:', uniqueEntryNumber);
+          // إضافة retryCount للرقم في حالة إعادة المحاولة لضمان التفرد
+          const uniqueEntryNumber = `JE-${currentYear}${(nextNumber + retryCount).toString().padStart(6, '0')}`;
+          console.log(`محاولة ${retryCount + 1}: حفظ برقم ${uniqueEntryNumber}`);
 
           // حفظ القيد
           const { data: journalEntry, error: entryError } = await supabase
@@ -487,14 +494,16 @@ const JournalEntries = () => {
             // إذا كان خطأ التكرار، أعد المحاولة
             if (entryError.code === '23505') {
               retryCount++;
-              console.log('رقم مكرر، إعادة المحاولة...', retryCount);
-              await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+              console.log(`رقم مكرر: ${uniqueEntryNumber}، إعادة المحاولة ${retryCount}/${maxRetries}...`);
+              if (retryCount >= maxRetries) {
+                throw new Error(`فشل الحفظ بعد ${maxRetries} محاولات بسبب تكرار رقم القيد`);
+              }
               continue;
             }
             throw entryError;
           }
 
-          console.log('تم حفظ القيد:', journalEntry);
+          console.log('تم حفظ القيد بنجاح:', journalEntry);
 
           // حفظ سطور القيد
           const lines = validLines.map(line => ({
@@ -512,7 +521,14 @@ const JournalEntries = () => {
             .from('journal_entry_lines')
             .insert(lines);
 
-          if (linesError) throw linesError;
+          if (linesError) {
+            // في حالة فشل حفظ السطور، احذف القيد
+            await supabase
+              .from('journal_entries')
+              .delete()
+              .eq('id', journalEntry.id);
+            throw linesError;
+          }
 
           savedEntryNumber = uniqueEntryNumber;
           success = true;
