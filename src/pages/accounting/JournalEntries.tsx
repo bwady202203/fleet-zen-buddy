@@ -84,6 +84,27 @@ const JournalEntries = () => {
     fetchProjects();
     fetchBranches();
     fetchJournalEntries();
+    
+    // Realtime subscription for journal entries
+    const channel = supabase
+      .channel('journal_entries_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entries'
+        },
+        () => {
+          console.log('Journal entry changed, refreshing...');
+          fetchJournalEntries();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchAccounts = async () => {
@@ -511,9 +532,11 @@ const JournalEntries = () => {
         description: `تم حفظ القيد رقم ${savedEntryNumber} / Entry #${savedEntryNumber} saved`,
       });
 
-      resetForm();
-      fetchJournalEntries();
+      // التنقل أولاً ثم إعادة التعيين
       navigate('/accounting/journal-entries');
+      setTimeout(() => {
+        resetForm();
+      }, 100);
     } catch (error: any) {
       console.error('Error saving journal entry:', error);
       toast({
@@ -538,7 +561,7 @@ const JournalEntries = () => {
     }));
   };
 
-  const resetForm = async () => {
+  const resetForm = () => {
     setFormData({
       entryNumber: "",
       date: new Date().toISOString().split('T')[0],
@@ -546,7 +569,6 @@ const JournalEntries = () => {
       lines: createEmptyLines(),
     });
     setSearchStates({});
-    await generateNextEntryNumber();
   };
 
   const handlePrintEntry = (entry: any) => {
