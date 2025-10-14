@@ -296,194 +296,159 @@ const LoadsList = () => {
               box-sizing: border-box;
             }
             
+            @page {
+              size: A4 landscape;
+              margin: 2cm;
+            }
+            
             body {
               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
               direction: rtl;
-              padding: 40px;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              min-height: 100vh;
+              padding: 20px;
+              background: white;
+              color: #000;
             }
             
             .container {
-              max-width: 900px;
+              max-width: 100%;
               margin: 0 auto;
               background: white;
-              border-radius: 20px;
-              overflow: hidden;
-              box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              border: 3px solid #000;
+              padding: 30px;
             }
             
             .header {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              padding: 40px;
               text-align: center;
+              border-bottom: 3px solid #000;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
             }
             
             .company-name {
-              font-size: 32px;
+              font-size: 28px;
               font-weight: bold;
-              margin-bottom: 10px;
-              text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+              margin-bottom: 5px;
+            }
+            
+            .company-name-en {
+              font-size: 20px;
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 15px;
             }
             
             .document-title {
-              font-size: 24px;
-              opacity: 0.95;
-              margin-top: 15px;
-              border-top: 2px solid rgba(255,255,255,0.3);
-              padding-top: 15px;
+              font-size: 22px;
+              font-weight: bold;
+              margin-top: 10px;
+            }
+            
+            .document-title-en {
+              font-size: 18px;
+              color: #333;
+              margin-top: 5px;
             }
             
             .content {
-              padding: 40px;
+              margin-top: 30px;
             }
             
             .load-number-section {
-              background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-              color: white;
-              padding: 25px;
-              border-radius: 15px;
-              margin-bottom: 30px;
               text-align: center;
-              box-shadow: 0 10px 25px rgba(240, 147, 251, 0.3);
+              padding: 20px;
+              border: 2px solid #000;
+              margin-bottom: 30px;
             }
             
             .load-number-label {
               font-size: 16px;
-              opacity: 0.9;
-              margin-bottom: 8px;
+              margin-bottom: 5px;
             }
             
             .load-number {
-              font-size: 36px;
+              font-size: 32px;
               font-weight: bold;
               letter-spacing: 2px;
             }
             
-            .info-grid {
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 20px;
-              margin-top: 30px;
+            .info-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
             }
             
-            .info-item {
-              background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-              padding: 20px;
-              border-radius: 12px;
-              border-right: 5px solid #667eea;
-              transition: transform 0.2s;
-            }
-            
-            .info-item:hover {
-              transform: translateX(-5px);
+            .info-table td {
+              padding: 12px;
+              border: 2px solid #000;
             }
             
             .info-label {
-              color: #667eea;
-              font-size: 14px;
-              font-weight: 600;
-              margin-bottom: 8px;
-              text-transform: uppercase;
-              letter-spacing: 1px;
+              font-weight: bold;
+              width: 25%;
+              background: #f5f5f5;
             }
             
             .info-value {
-              color: #2d3748;
-              font-size: 20px;
-              font-weight: bold;
+              width: 25%;
             }
             
-            .highlight-section {
-              background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-              padding: 25px;
-              border-radius: 15px;
-              margin-top: 30px;
-              box-shadow: 0 10px 25px rgba(252, 182, 159, 0.3);
-            }
-            
-            .highlight-title {
-              color: #c7502e;
-              font-size: 18px;
-              font-weight: bold;
-              margin-bottom: 15px;
-              text-align: center;
-            }
-            
-            .highlight-grid {
+            .signatures {
               display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 15px;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 30px;
+              margin-top: 50px;
+              padding-top: 30px;
+              border-top: 2px solid #000;
             }
             
-            .highlight-item {
-              background: white;
-              padding: 15px;
-              border-radius: 10px;
+            .signature-box {
               text-align: center;
             }
             
-            .highlight-label {
-              color: #c7502e;
-              font-size: 12px;
-              margin-bottom: 5px;
-              font-weight: 600;
-            }
-            
-            .highlight-value {
-              color: #2d3748;
-              font-size: 24px;
+            .signature-title {
               font-weight: bold;
-            }
-            
-            .notes-section {
-              margin-top: 30px;
-              padding: 20px;
-              background: #f7fafc;
-              border-radius: 12px;
-              border: 2px dashed #cbd5e0;
-            }
-            
-            .notes-label {
-              color: #4a5568;
-              font-size: 14px;
-              font-weight: 600;
-              margin-bottom: 10px;
-            }
-            
-            .notes-value {
-              color: #2d3748;
               font-size: 16px;
-              line-height: 1.6;
+              margin-bottom: 5px;
+            }
+            
+            .signature-title-en {
+              font-size: 14px;
+              color: #333;
+              margin-bottom: 20px;
+            }
+            
+            .signature-line {
+              border-top: 2px solid #000;
+              margin-top: 60px;
+              padding-top: 10px;
+            }
+            
+            .signature-name {
+              font-size: 14px;
+              color: #666;
             }
             
             .footer {
-              background: #f7fafc;
-              padding: 25px;
               text-align: center;
-              border-top: 3px solid #e2e8f0;
-              margin-top: 40px;
-            }
-            
-            .print-date {
-              color: #718096;
-              font-size: 14px;
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 2px solid #000;
+              font-size: 12px;
+              color: #666;
             }
             
             @media print {
               body {
-                background: white;
                 padding: 0;
               }
               
               .container {
-                box-shadow: none;
-                border-radius: 0;
+                border: 3px solid #000;
               }
               
-              .info-item:hover {
-                transform: none;
+              @page {
+                size: A4 landscape;
+                margin: 1.5cm;
               }
             }
           </style>
@@ -492,71 +457,78 @@ const LoadsList = () => {
           <div class="container">
             <div class="header">
               <div class="company-name">شركة الرمال الناعمة الصناعية</div>
+              <div class="company-name-en">Industrial Soft Sands Company</div>
               <div class="document-title">سند شحنة</div>
+              <div class="document-title-en">Load Document</div>
             </div>
             
             <div class="content">
               <div class="load-number-section">
-                <div class="load-number-label">رقم الشحنة</div>
+                <div class="load-number-label">رقم الشحنة / Load Number</div>
                 <div class="load-number">${load.load_number}</div>
               </div>
               
-              <div class="info-grid">
-                <div class="info-item">
-                  <div class="info-label">تاريخ الشحنة</div>
-                  <div class="info-value">${format(new Date(load.date), 'yyyy-MM-dd')}</div>
-                </div>
-                
-                <div class="info-item">
-                  <div class="info-label">تاريخ الفاتورة</div>
-                  <div class="info-value">${load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : 'لم يحدد'}</div>
-                </div>
-                
-                <div class="info-item">
-                  <div class="info-label">الشركة</div>
-                  <div class="info-value">${companyName}</div>
-                </div>
-                
-                <div class="info-item">
-                  <div class="info-label">نوع الشحنة</div>
-                  <div class="info-value">${loadType}</div>
-                </div>
-                
-                <div class="info-item">
-                  <div class="info-label">السائق</div>
-                  <div class="info-value">${driverName}</div>
-                </div>
-                
-                <div class="info-item">
-                  <div class="info-label">رقم الشاحنة</div>
-                  <div class="info-value">${load.truck_number || 'غير محدد'}</div>
-                </div>
-              </div>
+              <table class="info-table">
+                <tr>
+                  <td class="info-label">تاريخ الشحنة<br><small>Load Date</small></td>
+                  <td class="info-value">${format(new Date(load.date), 'yyyy-MM-dd')}</td>
+                  <td class="info-label">تاريخ الفاتورة<br><small>Invoice Date</small></td>
+                  <td class="info-value">${load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : 'لم يحدد / Not Set'}</td>
+                </tr>
+                <tr>
+                  <td class="info-label">الشركة<br><small>Company</small></td>
+                  <td class="info-value">${companyName}</td>
+                  <td class="info-label">نوع الشحنة<br><small>Load Type</small></td>
+                  <td class="info-value">${loadType}</td>
+                </tr>
+                <tr>
+                  <td class="info-label">السائق<br><small>Driver</small></td>
+                  <td class="info-value">${driverName}</td>
+                  <td class="info-label">رقم الشاحنة<br><small>Truck Number</small></td>
+                  <td class="info-value">${load.truck_number || 'غير محدد / Not Set'}</td>
+                </tr>
+                <tr>
+                  <td class="info-label">الكمية (طن)<br><small>Quantity (Ton)</small></td>
+                  <td class="info-value">${load.quantity}</td>
+                  <td class="info-label">السعر (ريال)<br><small>Price (SAR)</small></td>
+                  <td class="info-value">${parseFloat(load.unit_price).toFixed(2)}</td>
+                </tr>
+                ${load.notes ? `
+                <tr>
+                  <td class="info-label">ملاحظات<br><small>Notes</small></td>
+                  <td class="info-value" colspan="3">${load.notes}</td>
+                </tr>
+                ` : ''}
+              </table>
               
-              <div class="highlight-section">
-                <div class="highlight-title">تفاصيل الكمية والسعر</div>
-                <div class="highlight-grid">
-                  <div class="highlight-item">
-                    <div class="highlight-label">الكمية (طن)</div>
-                    <div class="highlight-value">${load.quantity}</div>
-                  </div>
-                  
-                  <div class="highlight-item">
-                    <div class="highlight-label">السعر (ريال)</div>
-                    <div class="highlight-value">${parseFloat(load.unit_price).toFixed(2)}</div>
+              <div class="signatures">
+                <div class="signature-box">
+                  <div class="signature-title">توقيع المسؤول</div>
+                  <div class="signature-title-en">Manager Signature</div>
+                  <div class="signature-line">
+                    <div class="signature-name">الاسم / Name: __________________</div>
                   </div>
                 </div>
-              </div>
-              
-              ${load.notes ? `
-                <div class="notes-section">
-                  <div class="notes-label">ملاحظات:</div>
-                  <div class="notes-value">${load.notes}</div>
+                
+                <div class="signature-box">
+                  <div class="signature-title">توقيع السائق</div>
+                  <div class="signature-title-en">Driver Signature</div>
+                  <div class="signature-line">
+                    <div class="signature-name">الاسم / Name: __________________</div>
+                  </div>
                 </div>
-              ` : ''}
+                
+                <div class="signature-box">
+                  <div class="signature-title">توقيع الاستلام</div>
+                  <div class="signature-title-en">Receiver Signature</div>
+                  <div class="signature-line">
+                    <div class="signature-name">الاسم / Name: __________________</div>
+                  </div>
+                </div>
+              </div>
               
               <div class="footer">
-                <div class="print-date">تاريخ الطباعة: ${format(new Date(), 'yyyy-MM-dd HH:mm')}</div>
+                <div>تاريخ الطباعة / Print Date: ${format(new Date(), 'yyyy-MM-dd HH:mm')}</div>
               </div>
             </div>
           </div>
