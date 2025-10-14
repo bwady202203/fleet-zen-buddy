@@ -441,20 +441,14 @@ const JournalEntries = () => {
     try {
       console.log('بدء حفظ القيد...', { validLines: validLines.length });
 
-      // استخدام transaction لتوليد رقم فريد والحفظ بشكل آمن
-      const maxRetries = 5; // زيادة عدد المحاولات
+      const maxRetries = 5;
       let retryCount = 0;
       let success = false;
       let savedEntryNumber = '';
 
       while (!success && retryCount < maxRetries) {
         try {
-          // إضافة delay عشوائي صغير لتقليل احتمالية التعارض
-          if (retryCount > 0) {
-            await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
-          }
-
-          // توليد رقم قيد جديد بطريقة أكثر أماناً
+          // جلب أحدث رقم قيد في كل محاولة
           const { data: lastEntryData, error: fetchError } = await supabase
             .from('journal_entries')
             .select('entry_number')
@@ -468,15 +462,13 @@ const JournalEntries = () => {
           
           if (lastEntryData && lastEntryData.length > 0) {
             const lastEntry = lastEntryData[0].entry_number;
-            // استخراج الرقم التسلسلي من نهاية رقم القيد بعد السنة
             const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
             if (match) {
               nextNumber = parseInt(match[1], 10) + 1;
             }
           }
 
-          // إضافة retryCount للرقم في حالة إعادة المحاولة لضمان التفرد
-          const uniqueEntryNumber = `JE-${currentYear}${(nextNumber + retryCount).toString().padStart(6, '0')}`;
+          const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
           console.log(`محاولة ${retryCount + 1}: حفظ برقم ${uniqueEntryNumber}`);
 
           // حفظ القيد
@@ -491,13 +483,15 @@ const JournalEntries = () => {
             .single();
 
           if (entryError) {
-            // إذا كان خطأ التكرار، أعد المحاولة
+            // إذا كان خطأ التكرار، أعد المحاولة بجلب الرقم التالي
             if (entryError.code === '23505') {
               retryCount++;
-              console.log(`رقم مكرر: ${uniqueEntryNumber}، إعادة المحاولة ${retryCount}/${maxRetries}...`);
+              console.log(`رقم ${uniqueEntryNumber} مكرر، سيتم جلب الرقم التالي (محاولة ${retryCount}/${maxRetries})...`);
               if (retryCount >= maxRetries) {
                 throw new Error(`فشل الحفظ بعد ${maxRetries} محاولات بسبب تكرار رقم القيد`);
               }
+              // انتظار قصير قبل المحاولة التالية
+              await new Promise(resolve => setTimeout(resolve, 100));
               continue;
             }
             throw entryError;
