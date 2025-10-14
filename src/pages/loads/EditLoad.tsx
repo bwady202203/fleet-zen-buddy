@@ -273,16 +273,6 @@ const EditLoad = () => {
                     placeholder="السعر / Unit Price"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label>المجموع / Total</Label>
-                  <Input
-                    type="text"
-                    value={((parseFloat(formData.quantity) || 0) * (parseFloat(formData.unit_price) || 0)).toFixed(2)}
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
