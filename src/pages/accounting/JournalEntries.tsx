@@ -261,16 +261,19 @@ const JournalEntries = () => {
 
   const generateNextEntryNumber = async () => {
     try {
+      const currentYear = new Date().getFullYear();
+      
+      // البحث عن أعلى رقم قيد للسنة الحالية فقط
       const { data, error } = await supabase
         .from('journal_entries')
         .select('entry_number')
-        .order('created_at', { ascending: false })
+        .like('entry_number', `JE-${currentYear}%`)
+        .order('entry_number', { ascending: false })
         .limit(1);
 
       if (error) throw error;
 
       let nextNumber = 1;
-      const currentYear = new Date().getFullYear();
       
       if (data && data.length > 0) {
         const lastEntry = data[0].entry_number;
@@ -450,110 +453,57 @@ const JournalEntries = () => {
     try {
       console.log('بدء حفظ القيد...', { validLines: validLines.length });
 
-      const maxRetries = 10; // زيادة عدد المحاولات
-      let retryCount = 0;
-      let success = false;
-      let savedEntryNumber = '';
+      // استخدام database function لتوليد رقم فريد والحفظ بشكل آمن
+      const { data: journalEntry, error: entryError } = await supabase
+        .rpc('create_journal_entry_with_number', {
+          p_date: formData.date,
+          p_description: formData.description
+        })
+        .single();
 
-      while (!success && retryCount < maxRetries) {
-        try {
-          // جلب أعلى رقم قيد بناءً على entry_number نفسه وليس created_at
-          const { data: maxEntryData, error: fetchError } = await supabase
-            .from('journal_entries')
-            .select('entry_number')
-            .order('entry_number', { ascending: false })
-            .limit(1);
-
-          if (fetchError) {
-            console.error('خطأ في جلب آخر رقم:', fetchError);
-            throw fetchError;
-          }
-
-          let nextNumber = 1;
-          const currentYear = new Date().getFullYear();
-          
-          if (maxEntryData && maxEntryData.length > 0) {
-            const lastEntry = maxEntryData[0].entry_number;
-            console.log('آخر رقم قيد في قاعدة البيانات:', lastEntry);
-            const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
-            if (match) {
-              nextNumber = parseInt(match[1], 10) + 1;
-            }
-          }
-
-          const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
-          console.log(`محاولة ${retryCount + 1}/${maxRetries}: حفظ برقم ${uniqueEntryNumber}`);
-
-          // محاولة الحفظ
-          const { data: journalEntry, error: entryError } = await supabase
-            .from('journal_entries')
-            .insert({
-              entry_number: uniqueEntryNumber,
-              date: formData.date,
-              description: formData.description,
-            })
-            .select()
-            .single();
-
-          if (entryError) {
-            if (entryError.code === '23505') {
-              // رقم مكرر - انتظر قليلاً وأعد المحاولة
-              retryCount++;
-              console.log(`⚠️ رقم ${uniqueEntryNumber} مكرر! انتظار وإعادة جلب الرقم التالي...`);
-              await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
-              continue;
-            }
-            console.error('خطأ في حفظ القيد:', entryError);
-            throw entryError;
-          }
-
-          console.log('✅ تم حفظ القيد بنجاح:', journalEntry);
-
-          // حفظ سطور القيد
-          const lines = validLines.map(line => ({
-            journal_entry_id: journalEntry.id,
-            account_id: line.accountId,
-            description: line.description,
-            debit: line.debit || 0,
-            credit: line.credit || 0,
-            cost_center_id: line.costCenterId || null,
-            project_id: line.projectId || null,
-            branch_id: selectedBranch || null,
-          }));
-
-          const { error: linesError } = await supabase
-            .from('journal_entry_lines')
-            .insert(lines);
-
-          if (linesError) {
-            console.error('خطأ في حفظ السطور، جاري حذف القيد:', linesError);
-            // حذف القيد في حالة فشل حفظ السطور
-            await supabase
-              .from('journal_entries')
-              .delete()
-              .eq('id', journalEntry.id);
-            throw linesError;
-          }
-
-          savedEntryNumber = uniqueEntryNumber;
-          success = true;
-          console.log('✅ تم حفظ جميع السطور بنجاح');
-
-        } catch (error) {
-          console.error(`محاولة ${retryCount + 1} فشلت:`, error);
-          if (retryCount >= maxRetries - 1) {
-            throw error;
-          }
-        }
+      if (entryError) {
+        console.error('❌ خطأ في حفظ القيد:', entryError);
+        throw entryError;
       }
 
-      if (!success) {
-        throw new Error(`فشل الحفظ بعد ${maxRetries} محاولات`);
+      if (!journalEntry) {
+        throw new Error('فشل في إنشاء القيد');
       }
+
+      console.log('✅ تم حفظ القيد بنجاح:', journalEntry);
+
+      // حفظ سطور القيد
+      const lines = validLines.map(line => ({
+        journal_entry_id: journalEntry.id,
+        account_id: line.accountId,
+        description: line.description,
+        debit: line.debit || 0,
+        credit: line.credit || 0,
+        cost_center_id: line.costCenterId || null,
+        project_id: line.projectId || null,
+        branch_id: selectedBranch || null,
+      }));
+
+      const { error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .insert(lines);
+
+      if (linesError) {
+        console.error('❌ خطأ في حفظ السطور، جاري حذف القيد:', linesError);
+        // حذف القيد في حالة فشل حفظ السطور
+        await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('id', journalEntry.id);
+        throw linesError;
+      }
+
+      console.log('✅ تم حفظ جميع السطور بنجاح');
+
 
       toast({
         title: "تم الحفظ بنجاح / Saved Successfully",
-        description: `تم حفظ القيد رقم ${savedEntryNumber} / Entry #${savedEntryNumber} saved`,
+        description: `تم حفظ القيد رقم ${journalEntry.entry_number} / Entry #${journalEntry.entry_number} saved`,
       });
 
       // التنقل أولاً ثم إعادة التعيين

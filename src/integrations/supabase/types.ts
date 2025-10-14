@@ -2055,6 +2055,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_journal_entry_with_number: {
+        Args: { p_date: string; p_description: string }
+        Returns: {
+          created_at: string
+          date: string
+          description: string
+          entry_number: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
