@@ -841,7 +841,7 @@ const JournalEntries = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-4 gap-4 p-4 bg-accent/50 rounded-lg">
               <div>
-                <Label className="text-sm">الفرع / Branch</Label>
+                <Label className="text-sm">الفرع</Label>
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
@@ -856,16 +856,16 @@ const JournalEntries = () => {
                 </select>
               </div>
               <div>
-                <Label className="text-sm">رقم القيد / Entry Number</Label>
+                <Label className="text-sm">رقم القيد</Label>
                 <Input 
                   value={formData.entryNumber} 
                   onChange={(e) => setFormData({ ...formData, entryNumber: e.target.value })}
                   className="bg-background" 
-                  placeholder="رقم القيد / Entry Number"
+                  placeholder="رقم القيد"
                 />
               </div>
               <div>
-                <Label className="text-sm">التاريخ / Date</Label>
+                <Label className="text-sm">التاريخ</Label>
                 <Input
                   type="date"
                   value={formData.date}
@@ -873,11 +873,11 @@ const JournalEntries = () => {
                 />
               </div>
               <div>
-                <Label className="text-sm">البيان العام / Description</Label>
+                <Label className="text-sm">البيان العام</Label>
                 <Input
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="بيان القيد / Entry Description"
+                  placeholder="بيان القيد"
                 />
               </div>
             </div>
@@ -885,15 +885,15 @@ const JournalEntries = () => {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>بنود القيد / Entry Lines</CardTitle>
+                  <CardTitle>بنود القيد</CardTitle>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={handlePasteFromExcel}>
                       <ClipboardPaste className="h-4 w-4 ml-2" />
-                      لصق من Excel / Paste from Excel
+                      لصق من Excel
                     </Button>
                     <Button variant="outline" size="sm" onClick={addEmptyLine}>
                       <Plus className="h-4 w-4 ml-2" />
-                      إضافة سطر / Add Line
+                      إضافة سطر
                     </Button>
                   </div>
                 </div>
@@ -903,12 +903,12 @@ const JournalEntries = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right min-w-[250px]">الحساب / Account</TableHead>
-                        <TableHead className="text-right min-w-[200px]">البيان / Description</TableHead>
-                        <TableHead className="text-right min-w-[120px]">المدين / Debit</TableHead>
-                        <TableHead className="text-right min-w-[120px]">الدائن / Credit</TableHead>
-                        <TableHead className="text-right min-w-[180px]">مركز التكلفة / Cost Center</TableHead>
-                        <TableHead className="text-right min-w-[180px]">المشروع / Project</TableHead>
+                        <TableHead className="text-right min-w-[250px]">الحساب</TableHead>
+                        <TableHead className="text-right min-w-[200px]">البيان</TableHead>
+                        <TableHead className="text-right min-w-[120px]">المدين</TableHead>
+                        <TableHead className="text-right min-w-[120px]">الدائن</TableHead>
+                        <TableHead className="text-right min-w-[180px]">مركز التكلفة</TableHead>
+                        <TableHead className="text-right min-w-[180px]">المشروع</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1219,9 +1219,9 @@ const JournalEntries = () => {
                               </TableCell>
                               <TableCell colSpan={2}>
                                 {isBalanced ? (
-                                  <span className="text-green-600">✓ متوازن / Balanced</span>
+                                  <span className="text-green-600">✓ متوازن</span>
                                 ) : totalDebit > 0 || totalCredit > 0 ? (
-                                  <span className="text-red-600">✗ غير متوازن / Unbalanced</span>
+                                  <span className="text-red-600">✗ غير متوازن</span>
                                 ) : null}
                               </TableCell>
                             </TableRow>
@@ -1294,15 +1294,15 @@ const JournalEntries = () => {
                   <ArrowRight className="h-6 w-6" />
                 </Link>
                 <div>
-                  <h1 className="text-3xl font-bold">القيود اليومية / Journal Entries</h1>
+                  <h1 className="text-3xl font-bold">القيود اليومية</h1>
                   <p className="text-muted-foreground mt-1">
-                    تسجيل ومتابعة القيود المحاسبية اليومية / Record and track daily accounting entries
+                    تسجيل ومتابعة القيود المحاسبية اليومية
                   </p>
                 </div>
               </div>
               <Button onClick={() => navigate('/accounting/journal-entries/new')}>
                 <Plus className="h-4 w-4 ml-2" />
-                قيد جديد / New Entry
+                قيد جديد
               </Button>
             </div>
           </div>
@@ -1380,12 +1380,12 @@ const JournalEntries = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right w-12"></TableHead>
-                      <TableHead className="text-right">رقم القيد / Entry No.</TableHead>
-                      <TableHead className="text-right">التاريخ / Date</TableHead>
-                      <TableHead className="text-right">البيان / Description</TableHead>
-                      <TableHead className="text-right">المدين / Debit</TableHead>
-                      <TableHead className="text-right">الدائن / Credit</TableHead>
-                      <TableHead className="text-center no-print">إجراءات / Actions</TableHead>
+                      <TableHead className="text-right">رقم القيد</TableHead>
+                      <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">البيان</TableHead>
+                      <TableHead className="text-right">المدين</TableHead>
+                      <TableHead className="text-right">الدائن</TableHead>
+                      <TableHead className="text-center no-print">إجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1451,19 +1451,19 @@ const JournalEntries = () => {
                               <div className="p-4">
                                 <div className="bg-card rounded-lg border">
                                   <div className="p-3 bg-muted/50 border-b">
-                                    <h4 className="font-semibold text-sm">تفاصيل سطور القيد / Entry Lines Details</h4>
+                                    <h4 className="font-semibold text-sm">تفاصيل سطور القيد</h4>
                                   </div>
                                   <Table>
                                     <TableHeader>
                                       <TableRow>
-                                        <TableHead className="text-right">رمز الحساب / Code</TableHead>
-                                        <TableHead className="text-right">اسم الحساب / Account Name</TableHead>
-                                        <TableHead className="text-right">البيان / Description</TableHead>
-                                        <TableHead className="text-right">مركز التكلفة / Cost Center</TableHead>
-                                        <TableHead className="text-right">المشروع / Project</TableHead>
-                                        <TableHead className="text-right">الفرع / Branch</TableHead>
-                                        <TableHead className="text-right">المدين / Debit</TableHead>
-                                        <TableHead className="text-right">الدائن / Credit</TableHead>
+                                        <TableHead className="text-right">رمز الحساب</TableHead>
+                                        <TableHead className="text-right">اسم الحساب</TableHead>
+                                        <TableHead className="text-right">البيان</TableHead>
+                                        <TableHead className="text-right">مركز التكلفة</TableHead>
+                                        <TableHead className="text-right">المشروع</TableHead>
+                                        <TableHead className="text-right">الفرع</TableHead>
+                                        <TableHead className="text-right">المدين</TableHead>
+                                        <TableHead className="text-right">الدائن</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1510,11 +1510,11 @@ const JournalEntries = () => {
 
               <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
                 <div>
-                  <div className="text-sm text-gray-600">رقم القيد / Entry No.</div>
+                  <div className="text-sm text-gray-600">رقم القيد</div>
                   <div className="font-bold text-lg">{selectedEntry.entryNumber}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">التاريخ / Date</div>
+                  <div className="text-sm text-gray-600">التاريخ</div>
                   <div className="font-bold text-lg">
                     {format(new Date(selectedEntry.date), 'dd/MM/yyyy')}
                   </div>
@@ -1611,7 +1611,7 @@ const JournalEntries = () => {
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden" dir="rtl">
             <DialogHeader>
               <DialogTitle className="flex items-center justify-between">
-                <span>عرض تفصيلي للقيد / Entry Details</span>
+                <span>عرض تفصيلي للقيد</span>
                 <Button onClick={handleSaveEdit}>
                   <Save className="h-4 w-4 ml-2" />
                   حفظ التعديلات
@@ -1622,7 +1622,7 @@ const JournalEntries = () => {
               <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)] px-2">
                 <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
                   <div>
-                    <Label className="text-sm">رقم القيد / Entry No.</Label>
+                    <Label className="text-sm">رقم القيد</Label>
                     <Input 
                       value={editingEntry.entryNumber} 
                       disabled
@@ -1649,7 +1649,7 @@ const JournalEntries = () => {
 
                 <div className="border rounded-lg">
                   <div className="flex items-center justify-between p-4 border-b bg-muted/50">
-                    <h3 className="font-semibold">سطور القيد / Entry Lines</h3>
+                    <h3 className="font-semibold">سطور القيد</h3>
                     <Button variant="outline" size="sm" onClick={addEditingLine}>
                       <Plus className="h-4 w-4 ml-2" />
                       إضافة سطر
@@ -1660,10 +1660,10 @@ const JournalEntries = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-right min-w-[250px]">الحساب / Account</TableHead>
-                          <TableHead className="text-right min-w-[200px]">البيان / Description</TableHead>
-                          <TableHead className="text-right min-w-[120px]">المدين / Debit</TableHead>
-                          <TableHead className="text-right min-w-[120px]">الدائن / Credit</TableHead>
+                          <TableHead className="text-right min-w-[250px]">الحساب</TableHead>
+                          <TableHead className="text-right min-w-[200px]">البيان</TableHead>
+                          <TableHead className="text-right min-w-[120px]">المدين</TableHead>
+                          <TableHead className="text-right min-w-[120px]">الدائن</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

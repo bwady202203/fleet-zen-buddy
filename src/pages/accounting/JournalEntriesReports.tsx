@@ -267,9 +267,9 @@ const JournalEntriesReports = () => {
                   <ArrowRight className="h-6 w-6" />
                 </Link>
                 <div>
-                  <h1 className="text-3xl font-bold">تقارير القيود اليومية / Journal Entries Reports</h1>
+                  <h1 className="text-3xl font-bold">تقارير القيود اليومية</h1>
                   <p className="text-muted-foreground mt-1">
-                    تقارير تفصيلية للقيود المحاسبية / Detailed accounting entries reports
+                    تقارير تفصيلية للقيود المحاسبية
                   </p>
                 </div>
               </div>
@@ -357,7 +357,7 @@ const JournalEntriesReports = () => {
               <div className="flex gap-4 mt-6">
                 <Button onClick={generateReport} disabled={loading}>
                   <Filter className="h-4 w-4 ml-2" />
-                  {loading ? 'جاري التحميل...' : 'إنشاء التقرير / Generate Report'}
+                  {loading ? 'جاري التحميل...' : 'إنشاء التقرير'}
                 </Button>
                 {reportData.length > 0 && (
                   <>
@@ -367,7 +367,7 @@ const JournalEntriesReports = () => {
                     </Button>
                     <Button variant="outline" onClick={handlePrint}>
                       <Printer className="h-4 w-4 ml-2" />
-                      طباعة / Print
+                      طباعة
                     </Button>
                   </>
                 )}
@@ -379,9 +379,9 @@ const JournalEntriesReports = () => {
           {reportData.length > 0 && (
             <Card className="print-area">
               <CardHeader>
-                <CardTitle>نتائج التقرير / Report Results</CardTitle>
+                <CardTitle>نتائج التقرير</CardTitle>
                 <div className="text-sm text-muted-foreground">
-                  إجمالي السجلات: {reportData.length} / Total Records: {reportData.length}
+                  إجمالي السجلات: {reportData.length}
                 </div>
               </CardHeader>
               <CardContent>
@@ -389,15 +389,15 @@ const JournalEntriesReports = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right">رقم القيد / Entry No.</TableHead>
-                        <TableHead className="text-right">التاريخ / Date</TableHead>
-                        <TableHead className="text-right">رمز الحساب / Code</TableHead>
-                        <TableHead className="text-right">اسم الحساب / Account</TableHead>
-                        <TableHead className="text-right">البيان / Description</TableHead>
-                        <TableHead className="text-right">مركز التكلفة / Cost Center</TableHead>
-                        <TableHead className="text-right">المشروع / Project</TableHead>
-                        <TableHead className="text-right">المدين / Debit</TableHead>
-                        <TableHead className="text-right">الدائن / Credit</TableHead>
+                        <TableHead className="text-right">رقم القيد</TableHead>
+                        <TableHead className="text-right">التاريخ</TableHead>
+                        <TableHead className="text-right">رمز الحساب</TableHead>
+                        <TableHead className="text-right">اسم الحساب</TableHead>
+                        <TableHead className="text-right">البيان</TableHead>
+                        <TableHead className="text-right">مركز التكلفة</TableHead>
+                        <TableHead className="text-right">المشروع</TableHead>
+                        <TableHead className="text-right">المدين</TableHead>
+                        <TableHead className="text-right">الدائن</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

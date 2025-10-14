@@ -832,9 +832,9 @@ const ChartOfAccounts = () => {
                 <ArrowRight className="h-6 w-6" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold">شجرة الحسابات / Chart of Accounts</h1>
+                <h1 className="text-3xl font-bold">شجرة الحسابات</h1>
                 <p className="text-muted-foreground mt-1">
-                  إدارة الدليل المحاسبي - 4 مستويات / Manage Chart of Accounts - 4 Levels
+                  إدارة الدليل المحاسبي - 4 مستويات
                 </p>
               </div>
             </div>
@@ -849,21 +849,21 @@ const ChartOfAccounts = () => {
               </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => resetForm()}>
+                <Button onClick={() => resetForm()}>
                     <Plus className="h-4 w-4 ml-2" />
-                    إضافة حساب جديد / Add New Account
+                    إضافة حساب جديد
                   </Button>
                 </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingAccount ? "تعديل الحساب / Edit Account" : "إضافة حساب جديد / Add New Account"}
+                    {editingAccount ? "تعديل الحساب" : "إضافة حساب جديد"}
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>نوع الحساب / Account Type</Label>
+                      <Label>نوع الحساب</Label>
                       <Select
                         value={formData.type}
                         onValueChange={(value) => setFormData({ ...formData, type: value })}
@@ -872,26 +872,26 @@ const ChartOfAccounts = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="asset">أصول / Assets</SelectItem>
-                          <SelectItem value="liability">خصوم / Liabilities</SelectItem>
-                          <SelectItem value="equity">حقوق ملكية / Equity</SelectItem>
-                          <SelectItem value="revenue">إيرادات / Revenue</SelectItem>
-                          <SelectItem value="expense">مصروفات / Expenses</SelectItem>
+                          <SelectItem value="asset">أصول</SelectItem>
+                          <SelectItem value="liability">خصوم</SelectItem>
+                          <SelectItem value="equity">حقوق ملكية</SelectItem>
+                          <SelectItem value="revenue">إيرادات</SelectItem>
+                          <SelectItem value="expense">مصروفات</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div>
-                      <Label>الحساب الرئيسي / Parent Account</Label>
+                      <Label>الحساب الرئيسي</Label>
                       <Select
                         value={formData.parent_id || "none"}
                         onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="بدون حساب رئيسي / No Parent" />
+                          <SelectValue placeholder="بدون حساب رئيسي" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">بدون حساب رئيسي / No Parent</SelectItem>
+                          <SelectItem value="none">بدون حساب رئيسي</SelectItem>
                           {accounts
                             .filter(acc => {
                               // Filter by type
@@ -911,36 +911,36 @@ const ChartOfAccounts = () => {
                   </div>
                   
                   <div>
-                    <Label>رمز الحساب / Account Code</Label>
+                    <Label>رمز الحساب</Label>
                     <Input
                       value={formData.code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      placeholder="مثال: 1111 / Example: 1111"
+                      placeholder="مثال: 1111"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label>اسم الحساب (عربي) / Account Name (Arabic)</Label>
+                    <Label>اسم الحساب (عربي)</Label>
                     <Input
                       value={formData.name_ar}
                       onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                      placeholder="مثال: الصندوق / Example: Cash"
+                      placeholder="مثال: الصندوق"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label>اسم الحساب (إنجليزي) / Account Name (English)</Label>
+                    <Label>اسم الحساب (إنجليزي)</Label>
                     <Input
                       value={formData.name_en}
                       onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                      placeholder="Example: Cash Box"
+                      placeholder="مثال: Cash Box"
                     />
                   </div>
                   
                   <div>
-                    <Label>الرصيد الافتتاحي / Opening Balance</Label>
+                    <Label>الرصيد الافتتاحي</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -1000,13 +1000,13 @@ const ChartOfAccounts = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right w-1/5">المستوى الأول / Level 1</TableHead>
-                    <TableHead className="text-right w-1/5">المستوى الثاني / Level 2</TableHead>
-                    <TableHead className="text-right w-1/5">المستوى الثالث / Level 3</TableHead>
-                    <TableHead className="text-right w-1/5">المستوى الرابع / Level 4</TableHead>
-                    <TableHead className="text-center w-1/12">الرصيد / Balance</TableHead>
-                    <TableHead className="text-center w-1/12">النوع / Type</TableHead>
-                    <TableHead className="text-center w-1/12">إجراءات / Actions</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الأول</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الثاني</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الثالث</TableHead>
+                    <TableHead className="text-right w-1/5">المستوى الرابع</TableHead>
+                    <TableHead className="text-center w-1/12">الرصيد</TableHead>
+                    <TableHead className="text-center w-1/12">النوع</TableHead>
+                    <TableHead className="text-center w-1/12">إجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
