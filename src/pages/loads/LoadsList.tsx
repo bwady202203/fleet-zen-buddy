@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Printer, Edit, Trash2, Filter, FileDown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowRight, Printer, Edit, Trash2, Filter, FileDown, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
@@ -19,6 +20,8 @@ const LoadsList = () => {
   const [loads, setLoads] = useState<any[]>([]);
   const [filteredLoads, setFilteredLoads] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [selectedLoad, setSelectedLoad] = useState<any>(null);
   
   // Filter states
   const [companies, setCompanies] = useState<any[]>([]);
@@ -276,35 +279,34 @@ const LoadsList = () => {
   };
 
   const handlePrintLoad = (load: any) => {
+    setSelectedLoad(load);
+    setPreviewDialogOpen(true);
+  };
+
+  const handlePrintFromDialog = () => {
+    const printContent = document.getElementById('load-print-content');
+    if (!printContent) return;
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
-    const companyName = load.companies?.name || '-';
-    const loadType = load.load_types?.name || '-';
-    const driverName = load.drivers?.name || '-';
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html dir="rtl">
         <head>
           <meta charset="UTF-8">
-          <title>شحنة ${load.load_number}</title>
+          <title>شحنة ${selectedLoad.load_number}</title>
           <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
             @page {
-              size: A4 landscape;
-              margin: 2cm;
+              size: A4 portrait;
+              margin: 1cm;
             }
             
             body {
               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
               direction: rtl;
-              padding: 20px;
+              padding: 0;
+              margin: 0;
               background: white;
               color: #000;
             }
@@ -314,59 +316,59 @@ const LoadsList = () => {
               margin: 0 auto;
               background: white;
               border: 3px solid #000;
-              padding: 30px;
+              padding: 20px;
             }
             
             .header {
               text-align: center;
               border-bottom: 3px solid #000;
-              padding-bottom: 20px;
-              margin-bottom: 30px;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
             }
             
             .company-name {
-              font-size: 28px;
+              font-size: 22px;
               font-weight: bold;
-              margin-bottom: 5px;
+              margin-bottom: 3px;
             }
             
             .company-name-en {
-              font-size: 20px;
+              font-size: 16px;
               font-weight: bold;
               color: #333;
-              margin-bottom: 15px;
+              margin-bottom: 10px;
             }
             
             .document-title {
-              font-size: 22px;
+              font-size: 18px;
               font-weight: bold;
-              margin-top: 10px;
+              margin-top: 8px;
             }
             
             .document-title-en {
-              font-size: 18px;
+              font-size: 14px;
               color: #333;
-              margin-top: 5px;
+              margin-top: 3px;
             }
             
             .content {
-              margin-top: 30px;
+              margin-top: 20px;
             }
             
             .load-number-section {
               text-align: center;
-              padding: 20px;
+              padding: 15px;
               border: 2px solid #000;
-              margin-bottom: 30px;
+              margin-bottom: 20px;
             }
             
             .load-number-label {
-              font-size: 16px;
+              font-size: 14px;
               margin-bottom: 5px;
             }
             
             .load-number {
-              font-size: 32px;
+              font-size: 24px;
               font-weight: bold;
               letter-spacing: 2px;
             }
@@ -374,30 +376,31 @@ const LoadsList = () => {
             .info-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 30px;
+              margin-bottom: 20px;
             }
             
             .info-table td {
-              padding: 12px;
+              padding: 10px;
               border: 2px solid #000;
+              font-size: 13px;
             }
             
             .info-label {
               font-weight: bold;
-              width: 25%;
+              width: 30%;
               background: #f5f5f5;
             }
             
             .info-value {
-              width: 25%;
+              width: 70%;
             }
             
             .signatures {
               display: grid;
               grid-template-columns: repeat(3, 1fr);
-              gap: 30px;
-              margin-top: 50px;
-              padding-top: 30px;
+              gap: 20px;
+              margin-top: 40px;
+              padding-top: 20px;
               border-top: 2px solid #000;
             }
             
@@ -407,134 +410,45 @@ const LoadsList = () => {
             
             .signature-title {
               font-weight: bold;
-              font-size: 16px;
-              margin-bottom: 5px;
+              font-size: 14px;
+              margin-bottom: 3px;
             }
             
             .signature-title-en {
-              font-size: 14px;
+              font-size: 12px;
               color: #333;
-              margin-bottom: 20px;
+              margin-bottom: 15px;
             }
             
             .signature-line {
               border-top: 2px solid #000;
-              margin-top: 60px;
-              padding-top: 10px;
+              margin-top: 50px;
+              padding-top: 8px;
             }
             
             .signature-name {
-              font-size: 14px;
+              font-size: 12px;
               color: #666;
             }
             
             .footer {
               text-align: center;
-              margin-top: 30px;
-              padding-top: 20px;
+              margin-top: 20px;
+              padding-top: 15px;
               border-top: 2px solid #000;
-              font-size: 12px;
+              font-size: 11px;
               color: #666;
-            }
-            
-            @media print {
-              body {
-                padding: 0;
-              }
-              
-              .container {
-                border: 3px solid #000;
-              }
-              
-              @page {
-                size: A4 landscape;
-                margin: 1.5cm;
-              }
             }
           </style>
         </head>
         <body>
-          <div class="container">
-            <div class="header">
-              <div class="company-name">شركة الرمال الناعمة الصناعية</div>
-              <div class="company-name-en">Industrial Soft Sands Company</div>
-              <div class="document-title">سند شحنة</div>
-              <div class="document-title-en">Load Document</div>
-            </div>
-            
-            <div class="content">
-              <div class="load-number-section">
-                <div class="load-number-label">رقم الشحنة / Load Number</div>
-                <div class="load-number">${load.load_number}</div>
-              </div>
-              
-              <table class="info-table">
-                <tr>
-                  <td class="info-label">تاريخ الشحنة<br><small>Load Date</small></td>
-                  <td class="info-value">${format(new Date(load.date), 'yyyy-MM-dd')}</td>
-                  <td class="info-label">تاريخ الفاتورة<br><small>Invoice Date</small></td>
-                  <td class="info-value">${load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : 'لم يحدد / Not Set'}</td>
-                </tr>
-                <tr>
-                  <td class="info-label">الشركة<br><small>Company</small></td>
-                  <td class="info-value">${companyName}</td>
-                  <td class="info-label">نوع الشحنة<br><small>Load Type</small></td>
-                  <td class="info-value">${loadType}</td>
-                </tr>
-                <tr>
-                  <td class="info-label">السائق<br><small>Driver</small></td>
-                  <td class="info-value">${driverName}</td>
-                  <td class="info-label">رقم الشاحنة<br><small>Truck Number</small></td>
-                  <td class="info-value">${load.truck_number || 'غير محدد / Not Set'}</td>
-                </tr>
-                <tr>
-                  <td class="info-label">الكمية (طن)<br><small>Quantity (Ton)</small></td>
-                  <td class="info-value">${load.quantity}</td>
-                  <td class="info-label">السعر (ريال)<br><small>Price (SAR)</small></td>
-                  <td class="info-value">${parseFloat(load.unit_price).toFixed(2)}</td>
-                </tr>
-                ${load.notes ? `
-                <tr>
-                  <td class="info-label">ملاحظات<br><small>Notes</small></td>
-                  <td class="info-value" colspan="3">${load.notes}</td>
-                </tr>
-                ` : ''}
-              </table>
-              
-              <div class="signatures">
-                <div class="signature-box">
-                  <div class="signature-title">توقيع المسؤول</div>
-                  <div class="signature-title-en">Manager Signature</div>
-                  <div class="signature-line">
-                    <div class="signature-name">الاسم / Name: __________________</div>
-                  </div>
-                </div>
-                
-                <div class="signature-box">
-                  <div class="signature-title">توقيع السائق</div>
-                  <div class="signature-title-en">Driver Signature</div>
-                  <div class="signature-line">
-                    <div class="signature-name">الاسم / Name: __________________</div>
-                  </div>
-                </div>
-                
-                <div class="signature-box">
-                  <div class="signature-title">توقيع الاستلام</div>
-                  <div class="signature-title-en">Receiver Signature</div>
-                  <div class="signature-line">
-                    <div class="signature-name">الاسم / Name: __________________</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="footer">
-                <div>تاريخ الطباعة / Print Date: ${format(new Date(), 'yyyy-MM-dd HH:mm')}</div>
-              </div>
-            </div>
-          </div>
+          ${printContent.innerHTML}
           <script>
             window.onload = function() {
               window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
             };
           </script>
         </body>
@@ -946,6 +860,142 @@ const LoadsList = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Preview Dialog */}
+        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>معاينة سند الشحنة</span>
+                <Button onClick={handlePrintFromDialog} size="sm">
+                  <Printer className="h-4 w-4 ml-2" />
+                  طباعة / تحميل PDF
+                </Button>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedLoad && (
+              <div id="load-print-content" className="p-6">
+                <div className="container" style={{ maxWidth: '100%', margin: '0 auto', background: 'white', border: '3px solid #000', padding: '20px' }}>
+                  <div className="header" style={{ textAlign: 'center', borderBottom: '3px solid #000', paddingBottom: '15px', marginBottom: '20px' }}>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '3px' }}>شركة الرمال الناعمة الصناعية</div>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#333', marginBottom: '10px' }}>Industrial Soft Sands Company</div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '8px' }}>سند شحنة</div>
+                    <div style={{ fontSize: '14px', color: '#333', marginTop: '3px' }}>Load Document</div>
+                  </div>
+                  
+                  <div className="content" style={{ marginTop: '20px' }}>
+                    <div style={{ textAlign: 'center', padding: '15px', border: '2px solid #000', marginBottom: '20px' }}>
+                      <div style={{ fontSize: '14px', marginBottom: '5px' }}>رقم الشحنة / Load Number</div>
+                      <div style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '2px' }}>{selectedLoad.load_number}</div>
+                    </div>
+                    
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', width: '30%', background: '#f5f5f5', fontSize: '13px' }}>
+                            تاريخ الشحنة<br/><small>Load Date</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', width: '70%', fontSize: '13px' }}>
+                            {format(new Date(selectedLoad.date), 'yyyy-MM-dd')}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                            تاريخ الفاتورة<br/><small>Invoice Date</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                            {selectedLoad.invoice_date ? format(new Date(selectedLoad.invoice_date), 'yyyy-MM-dd') : 'لم يحدد / Not Set'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                            الشركة<br/><small>Company</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                            {selectedLoad.companies?.name || '-'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                            نوع الشحنة<br/><small>Load Type</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                            {selectedLoad.load_types?.name || '-'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                            السائق<br/><small>Driver</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                            {selectedLoad.drivers?.name || '-'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                            رقم الشاحنة<br/><small>Truck Number</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                            {selectedLoad.truck_number || 'غير محدد / Not Set'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                            الكمية (طن)<br/><small>Quantity (Ton)</small>
+                          </td>
+                          <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                            {selectedLoad.quantity}
+                          </td>
+                        </tr>
+                        {selectedLoad.notes && (
+                          <tr>
+                            <td style={{ padding: '10px', border: '2px solid #000', fontWeight: 'bold', background: '#f5f5f5', fontSize: '13px' }}>
+                              ملاحظات<br/><small>Notes</small>
+                            </td>
+                            <td style={{ padding: '10px', border: '2px solid #000', fontSize: '13px' }}>
+                              {selectedLoad.notes}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #000' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '3px' }}>توقيع المسؤول</div>
+                        <div style={{ fontSize: '12px', color: '#333', marginBottom: '15px' }}>Manager Signature</div>
+                        <div style={{ borderTop: '2px solid #000', marginTop: '50px', paddingTop: '8px' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>الاسم / Name: __________________</div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '3px' }}>توقيع السائق</div>
+                        <div style={{ fontSize: '12px', color: '#333', marginBottom: '15px' }}>Driver Signature</div>
+                        <div style={{ borderTop: '2px solid #000', marginTop: '50px', paddingTop: '8px' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>الاسم / Name: __________________</div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '3px' }}>توقيع الاستلام</div>
+                        <div style={{ fontSize: '12px', color: '#333', marginBottom: '15px' }}>Receiver Signature</div>
+                        <div style={{ borderTop: '2px solid #000', marginTop: '50px', paddingTop: '8px' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>الاسم / Name: __________________</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #000', fontSize: '11px', color: '#666' }}>
+                      <div>تاريخ الطباعة / Print Date: {format(new Date(), 'yyyy-MM-dd HH:mm')}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
 
       <style>{`
