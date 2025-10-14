@@ -70,6 +70,7 @@ const JournalEntries = () => {
   const [filterAccount, setFilterAccount] = useState("");
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
@@ -414,6 +415,12 @@ const JournalEntries = () => {
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
   const handleSubmit = async () => {
+    // منع الحفظ المتعدد
+    if (isSaving) {
+      console.log('جاري الحفظ بالفعل، تجاهل المحاولة الجديدة');
+      return;
+    }
+
     // Filter out empty lines
     const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
 
@@ -438,30 +445,36 @@ const JournalEntries = () => {
       return;
     }
 
+    setIsSaving(true);
+    
     try {
       console.log('بدء حفظ القيد...', { validLines: validLines.length });
 
-      const maxRetries = 5;
+      const maxRetries = 10; // زيادة عدد المحاولات
       let retryCount = 0;
       let success = false;
       let savedEntryNumber = '';
 
       while (!success && retryCount < maxRetries) {
         try {
-          // جلب أحدث رقم قيد في كل محاولة
-          const { data: lastEntryData, error: fetchError } = await supabase
+          // جلب أعلى رقم قيد بناءً على entry_number نفسه وليس created_at
+          const { data: maxEntryData, error: fetchError } = await supabase
             .from('journal_entries')
             .select('entry_number')
             .order('entry_number', { ascending: false })
             .limit(1);
 
-          if (fetchError) throw fetchError;
+          if (fetchError) {
+            console.error('خطأ في جلب آخر رقم:', fetchError);
+            throw fetchError;
+          }
 
           let nextNumber = 1;
           const currentYear = new Date().getFullYear();
           
-          if (lastEntryData && lastEntryData.length > 0) {
-            const lastEntry = lastEntryData[0].entry_number;
+          if (maxEntryData && maxEntryData.length > 0) {
+            const lastEntry = maxEntryData[0].entry_number;
+            console.log('آخر رقم قيد في قاعدة البيانات:', lastEntry);
             const match = lastEntry.match(/JE-\d{4}(\d{6})$/);
             if (match) {
               nextNumber = parseInt(match[1], 10) + 1;
@@ -469,9 +482,9 @@ const JournalEntries = () => {
           }
 
           const uniqueEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
-          console.log(`محاولة ${retryCount + 1}: حفظ برقم ${uniqueEntryNumber}`);
+          console.log(`محاولة ${retryCount + 1}/${maxRetries}: حفظ برقم ${uniqueEntryNumber}`);
 
-          // حفظ القيد
+          // محاولة الحفظ
           const { data: journalEntry, error: entryError } = await supabase
             .from('journal_entries')
             .insert({
@@ -483,21 +496,18 @@ const JournalEntries = () => {
             .single();
 
           if (entryError) {
-            // إذا كان خطأ التكرار، أعد المحاولة بجلب الرقم التالي
             if (entryError.code === '23505') {
+              // رقم مكرر - انتظر قليلاً وأعد المحاولة
               retryCount++;
-              console.log(`رقم ${uniqueEntryNumber} مكرر، سيتم جلب الرقم التالي (محاولة ${retryCount}/${maxRetries})...`);
-              if (retryCount >= maxRetries) {
-                throw new Error(`فشل الحفظ بعد ${maxRetries} محاولات بسبب تكرار رقم القيد`);
-              }
-              // انتظار قصير قبل المحاولة التالية
-              await new Promise(resolve => setTimeout(resolve, 100));
+              console.log(`⚠️ رقم ${uniqueEntryNumber} مكرر! انتظار وإعادة جلب الرقم التالي...`);
+              await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
               continue;
             }
+            console.error('خطأ في حفظ القيد:', entryError);
             throw entryError;
           }
 
-          console.log('تم حفظ القيد بنجاح:', journalEntry);
+          console.log('✅ تم حفظ القيد بنجاح:', journalEntry);
 
           // حفظ سطور القيد
           const lines = validLines.map(line => ({
@@ -516,7 +526,8 @@ const JournalEntries = () => {
             .insert(lines);
 
           if (linesError) {
-            // في حالة فشل حفظ السطور، احذف القيد
+            console.error('خطأ في حفظ السطور، جاري حذف القيد:', linesError);
+            // حذف القيد في حالة فشل حفظ السطور
             await supabase
               .from('journal_entries')
               .delete()
@@ -526,15 +537,18 @@ const JournalEntries = () => {
 
           savedEntryNumber = uniqueEntryNumber;
           success = true;
-          console.log('تم حفظ جميع السطور بنجاح');
+          console.log('✅ تم حفظ جميع السطور بنجاح');
 
         } catch (error) {
-          if (retryCount >= maxRetries - 1) throw error;
+          console.error(`محاولة ${retryCount + 1} فشلت:`, error);
+          if (retryCount >= maxRetries - 1) {
+            throw error;
+          }
         }
       }
 
       if (!success) {
-        throw new Error('فشل الحفظ بعد عدة محاولات');
+        throw new Error(`فشل الحفظ بعد ${maxRetries} محاولات`);
       }
 
       toast({
@@ -548,12 +562,14 @@ const JournalEntries = () => {
         resetForm();
       }, 100);
     } catch (error: any) {
-      console.error('Error saving journal entry:', error);
+      console.error('❌ خطأ نهائي في حفظ القيد:', error);
       toast({
         title: "خطأ / Error",
         description: error?.message || "فشل في حفظ القيد / Failed to save entry",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1160,9 +1176,19 @@ const JournalEntries = () => {
                   </Card>
 
                   <div className="flex gap-4">
-                    <Button onClick={handleSubmit} className="flex-1" disabled={!isBalanced}>
-                      <Save className="h-4 w-4 ml-2" />
-                      حفظ القيد / Save Entry
+                    <Button 
+                      onClick={handleSubmit} 
+                      className="flex-1" 
+                      disabled={!isBalanced || isSaving}
+                    >
+                      {isSaving ? (
+                        <>جاري الحفظ... / Saving...</>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 ml-2" />
+                          حفظ القيد / Save Entry
+                        </>
+                      )}
                     </Button>
                     <Button variant="outline" onClick={() => navigate('/accounting/journal-entries')} className="flex-1">
                       <X className="h-4 w-4 ml-2" />
