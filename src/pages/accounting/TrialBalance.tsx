@@ -680,10 +680,11 @@ const TrialBalance = () => {
           }
           .print-content {
             position: absolute;
-            left: 0;
+            right: 0;
             top: 0;
             width: 100%;
             padding: 20px;
+            direction: rtl;
           }
           .no-print {
             display: none !important;
@@ -709,11 +710,13 @@ const TrialBalance = () => {
             justify-content: space-between;
             font-size: 14px;
             margin-top: 10px;
+            direction: rtl;
           }
           .print-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            direction: rtl;
           }
           .print-table th, .print-table td {
             border: 1px solid #000;
