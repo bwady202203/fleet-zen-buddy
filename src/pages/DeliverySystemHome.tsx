@@ -11,7 +11,7 @@ export default function DeliverySystemHome() {
   useEffect(() => {
     const isDeliveryMode = sessionStorage.getItem("delivery_system_mode");
     if (!isDeliveryMode) {
-      navigate("/delivery-system");
+      navigate("/ds");
     }
   }, [navigate]);
 
@@ -19,7 +19,7 @@ export default function DeliverySystemHome() {
     sessionStorage.removeItem("delivery_system_mode");
     sessionStorage.removeItem("delivery_system_user");
     toast.success("تم تسجيل الخروج بنجاح");
-    navigate("/delivery-system");
+    navigate("/ds");
   };
 
   const username = sessionStorage.getItem("delivery_system_user");

@@ -235,7 +235,7 @@ export default function DeliveryReceipts() {
 
   const handleBackClick = () => {
     if (isDeliveryMode) {
-      navigate("/delivery-system/home");
+      navigate("/ds/home");
     } else {
       navigate("/loads");
     }

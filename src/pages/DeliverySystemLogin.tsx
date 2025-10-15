@@ -37,7 +37,7 @@ export default function DeliverySystemLogin() {
         sessionStorage.setItem("delivery_system_user", username);
         
         toast.success("تم تسجيل الدخول بنجاح");
-        navigate("/delivery-system/home");
+        navigate("/ds/home");
       } else {
         toast.error("اسم المستخدم أو كلمة المرور غير صحيحة");
       }
