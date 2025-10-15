@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -968,99 +968,119 @@ const TrialBalance = () => {
           <TabsContent value="general">
             <Card className="mb-6 no-print">
               <CardHeader>
-                <CardTitle>فلترة الفترة</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  فلترة ميزان المراجعة
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4 flex gap-2 justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQuickFilter('currentYear')}
-                    className="gap-2"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    السنة الحالية
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQuickFilter('last3Months')}
-                    className="gap-2"
-                  >
-                    <CalendarRange className="h-4 w-4" />
-                    آخر 3 أشهر
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQuickFilter('currentMonth')}
-                    className="gap-2"
-                  >
-                    <CalendarClock className="h-4 w-4" />
-                    الشهر الحالي
-                  </Button>
+              <CardContent className="space-y-6">
+                {/* Quick Date Filters */}
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">فترات سريعة</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuickFilter('currentYear')}
+                      className="gap-2"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      السنة الحالية
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuickFilter('last3Months')}
+                      className="gap-2"
+                    >
+                      <CalendarRange className="h-4 w-4" />
+                      آخر 3 أشهر
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQuickFilter('currentMonth')}
+                      className="gap-2"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                      الشهر الحالي
+                    </Button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <Label>مستوى العرض</Label>
-                    <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">جميع المستويات</SelectItem>
-                        <SelectItem value="1">المستوى الأول</SelectItem>
-                        <SelectItem value="2">المستوى الثاني</SelectItem>
-                        <SelectItem value="3">المستوى الثالث</SelectItem>
-                        <SelectItem value="4">المستوى الرابع</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                {/* Custom Date Range */}
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">فترة مخصصة</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>من تاريخ</Label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>إلى تاريخ</Label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>الفرع</Label>
-                    <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر الفرع" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">جميع الفروع</SelectItem>
-                        {branches.map(branch => (
-                          <SelectItem key={branch.id} value={branch.id}>
-                            {branch.code} - {branch.name_ar}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                </div>
+
+                {/* Display Options */}
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">خيارات العرض</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>مستوى العرض</Label>
+                      <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">جميع المستويات</SelectItem>
+                          <SelectItem value="1">المستوى الأول</SelectItem>
+                          <SelectItem value="2">المستوى الثاني</SelectItem>
+                          <SelectItem value="3">المستوى الثالث</SelectItem>
+                          <SelectItem value="4">المستوى الرابع</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>الفرع</Label>
+                      <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الفرع" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">جميع الفروع</SelectItem>
+                          {branches.map(branch => (
+                            <SelectItem key={branch.id} value={branch.id}>
+                              {branch.code} - {branch.name_ar}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2 pt-6">
-                    <input
-                      type="checkbox"
-                      id="noBranch"
-                      checked={showOnlyNoBranch}
-                      onChange={(e) => setShowOnlyNoBranch(e.target.checked)}
-                      className="rounded border-border"
-                    />
-                    <label htmlFor="noBranch" className="text-sm">
-                      قيود بدون فرع فقط
-                    </label>
-                  </div>
-                  <div>
-                    <Label>من تاريخ</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>إلى تاريخ</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
+                </div>
+
+                {/* Additional Filter */}
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="noBranch"
+                    checked={showOnlyNoBranch}
+                    onChange={(e) => setShowOnlyNoBranch(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  <label htmlFor="noBranch" className="text-sm font-medium">
+                    عرض القيود بدون فرع فقط
+                  </label>
                 </div>
               </CardContent>
             </Card>
