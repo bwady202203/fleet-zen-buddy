@@ -97,449 +97,69 @@ const App = () => {
                             <Route path="/ds/home" element={<DeliverySystemHome />} />
                             
                             {/* Protected Routes with Icons Bar */}
-                            <Route path="/" element={
+                            <Route path="/*" element={
                               <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Dashboard />
-                                </>
+                                <SystemIconsBar />
+                                <Routes>
+                                  <Route path="/" element={<Dashboard />} />
+                                  <Route path="/users" element={<UsersManagement />} />
+                                  <Route path="/fleet" element={<Index />} />
+                                  <Route path="/accounting" element={<Accounting />} />
+                                  <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
+                                  <Route path="/accounting/journal-entries" element={<JournalEntries />} />
+                                  <Route path="/accounting/journal-entries/new" element={<JournalEntries />} />
+                                  <Route path="/accounting/journal-entries-reports" element={<JournalEntriesReports />} />
+                                  <Route path="/accounting/ledger" element={<Ledger />} />
+                                  <Route path="/accounting/trial-balance" element={<TrialBalance />} />
+                                  <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
+                                  <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
+                                  <Route path="/accounting/sales-return" element={<SalesReturn />} />
+                                  <Route path="/accounting/purchase-return" element={<PurchaseReturn />} />
+                                  <Route path="/accounting/balance-sheet" element={<BalanceSheet />} />
+                                  <Route path="/accounting/income-statement" element={<IncomeStatement />} />
+                                  <Route path="/accounting/cost-centers" element={<CostCenters />} />
+                                  <Route path="/accounting/branches" element={<Branches />} />
+                                  <Route path="/accounting/projects" element={<Projects />} />
+                                  <Route path="/hr" element={<HR />} />
+                                  <Route path="/hr/employees" element={<Employees />} />
+                                  <Route path="/hr/payroll" element={<Payroll />} />
+                                  <Route path="/hr/advances" element={<Advances />} />
+                                  <Route path="/hr/additions" element={<Additions />} />
+                                  <Route path="/hr/deductions" element={<Deductions />} />
+                  <Route path="/hr/leaves" element={<Leaves />} />
+                  <Route path="/hr/attendance" element={<Attendance />} />
+                  <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
+                                  <Route path="/loads" element={<Loads />} />
+                                  <Route path="/loads/register" element={<LoadsRegister />} />
+                                  <Route path="/loads/list" element={<LoadsList />} />
+                                  <Route path="/loads/edit/:id" element={<EditLoad />} />
+                                  <Route path="/loads/drivers" element={<DriversManagement />} />
+                                  <Route path="/loads/companies" element={<CompaniesManagement />} />
+                                  <Route path="/loads/companies-management" element={<CompaniesManagement />} />
+                                  <Route path="/loads/invoices" element={<LoadInvoices />} />
+                                  <Route path="/loads/receipts" element={<PaymentReceipts />} />
+                                  <Route path="/loads/reports" element={<LoadReports />} />
+                                  <Route path="/loads/load-types" element={<LoadTypes />} />
+                                  <Route path="/loads/suppliers" element={<SuppliersManagement />} />
+                                  <Route path="/loads/delivery-receipts" element={<DeliveryReceipts />} />
+                                  <Route path="/reports" element={<MaintenanceReports />} />
+                                  <Route path="/spare-parts" element={<SpareParts />} />
+                                  <Route path="/purchases" element={<Purchases />} />
+                                  <Route path="/stock-movement" element={<StockMovement />} />
+                                  <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
+                                  <Route path="/price-history" element={<PurchasePriceHistory />} />
+                                  <Route path="/bulk-vehicles" element={<BulkVehicles />} />
+                                  <Route path="/custody" element={<CustodyHome />} />
+                                  <Route path="/custody/representatives" element={<CustodyRepresentatives />} />
+                                  <Route path="/custody/transfers" element={<CustodyTransfers />} />
+                                  <Route path="/custody/expenses" element={<CustodyExpenses />} />
+                                  <Route path="/custody/records" element={<CustodyRecords />} />
+                                  <Route path="/custody/filter" element={<CustodyFilter />} />
+                                  <Route path="/custody/journal" element={<CustodyJournalEntries />} />
+                                  <Route path="*" element={<NotFound />} />
+                                </Routes>
                               </ProtectedRoute>
                             } />
-                            <Route path="/users" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <UsersManagement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/fleet" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Index />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Accounting />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/chart-of-accounts" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <ChartOfAccounts />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/journal-entries" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <JournalEntries />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/journal-entries/new" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <JournalEntries />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/journal-entries-reports" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <JournalEntriesReports />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/ledger" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Ledger />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/trial-balance" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <TrialBalance />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/sales-invoice" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <SalesInvoice />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/purchase-invoice" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <PurchaseInvoice />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/sales-return" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <SalesReturn />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/purchase-return" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <PurchaseReturn />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/balance-sheet" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <BalanceSheet />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/income-statement" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <IncomeStatement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/cost-centers" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CostCenters />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/branches" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Branches />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/accounting/projects" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Projects />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <HR />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/employees" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Employees />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/payroll" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Payroll />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/advances" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Advances />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/additions" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Additions />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/deductions" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Deductions />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/leaves" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Leaves />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/attendance" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Attendance />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/hr/bulk-employees" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <BulkEmployees />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Loads />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/register" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <LoadsRegister />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/list" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <LoadsList />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/edit/:id" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <EditLoad />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/drivers" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <DriversManagement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/companies" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CompaniesManagement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/companies-management" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CompaniesManagement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/invoices" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <LoadInvoices />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/receipts" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <PaymentReceipts />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/reports" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <LoadReports />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/load-types" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <LoadTypes />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/suppliers" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <SuppliersManagement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/loads/delivery-receipts" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <DeliveryReceipts />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/reports" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <MaintenanceReports />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/spare-parts" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <SpareParts />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/purchases" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <Purchases />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/stock-movement" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <StockMovement />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/vehicle-mileage" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <VehicleMileageReport />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/price-history" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <PurchasePriceHistory />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/bulk-vehicles" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <BulkVehicles />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyHome />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody/representatives" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyRepresentatives />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody/transfers" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyTransfers />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody/expenses" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyExpenses />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody/records" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyRecords />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody/filter" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyFilter />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            <Route path="/custody/journal" element={
-                              <ProtectedRoute>
-                                <>
-                                  <SystemIconsBar />
-                                  <CustodyJournalEntries />
-                                </>
-                              </ProtectedRoute>
-                            } />
-                            
-                            {/* 404 - Must be last */}
-                            <Route path="*" element={<NotFound />} />
                           </Routes>
                         </BrowserRouter>
                       </TooltipProvider>
