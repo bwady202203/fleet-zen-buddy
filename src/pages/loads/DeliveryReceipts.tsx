@@ -43,13 +43,6 @@ export default function DeliveryReceipts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addDriverDialogOpen, setAddDriverDialogOpen] = useState(false);
   const [newDriverName, setNewDriverName] = useState("");
-  const [isDeliveryMode, setIsDeliveryMode] = useState(false);
-  
-  useEffect(() => {
-    const deliveryMode = sessionStorage.getItem("delivery_system_mode") === "true";
-    setIsDeliveryMode(deliveryMode);
-  }, []);
-  
   const [formData, setFormData] = useState({
     entry_time: "",
     exit_time: "",
@@ -233,20 +226,12 @@ export default function DeliveryReceipts() {
     }, 250);
   };
 
-  const handleBackClick = () => {
-    if (isDeliveryMode) {
-      navigate("/delivery-system/home");
-    } else {
-      navigate("/loads");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background p-4" dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-right">سندات التسليم</h1>
-          <Button onClick={handleBackClick} variant="outline">
+          <Button onClick={() => navigate("/loads")} variant="outline">
             رجوع
           </Button>
         </div>

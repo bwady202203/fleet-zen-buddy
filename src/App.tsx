@@ -52,8 +52,6 @@ import LoadReports from "./pages/loads/LoadReports";
 import LoadTypes from "./pages/loads/LoadTypes";
 import SuppliersManagement from "./pages/loads/SuppliersManagement";
 import DeliveryReceipts from "./pages/loads/DeliveryReceipts";
-import DeliverySystemLogin from "./pages/DeliverySystemLogin";
-import DeliverySystemHome from "./pages/DeliverySystemHome";
 import Employees from "./pages/hr/Employees";
 import Payroll from "./pages/hr/Payroll";
 import Advances from "./pages/hr/Advances";
@@ -92,8 +90,6 @@ const App = () => {
                         <BrowserRouter>
                           <Routes>
                             <Route path="/auth" element={<Auth />} />
-                            <Route path="/delivery-system" element={<DeliverySystemLogin />} />
-                            <Route path="/delivery-system/home" element={<DeliverySystemHome />} />
                             
                             {/* Protected Routes with Icons Bar */}
                             <Route path="/*" element={
