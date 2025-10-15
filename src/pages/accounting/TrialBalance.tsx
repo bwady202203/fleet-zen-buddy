@@ -980,15 +980,15 @@ const TrialBalance = () => {
                 {/* Quick Date Filters */}
                 <div className="space-y-2">
                   <Label className="text-base font-semibold">فترات سريعة</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 justify-end">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setQuickFilter('currentYear')}
+                      onClick={() => setQuickFilter('currentMonth')}
                       className="gap-2"
                     >
-                      <Calendar className="h-4 w-4" />
-                      السنة الحالية
+                      <CalendarClock className="h-4 w-4" />
+                      الشهر الحالي
                     </Button>
                     <Button
                       variant="outline"
@@ -1002,11 +1002,11 @@ const TrialBalance = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setQuickFilter('currentMonth')}
+                      onClick={() => setQuickFilter('currentYear')}
                       className="gap-2"
                     >
-                      <CalendarClock className="h-4 w-4" />
-                      الشهر الحالي
+                      <Calendar className="h-4 w-4" />
+                      السنة الحالية
                     </Button>
                   </div>
                 </div>
@@ -1016,19 +1016,19 @@ const TrialBalance = () => {
                   <Label className="text-base font-semibold">فترة مخصصة</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>من تاريخ</Label>
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label>إلى تاريخ</Label>
                       <Input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>من تاريخ</Label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
                       />
                     </div>
                   </div>
@@ -1038,21 +1038,6 @@ const TrialBalance = () => {
                 <div className="space-y-2">
                   <Label className="text-base font-semibold">خيارات العرض</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>مستوى العرض</Label>
-                      <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">جميع المستويات</SelectItem>
-                          <SelectItem value="1">المستوى الأول</SelectItem>
-                          <SelectItem value="2">المستوى الثاني</SelectItem>
-                          <SelectItem value="3">المستوى الثالث</SelectItem>
-                          <SelectItem value="4">المستوى الرابع</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div className="space-y-2">
                       <Label>الفرع</Label>
                       <Select value={selectedBranch} onValueChange={setSelectedBranch}>
@@ -1069,11 +1054,29 @@ const TrialBalance = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label>مستوى العرض</Label>
+                      <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">جميع المستويات</SelectItem>
+                          <SelectItem value="1">المستوى الأول</SelectItem>
+                          <SelectItem value="2">المستوى الثاني</SelectItem>
+                          <SelectItem value="3">المستوى الثالث</SelectItem>
+                          <SelectItem value="4">المستوى الرابع</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
                 {/* Additional Filter */}
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-2 justify-end">
+                  <label htmlFor="noBranch" className="text-sm font-medium">
+                    عرض القيود بدون فرع فقط
+                  </label>
                   <input
                     type="checkbox"
                     id="noBranch"
@@ -1081,9 +1084,6 @@ const TrialBalance = () => {
                     onChange={(e) => setShowOnlyNoBranch(e.target.checked)}
                     className="rounded border-border"
                   />
-                  <label htmlFor="noBranch" className="text-sm font-medium">
-                    عرض القيود بدون فرع فقط
-                  </label>
                 </div>
               </CardContent>
             </Card>
