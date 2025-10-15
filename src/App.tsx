@@ -91,10 +91,9 @@ const App = () => {
                         <Sonner />
                         <BrowserRouter>
                           <Routes>
-                            {/* Public Routes - No Authentication Required */}
                             <Route path="/auth" element={<Auth />} />
-                            <Route path="/ds" element={<DeliverySystemLogin />} />
-                            <Route path="/ds/home" element={<DeliverySystemHome />} />
+                            <Route path="/delivery-system" element={<DeliverySystemLogin />} />
+                            <Route path="/delivery-system/home" element={<DeliverySystemHome />} />
                             
                             {/* Protected Routes with Icons Bar */}
                             <Route path="/*" element={
