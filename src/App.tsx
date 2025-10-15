@@ -97,7 +97,7 @@ const App = () => {
                             <Route path="/ds/home" element={<DeliverySystemHome />} />
                             
                             {/* Protected Routes with Icons Bar */}
-                            <Route path="/*" element={
+                            <Route path="*" element={
                               <ProtectedRoute>
                                 <SystemIconsBar />
                                 <Routes>
