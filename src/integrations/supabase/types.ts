@@ -597,6 +597,110 @@ export type Database = {
           },
         ]
       }
+      delivery_receipts: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer_name: string | null
+          driver_id: string | null
+          driver_signature: string | null
+          empty_weight: number | null
+          entry_time: string | null
+          exit_time: string | null
+          full_weight: number | null
+          id: string
+          material_type: string | null
+          net_weight: number | null
+          organization_id: string | null
+          receipt_number: string
+          receiver_signature: string | null
+          supervisor_signature: string | null
+          supplier_company: string | null
+          truck_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_name?: string | null
+          driver_id?: string | null
+          driver_signature?: string | null
+          empty_weight?: number | null
+          entry_time?: string | null
+          exit_time?: string | null
+          full_weight?: number | null
+          id?: string
+          material_type?: string | null
+          net_weight?: number | null
+          organization_id?: string | null
+          receipt_number: string
+          receiver_signature?: string | null
+          supervisor_signature?: string | null
+          supplier_company?: string | null
+          truck_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_name?: string | null
+          driver_id?: string | null
+          driver_signature?: string | null
+          empty_weight?: number | null
+          entry_time?: string | null
+          exit_time?: string | null
+          full_weight?: number | null
+          id?: string
+          material_type?: string | null
+          net_weight?: number | null
+          organization_id?: string | null
+          receipt_number?: string
+          receiver_signature?: string | null
+          supervisor_signature?: string | null
+          supplier_company?: string | null
+          truck_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_receipts_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_system_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string | null
+          password_hash: string
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          password_hash: string
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          password_hash?: string
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       driver_payments: {
         Row: {
           amount: number
@@ -2070,6 +2174,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      verify_delivery_system_user: {
+        Args: { p_password: string; p_username: string }
         Returns: boolean
       }
     }

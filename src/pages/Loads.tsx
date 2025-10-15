@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList } from "lucide-react";
+import DeliverySystemAuth from "@/components/DeliverySystemAuth";
 
 const Loads = () => {
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
   const sections = [
     {
       title: "تسجيل الحمولات",
@@ -75,6 +79,16 @@ const Loads = () => {
       icon: FileText,
       link: "/loads/reports",
       color: "from-green-500 to-green-600"
+    },
+    {
+      title: "سندات التسليم",
+      titleEn: "Delivery Receipts",
+      description: "إدارة سندات التسليم والاستلام",
+      descriptionEn: "Manage Delivery Receipts",
+      icon: ClipboardList,
+      link: "#",
+      color: "from-amber-500 to-amber-600",
+      onClick: true
     }
   ];
 
@@ -98,33 +112,65 @@ const Loads = () => {
 
       <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sections.map((section) => (
-            <Link key={section.title} to={section.link}>
-              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">
-                <CardHeader>
-                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${section.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <section.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                    {section.title}
-                    <span className="block text-sm font-normal text-muted-foreground mt-1" dir="ltr">{section.titleEn}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{section.description}</p>
-                  <p className="text-sm text-muted-foreground/80 mt-1" dir="ltr">{section.descriptionEn}</p>
-                  <div className="mt-4 pt-4 border-t">
-                    <span className="text-sm text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
-                      فتح / Open
-                      <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {sections.map((section) => {
+            if (section.onClick) {
+              return (
+                <div key={section.title} onClick={() => setAuthDialogOpen(true)} className="cursor-pointer">
+                  <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">
+                    <CardHeader>
+                      <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${section.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                        <section.icon className="h-8 w-8 text-white" />
+                      </div>
+                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                        {section.title}
+                        <span className="block text-sm font-normal text-muted-foreground mt-1" dir="ltr">{section.titleEn}</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">{section.description}</p>
+                      <p className="text-sm text-muted-foreground/80 mt-1" dir="ltr">{section.descriptionEn}</p>
+                      <div className="mt-4 pt-4 border-t">
+                        <span className="text-sm text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
+                          فتح / Open
+                          <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            }
+
+            return (
+              <Link key={section.title} to={section.link}>
+                <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">
+                  <CardHeader>
+                    <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${section.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                      <section.icon className="h-8 w-8 text-white" />
+                    </div>
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                      {section.title}
+                      <span className="block text-sm font-normal text-muted-foreground mt-1" dir="ltr">{section.titleEn}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{section.description}</p>
+                    <p className="text-sm text-muted-foreground/80 mt-1" dir="ltr">{section.descriptionEn}</p>
+                    <div className="mt-4 pt-4 border-t">
+                      <span className="text-sm text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
+                        فتح / Open
+                        <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </main>
+
+      <DeliverySystemAuth open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
     </div>
   );
 };
