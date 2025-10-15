@@ -227,12 +227,19 @@ const ChartOfAccounts = () => {
   }, [formData.parent_id, dialogOpen, editingAccount]);
 
   const resetForm = (parentId: string | null = null) => {
+    const newCode = generateAccountCode(parentId);
+    console.log('Reset form with parentId:', parentId, 'Generated code:', newCode);
+    
+    // Get parent account type if parentId exists
+    const parentAccount = parentId ? accounts.find(acc => acc.id === parentId) : null;
+    const accountType = parentAccount ? parentAccount.type : "asset";
+    
     setFormData({
-      code: generateAccountCode(parentId),
+      code: newCode,
       name_ar: "",
       name_en: "",
       parent_id: parentId,
-      type: "asset",
+      type: accountType,
       is_active: true,
       balance: 0,
     });
@@ -300,6 +307,7 @@ const ChartOfAccounts = () => {
   };
 
   const handleAddSubAccount = (parentAccount: Account) => {
+    console.log('Adding sub-account under:', parentAccount.name_ar, 'ID:', parentAccount.id);
     resetForm(parentAccount.id);
     setDialogOpen(true);
   };
@@ -892,7 +900,10 @@ const ChartOfAccounts = () => {
                       <Label>الحساب الرئيسي</Label>
                       <Select
                         value={formData.parent_id || "none"}
-                        onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
+                        onValueChange={(value) => {
+                          console.log('Parent changed to:', value);
+                          setFormData({ ...formData, parent_id: value === "none" ? null : value });
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="بدون حساب رئيسي" />
