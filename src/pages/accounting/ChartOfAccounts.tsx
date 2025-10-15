@@ -173,11 +173,18 @@ const ChartOfAccounts = () => {
       setDialogOpen(false);
       resetForm();
       fetchAccounts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving account:', error);
+      
+      let errorMessage = "حدث خطأ في حفظ الحساب";
+      
+      if (error?.code === '23505') {
+        errorMessage = "رمز الحساب موجود بالفعل. الرجاء استخدام رمز مختلف";
+      }
+      
       toast({
         title: "خطأ",
-        description: "حدث خطأ في حفظ الحساب",
+        description: errorMessage,
         variant: "destructive",
       });
     }
