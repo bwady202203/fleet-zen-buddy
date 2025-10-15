@@ -971,15 +971,15 @@ const TrialBalance = () => {
           <TabsContent value="general">
             <Card className="mb-6 no-print">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 justify-end">
+                  <span>فلترة ميزان المراجعة</span>
                   <Filter className="h-5 w-5" />
-                  فلترة ميزان المراجعة
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Quick Date Filters */}
                 <div className="space-y-2">
-                  <Label className="text-base font-semibold">فترات سريعة</Label>
+                  <Label className="text-base font-semibold text-right block">فترات سريعة</Label>
                   <div className="flex flex-wrap gap-2 justify-end">
                     <Button
                       variant="outline"
@@ -987,8 +987,8 @@ const TrialBalance = () => {
                       onClick={() => setQuickFilter('currentMonth')}
                       className="gap-2"
                     >
+                      <span>الشهر الحالي</span>
                       <CalendarClock className="h-4 w-4" />
-                      الشهر الحالي
                     </Button>
                     <Button
                       variant="outline"
@@ -996,8 +996,8 @@ const TrialBalance = () => {
                       onClick={() => setQuickFilter('last3Months')}
                       className="gap-2"
                     >
+                      <span>آخر 3 أشهر</span>
                       <CalendarRange className="h-4 w-4" />
-                      آخر 3 أشهر
                     </Button>
                     <Button
                       variant="outline"
@@ -1005,30 +1005,32 @@ const TrialBalance = () => {
                       onClick={() => setQuickFilter('currentYear')}
                       className="gap-2"
                     >
+                      <span>السنة الحالية</span>
                       <Calendar className="h-4 w-4" />
-                      السنة الحالية
                     </Button>
                   </div>
                 </div>
 
                 {/* Custom Date Range */}
                 <div className="space-y-2">
-                  <Label className="text-base font-semibold">فترة مخصصة</Label>
+                  <Label className="text-base font-semibold text-right block">فترة مخصصة</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>إلى تاريخ</Label>
+                      <Label className="text-right block">إلى تاريخ</Label>
                       <Input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
+                        className="text-right"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>من تاريخ</Label>
+                      <Label className="text-right block">من تاريخ</Label>
                       <Input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
+                        className="text-right"
                       />
                     </div>
                   </div>
@@ -1036,12 +1038,12 @@ const TrialBalance = () => {
 
                 {/* Display Options */}
                 <div className="space-y-2">
-                  <Label className="text-base font-semibold">خيارات العرض</Label>
+                  <Label className="text-base font-semibold text-right block">خيارات العرض</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>الفرع</Label>
+                      <Label className="text-right block">الفرع</Label>
                       <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                        <SelectTrigger>
+                        <SelectTrigger className="text-right">
                           <SelectValue placeholder="اختر الفرع" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1055,9 +1057,9 @@ const TrialBalance = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>مستوى العرض</Label>
+                      <Label className="text-right block">مستوى العرض</Label>
                       <Select value={displayLevel.toString()} onValueChange={(value) => setDisplayLevel(value === 'all' ? 'all' : parseInt(value))}>
-                        <SelectTrigger>
+                        <SelectTrigger className="text-right">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
