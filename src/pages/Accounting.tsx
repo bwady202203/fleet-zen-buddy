@@ -13,6 +13,30 @@ const Accounting = () => {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
+  const convertToCSV = (data: any[], headers: string[]) => {
+    const csvRows = [];
+    
+    // Add headers
+    csvRows.push(headers.join(','));
+    
+    // Add data rows
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header];
+        // Handle null/undefined
+        if (value === null || value === undefined) return '';
+        // Escape quotes and wrap in quotes if contains comma, newline, or quote
+        const escaped = String(value).replace(/"/g, '""');
+        return escaped.includes(',') || escaped.includes('\n') || escaped.includes('"') 
+          ? `"${escaped}"` 
+          : escaped;
+      });
+      csvRows.push(values.join(','));
+    }
+    
+    return csvRows.join('\n');
+  };
+
   const handleExportData = async () => {
     try {
       setIsExporting(true);
@@ -26,39 +50,172 @@ const Accounting = () => {
         throw new Error("غير مصرح");
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-system-data`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Fetch all accounting-related data
+      const [
+        accounts,
+        journalEntries,
+        journalLines,
+        costCenters,
+        projects,
+        branches,
+        invoices,
+        invoiceItems,
+      ] = await Promise.all([
+        supabase.from('chart_of_accounts').select('*'),
+        supabase.from('journal_entries').select('*'),
+        supabase.from('journal_entry_lines').select('*'),
+        supabase.from('cost_centers').select('*'),
+        supabase.from('projects').select('*'),
+        supabase.from('branches').select('*'),
+        supabase.from('invoices').select('*'),
+        supabase.from('invoice_items').select('*'),
+      ]);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "فشل تصدير البيانات");
+      // Create metadata file describing the structure
+      const metadata = {
+        export_date: new Date().toISOString(),
+        description: 'نظام المحاسبة - تصدير كامل للبيانات',
+        tables: {
+          chart_of_accounts: {
+            description: 'دليل الحسابات',
+            columns: 'id, code, name_ar, name_en, type, parent_id, balance, is_active, created_at, updated_at',
+            relationships: 'parent_id -> chart_of_accounts.id (self-reference for hierarchical structure)'
+          },
+          journal_entries: {
+            description: 'القيود اليومية',
+            columns: 'id, entry_number, date, description, reference, created_by, created_at, updated_at',
+            relationships: 'created_by -> auth.users.id'
+          },
+          journal_entry_lines: {
+            description: 'سطور القيود اليومية',
+            columns: 'id, journal_entry_id, account_id, debit, credit, description, cost_center_id, project_id, branch_id, created_at',
+            relationships: [
+              'journal_entry_id -> journal_entries.id',
+              'account_id -> chart_of_accounts.id',
+              'cost_center_id -> cost_centers.id (optional)',
+              'project_id -> projects.id (optional)',
+              'branch_id -> branches.id (optional)'
+            ]
+          },
+          cost_centers: {
+            description: 'مراكز التكلفة',
+            columns: 'id, code, name_ar, name_en, is_active, created_at, updated_at',
+            relationships: 'none'
+          },
+          projects: {
+            description: 'المشاريع',
+            columns: 'id, code, name_ar, name_en, start_date, end_date, is_active, created_at, updated_at',
+            relationships: 'none'
+          },
+          branches: {
+            description: 'الفروع',
+            columns: 'id, code, name_ar, name_en, address, phone, manager_name, is_active, created_at, updated_at',
+            relationships: 'none'
+          },
+          invoices: {
+            description: 'الفواتير',
+            columns: 'id, invoice_number, type, date, customer_supplier, total_amount, tax_amount, discount_amount, net_amount, status, notes, created_by, created_at, updated_at',
+            relationships: 'created_by -> auth.users.id'
+          },
+          invoice_items: {
+            description: 'بنود الفواتير',
+            columns: 'id, invoice_id, description, quantity, unit_price, total, account_id, created_at',
+            relationships: [
+              'invoice_id -> invoices.id',
+              'account_id -> chart_of_accounts.id'
+            ]
+          }
+        },
+        notes: [
+          'CSV files use UTF-8 encoding with BOM for Arabic text compatibility',
+          'All date fields are in ISO 8601 format (YYYY-MM-DD)',
+          'All UUID fields represent unique identifiers for records',
+          'Null values are represented as empty fields in CSV',
+          'Relationships are described in the metadata for AI understanding'
+        ]
+      };
+
+      // Create CSV files
+      const files: { [key: string]: string } = {};
+      
+      if (accounts.data && accounts.data.length > 0) {
+        const headers = ['id', 'code', 'name_ar', 'name_en', 'type', 'parent_id', 'balance', 'is_active', 'created_at', 'updated_at'];
+        files['chart_of_accounts.csv'] = convertToCSV(accounts.data, headers);
       }
 
-      const systemData = await response.json();
+      if (journalEntries.data && journalEntries.data.length > 0) {
+        const headers = ['id', 'entry_number', 'date', 'description', 'reference', 'created_by', 'created_at', 'updated_at'];
+        files['journal_entries.csv'] = convertToCSV(journalEntries.data, headers);
+      }
+
+      if (journalLines.data && journalLines.data.length > 0) {
+        const headers = ['id', 'journal_entry_id', 'account_id', 'debit', 'credit', 'description', 'cost_center_id', 'project_id', 'branch_id', 'created_at'];
+        files['journal_entry_lines.csv'] = convertToCSV(journalLines.data, headers);
+      }
+
+      if (costCenters.data && costCenters.data.length > 0) {
+        const headers = ['id', 'code', 'name_ar', 'name_en', 'is_active', 'created_at', 'updated_at'];
+        files['cost_centers.csv'] = convertToCSV(costCenters.data, headers);
+      }
+
+      if (projects.data && projects.data.length > 0) {
+        const headers = ['id', 'code', 'name_ar', 'name_en', 'start_date', 'end_date', 'is_active', 'created_at', 'updated_at'];
+        files['projects.csv'] = convertToCSV(projects.data, headers);
+      }
+
+      if (branches.data && branches.data.length > 0) {
+        const headers = ['id', 'code', 'name_ar', 'name_en', 'address', 'phone', 'manager_name', 'is_active', 'created_at', 'updated_at'];
+        files['branches.csv'] = convertToCSV(branches.data, headers);
+      }
+
+      if (invoices.data && invoices.data.length > 0) {
+        const headers = ['id', 'invoice_number', 'type', 'date', 'customer_supplier', 'total_amount', 'tax_amount', 'discount_amount', 'net_amount', 'status', 'notes', 'created_by', 'created_at', 'updated_at'];
+        files['invoices.csv'] = convertToCSV(invoices.data, headers);
+      }
+
+      if (invoiceItems.data && invoiceItems.data.length > 0) {
+        const headers = ['id', 'invoice_id', 'description', 'quantity', 'unit_price', 'total', 'account_id', 'created_at'];
+        files['invoice_items.csv'] = convertToCSV(invoiceItems.data, headers);
+      }
+
+      // Add metadata as JSON
+      files['_metadata.json'] = JSON.stringify(metadata, null, 2);
+
+      // Create downloads
+      const timestamp = new Date().toISOString().split('T')[0];
       
-      const blob = new Blob([JSON.stringify(systemData, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `system-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Download metadata first
+      const metadataBlob = new Blob(['\ufeff' + files['_metadata.json']], { type: 'application/json;charset=utf-8;' });
+      const metadataUrl = URL.createObjectURL(metadataBlob);
+      const metadataLink = document.createElement('a');
+      metadataLink.href = metadataUrl;
+      metadataLink.download = `accounting-export-${timestamp}_metadata.json`;
+      document.body.appendChild(metadataLink);
+      metadataLink.click();
+      document.body.removeChild(metadataLink);
+      URL.revokeObjectURL(metadataUrl);
+
+      // Download each CSV file with UTF-8 BOM for Excel compatibility
+      const csvFiles = Object.entries(files).filter(([name]) => name.endsWith('.csv'));
+      for (let i = 0; i < csvFiles.length; i++) {
+        const [name, content] = csvFiles[i];
+        await new Promise(resolve => setTimeout(resolve, 100 * i));
+        
+        // Add UTF-8 BOM for better Excel compatibility with Arabic text
+        const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `accounting-export-${timestamp}_${name}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
 
       toast({
         title: "تم التصدير بنجاح",
-        description: `تم تصدير ${systemData.summary?.total_records || 0} سجل من ${systemData.summary?.total_tables || 0} جدول`,
+        description: `تم تحميل ${csvFiles.length} ملف CSV + ملف الوصف`,
       });
     } catch (error) {
       console.error("Export error:", error);
