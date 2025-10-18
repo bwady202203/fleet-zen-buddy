@@ -1161,18 +1161,18 @@ const LoadReports = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="drivers" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6" dir="ltr">
-            <TabsTrigger value="drivers" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              تقرير السائقين
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <Receipt className="h-4 w-4" />
+              تقرير مستحقات السائقين
             </TabsTrigger>
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               تقرير الشركات
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2">
-              <Receipt className="h-4 w-4" />
-              تقرير مستحقات السائقين
+            <TabsTrigger value="drivers" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              تقرير السائقين
             </TabsTrigger>
           </TabsList>
 
