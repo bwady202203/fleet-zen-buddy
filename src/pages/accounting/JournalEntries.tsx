@@ -370,7 +370,7 @@ const JournalEntries = () => {
       }
 
       const newLines: JournalEntryLine[] = [];
-      let notFoundCount = 0;
+      const notFoundAccounts: string[] = [];
       
       for (let i = 0; i < rows.length; i++) {
         const cells = rows[i].split('\t');
@@ -380,9 +380,9 @@ const JournalEntries = () => {
         const accountCode = convertArabicToEnglishNumbers(cells[0]?.trim() || "");
         const account = accounts.find(acc => acc.code === accountCode);
         
-        // عد الحسابات غير الموجودة فقط
+        // تتبع الحسابات غير الموجودة
         if (!account && accountCode) {
-          notFoundCount++;
+          notFoundAccounts.push(accountCode);
         }
         
         // تحويل الأرقام العربية في المدين والدائن
@@ -408,17 +408,17 @@ const JournalEntries = () => {
           lines: newLines,
         }));
         
-        // عرض رسالة مختصرة عن الحسابات غير الموجودة
-        if (notFoundCount > 0) {
+        // عرض رسالة بالحسابات غير الموجودة
+        if (notFoundAccounts.length > 0) {
           toast({
             title: "تحذير: بعض الحسابات غير موجودة",
-            description: `عدد ${notFoundCount} حساب غير موجود في دليل الحسابات. تم لصق ${newLines.length} سطر. يرجى مراجعة أكواد الحسابات وتصحيحها.`,
+            description: `الأكواد التالية غير موجودة: ${notFoundAccounts.join(', ')}. يرجى التحقق من دليل الحسابات.`,
             variant: "destructive",
           });
         } else {
           toast({
-            title: "تم اللصق بنجاح",
-            description: `تم لصق ${newLines.length} سطر بنجاح`,
+            title: "تم اللصق بنجاح / Pasted Successfully",
+            description: `تم لصق ${newLines.length} سطر / ${newLines.length} rows pasted`,
           });
         }
       }
