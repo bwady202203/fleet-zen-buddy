@@ -671,157 +671,200 @@ export default function PaymentVouchers() {
       </Card>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingVoucher ? "تعديل سند صرف" : "سند صرف جديد"}
-            </DialogTitle>
+        <DialogContent className="max-w-3xl" dir="rtl">
+          <DialogHeader className="border-b pb-6 mb-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
+                <FileText className="h-8 w-8 text-primary" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-center">
+                سند صرف
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {editingVoucher ? "تعديل بيانات السند" : "إضافة سند صرف جديد"}
+              </p>
+            </div>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label>التاريخ</Label>
-              <Input
-                type="date"
-                value={formData.voucher_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, voucher_date: e.target.value })
-                }
-                required
-              />
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-gradient-to-br from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/20">
+              <div className="grid grid-cols-1 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm">1</div>
+                    التاريخ
+                  </Label>
+                  <Input
+                    type="date"
+                    value={formData.voucher_date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, voucher_date: e.target.value })
+                    }
+                    className="h-12 text-lg bg-background"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label>الحساب المدين</Label>
-              <Popover open={debitOpen} onOpenChange={setDebitOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={debitOpen}
-                    className="w-full justify-between"
-                  >
-                    {formData.debit_account_id
-                      ? accounts.find((acc) => acc.id === formData.debit_account_id)?.code +
-                        " - " +
-                        accounts.find((acc) => acc.id === formData.debit_account_id)?.name_ar
-                      : "اختر الحساب المدين"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" dir="rtl">
-                  <Command>
-                    <CommandInput placeholder="ابحث عن الحساب..." />
-                    <CommandList>
-                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
-                      <CommandGroup>
-                        {accounts.map((account) => (
-                          <CommandItem
-                            key={account.id}
-                            value={account.code + " " + account.name_ar}
-                            onSelect={() => {
-                              setFormData({ ...formData, debit_account_id: account.id });
-                              setDebitOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "ml-2 h-4 w-4",
-                                formData.debit_account_id === account.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {account.code} - {account.name_ar}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 text-sm">2</div>
+                    الحساب المدين
+                  </Label>
+                  <Popover open={debitOpen} onOpenChange={setDebitOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={debitOpen}
+                        className="w-full justify-between h-12 text-base bg-background hover:bg-background/80"
+                      >
+                        {formData.debit_account_id
+                          ? accounts.find((acc) => acc.id === formData.debit_account_id)?.code +
+                            " - " +
+                            accounts.find((acc) => acc.id === formData.debit_account_id)?.name_ar
+                          : "اختر الحساب المدين"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0 bg-background" dir="rtl">
+                      <Command className="bg-background">
+                        <CommandInput placeholder="ابحث عن الحساب..." className="h-12" />
+                        <CommandList>
+                          <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                          <CommandGroup>
+                            {accounts.map((account) => (
+                              <CommandItem
+                                key={account.id}
+                                value={account.code + " " + account.name_ar}
+                                onSelect={() => {
+                                  setFormData({ ...formData, debit_account_id: account.id });
+                                  setDebitOpen(false);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    "ml-2 h-4 w-4",
+                                    formData.debit_account_id === account.id
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {account.code} - {account.name_ar}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400 text-sm">3</div>
+                    الحساب الدائن
+                  </Label>
+                  <Popover open={creditOpen} onOpenChange={setCreditOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={creditOpen}
+                        className="w-full justify-between h-12 text-base bg-background hover:bg-background/80"
+                      >
+                        {formData.credit_account_id
+                          ? accounts.find((acc) => acc.id === formData.credit_account_id)?.code +
+                            " - " +
+                            accounts.find((acc) => acc.id === formData.credit_account_id)?.name_ar
+                          : "اختر الحساب الدائن"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0 bg-background" dir="rtl">
+                      <Command className="bg-background">
+                        <CommandInput placeholder="ابحث عن الحساب..." className="h-12" />
+                        <CommandList>
+                          <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                          <CommandGroup>
+                            {accounts.map((account) => (
+                              <CommandItem
+                                key={account.id}
+                                value={account.code + " " + account.name_ar}
+                                onSelect={() => {
+                                  setFormData({ ...formData, credit_account_id: account.id });
+                                  setCreditOpen(false);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    "ml-2 h-4 w-4",
+                                    formData.credit_account_id === account.id
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {account.code} - {account.name_ar}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label>الحساب الدائن</Label>
-              <Popover open={creditOpen} onOpenChange={setCreditOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={creditOpen}
-                    className="w-full justify-between"
-                  >
-                    {formData.credit_account_id
-                      ? accounts.find((acc) => acc.id === formData.credit_account_id)?.code +
-                        " - " +
-                        accounts.find((acc) => acc.id === formData.credit_account_id)?.name_ar
-                      : "اختر الحساب الدائن"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" dir="rtl">
-                  <Command>
-                    <CommandInput placeholder="ابحث عن الحساب..." />
-                    <CommandList>
-                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
-                      <CommandGroup>
-                        {accounts.map((account) => (
-                          <CommandItem
-                            key={account.id}
-                            value={account.code + " " + account.name_ar}
-                            onSelect={() => {
-                              setFormData({ ...formData, credit_account_id: account.id });
-                              setCreditOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "ml-2 h-4 w-4",
-                                formData.credit_account_id === account.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {account.code} - {account.name_ar}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/20 p-6 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="space-y-2">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 text-sm">4</div>
+                  المبلغ
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, amount: e.target.value })
+                  }
+                  className="h-12 text-lg font-semibold bg-background"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <Label>المبلغ</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, amount: e.target.value })
-                }
-                required
-              />
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/20 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="space-y-2">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 text-sm">5</div>
+                  البيان
+                </Label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  rows={3}
+                  className="text-base bg-background resize-none"
+                  placeholder="أدخل وصف السند..."
+                />
+              </div>
             </div>
 
-            <div>
-              <Label>البيان</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={resetForm}>
+            <div className="flex gap-3 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={resetForm} className="h-11 px-8">
                 إلغاء
               </Button>
-              <Button type="submit">
-                {editingVoucher ? "تحديث" : "حفظ"}
+              <Button type="submit" className="h-11 px-8 bg-primary hover:bg-primary/90">
+                {editingVoucher ? "تحديث السند" : "حفظ السند"}
               </Button>
             </div>
           </form>
