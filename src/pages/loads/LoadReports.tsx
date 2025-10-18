@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download, Calendar as CalendarIcon, Receipt } from "lucide-react";
+import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download, Calendar as CalendarIcon, Receipt, Plus, Edit, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
 
 interface DriverPayment {
   id: string;
@@ -32,6 +34,24 @@ interface DriverReport {
   loads: any[];
   totalCommission: number;
   totalPaid: number;
+  remaining: number;
+}
+
+interface TransferReceipt {
+  id: string;
+  receipt_number: string;
+  amount: number;
+  transfer_date: string;
+  description: string | null;
+  driver_id: string;
+}
+
+interface PaymentDriver {
+  id: string;
+  name: string;
+  phone: string | null;
+  total_due: number;
+  total_paid: number;
   remaining: number;
 }
 
@@ -56,12 +76,29 @@ const LoadReports = () => {
   const [invoiceDateFrom, setInvoiceDateFrom] = useState<Date | undefined>(undefined);
   const [invoiceDateTo, setInvoiceDateTo] = useState<Date | undefined>(undefined);
 
+  // Payment report states
+  const [paymentDrivers, setPaymentDrivers] = useState<PaymentDriver[]>([]);
+  const [receipts, setReceipts] = useState<Record<string, TransferReceipt[]>>({});
+  const [expandedDriverId, setExpandedDriverId] = useState<string | null>(null);
+  const [quickReceiptDialogOpen, setQuickReceiptDialogOpen] = useState(false);
+  const [editReceiptDialogOpen, setEditReceiptDialogOpen] = useState(false);
+  const [selectedDriverIdForReceipt, setSelectedDriverIdForReceipt] = useState<string | null>(null);
+  const [editingReceipt, setEditingReceipt] = useState<TransferReceipt | null>(null);
+  const [receiptFormData, setReceiptFormData] = useState({
+    receipt_number: '',
+    amount: '',
+    transfer_date: new Date().toISOString().split('T')[0],
+    description: ''
+  });
+  const [loadingPaymentReport, setLoadingPaymentReport] = useState(false);
+
   useEffect(() => {
     loadDrivers();
     loadDriverReports();
     loadCompanyLoads();
     loadCompanies();
     loadLoadTypes();
+    loadPaymentDriversData();
   }, []);
 
   const loadDrivers = async () => {
@@ -852,6 +889,260 @@ const LoadReports = () => {
     });
   };
 
+  // Payment Report Functions
+  const loadPaymentDriversData = async () => {
+    setLoadingPaymentReport(true);
+    try {
+      const { data: driversData, error: driversError } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (driversError) throw driversError;
+
+      const { data: loadsData, error: loadsError } = await supabase
+        .from('loads')
+        .select('*');
+
+      if (loadsError) throw loadsError;
+
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('driver_payments')
+        .select('*');
+
+      if (paymentsError) throw paymentsError;
+
+      const { data: receiptsData, error: receiptsError } = await supabase
+        .from('driver_transfer_receipts')
+        .select('*')
+        .order('transfer_date', { ascending: false });
+
+      if (receiptsError) throw receiptsError;
+
+      const driversWithTotals = driversData?.map(driver => {
+        const driverLoads = loadsData?.filter(load => load.driver_id === driver.id) || [];
+        const driverPayments = paymentsData?.filter(payment => payment.driver_id === driver.id) || [];
+        
+        const total_due = driverLoads.reduce((sum, load) => {
+          const unitPrice = load.unit_price ? parseFloat(String(load.unit_price)) : 0;
+          return sum + unitPrice;
+        }, 0);
+        
+        const total_paid = driverPayments.reduce((sum, payment) => {
+          return sum + (payment.amount || 0);
+        }, 0);
+        
+        const remaining = total_due - total_paid;
+
+        return {
+          ...driver,
+          total_due,
+          total_paid,
+          remaining
+        };
+      }) || [];
+
+      setPaymentDrivers(driversWithTotals);
+
+      const receiptsByDriver: Record<string, TransferReceipt[]> = {};
+      receiptsData?.forEach(receipt => {
+        if (!receiptsByDriver[receipt.driver_id]) {
+          receiptsByDriver[receipt.driver_id] = [];
+        }
+        receiptsByDriver[receipt.driver_id].push(receipt);
+      });
+      setReceipts(receiptsByDriver);
+
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingPaymentReport(false);
+    }
+  };
+
+  const handleQuickReceipt = (driverId: string) => {
+    setSelectedDriverIdForReceipt(driverId);
+    setReceiptFormData({
+      receipt_number: '',
+      amount: '',
+      transfer_date: new Date().toISOString().split('T')[0],
+      description: ''
+    });
+    setQuickReceiptDialogOpen(true);
+  };
+
+  const handleQuickReceiptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDriverIdForReceipt) return;
+
+    setLoadingPaymentReport(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+
+      const { error } = await supabase
+        .from('driver_payments')
+        .insert({
+          driver_id: selectedDriverIdForReceipt,
+          amount: parseFloat(receiptFormData.amount),
+          payment_date: receiptFormData.transfer_date,
+          notes: `${receiptFormData.receipt_number} - ${receiptFormData.description || ''}`.trim(),
+          created_by: userData?.user?.id
+        });
+
+      if (error) throw error;
+
+      const { data: orgData } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', userData?.user?.id)
+        .single();
+
+      await supabase
+        .from('driver_transfer_receipts')
+        .insert({
+          driver_id: selectedDriverIdForReceipt,
+          receipt_number: receiptFormData.receipt_number,
+          amount: parseFloat(receiptFormData.amount),
+          transfer_date: receiptFormData.transfer_date,
+          description: receiptFormData.description || null,
+          organization_id: orgData?.organization_id,
+          created_by: userData?.user?.id
+        });
+
+      toast({
+        title: "تم الإضافة",
+        description: "تم إضافة سند التحويل بنجاح"
+      });
+
+      setQuickReceiptDialogOpen(false);
+      await loadPaymentDriversData();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingPaymentReport(false);
+    }
+  };
+
+  const handleEditReceipt = (receipt: TransferReceipt) => {
+    setEditingReceipt(receipt);
+    setReceiptFormData({
+      receipt_number: receipt.receipt_number,
+      amount: receipt.amount.toString(),
+      transfer_date: receipt.transfer_date,
+      description: receipt.description || ''
+    });
+    setEditReceiptDialogOpen(true);
+  };
+
+  const handleEditReceiptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReceipt) return;
+
+    setLoadingPaymentReport(true);
+    try {
+      const { data: paymentData } = await supabase
+        .from('driver_payments')
+        .select('id')
+        .eq('driver_id', editingReceipt.driver_id)
+        .eq('payment_date', editingReceipt.transfer_date)
+        .eq('amount', editingReceipt.amount)
+        .single();
+
+      if (paymentData) {
+        await supabase
+          .from('driver_payments')
+          .update({
+            amount: parseFloat(receiptFormData.amount),
+            payment_date: receiptFormData.transfer_date,
+            notes: `${receiptFormData.receipt_number} - ${receiptFormData.description || ''}`.trim()
+          })
+          .eq('id', paymentData.id);
+      }
+
+      const { error } = await supabase
+        .from('driver_transfer_receipts')
+        .update({
+          receipt_number: receiptFormData.receipt_number,
+          amount: parseFloat(receiptFormData.amount),
+          transfer_date: receiptFormData.transfer_date,
+          description: receiptFormData.description || null
+        })
+        .eq('id', editingReceipt.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث سند التحويل بنجاح"
+      });
+
+      setEditReceiptDialogOpen(false);
+      await loadPaymentDriversData();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingPaymentReport(false);
+    }
+  };
+
+  const handleDeleteReceipt = async (receiptId: string, driverId: string, amount: number, transferDate: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا السند؟')) return;
+
+    try {
+      const { data: paymentData } = await supabase
+        .from('driver_payments')
+        .select('id')
+        .eq('driver_id', driverId)
+        .eq('payment_date', transferDate)
+        .eq('amount', amount)
+        .single();
+
+      if (paymentData) {
+        await supabase
+          .from('driver_payments')
+          .delete()
+          .eq('id', paymentData.id);
+      }
+
+      const { error } = await supabase
+        .from('driver_transfer_receipts')
+        .delete()
+        .eq('id', receiptId);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف سند التحويل بنجاح"
+      });
+      
+      await loadPaymentDriversData();
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: "فشل حذف سند التحويل",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleDriverExpansion = (driverId: string) => {
+    setExpandedDriverId(expandedDriverId === driverId ? null : driverId);
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
@@ -870,7 +1161,7 @@ const LoadReports = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="drivers" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="drivers" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               تقرير السائقين
@@ -878,6 +1169,10 @@ const LoadReports = () => {
             <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               تقرير الشركات
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <Receipt className="h-4 w-4" />
+              تقرير مستحقات السائقين
             </TabsTrigger>
           </TabsList>
 
@@ -889,12 +1184,6 @@ const LoadReports = () => {
                     <FileText className="h-6 w-6" />
                     تقرير السائقين والعمولات
                   </CardTitle>
-                  <Link to="/loads/drivers-payment-report">
-                    <Button variant="outline">
-                      <Receipt className="h-4 w-4 ml-2" />
-                      تقرير مستحقات السائقين
-                    </Button>
-                  </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
@@ -1357,6 +1646,258 @@ const LoadReports = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle>ملخص مستحقات السائقين</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingPaymentReport ? (
+                  <div className="text-center py-8">جاري التحميل...</div>
+                ) : paymentDrivers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">لا توجد بيانات</div>
+                ) : (
+                  <div className="space-y-2">
+                    {paymentDrivers.map((driver) => (
+                      <Collapsible
+                        key={driver.id}
+                        open={expandedDriverId === driver.id}
+                        onOpenChange={() => toggleDriverExpansion(driver.id)}
+                      >
+                        <Card>
+                          <CollapsibleTrigger asChild>
+                            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4 flex-1">
+                                  <div className="flex-1">
+                                    <h3 className="text-lg font-semibold">{driver.name}</h3>
+                                    {driver.phone && (
+                                      <p className="text-sm text-muted-foreground">{driver.phone}</p>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-6">
+                                    <div className="text-center">
+                                      <p className="text-sm text-muted-foreground">المستحق</p>
+                                      <p className="text-lg font-bold text-primary">
+                                        {driver.total_due.toFixed(2)} ريال
+                                      </p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-sm text-muted-foreground">المدفوع</p>
+                                      <p className="text-lg font-bold text-green-600">
+                                        {driver.total_paid.toFixed(2)} ريال
+                                      </p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-sm text-muted-foreground">المتبقي</p>
+                                      <p className={`text-lg font-bold ${driver.remaining > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                        {driver.remaining.toFixed(2)} ريال
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleQuickReceipt(driver.id);
+                                      }}
+                                    >
+                                      <Plus className="h-4 w-4 ml-2" />
+                                      سند تحويل
+                                    </Button>
+                                    {expandedDriverId === driver.id ? (
+                                      <ChevronUp className="h-5 w-5" />
+                                    ) : (
+                                      <ChevronDown className="h-5 w-5" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </CollapsibleTrigger>
+                          
+                          <CollapsibleContent>
+                            <CardContent className="pt-4 border-t">
+                              <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Receipt className="h-5 w-5" />
+                                سندات التحويل
+                              </h4>
+                              {receipts[driver.id]?.length > 0 ? (
+                                <div className="border rounded-lg overflow-hidden">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>رقم السند</TableHead>
+                                        <TableHead>التاريخ</TableHead>
+                                        <TableHead>المبلغ</TableHead>
+                                        <TableHead>الوصف</TableHead>
+                                        <TableHead>الإجراءات</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {receipts[driver.id].map((receipt) => (
+                                        <TableRow key={receipt.id}>
+                                          <TableCell className="font-medium">{receipt.receipt_number}</TableCell>
+                                          <TableCell>{new Date(receipt.transfer_date).toLocaleDateString('en-US')}</TableCell>
+                                          <TableCell>{receipt.amount.toFixed(2)} ريال</TableCell>
+                                          <TableCell className="max-w-[200px] truncate">{receipt.description || '-'}</TableCell>
+                                          <TableCell>
+                                            <div className="flex gap-2">
+                                              <Button 
+                                                size="sm" 
+                                                variant="outline" 
+                                                onClick={() => handleEditReceipt(receipt)}
+                                              >
+                                                <Edit className="h-3 w-3" />
+                                              </Button>
+                                              <Button 
+                                                size="sm" 
+                                                variant="destructive" 
+                                                onClick={() => handleDeleteReceipt(receipt.id, driver.id, receipt.amount, receipt.transfer_date)}
+                                              >
+                                                <Trash2 className="h-3 w-3" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              ) : (
+                                <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/20">
+                                  <Receipt className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                  <p>لا توجد سندات تحويل لهذا السائق</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </CollapsibleContent>
+                        </Card>
+                      </Collapsible>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Receipt Dialog */}
+            <Dialog open={quickReceiptDialogOpen} onOpenChange={setQuickReceiptDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>إضافة سند تحويل سريع</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleQuickReceiptSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="receipt_number">رقم السند</Label>
+                    <Input
+                      id="receipt_number"
+                      value={receiptFormData.receipt_number}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, receipt_number: e.target.value })}
+                      required
+                      placeholder="أدخل رقم السند"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">المبلغ</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={receiptFormData.amount}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, amount: e.target.value })}
+                      required
+                      placeholder="أدخل المبلغ"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="transfer_date">تاريخ التحويل</Label>
+                    <Input
+                      id="transfer_date"
+                      type="date"
+                      value={receiptFormData.transfer_date}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, transfer_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">الوصف</Label>
+                    <Input
+                      id="description"
+                      value={receiptFormData.description}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, description: e.target.value })}
+                      placeholder="أدخل الوصف (اختياري)"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={loadingPaymentReport}>إضافة</Button>
+                    <Button type="button" variant="outline" onClick={() => setQuickReceiptDialogOpen(false)}>
+                      إلغاء
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit Receipt Dialog */}
+            <Dialog open={editReceiptDialogOpen} onOpenChange={setEditReceiptDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>تعديل سند التحويل</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleEditReceiptSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_receipt_number">رقم السند</Label>
+                    <Input
+                      id="edit_receipt_number"
+                      value={receiptFormData.receipt_number}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, receipt_number: e.target.value })}
+                      required
+                      placeholder="أدخل رقم السند"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_amount">المبلغ</Label>
+                    <Input
+                      id="edit_amount"
+                      type="number"
+                      step="0.01"
+                      value={receiptFormData.amount}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, amount: e.target.value })}
+                      required
+                      placeholder="أدخل المبلغ"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_transfer_date">تاريخ التحويل</Label>
+                    <Input
+                      id="edit_transfer_date"
+                      type="date"
+                      value={receiptFormData.transfer_date}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, transfer_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_description">الوصف</Label>
+                    <Input
+                      id="edit_description"
+                      value={receiptFormData.description}
+                      onChange={(e) => setReceiptFormData({ ...receiptFormData, description: e.target.value })}
+                      placeholder="أدخل الوصف (اختياري)"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={loadingPaymentReport}>حفظ التعديلات</Button>
+                    <Button type="button" variant="outline" onClick={() => setEditReceiptDialogOpen(false)}>
+                      إلغاء
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
       </main>
