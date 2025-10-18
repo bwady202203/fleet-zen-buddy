@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1425,8 +1425,8 @@ const JournalEntries = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredEntries.map((entry) => (
-                      <>
-                        <TableRow key={entry.id} className="hover:bg-muted/50">
+                      <Fragment key={entry.id}>
+                        <TableRow className="hover:bg-muted/50">
                           <TableCell>
                             <Button
                               variant="ghost"
@@ -1525,7 +1525,7 @@ const JournalEntries = () => {
                             </TableCell>
                           </TableRow>
                         )}
-                      </>
+                      </Fragment>
                     ))}
                   </TableBody>
                 </Table>
