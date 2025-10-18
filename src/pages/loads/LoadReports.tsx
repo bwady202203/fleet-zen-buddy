@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowRight, FileText, Send, Printer, Eye, Trash2, Building2, Download, Calendar as CalendarIcon, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -889,6 +889,12 @@ const LoadReports = () => {
                     <FileText className="h-6 w-6" />
                     تقرير السائقين والعمولات
                   </CardTitle>
+                  <Link to="/loads/drivers-payment-report">
+                    <Button variant="outline">
+                      <Receipt className="h-4 w-4 ml-2" />
+                      تقرير مستحقات السائقين
+                    </Button>
+                  </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>

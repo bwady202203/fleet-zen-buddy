@@ -50,6 +50,7 @@ import CompaniesManagement from "./pages/loads/CompaniesManagement";
 import LoadInvoices from "./pages/loads/LoadInvoices";
 import PaymentReceipts from "./pages/loads/PaymentReceipts";
 import LoadReports from "./pages/loads/LoadReports";
+import DriversPaymentReport from "./pages/loads/DriversPaymentReport";
 import LoadTypes from "./pages/loads/LoadTypes";
 import SuppliersManagement from "./pages/loads/SuppliersManagement";
 import DeliveryReceipts from "./pages/loads/DeliveryReceipts";
@@ -137,6 +138,7 @@ const App = () => {
                                   <Route path="/loads/invoices" element={<LoadInvoices />} />
                                   <Route path="/loads/receipts" element={<PaymentReceipts />} />
                                   <Route path="/loads/reports" element={<LoadReports />} />
+                                  <Route path="/loads/drivers-payment-report" element={<DriversPaymentReport />} />
                                   <Route path="/loads/load-types" element={<LoadTypes />} />
                                   <Route path="/loads/suppliers" element={<SuppliersManagement />} />
                                   <Route path="/loads/delivery-receipts" element={<DeliveryReceipts />} />
