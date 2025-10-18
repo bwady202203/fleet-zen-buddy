@@ -1049,7 +1049,6 @@ const JournalEntries = () => {
                                   </TableCell>
                                   <TableCell>
                                     <Input
-                                      type="number"
                                       value={line.debit || ""}
                                       onChange={(e) => {
                                         const debit = parseFloat(e.target.value) || 0;
@@ -1061,7 +1060,6 @@ const JournalEntries = () => {
                                   </TableCell>
                                   <TableCell>
                                     <Input
-                                      type="number"
                                       value={line.credit || ""}
                                       onChange={(e) => {
                                         const credit = parseFloat(e.target.value) || 0;
