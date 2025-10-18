@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Building2, Trash2, Edit } from "lucide-react";
+import { Plus, Building2, Trash2, Edit, Users, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Organization {
   id: string;
@@ -28,6 +30,13 @@ interface UserOrganization {
   is_default: boolean;
 }
 
+interface UserWithRole {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+}
+
 const OrganizationsManagement = () => {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
@@ -35,7 +44,11 @@ const OrganizationsManagement = () => {
   const [userOrganizations, setUserOrganizations] = useState<UserOrganization[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [orgUsers, setOrgUsers] = useState<UserWithRole[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     name_en: "",
@@ -44,6 +57,12 @@ const OrganizationsManagement = () => {
     address: "",
     tax_number: "",
     commercial_registration: "",
+  });
+  const [newUserData, setNewUserData] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    role: "user",
   });
 
   useEffect(() => {
@@ -222,6 +241,196 @@ const OrganizationsManagement = () => {
     setEditingOrg(null);
   };
 
+  const loadOrgUsers = async (orgId: string) => {
+    try {
+      // جلب المستخدمين المرتبطين بالشركة
+      const { data: userOrgs, error: userOrgsError } = await supabase
+        .from('user_organizations')
+        .select('user_id')
+        .eq('organization_id', orgId);
+
+      if (userOrgsError) throw userOrgsError;
+
+      const userIds = (userOrgs || []).map(uo => uo.user_id);
+      
+      if (userIds.length === 0) {
+        setOrgUsers([]);
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', profile.id)
+            .eq('organization_id', orgId)
+            .maybeSingle();
+
+          return {
+            id: profile.id,
+            email: profile.email || '',
+            full_name: profile.full_name || '',
+            role: roleData?.role || 'user',
+          };
+        })
+      );
+
+      setOrgUsers(usersWithRoles);
+    } catch (error) {
+      console.error('Error loading org users:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل تحميل المستخدمين',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleShowUsers = async (org: Organization) => {
+    setSelectedOrg(org);
+    await loadOrgUsers(org.id);
+    setUsersDialogOpen(true);
+  };
+
+  const handleAddUserToOrg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrg) return;
+
+    try {
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: newUserData.email,
+        password: newUserData.password,
+        options: {
+          data: {
+            full_name: newUserData.fullName,
+          },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (authData.user) {
+        // ربط المستخدم بالشركة
+        const { error: orgLinkError } = await supabase
+          .from('user_organizations')
+          .insert([{
+            user_id: authData.user.id,
+            organization_id: selectedOrg.id
+          }]);
+
+        if (orgLinkError) throw orgLinkError;
+
+        // تعيين الدور
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: authData.user.id,
+            role: newUserData.role as 'admin' | 'manager' | 'accountant' | 'employee',
+            organization_id: selectedOrg.id
+          }]);
+
+        if (roleError) throw roleError;
+
+        toast({
+          title: 'تم الإضافة',
+          description: 'تم إضافة المستخدم بنجاح',
+        });
+
+        setAddUserDialogOpen(false);
+        setNewUserData({ email: '', password: '', fullName: '', role: 'user' });
+        await loadOrgUsers(selectedOrg.id);
+      }
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      if (error.message.includes('User already registered')) {
+        toast({
+          title: 'خطأ',
+          description: 'البريد الإلكتروني مسجل مسبقاً',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'خطأ',
+          description: 'فشل إضافة المستخدم',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    if (!selectedOrg) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole as 'admin' | 'manager' | 'accountant' | 'employee' })
+        .eq('user_id', userId)
+        .eq('organization_id', selectedOrg.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'تم التحديث',
+        description: 'تم تحديث الصلاحية بنجاح',
+      });
+      
+      await loadOrgUsers(selectedOrg.id);
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل تحديث الصلاحية',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRemoveUserFromOrg = async (userId: string) => {
+    if (!selectedOrg) return;
+    if (!confirm('هل أنت متأكد من إزالة هذا المستخدم من الشركة؟')) return;
+
+    try {
+      // حذف دور المستخدم
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('organization_id', selectedOrg.id);
+
+      // حذف ارتباط المستخدم بالشركة
+      const { error } = await supabase
+        .from('user_organizations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('organization_id', selectedOrg.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'تم الحذف',
+        description: 'تم إزالة المستخدم من الشركة',
+      });
+
+      await loadOrgUsers(selectedOrg.id);
+    } catch (error) {
+      console.error('Error removing user:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل إزالة المستخدم',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const isDefault = (orgId: string) => {
     return userOrganizations.find(uo => uo.organization_id === orgId)?.is_default || false;
   };
@@ -382,14 +591,22 @@ const OrganizationsManagement = () => {
                 </div>
                 
                 <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleShowUsers(org)}
+                    className="flex-1"
+                  >
+                    <Users className="h-4 w-4 ml-1" />
+                    المستخدمين
+                  </Button>
                   {!isDefault(org.id) && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleSetDefault(org.id)}
-                      className="flex-1"
                     >
-                      تعيين كافتراضي
+                      افتراضي
                     </Button>
                   )}
                   <Button
@@ -413,6 +630,133 @@ const OrganizationsManagement = () => {
           ))}
         </div>
       )}
+
+      {/* Users Dialog */}
+      <Dialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>مستخدمو {selectedOrg?.name}</span>
+              <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <UserPlus className="h-4 w-4 ml-1" />
+                    إضافة مستخدم
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>إضافة مستخدم جديد</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAddUserToOrg} className="space-y-4">
+                    <div>
+                      <Label htmlFor="new-fullName">الاسم الكامل</Label>
+                      <Input
+                        id="new-fullName"
+                        value={newUserData.fullName}
+                        onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-email">البريد الإلكتروني</Label>
+                      <Input
+                        id="new-email"
+                        type="email"
+                        value={newUserData.email}
+                        onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-password">كلمة المرور</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={newUserData.password}
+                        onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-role">الصلاحية</Label>
+                      <Select
+                        value={newUserData.role}
+                        onValueChange={(value) => setNewUserData({ ...newUserData, role: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">مسؤول</SelectItem>
+                          <SelectItem value="manager">مدير</SelectItem>
+                          <SelectItem value="accountant">محاسب</SelectItem>
+                          <SelectItem value="user">مستخدم</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" className="w-full">إضافة</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {orgUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>لا يوجد مستخدمون في هذه الشركة</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">الاسم</TableHead>
+                    <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                    <TableHead className="text-right">الصلاحية</TableHead>
+                    <TableHead className="text-right">الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orgUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.full_name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => handleUpdateUserRole(user.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">مسؤول</SelectItem>
+                            <SelectItem value="manager">مدير</SelectItem>
+                            <SelectItem value="accountant">محاسب</SelectItem>
+                            <SelectItem value="user">مستخدم</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveUserFromOrg(user.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
