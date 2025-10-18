@@ -40,6 +40,7 @@ import IncomeStatement from "./pages/accounting/IncomeStatement";
 import CostCenters from "./pages/accounting/CostCenters";
 import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
+import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import LoadsRegister from "./pages/loads/LoadsRegister";
@@ -107,6 +108,7 @@ const App = () => {
                                   <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                                   <Route path="/accounting/journal-entries" element={<JournalEntries />} />
                                   <Route path="/accounting/journal-entries/new" element={<JournalEntries />} />
+                                  <Route path="/accounting/payment-vouchers" element={<PaymentVouchers />} />
                                   <Route path="/accounting/journal-entries-reports" element={<JournalEntriesReports />} />
                                   <Route path="/accounting/ledger" element={<Ledger />} />
                                   <Route path="/accounting/trial-balance" element={<TrialBalance />} />

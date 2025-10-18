@@ -245,6 +245,13 @@ const Accounting = () => {
       color: "from-blue-500 to-blue-600"
     },
     {
+      title: "سندات الصرف",
+      description: "إدارة سندات الصرف",
+      icon: Receipt,
+      link: "/accounting/payment-vouchers",
+      color: "from-red-500 to-red-600"
+    },
+    {
       title: "تقارير القيود اليومية",
       description: "تقارير تفصيلية مع فلاتر متقدمة",
       icon: FileBarChart,

@@ -1748,6 +1748,63 @@ export type Database = {
           },
         ]
       }
+      payment_vouchers: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          credit_account_id: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          organization_id: string | null
+          updated_at: string | null
+          voucher_date: string
+          voucher_number: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          credit_account_id: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          updated_at?: string | null
+          voucher_date: string
+          voucher_number: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          credit_account_id?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          updated_at?: string | null
+          voucher_date?: string
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_vouchers_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_vouchers_debit_account_id_fkey"
+            columns: ["debit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
