@@ -1051,7 +1051,8 @@ const JournalEntries = () => {
                                     <Input
                                       value={line.debit || ""}
                                       onChange={(e) => {
-                                        const debit = parseFloat(e.target.value) || 0;
+                                        const value = e.target.value.replace(/[^\d.]/g, '');
+                                        const debit = value ? parseFloat(value) : 0;
                                         updateLine(line.id, { debit, credit: 0 });
                                       }}
                                       placeholder="0.00"
@@ -1062,7 +1063,8 @@ const JournalEntries = () => {
                                     <Input
                                       value={line.credit || ""}
                                       onChange={(e) => {
-                                        const credit = parseFloat(e.target.value) || 0;
+                                        const value = e.target.value.replace(/[^\d.]/g, '');
+                                        const credit = value ? parseFloat(value) : 0;
                                         updateLine(line.id, { credit, debit: 0 });
                                       }}
                                       placeholder="0.00"
