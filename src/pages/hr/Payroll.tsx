@@ -111,47 +111,59 @@ const Payroll = () => {
           @media print {
             @page {
               size: landscape;
-              margin: 1cm;
+              margin: 1.5cm;
             }
             body {
               print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
             }
+            .print-hidden {
+              display: none !important;
+            }
             .print-header {
               background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
               color: white;
-              padding: 20px;
-              border-radius: 8px;
-              margin-bottom: 20px;
+              padding: 24px;
+              border-radius: 12px;
+              margin-bottom: 24px;
+              text-align: center;
             }
             .print-table {
               border-collapse: collapse;
               width: 100%;
               font-size: 11px;
+              margin-top: 20px;
             }
             .print-table th {
               background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
               color: white;
-              padding: 10px 8px;
+              padding: 12px 8px;
               font-weight: 600;
               border: 1px solid #2563eb;
+              text-align: center;
             }
             .print-table td {
-              padding: 8px;
+              padding: 10px 8px;
               border: 1px solid #e5e7eb;
+              text-align: center;
             }
             .print-table tr:nth-child(even) {
               background-color: #f9fafb;
             }
             .print-total-row {
-              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
               font-weight: 700;
               font-size: 12px;
             }
             .print-footer {
-              margin-top: 30px;
+              margin-top: 40px;
               padding-top: 20px;
-              border-top: 2px solid #3b82f6;
+              border-top: 3px solid #3b82f6;
+            }
+            .print-card {
+              background: white;
+              border-radius: 12px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
           }
         `}
@@ -186,7 +198,7 @@ const Payroll = () => {
         </header>
 
         <main className="container mx-auto px-4 py-8">
-          <Card>
+          <Card className="print:print-card print:shadow-none">
             <CardHeader className="print:hidden">
               <div className="flex items-center justify-between">
                 <CardTitle>كشف الرواتب الشهري</CardTitle>
@@ -205,14 +217,14 @@ const Payroll = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="print:p-8">
               {/* Print Preview Header */}
               <div className="print:block hidden">
-                <div className="print-header text-center">
-                  <h1 className="text-4xl font-bold mb-3">كشف رواتب الموظفين</h1>
-                  <div className="flex justify-between items-center text-lg">
+                <div className="print-header">
+                  <h1 className="text-4xl font-bold mb-4">كشف رواتب الموظفين</h1>
+                  <div className="flex justify-between items-center text-lg px-4">
                     <div>شهر يناير 2025</div>
-                    <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')}</div>
+                    <div>تاريخ الإعداد: {new Date().toLocaleDateString('ar-SA')}</div>
                   </div>
                 </div>
               </div>
@@ -247,7 +259,7 @@ const Payroll = () => {
                           {employee.advances > 0 ? `-${employee.advances.toLocaleString()} ر.س` : "-"}
                         </TableCell>
                         <TableCell className="font-bold text-primary">{employee.netSalary.toLocaleString()} ر.س</TableCell>
-                        <TableCell className="print:hidden">
+                        <TableCell className="print-hidden">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(employee)}>
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -262,7 +274,7 @@ const Payroll = () => {
                       <TableCell className="text-red-600">-{totalDeductions.toLocaleString()} ر.س</TableCell>
                       <TableCell className="text-red-600">-{totalAdvances.toLocaleString()} ر.س</TableCell>
                       <TableCell className="text-primary text-lg">{totalNetSalary.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="print:hidden"></TableCell>
+                      <TableCell className="print-hidden"></TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -270,18 +282,24 @@ const Payroll = () => {
 
               {/* Print Footer */}
               <div className="print:block hidden print-footer">
-                <div className="grid grid-cols-3 gap-8 text-center">
+                <div className="grid grid-cols-3 gap-12 text-center mt-8">
                   <div>
-                    <p className="font-semibold mb-2">المدير المالي</p>
-                    <p className="border-t-2 border-gray-400 pt-2 mt-8">التوقيع</p>
+                    <p className="font-bold text-base mb-3">المدير المالي</p>
+                    <div className="border-t-2 border-gray-600 pt-3 mt-12 mx-4">
+                      <p className="text-sm">التوقيع</p>
+                    </div>
                   </div>
                   <div>
-                    <p className="font-semibold mb-2">مدير الموارد البشرية</p>
-                    <p className="border-t-2 border-gray-400 pt-2 mt-8">التوقيع</p>
+                    <p className="font-bold text-base mb-3">مدير الموارد البشرية</p>
+                    <div className="border-t-2 border-gray-600 pt-3 mt-12 mx-4">
+                      <p className="text-sm">التوقيع</p>
+                    </div>
                   </div>
                   <div>
-                    <p className="font-semibold mb-2">المدير العام</p>
-                    <p className="border-t-2 border-gray-400 pt-2 mt-8">التوقيع والختم</p>
+                    <p className="font-bold text-base mb-3">المدير العام</p>
+                    <div className="border-t-2 border-gray-600 pt-3 mt-12 mx-4">
+                      <p className="text-sm">التوقيع والختم</p>
+                    </div>
                   </div>
                 </div>
               </div>
