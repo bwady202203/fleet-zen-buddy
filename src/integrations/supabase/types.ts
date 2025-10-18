@@ -2184,6 +2184,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_organization_chart_of_accounts: {
+        Args: { p_organization_id: string }
+        Returns: undefined
+      }
       verify_delivery_system_user: {
         Args: { p_password: string; p_username: string }
         Returns: boolean
