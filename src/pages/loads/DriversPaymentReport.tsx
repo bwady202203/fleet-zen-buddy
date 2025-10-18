@@ -72,10 +72,10 @@ const DriversPaymentReport = () => {
       
       console.log('Drivers loaded:', driversData?.length);
 
-      // Get all loads with commission amounts - using commission_amount field directly
+      // Get all loads with full details (same as driver report)
       const { data: loadsData, error: loadsError } = await supabase
         .from('loads')
-        .select('driver_id, commission_amount');
+        .select('*');
 
       if (loadsError) {
         console.error('Error loading loads:', loadsError);
@@ -83,6 +83,18 @@ const DriversPaymentReport = () => {
       }
       
       console.log('Loads loaded:', loadsData?.length);
+
+      // Get driver payments (same as driver report)
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('driver_payments')
+        .select('*');
+
+      if (paymentsError) {
+        console.error('Error loading payments:', paymentsError);
+        throw paymentsError;
+      }
+      
+      console.log('Payments loaded:', paymentsData?.length);
 
       // Get all transfer receipts
       const { data: receiptsData, error: receiptsError } = await supabase
@@ -97,21 +109,21 @@ const DriversPaymentReport = () => {
       
       console.log('Receipts loaded:', receiptsData?.length);
 
-      // Calculate totals for each driver
+      // Calculate totals for each driver using same logic as driver report
       const driversWithTotals = driversData?.map(driver => {
         const driverLoads = loadsData?.filter(load => load.driver_id === driver.id) || [];
+        const driverPayments = paymentsData?.filter(payment => payment.driver_id === driver.id) || [];
         const driverReceipts = receiptsData?.filter(receipt => receipt.driver_id === driver.id) || [];
         
-        // Calculate total due from commission_amount in loads
+        // Calculate total commission from unit_price (same as driver report)
         const total_due = driverLoads.reduce((sum, load) => {
-          const commission = load.commission_amount || 0;
-          return sum + commission;
+          const unitPrice = load.unit_price ? parseFloat(String(load.unit_price)) : 0;
+          return sum + unitPrice;
         }, 0);
         
-        // Calculate total paid from transfer receipts
-        const total_paid = driverReceipts.reduce((sum, receipt) => {
-          const amount = receipt.amount || 0;
-          return sum + amount;
+        // Calculate total paid from driver_payments (same as driver report)
+        const total_paid = driverPayments.reduce((sum, payment) => {
+          return sum + (payment.amount || 0);
         }, 0);
         
         const remaining = total_due - total_paid;
