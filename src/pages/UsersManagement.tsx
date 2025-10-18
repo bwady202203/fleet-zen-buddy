@@ -10,8 +10,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UserPlus, Trash2, Shield, ArrowRight, Settings, Key } from 'lucide-react';
+import { UserPlus, Trash2, Shield, ArrowRight, Settings, Key, Plus, Building2, Edit } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 interface UserWithRole {
   id: string;
@@ -29,6 +31,19 @@ interface ModulePermission {
   can_delete: boolean;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+  name_en: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  tax_number: string | null;
+  commercial_registration: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
 const MODULES = [
   { id: 'accounting', name: 'المحاسبة المالية' },
   { id: 'hr', name: 'الموارد البشرية' },
@@ -38,9 +53,23 @@ const MODULES = [
 ];
 
 const UsersManagement = () => {
-  const { userRole, currentOrganizationId } = useAuth();
-  const [organizations, setOrganizations] = useState<Array<{id: string, name: string}>>([]);
+  const { userRole, currentOrganizationId, user } = useAuth();
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganization, setSelectedOrganization] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('users');
+  
+  // Organization management states
+  const [isOrgDialogOpen, setIsOrgDialogOpen] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
+  const [orgFormData, setOrgFormData] = useState({
+    name: "",
+    name_en: "",
+    phone: "",
+    email: "",
+    address: "",
+    tax_number: "",
+    commercial_registration: "",
+  });
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -81,21 +110,24 @@ const UsersManagement = () => {
 
   const fetchOrganizations = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: userOrgs, error: userOrgsError } = await supabase
         .from('user_organizations')
-        .select('organization_id, organizations(id, name)')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        .select('organization_id')
+        .eq('user_id', user?.id);
 
-      if (error) throw error;
+      if (userOrgsError) throw userOrgsError;
 
-      const orgs = (data || [])
-        .filter(item => item.organizations)
-        .map(item => ({
-          id: item.organizations.id,
-          name: item.organizations.name
-        }));
+      const orgIds = (userOrgs || []).map(uo => uo.organization_id);
+      if (orgIds.length > 0) {
+        const { data: orgs, error: orgsError } = await supabase
+          .from('organizations')
+          .select('*')
+          .in('id', orgIds)
+          .order('created_at', { ascending: false });
 
-      setOrganizations(orgs);
+        if (orgsError) throw orgsError;
+        setOrganizations(orgs || []);
+      }
     } catch (error) {
       console.error('Error fetching organizations:', error);
     }
@@ -389,6 +421,109 @@ const UsersManagement = () => {
     setIsChangePasswordDialogOpen(true);
   };
 
+  // Organization management functions
+  const handleOrgSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (editingOrg) {
+        const { error } = await supabase
+          .from("organizations")
+          .update({
+            name: orgFormData.name,
+            name_en: orgFormData.name_en || null,
+            phone: orgFormData.phone || null,
+            email: orgFormData.email || null,
+            address: orgFormData.address || null,
+            tax_number: orgFormData.tax_number || null,
+            commercial_registration: orgFormData.commercial_registration || null,
+          })
+          .eq("id", editingOrg.id);
+
+        if (error) throw error;
+        toast.success('تم تحديث بيانات الشركة بنجاح');
+      } else {
+        const { data: newOrg, error: orgError } = await supabase
+          .from("organizations")
+          .insert({
+            name: orgFormData.name,
+            name_en: orgFormData.name_en || null,
+            phone: orgFormData.phone || null,
+            email: orgFormData.email || null,
+            address: orgFormData.address || null,
+            tax_number: orgFormData.tax_number || null,
+            commercial_registration: orgFormData.commercial_registration || null,
+          })
+          .select()
+          .single();
+
+        if (orgError) throw orgError;
+
+        const { error: linkError } = await supabase
+          .from("user_organizations")
+          .insert({
+            user_id: user?.id,
+            organization_id: newOrg.id,
+          });
+
+        if (linkError) throw linkError;
+        toast.success('تم إنشاء الشركة بنجاح');
+      }
+
+      setIsOrgDialogOpen(false);
+      resetOrgForm();
+      fetchOrganizations();
+    } catch (error) {
+      console.error("Error saving organization:", error);
+      toast.error('حدث خطأ أثناء حفظ بيانات الشركة');
+    }
+  };
+
+  const handleEditOrg = (org: Organization) => {
+    setEditingOrg(org);
+    setOrgFormData({
+      name: org.name,
+      name_en: org.name_en || "",
+      phone: org.phone || "",
+      email: org.email || "",
+      address: org.address || "",
+      tax_number: org.tax_number || "",
+      commercial_registration: org.commercial_registration || "",
+    });
+    setIsOrgDialogOpen(true);
+  };
+
+  const handleDeleteOrg = async (orgId: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذه الشركة؟")) return;
+
+    try {
+      const { error } = await supabase
+        .from("organizations")
+        .delete()
+        .eq("id", orgId);
+
+      if (error) throw error;
+      toast.success('تم حذف الشركة بنجاح');
+      fetchOrganizations();
+    } catch (error) {
+      console.error("Error deleting organization:", error);
+      toast.error('حدث خطأ أثناء حذف الشركة');
+    }
+  };
+
+  const resetOrgForm = () => {
+    setOrgFormData({
+      name: "",
+      name_en: "",
+      phone: "",
+      email: "",
+      address: "",
+      tax_number: "",
+      commercial_registration: "",
+    });
+    setEditingOrg(null);
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -494,27 +629,36 @@ const UsersManagement = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center flex-wrap gap-4">
-              <CardTitle>قائمة المستخدمين</CardTitle>
-              
-              <div className="flex gap-2 items-center">
-                <Label htmlFor="org-select" className="whitespace-nowrap">الشركة:</Label>
-                <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
-                  <SelectTrigger id="org-select" className="w-[200px]">
-                    <SelectValue placeholder="اختر الشركة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {organizations.map(org => (
-                      <SelectItem key={org.id} value={org.id}>
-                        {org.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="users">إدارة المستخدمين</TabsTrigger>
+            <TabsTrigger value="organizations">إدارة الشركات</TabsTrigger>
+          </TabsList>
+
+          {/* Users Tab */}
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <CardTitle>قائمة المستخدمين</CardTitle>
+                  
+                  <div className="flex gap-2 items-center">
+                    <Label htmlFor="org-select" className="whitespace-nowrap">الشركة:</Label>
+                    <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
+                      <SelectTrigger id="org-select" className="w-[200px]">
+                        <SelectValue placeholder="اختر الشركة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {organizations.map(org => (
+                          <SelectItem key={org.id} value={org.id}>
+                            {org.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button disabled={!selectedOrganization}>
                     <UserPlus className="ml-2 h-4 w-4" />
@@ -718,8 +862,7 @@ const UsersManagement = () => {
               </Table>
             )}
           </CardContent>
-        </Card>
-
+        
         {/* Permissions Dialog */}
         <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
           <DialogContent className="max-w-3xl" dir="rtl">
@@ -853,6 +996,174 @@ const UsersManagement = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </Card>
+      </TabsContent>
+
+      {/* Organizations Tab */}
+      <TabsContent value="organizations">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>إدارة الشركات</CardTitle>
+                    <Dialog open={isOrgDialogOpen} onOpenChange={(open) => {
+                      setIsOrgDialogOpen(open);
+                      if (!open) resetOrgForm();
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="ml-2 h-4 w-4" />
+                          إضافة شركة جديدة
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[600px]" dir="rtl">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {editingOrg ? "تعديل الشركة" : "إضافة شركة جديدة"}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleOrgSubmit} className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="name">اسم الشركة (عربي) *</Label>
+                              <Input
+                                id="name"
+                                value={orgFormData.name}
+                                onChange={(e) => setOrgFormData({ ...orgFormData, name: e.target.value })}
+                                required
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="name_en">اسم الشركة (إنجليزي)</Label>
+                              <Input
+                                id="name_en"
+                                value={orgFormData.name_en}
+                                onChange={(e) => setOrgFormData({ ...orgFormData, name_en: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="phone">الهاتف</Label>
+                              <Input
+                                id="phone"
+                                value={orgFormData.phone}
+                                onChange={(e) => setOrgFormData({ ...orgFormData, phone: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="email">البريد الإلكتروني</Label>
+                              <Input
+                                id="email"
+                                type="email"
+                                value={orgFormData.email}
+                                onChange={(e) => setOrgFormData({ ...orgFormData, email: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="address">العنوان</Label>
+                            <Input
+                              id="address"
+                              value={orgFormData.address}
+                              onChange={(e) => setOrgFormData({ ...orgFormData, address: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="tax_number">الرقم الضريبي</Label>
+                              <Input
+                                id="tax_number"
+                                value={orgFormData.tax_number}
+                                onChange={(e) => setOrgFormData({ ...orgFormData, tax_number: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="commercial_registration">السجل التجاري</Label>
+                              <Input
+                                id="commercial_registration"
+                                value={orgFormData.commercial_registration}
+                                onChange={(e) => setOrgFormData({ ...orgFormData, commercial_registration: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={() => setIsOrgDialogOpen(false)}>
+                              إلغاء
+                            </Button>
+                            <Button type="submit">
+                              {editingOrg ? "تحديث" : "إضافة"}
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="text-center p-12">
+                      <p>جاري التحميل...</p>
+                    </div>
+                  ) : organizations.length === 0 ? (
+                    <div className="text-center p-12">
+                      <Building2 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">لا توجد شركات</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {organizations.map((org) => (
+                        <Card key={org.id}>
+                          <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                              <span>{org.name}</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2 text-sm">
+                              {org.name_en && (
+                                <p className="text-muted-foreground">{org.name_en}</p>
+                              )}
+                              {org.phone && (
+                                <p><strong>الهاتف:</strong> {org.phone}</p>
+                              )}
+                              {org.email && (
+                                <p><strong>البريد:</strong> {org.email}</p>
+                              )}
+                              {org.tax_number && (
+                                <p><strong>الرقم الضريبي:</strong> {org.tax_number}</p>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditOrg(org)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteOrg(org.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
       </main>
     </div>
   );
