@@ -106,16 +106,21 @@ const OrganizationsManagement = () => {
               .select('*', { count: 'exact', head: true })
               .eq('organization_id', org.id);
 
-            // عدد القيود اليومية
-            const { count: journalEntriesCount } = await supabase
+            // عدد القيود اليومية - فقط التي organization_id يساوي معرف الشركة
+            // (ليس null أو أي قيمة أخرى)
+            const { data: journalEntriesData, error: jeError } = await supabase
               .from('journal_entries')
-              .select('*', { count: 'exact', head: true })
+              .select('id', { count: 'exact' })
               .eq('organization_id', org.id);
+
+            if (jeError) {
+              console.error('Error counting journal entries:', jeError);
+            }
 
             return {
               ...org,
               users_count: usersCount || 0,
-              journal_entries_count: journalEntriesCount || 0,
+              journal_entries_count: journalEntriesData?.length || 0,
             };
           })
         );
