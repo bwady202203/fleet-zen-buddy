@@ -390,6 +390,16 @@ export default function PurchasePOS() {
                     <Save className="ml-2 h-5 w-5" />
                     إتمام عملية الشراء
                   </Button>
+                  {cart.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      أضف منتجات إلى السلة أولاً
+                    </p>
+                  )}
+                  {cart.length > 0 && !supplierName.trim() && (
+                    <p className="text-xs text-destructive text-center mt-2">
+                      يرجى إدخال اسم المورد
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
