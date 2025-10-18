@@ -370,6 +370,7 @@ const JournalEntries = () => {
       }
 
       const newLines: JournalEntryLine[] = [];
+      const notFoundAccounts: string[] = [];
       
       for (let i = 0; i < rows.length; i++) {
         const cells = rows[i].split('\t');
@@ -378,6 +379,11 @@ const JournalEntries = () => {
         // البحث عن الحساب بالكود (مع دعم الأرقام العربية)
         const accountCode = convertArabicToEnglishNumbers(cells[0]?.trim() || "");
         const account = accounts.find(acc => acc.code === accountCode);
+        
+        // تتبع الحسابات غير الموجودة
+        if (!account && accountCode) {
+          notFoundAccounts.push(accountCode);
+        }
         
         // تحويل الأرقام العربية في المدين والدائن
         const debitStr = convertArabicToEnglishNumbers(cells[2]?.trim() || "0");
@@ -402,10 +408,19 @@ const JournalEntries = () => {
           lines: newLines,
         }));
         
-        toast({
-          title: "تم اللصق بنجاح / Pasted Successfully",
-          description: `تم لصق ${newLines.length} سطر / ${newLines.length} rows pasted`,
-        });
+        // عرض رسالة بالحسابات غير الموجودة
+        if (notFoundAccounts.length > 0) {
+          toast({
+            title: "تحذير: بعض الحسابات غير موجودة",
+            description: `الأكواد التالية غير موجودة: ${notFoundAccounts.join(', ')}. يرجى التحقق من دليل الحسابات.`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "تم اللصق بنجاح / Pasted Successfully",
+            description: `تم لصق ${newLines.length} سطر / ${newLines.length} rows pasted`,
+          });
+        }
       }
     } catch (error) {
       console.error('Paste error:', error);
