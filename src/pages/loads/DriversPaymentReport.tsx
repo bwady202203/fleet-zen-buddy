@@ -56,6 +56,8 @@ const DriversPaymentReport = () => {
   const loadDriversData = async () => {
     setLoading(true);
     try {
+      console.log('Starting to load drivers data...');
+      
       // Get all drivers
       const { data: driversData, error: driversError } = await supabase
         .from('drivers')
@@ -63,14 +65,24 @@ const DriversPaymentReport = () => {
         .eq('is_active', true)
         .order('name');
 
-      if (driversError) throw driversError;
+      if (driversError) {
+        console.error('Error loading drivers:', driversError);
+        throw driversError;
+      }
+      
+      console.log('Drivers loaded:', driversData?.length);
 
-      // Get all loads with commission amounts
+      // Get all loads with commission amounts - using commission_amount field directly
       const { data: loadsData, error: loadsError } = await supabase
         .from('loads')
         .select('driver_id, commission_amount');
 
-      if (loadsError) throw loadsError;
+      if (loadsError) {
+        console.error('Error loading loads:', loadsError);
+        throw loadsError;
+      }
+      
+      console.log('Loads loaded:', loadsData?.length);
 
       // Get all transfer receipts
       const { data: receiptsData, error: receiptsError } = await supabase
@@ -78,16 +90,33 @@ const DriversPaymentReport = () => {
         .select('*')
         .order('transfer_date', { ascending: false });
 
-      if (receiptsError) throw receiptsError;
+      if (receiptsError) {
+        console.error('Error loading receipts:', receiptsError);
+        throw receiptsError;
+      }
+      
+      console.log('Receipts loaded:', receiptsData?.length);
 
       // Calculate totals for each driver
       const driversWithTotals = driversData?.map(driver => {
         const driverLoads = loadsData?.filter(load => load.driver_id === driver.id) || [];
         const driverReceipts = receiptsData?.filter(receipt => receipt.driver_id === driver.id) || [];
         
-        const total_due = driverLoads.reduce((sum, load) => sum + (load.commission_amount || 0), 0);
-        const total_paid = driverReceipts.reduce((sum, receipt) => sum + (receipt.amount || 0), 0);
+        // Calculate total due from commission_amount in loads
+        const total_due = driverLoads.reduce((sum, load) => {
+          const commission = load.commission_amount || 0;
+          return sum + commission;
+        }, 0);
+        
+        // Calculate total paid from transfer receipts
+        const total_paid = driverReceipts.reduce((sum, receipt) => {
+          const amount = receipt.amount || 0;
+          return sum + amount;
+        }, 0);
+        
         const remaining = total_due - total_paid;
+        
+        console.log(`Driver ${driver.name}: Due=${total_due}, Paid=${total_paid}, Remaining=${remaining}`);
 
         return {
           ...driver,
@@ -108,8 +137,11 @@ const DriversPaymentReport = () => {
         receiptsByDriver[receipt.driver_id].push(receipt);
       });
       setReceipts(receiptsByDriver);
+      
+      console.log('Drivers with totals:', driversWithTotals);
 
     } catch (error: any) {
+      console.error('Error in loadDriversData:', error);
       toast({
         title: "خطأ",
         description: error.message,
