@@ -371,7 +371,6 @@ const JournalEntries = () => {
 
       const newLines: JournalEntryLine[] = [];
       let notFoundCount = 0;
-      let skippedCount = 0;
       
       for (let i = 0; i < rows.length; i++) {
         const cells = rows[i].split('\t');
@@ -381,11 +380,9 @@ const JournalEntries = () => {
         const accountCode = convertArabicToEnglishNumbers(cells[0]?.trim() || "");
         const account = accounts.find(acc => acc.code === accountCode);
         
-        // تخطي الأسطر التي لا تحتوي على حساب صحيح
-        if (!account || !accountCode) {
+        // عد الحسابات غير الموجودة فقط
+        if (!account && accountCode) {
           notFoundCount++;
-          skippedCount++;
-          continue;
         }
         
         // تحويل الأرقام العربية في المدين والدائن
@@ -394,9 +391,9 @@ const JournalEntries = () => {
         
         newLines.push({
           id: `line-${Date.now()}-${i}`,
-          accountId: account.id,
-          accountCode: account.code,
-          accountName: account.name_ar,
+          accountId: account?.id || "",
+          accountCode: account?.code || accountCode,
+          accountName: account?.name_ar || "",
           description: cells[1]?.trim() || "",
           debit: parseFloat(debitStr) || 0,
           credit: parseFloat(creditStr) || 0,
@@ -414,8 +411,8 @@ const JournalEntries = () => {
         // عرض رسالة مختصرة عن الحسابات غير الموجودة
         if (notFoundCount > 0) {
           toast({
-            title: "تحذير: بعض الأسطر تم تخطيها",
-            description: `تم لصق ${newLines.length} سطر بنجاح. تم تخطي ${skippedCount} سطر بسبب أكواد حسابات غير موجودة. يرجى مراجعة دليل الحسابات.`,
+            title: "تحذير: بعض الحسابات غير موجودة",
+            description: `عدد ${notFoundCount} حساب غير موجود في دليل الحسابات. تم لصق ${newLines.length} سطر. يرجى مراجعة أكواد الحسابات وتصحيحها.`,
             variant: "destructive",
           });
         } else {
@@ -424,12 +421,6 @@ const JournalEntries = () => {
             description: `تم لصق ${newLines.length} سطر بنجاح`,
           });
         }
-      } else if (skippedCount > 0) {
-        toast({
-          title: "خطأ في اللصق",
-          description: `جميع الأسطر (${skippedCount}) تحتوي على أكواد حسابات غير صحيحة. يرجى التحقق من البيانات الملصقة.`,
-          variant: "destructive",
-        });
       }
     } catch (error) {
       console.error('Paste error:', error);
