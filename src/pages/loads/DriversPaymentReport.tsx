@@ -344,19 +344,19 @@ const DriversPaymentReport = () => {
                                 <div className="text-center">
                                   <p className="text-sm text-muted-foreground">المستحق</p>
                                   <p className="text-lg font-bold text-primary">
-                                    {driver.total_due.toLocaleString('ar-SA')} ريال
+                                    {driver.total_due.toFixed(2)} ريال
                                   </p>
                                 </div>
                                 <div className="text-center">
                                   <p className="text-sm text-muted-foreground">المدفوع</p>
                                   <p className="text-lg font-bold text-green-600">
-                                    {driver.total_paid.toLocaleString('ar-SA')} ريال
+                                    {driver.total_paid.toFixed(2)} ريال
                                   </p>
                                 </div>
                                 <div className="text-center">
                                   <p className="text-sm text-muted-foreground">المتبقي</p>
                                   <p className={`text-lg font-bold ${driver.remaining > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                    {driver.remaining.toLocaleString('ar-SA')} ريال
+                                    {driver.remaining.toFixed(2)} ريال
                                   </p>
                                 </div>
                               </div>
@@ -404,8 +404,8 @@ const DriversPaymentReport = () => {
                                   {receipts[driver.id].map((receipt) => (
                                     <TableRow key={receipt.id}>
                                       <TableCell className="font-medium">{receipt.receipt_number}</TableCell>
-                                      <TableCell>{new Date(receipt.transfer_date).toLocaleDateString('ar-SA')}</TableCell>
-                                      <TableCell>{receipt.amount.toLocaleString('ar-SA')} ريال</TableCell>
+                                      <TableCell>{new Date(receipt.transfer_date).toLocaleDateString('en-US')}</TableCell>
+                                      <TableCell>{receipt.amount.toFixed(2)} ريال</TableCell>
                                       <TableCell className="max-w-[200px] truncate">{receipt.description || '-'}</TableCell>
                                       <TableCell>
                                         <div className="flex gap-2">
