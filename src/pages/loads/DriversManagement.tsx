@@ -3,24 +3,43 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Plus, Edit, Trash2, Upload, Users } from "lucide-react";
+import { ArrowRight, Plus, Edit, Trash2, Upload, Users, FileText, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import * as XLSX from 'xlsx';
+import { Badge } from "@/components/ui/badge";
+
+interface TransferReceipt {
+  id: string;
+  receipt_number: string;
+  amount: number;
+  transfer_date: string;
+  description: string | null;
+}
 
 const DriversManagement = () => {
   const { toast } = useToast();
   const [drivers, setDrivers] = useState<any[]>([]);
+  const [driverReceipts, setDriverReceipts] = useState<Record<string, TransferReceipt[]>>({});
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<any>(null);
+  const [editingReceipt, setEditingReceipt] = useState<TransferReceipt | null>(null);
+  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: ''
+  });
+  const [receiptFormData, setReceiptFormData] = useState({
+    receipt_number: '',
+    amount: '',
+    transfer_date: new Date().toISOString().split('T')[0],
+    description: ''
   });
   const [bulkDrivers, setBulkDrivers] = useState<Array<{ name: string; phone: string }>>([
     { name: '', phone: '' }
@@ -45,6 +64,44 @@ const DriversManagement = () => {
       });
     } else {
       setDrivers(data || []);
+      // Load receipts for all drivers
+      if (data && data.length > 0) {
+        loadAllReceipts(data.map(d => d.id));
+      }
+    }
+  };
+
+  const loadAllReceipts = async (driverIds: string[]) => {
+    const receiptsMap: Record<string, TransferReceipt[]> = {};
+    
+    for (const driverId of driverIds) {
+      const { data } = await supabase
+        .from('driver_transfer_receipts')
+        .select('*')
+        .eq('driver_id', driverId)
+        .order('transfer_date', { ascending: false });
+      
+      receiptsMap[driverId] = data || [];
+    }
+    
+    setDriverReceipts(receiptsMap);
+  };
+
+  const loadDriverReceipts = async (driverId: string) => {
+    const { data, error } = await supabase
+      .from('driver_transfer_receipts')
+      .select('*')
+      .eq('driver_id', driverId)
+      .order('transfer_date', { ascending: false });
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل تحميل سندات التحويل",
+        variant: "destructive"
+      });
+    } else {
+      setDriverReceipts(prev => ({ ...prev, [driverId]: data || [] }));
     }
   };
 
@@ -126,6 +183,105 @@ const DriversManagement = () => {
         description: "تم حذف السائق بنجاح"
       });
       loadDrivers();
+    }
+  };
+
+  const handleAddReceipt = (driverId: string) => {
+    setSelectedDriverId(driverId);
+    setEditingReceipt(null);
+    setReceiptFormData({
+      receipt_number: '',
+      amount: '',
+      transfer_date: new Date().toISOString().split('T')[0],
+      description: ''
+    });
+    setReceiptDialogOpen(true);
+  };
+
+  const handleEditReceipt = (receipt: TransferReceipt, driverId: string) => {
+    setSelectedDriverId(driverId);
+    setEditingReceipt(receipt);
+    setReceiptFormData({
+      receipt_number: receipt.receipt_number,
+      amount: receipt.amount.toString(),
+      transfer_date: receipt.transfer_date,
+      description: receipt.description || ''
+    });
+    setReceiptDialogOpen(true);
+  };
+
+  const handleReceiptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDriverId) return;
+
+    setLoading(true);
+    try {
+      const receiptData = {
+        driver_id: selectedDriverId,
+        receipt_number: receiptFormData.receipt_number,
+        amount: parseFloat(receiptFormData.amount),
+        transfer_date: receiptFormData.transfer_date,
+        description: receiptFormData.description || null
+      };
+
+      if (editingReceipt) {
+        const { error } = await supabase
+          .from('driver_transfer_receipts')
+          .update(receiptData)
+          .eq('id', editingReceipt.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "تم التحديث",
+          description: "تم تحديث سند التحويل بنجاح"
+        });
+      } else {
+        const { error } = await supabase
+          .from('driver_transfer_receipts')
+          .insert(receiptData);
+
+        if (error) throw error;
+
+        toast({
+          title: "تم الإضافة",
+          description: "تم إضافة سند التحويل بنجاح"
+        });
+      }
+
+      setReceiptDialogOpen(false);
+      loadDriverReceipts(selectedDriverId);
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteReceipt = async (receiptId: string, driverId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا السند؟')) return;
+
+    const { error } = await supabase
+      .from('driver_transfer_receipts')
+      .delete()
+      .eq('id', receiptId);
+
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل حذف سند التحويل",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف سند التحويل بنجاح"
+      });
+      loadDriverReceipts(driverId);
     }
   };
 
@@ -319,27 +475,19 @@ const DriversManagement = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>اسم السائق / Driver Name</TableHead>
-                  <TableHead>رقم الجوال / Mobile Number</TableHead>
-                  <TableHead>الحالة / Status</TableHead>
-                  <TableHead>الإجراءات / Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {drivers.map((driver) => (
-                  <TableRow key={driver.id}>
-                    <TableCell className="font-medium">{driver.name}</TableCell>
-                    <TableCell>{driver.phone || '-'}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${driver.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {driver.is_active ? 'نشط' : 'غير نشط'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+            <div className="grid gap-6">
+              {drivers.map((driver) => (
+                <Card key={driver.id} className="overflow-hidden">
+                  <CardHeader className="bg-muted/50">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-xl">{driver.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{driver.phone || 'لا يوجد رقم جوال'}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={driver.is_active ? "default" : "secondary"}>
+                          {driver.is_active ? 'نشط' : 'غير نشط'}
+                        </Badge>
                         <Button size="sm" variant="outline" onClick={() => handleEdit(driver)}>
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -347,11 +495,66 @@ const DriversManagement = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          سندات التحويل
+                        </h3>
+                        <Button size="sm" onClick={() => handleAddReceipt(driver.id)}>
+                          <Plus className="h-4 w-4 ml-2" />
+                          إضافة سند
+                        </Button>
+                      </div>
+                      
+                      {driverReceipts[driver.id]?.length > 0 ? (
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>رقم السند</TableHead>
+                                <TableHead>التاريخ</TableHead>
+                                <TableHead>المبلغ</TableHead>
+                                <TableHead>الوصف</TableHead>
+                                <TableHead>الإجراءات</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {driverReceipts[driver.id].map((receipt) => (
+                                <TableRow key={receipt.id}>
+                                  <TableCell className="font-medium">{receipt.receipt_number}</TableCell>
+                                  <TableCell>{new Date(receipt.transfer_date).toLocaleDateString('ar-SA')}</TableCell>
+                                  <TableCell>{receipt.amount.toLocaleString('ar-SA')} ريال</TableCell>
+                                  <TableCell className="max-w-[200px] truncate">{receipt.description || '-'}</TableCell>
+                                  <TableCell>
+                                    <div className="flex gap-2">
+                                      <Button size="sm" variant="outline" onClick={() => handleEditReceipt(receipt, driver.id)}>
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <Button size="sm" variant="destructive" onClick={() => handleDeleteReceipt(receipt.id, driver.id)}>
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/20">
+                          <Receipt className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>لا توجد سندات تحويل لهذا السائق</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -419,6 +622,67 @@ const DriversManagement = () => {
                 </div>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingReceipt ? 'تعديل سند التحويل' : 'إضافة سند تحويل جديد'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleReceiptSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="receipt_number">رقم السند</Label>
+                <Input
+                  id="receipt_number"
+                  value={receiptFormData.receipt_number}
+                  onChange={(e) => setReceiptFormData({ ...receiptFormData, receipt_number: e.target.value })}
+                  required
+                  placeholder="أدخل رقم السند"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">المبلغ</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  value={receiptFormData.amount}
+                  onChange={(e) => setReceiptFormData({ ...receiptFormData, amount: e.target.value })}
+                  required
+                  placeholder="أدخل المبلغ"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="transfer_date">تاريخ التحويل</Label>
+                <Input
+                  id="transfer_date"
+                  type="date"
+                  value={receiptFormData.transfer_date}
+                  onChange={(e) => setReceiptFormData({ ...receiptFormData, transfer_date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">الوصف</Label>
+                <Input
+                  id="description"
+                  value={receiptFormData.description}
+                  onChange={(e) => setReceiptFormData({ ...receiptFormData, description: e.target.value })}
+                  placeholder="أدخل الوصف (اختياري)"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={loading}>
+                  {editingReceipt ? 'تحديث' : 'إضافة'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setReceiptDialogOpen(false)}>
+                  إلغاء
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </main>

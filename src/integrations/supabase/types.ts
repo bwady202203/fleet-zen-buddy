@@ -752,6 +752,53 @@ export type Database = {
           },
         ]
       }
+      driver_transfer_receipts: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          driver_id: string
+          id: string
+          organization_id: string | null
+          receipt_number: string
+          transfer_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          driver_id: string
+          id?: string
+          organization_id?: string | null
+          receipt_number: string
+          transfer_date?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          driver_id?: string
+          id?: string
+          organization_id?: string | null
+          receipt_number?: string
+          transfer_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_transfer_receipts_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string | null
