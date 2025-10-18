@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -355,6 +355,13 @@ const JournalEntries = () => {
     return result;
   };
 
+  // دالة للتحقق من وجود رقم الحساب
+  const validateAccountCode = (accountCode: string): boolean => {
+    if (!accountCode) return true; // فارغ مقبول
+    const normalizedCode = convertArabicToEnglishNumbers(accountCode.trim());
+    return accounts.some(acc => acc.code === normalizedCode);
+  };
+
   const handlePasteFromExcel = async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -433,6 +440,13 @@ const JournalEntries = () => {
     setFormData(prev => ({
       ...prev,
       lines: [...prev.lines, newLine],
+    }));
+  };
+
+  const deleteLine = (lineId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      lines: prev.lines.filter(line => line.id !== lineId),
     }));
   };
 
@@ -944,6 +958,7 @@ const JournalEntries = () => {
                         <TableHead className="text-right min-w-[120px]">الدائن</TableHead>
                         <TableHead className="text-right min-w-[180px]">مركز التكلفة</TableHead>
                         <TableHead className="text-right min-w-[180px]">المشروع</TableHead>
+                        <TableHead className="text-right w-[80px]">إجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -977,6 +992,8 @@ const JournalEntries = () => {
                               prj.name_en.toLowerCase().includes(searchState.projectSearch.toLowerCase())
                             )
                           : projects; // إظهار الكل عند الفوكس بدون بحث
+
+                        const isAccountInvalid = line.accountCode && !line.accountId;
 
                         return (
                           <TableRow key={line.id}>
@@ -1024,7 +1041,7 @@ const JournalEntries = () => {
                                         placeholder="ابحث بالرمز أو الاسم..."
                                         onFocus={() => updateSearchState(line.id, { showAccountSearch: true })}
                                         onBlur={() => setTimeout(() => updateSearchState(line.id, { showAccountSearch: false }), 200)}
-                                        className="text-sm"
+                                        className={`text-sm ${isAccountInvalid ? 'border-red-500 bg-red-50' : ''}`}
                                       />
                                       {searchState.showAccountSearch && filteredAccounts.length > 0 && (
                                         <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
@@ -1162,6 +1179,9 @@ const JournalEntries = () => {
                                           </CardContent>
                                         </Card>
                                       )}
+                                      {isAccountInvalid && (
+                                        <p className="text-xs text-red-500 mt-1">رقم الحساب غير موجود</p>
+                                      )}
                                     </div>
                                   </TableCell>
                                   <TableCell>
@@ -1238,6 +1258,16 @@ const JournalEntries = () => {
                                         </Card>
                                       )}
                                     </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteLine(line.id)}
+                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               );
