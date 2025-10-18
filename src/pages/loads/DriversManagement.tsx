@@ -216,16 +216,12 @@ const DriversManagement = () => {
 
     setLoading(true);
     try {
-      // Get current user
-      const { data: userData } = await supabase.auth.getUser();
-      
       const receiptData = {
         driver_id: selectedDriverId,
         receipt_number: receiptFormData.receipt_number,
         amount: parseFloat(receiptFormData.amount),
         transfer_date: receiptFormData.transfer_date,
-        description: receiptFormData.description || null,
-        created_by: userData?.user?.id
+        description: receiptFormData.description || null
       };
 
       if (editingReceipt) {
