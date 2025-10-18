@@ -447,13 +447,31 @@ const JournalEntries = () => {
       return;
     }
 
+    console.log('📝 جميع السطور قبل الفلترة:', formData.lines);
+    
     // Filter out empty lines
-    const validLines = formData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
+    const validLines = formData.lines.filter(line => {
+      const hasAccount = !!line.accountId;
+      const hasAmount = (line.debit > 0 || line.credit > 0);
+      console.log('فحص السطر:', { 
+        accountId: line.accountId, 
+        accountCode: line.accountCode,
+        accountName: line.accountName,
+        debit: line.debit, 
+        credit: line.credit,
+        hasAccount,
+        hasAmount,
+        isValid: hasAccount && hasAmount
+      });
+      return hasAccount && hasAmount;
+    });
+
+    console.log('✅ السطور الصالحة بعد الفلترة:', validLines.length);
 
     if (validLines.length === 0) {
       toast({
         title: "تنبيه / Warning",
-        description: "يجب إضافة سطر واحد على الأقل / Must add at least one line",
+        description: "يجب إضافة سطر واحد على الأقل مع تعبئة الحساب والمبلغ / Must add at least one line with account and amount",
         variant: "destructive",
       });
       return;
