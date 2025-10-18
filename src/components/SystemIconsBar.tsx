@@ -105,7 +105,7 @@ export const SystemIconsBar = () => {
           <div className="flex items-center gap-2">
             <span className="font-semibold">التاريخ الهجري:</span>
             <span>{hijriDateStr}</span>
-            {userRole === 'admin' && (
+            {(userRole === 'admin' || userRole === 'manager') && (
               <Button
                 onClick={handleExportData}
                 variant="ghost"
