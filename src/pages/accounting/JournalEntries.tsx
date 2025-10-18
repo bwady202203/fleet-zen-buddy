@@ -241,6 +241,8 @@ const JournalEntries = () => {
       description: "",
       debit: 0,
       credit: 0,
+      debitText: "",
+      creditText: "",
       costCenter: "",
       projectName: "",
     }));
@@ -433,6 +435,8 @@ const JournalEntries = () => {
       description: "",
       debit: 0,
       credit: 0,
+      debitText: "",
+      creditText: "",
       costCenter: "",
       projectName: "",
     };
@@ -1086,13 +1090,17 @@ const JournalEntries = () => {
                                     <Input
                                       type="text"
                                       inputMode="decimal"
-                                      value={line.debit > 0 ? line.debit : ""}
+                                      value={(line as any).debitText !== undefined ? (line as any).debitText : (line.debit > 0 ? line.debit.toString() : "")}
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         // السماح بالأرقام والنقطة فقط
                                         if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                                          const debit = value === "" ? 0 : parseFloat(value) || 0;
-                                          updateLine(line.id, { debit, credit: 0 });
+                                          updateLine(line.id, { 
+                                            debitText: value,
+                                            debit: value === "" || value === "." ? 0 : parseFloat(value) || 0, 
+                                            credit: 0,
+                                            creditText: ""
+                                          } as any);
                                         }
                                       }}
                                       placeholder="0.00"
@@ -1103,13 +1111,17 @@ const JournalEntries = () => {
                                     <Input
                                       type="text"
                                       inputMode="decimal"
-                                      value={line.credit > 0 ? line.credit : ""}
+                                      value={(line as any).creditText !== undefined ? (line as any).creditText : (line.credit > 0 ? line.credit.toString() : "")}
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         // السماح بالأرقام والنقطة فقط
                                         if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                                          const credit = value === "" ? 0 : parseFloat(value) || 0;
-                                          updateLine(line.id, { credit, debit: 0 });
+                                          updateLine(line.id, { 
+                                            creditText: value,
+                                            credit: value === "" || value === "." ? 0 : parseFloat(value) || 0, 
+                                            debit: 0,
+                                            debitText: ""
+                                          } as any);
                                         }
                                       }}
                                       placeholder="0.00"

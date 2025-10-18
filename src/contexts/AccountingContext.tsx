@@ -44,6 +44,8 @@ export interface JournalEntryLine {
   description: string;
   debit: number;
   credit: number;
+  debitText?: string;
+  creditText?: string;
   costCenter?: string;
   costCenterId?: string;
   projectName?: string;
