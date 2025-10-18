@@ -38,7 +38,9 @@ const MODULES = [
 ];
 
 const UsersManagement = () => {
-  const { userRole } = useAuth();
+  const { userRole, currentOrganizationId } = useAuth();
+  const [organizations, setOrganizations] = useState<Array<{id: string, name: string}>>([]);
+  const [selectedOrganization, setSelectedOrganization] = useState<string>('');
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -65,14 +67,64 @@ const UsersManagement = () => {
   });
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchOrganizations();
+    if (currentOrganizationId) {
+      setSelectedOrganization(currentOrganizationId);
+    }
+  }, [currentOrganizationId]);
+
+  useEffect(() => {
+    if (selectedOrganization) {
+      fetchUsers();
+    }
+  }, [selectedOrganization]);
+
+  const fetchOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_organizations')
+        .select('organization_id, organizations(id, name)')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+
+      const orgs = (data || [])
+        .filter(item => item.organizations)
+        .map(item => ({
+          id: item.organizations.id,
+          name: item.organizations.name
+        }));
+
+      setOrganizations(orgs);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+    }
+  };
 
   const fetchUsers = async () => {
+    if (!selectedOrganization) return;
+    
     try {
+      // جلب المستخدمين المرتبطين بالشركة
+      const { data: userOrgs, error: userOrgsError } = await supabase
+        .from('user_organizations')
+        .select('user_id')
+        .eq('organization_id', selectedOrganization);
+
+      if (userOrgsError) throw userOrgsError;
+
+      const userIds = (userOrgs || []).map(uo => uo.user_id);
+      
+      if (userIds.length === 0) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
+        .in('id', userIds)
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -83,7 +135,8 @@ const UsersManagement = () => {
             .from('user_roles')
             .select('role')
             .eq('user_id', profile.id)
-            .single();
+            .eq('organization_id', selectedOrganization)
+            .maybeSingle();
 
           return {
             id: profile.id,
@@ -131,11 +184,23 @@ const UsersManagement = () => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
+        // ربط المستخدم بالشركة
+        const { error: orgLinkError } = await supabase
+          .from('user_organizations')
+          .insert([{
+            user_id: authData.user.id,
+            organization_id: selectedOrganization
+          }]);
+
+        if (orgLinkError) throw orgLinkError;
+
+        // تعيين الدور للمستخدم في هذه الشركة
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert([{
             user_id: authData.user.id,
-            role: newUser.role as 'admin' | 'manager' | 'accountant' | 'employee'
+            role: newUser.role as 'admin' | 'manager' | 'accountant' | 'employee',
+            organization_id: selectedOrganization
           }]);
 
         if (roleError) throw roleError;
@@ -187,17 +252,28 @@ const UsersManagement = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم من هذه الشركة؟')) return;
 
     try {
-      const { error } = await supabase
+      // حذف دور المستخدم في هذه الشركة
+      const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('organization_id', selectedOrganization);
 
-      if (error) throw error;
+      if (roleError) throw roleError;
 
-      toast.success('تم حذف صلاحيات المستخدم');
+      // حذف ارتباط المستخدم بالشركة
+      const { error: orgError } = await supabase
+        .from('user_organizations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('organization_id', selectedOrganization);
+
+      if (orgError) throw orgError;
+
+      toast.success('تم حذف المستخدم من الشركة');
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -210,7 +286,8 @@ const UsersManagement = () => {
       const { error } = await supabase
         .from('user_roles')
         .update({ role: newRole as 'admin' | 'manager' | 'accountant' | 'employee' })
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('organization_id', selectedOrganization);
 
       if (error) throw error;
 
@@ -419,11 +496,27 @@ const UsersManagement = () => {
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-4">
               <CardTitle>قائمة المستخدمين</CardTitle>
+              
+              <div className="flex gap-2 items-center">
+                <Label htmlFor="org-select" className="whitespace-nowrap">الشركة:</Label>
+                <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
+                  <SelectTrigger id="org-select" className="w-[200px]">
+                    <SelectValue placeholder="اختر الشركة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizations.map(org => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button disabled={!selectedOrganization}>
                     <UserPlus className="ml-2 h-4 w-4" />
                     إضافة مستخدم جديد
                   </Button>
