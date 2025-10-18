@@ -490,12 +490,20 @@ const UsersManagement = () => {
                 إضافة وتعديل المستخدمين وصلاحياتهم
               </p>
             </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                العودة للرئيسية
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/organizations">
+                <Button variant="outline">
+                  <Settings className="ml-2 h-4 w-4" />
+                  إدارة الشركات
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button variant="outline">
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                  العودة للرئيسية
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
