@@ -216,12 +216,22 @@ const DriversManagement = () => {
 
     setLoading(true);
     try {
+      // Get current user and organization
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: orgData } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', userData?.user?.id)
+        .single();
+      
       const receiptData = {
         driver_id: selectedDriverId,
         receipt_number: receiptFormData.receipt_number,
         amount: parseFloat(receiptFormData.amount),
         transfer_date: receiptFormData.transfer_date,
-        description: receiptFormData.description || null
+        description: receiptFormData.description || null,
+        organization_id: orgData?.organization_id,
+        created_by: userData?.user?.id
       };
 
       if (editingReceipt) {

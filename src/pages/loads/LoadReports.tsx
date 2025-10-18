@@ -889,6 +889,12 @@ const LoadReports = () => {
                     <FileText className="h-6 w-6" />
                     تقرير السائقين والعمولات
                   </CardTitle>
+                  <Link to="/loads/drivers-transfer-report">
+                    <Button variant="outline">
+                      <FileText className="h-4 w-4 ml-2" />
+                      تقرير سندات التحويل
+                    </Button>
+                  </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
