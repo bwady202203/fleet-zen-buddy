@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Building2, Trash2, Edit, Users, UserPlus } from "lucide-react";
+import { Plus, Building2, Trash2, Edit, Users, UserPlus, FileText, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,8 @@ interface Organization {
   commercial_registration: string | null;
   is_active: boolean;
   created_at: string;
+  users_count?: number;
+  journal_entries_count?: number;
 }
 
 interface UserOrganization {
@@ -94,7 +96,31 @@ const OrganizationsManagement = () => {
           .order("created_at", { ascending: false });
 
         if (orgsError) throw orgsError;
-        setOrganizations(orgs || []);
+        
+        // إضافة عدد المستخدمين والقيود لكل شركة
+        const orgsWithCounts = await Promise.all(
+          (orgs || []).map(async (org) => {
+            // عدد المستخدمين
+            const { count: usersCount } = await supabase
+              .from('user_organizations')
+              .select('*', { count: 'exact', head: true })
+              .eq('organization_id', org.id);
+
+            // عدد القيود اليومية
+            const { count: journalEntriesCount } = await supabase
+              .from('journal_entries')
+              .select('*', { count: 'exact', head: true })
+              .eq('organization_id', org.id);
+
+            return {
+              ...org,
+              users_count: usersCount || 0,
+              journal_entries_count: journalEntriesCount || 0,
+            };
+          })
+        );
+        
+        setOrganizations(orgsWithCounts);
       }
     } catch (error) {
       console.error("Error loading organizations:", error);
@@ -575,19 +601,44 @@ const OrganizationsManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-3">
                   {org.name_en && (
-                    <p className="text-muted-foreground">{org.name_en}</p>
+                    <p className="text-sm text-muted-foreground">{org.name_en}</p>
                   )}
-                  {org.phone && (
-                    <p><strong>الهاتف:</strong> {org.phone}</p>
-                  )}
-                  {org.email && (
-                    <p><strong>البريد:</strong> {org.email}</p>
-                  )}
-                  {org.tax_number && (
-                    <p><strong>الرقم الضريبي:</strong> {org.tax_number}</p>
-                  )}
+                  
+                  {/* إحصائيات */}
+                  <div className="grid grid-cols-3 gap-2 py-3 border-y">
+                    <div className="flex flex-col items-center gap-1 p-2 bg-primary/5 rounded">
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">المستخدمين</span>
+                      <span className="text-lg font-bold">{org.users_count || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2 bg-blue-500/5 rounded">
+                      <FileText className="h-4 w-4 text-blue-500" />
+                      <span className="text-xs text-muted-foreground">القيود</span>
+                      <span className="text-lg font-bold">{org.journal_entries_count || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2 bg-green-500/5 rounded">
+                      <Calendar className="h-4 w-4 text-green-500" />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">تاريخ الإنشاء</span>
+                      <span className="text-xs font-bold">
+                        {new Date(org.created_at).toLocaleDateString('ar-SA')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* بيانات إضافية */}
+                  <div className="space-y-1 text-sm">
+                    {org.phone && (
+                      <p><strong>الهاتف:</strong> {org.phone}</p>
+                    )}
+                    {org.email && (
+                      <p><strong>البريد:</strong> {org.email}</p>
+                    )}
+                    {org.tax_number && (
+                      <p><strong>الرقم الضريبي:</strong> {org.tax_number}</p>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="flex gap-2 mt-4">
