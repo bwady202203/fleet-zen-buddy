@@ -252,6 +252,28 @@ const DriversPaymentReport = () => {
 
     setLoading(true);
     try {
+      // Find the corresponding payment record
+      const { data: paymentData } = await supabase
+        .from('driver_payments')
+        .select('id')
+        .eq('driver_id', editingReceipt.driver_id)
+        .eq('payment_date', editingReceipt.transfer_date)
+        .eq('amount', editingReceipt.amount)
+        .single();
+
+      // Update payment if found
+      if (paymentData) {
+        await supabase
+          .from('driver_payments')
+          .update({
+            amount: parseFloat(receiptFormData.amount),
+            payment_date: receiptFormData.transfer_date,
+            notes: `${receiptFormData.receipt_number} - ${receiptFormData.description || ''}`.trim()
+          })
+          .eq('id', paymentData.id);
+      }
+
+      // Update transfer receipt
       const { error } = await supabase
         .from('driver_transfer_receipts')
         .update({
@@ -270,7 +292,7 @@ const DriversPaymentReport = () => {
       });
 
       setEditReceiptDialogOpen(false);
-      loadDriversData();
+      await loadDriversData();
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -282,26 +304,46 @@ const DriversPaymentReport = () => {
     }
   };
 
-  const handleDeleteReceipt = async (receiptId: string) => {
+  const handleDeleteReceipt = async (receiptId: string, driverId: string, amount: number, transferDate: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا السند؟')) return;
 
-    const { error } = await supabase
-      .from('driver_transfer_receipts')
-      .delete()
-      .eq('id', receiptId);
+    try {
+      // Find and delete the corresponding payment record
+      const { data: paymentData } = await supabase
+        .from('driver_payments')
+        .select('id')
+        .eq('driver_id', driverId)
+        .eq('payment_date', transferDate)
+        .eq('amount', amount)
+        .single();
 
-    if (error) {
+      if (paymentData) {
+        await supabase
+          .from('driver_payments')
+          .delete()
+          .eq('id', paymentData.id);
+      }
+
+      // Delete transfer receipt
+      const { error } = await supabase
+        .from('driver_transfer_receipts')
+        .delete()
+        .eq('id', receiptId);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف سند التحويل بنجاح"
+      });
+      
+      await loadDriversData();
+    } catch (error: any) {
       toast({
         title: "خطأ",
         description: "فشل حذف سند التحويل",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف سند التحويل بنجاح"
-      });
-      loadDriversData();
     }
   };
 
@@ -430,10 +472,10 @@ const DriversPaymentReport = () => {
                                           >
                                             <Edit className="h-3 w-3" />
                                           </Button>
-                                          <Button 
+                                           <Button 
                                             size="sm" 
                                             variant="destructive" 
-                                            onClick={() => handleDeleteReceipt(receipt.id)}
+                                            onClick={() => handleDeleteReceipt(receipt.id, driver.id, receipt.amount, receipt.transfer_date)}
                                           >
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
