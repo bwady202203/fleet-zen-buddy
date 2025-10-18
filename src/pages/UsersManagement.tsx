@@ -57,6 +57,7 @@ const UsersManagement = () => {
     password: '',
     fullName: '',
     role: 'user',
+    organizationId: '',
     modules: MODULES.map(m => ({
       module_name: m.id,
       can_view: false,
@@ -165,6 +166,11 @@ const UsersManagement = () => {
       return;
     }
 
+    if (!newUser.organizationId) {
+      toast.error('الرجاء اختيار الشركة');
+      return;
+    }
+
     if (newUser.password.length < 6) {
       toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
       return;
@@ -184,12 +190,12 @@ const UsersManagement = () => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        // ربط المستخدم بالشركة
+        // ربط المستخدم بالشركة المختارة
         const { error: orgLinkError } = await supabase
           .from('user_organizations')
           .insert([{
             user_id: authData.user.id,
-            organization_id: selectedOrganization
+            organization_id: newUser.organizationId
           }]);
 
         if (orgLinkError) throw orgLinkError;
@@ -200,7 +206,7 @@ const UsersManagement = () => {
           .insert([{
             user_id: authData.user.id,
             role: newUser.role as 'admin' | 'manager' | 'accountant' | 'employee',
-            organization_id: selectedOrganization
+            organization_id: newUser.organizationId
           }]);
 
         if (roleError) throw roleError;
@@ -231,6 +237,7 @@ const UsersManagement = () => {
           password: '', 
           fullName: '', 
           role: 'user',
+          organizationId: '',
           modules: MODULES.map(m => ({
             module_name: m.id,
             can_view: false,
@@ -514,7 +521,12 @@ const UsersManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (open && selectedOrganization) {
+                  setNewUser(prev => ({ ...prev, organizationId: selectedOrganization }));
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button disabled={!selectedOrganization}>
                     <UserPlus className="ml-2 h-4 w-4" />
@@ -526,6 +538,24 @@ const UsersManagement = () => {
                     <DialogTitle>إضافة مستخدم جديد</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleAddUser} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="organization">الشركة *</Label>
+                      <Select
+                        value={newUser.organizationId}
+                        onValueChange={(value) => setNewUser({ ...newUser, organizationId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر الشركة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizations.map(org => (
+                            <SelectItem key={org.id} value={org.id}>
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="fullName">الاسم الكامل</Label>
                       <Input
