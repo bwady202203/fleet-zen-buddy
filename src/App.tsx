@@ -64,6 +64,7 @@ import BulkEmployees from "./pages/BulkEmployees";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
 import Purchases from "./pages/Purchases";
+import PurchasePOS from "./pages/PurchasePOS";
 import StockMovement from "./pages/StockMovement";
 import VehicleMileageReport from "./pages/VehicleMileageReport";
 import PurchasePriceHistory from "./pages/PurchasePriceHistory";
@@ -142,6 +143,7 @@ const App = () => {
                                   <Route path="/reports" element={<MaintenanceReports />} />
                                   <Route path="/spare-parts" element={<SpareParts />} />
                                   <Route path="/purchases" element={<Purchases />} />
+                                  <Route path="/purchases/pos" element={<PurchasePOS />} />
                                   <Route path="/stock-movement" element={<StockMovement />} />
                                   <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
                                   <Route path="/price-history" element={<PurchasePriceHistory />} />

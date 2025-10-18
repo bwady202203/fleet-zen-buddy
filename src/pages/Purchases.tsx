@@ -40,7 +40,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus } from "lucide-react";
+import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
@@ -212,6 +212,12 @@ const Purchases = () => {
               <h1 className="text-2xl font-bold">إدارة المشتريات</h1>
             </div>
             <div className="flex items-center gap-3">
+              <Link to="/purchases/pos">
+                <Button variant="default">
+                  <Store className="h-4 w-4 ml-2" />
+                  نقطة البيع POS
+                </Button>
+              </Link>
               <Link to="/price-history">
                 <Button variant="outline">
                   <BarChart3 className="h-4 w-4 ml-2" />
