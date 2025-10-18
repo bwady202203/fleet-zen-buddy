@@ -1161,7 +1161,7 @@ const LoadReports = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="drivers" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6" dir="ltr">
             <TabsTrigger value="drivers" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               تقرير السائقين
