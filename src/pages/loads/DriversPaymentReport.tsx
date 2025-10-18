@@ -181,15 +181,30 @@ const DriversPaymentReport = () => {
 
     setLoading(true);
     try {
-      // Get user data for created_by and organization_id
+      // Get user data for created_by
       const { data: userData } = await supabase.auth.getUser();
+
+      // Insert into driver_payments (same as driver report)
+      const { error } = await supabase
+        .from('driver_payments')
+        .insert({
+          driver_id: selectedDriverId,
+          amount: parseFloat(receiptFormData.amount),
+          payment_date: receiptFormData.transfer_date,
+          notes: `${receiptFormData.receipt_number} - ${receiptFormData.description || ''}`.trim(),
+          created_by: userData?.user?.id
+        });
+
+      if (error) throw error;
+
+      // Also add to transfer receipts for record keeping
       const { data: orgData } = await supabase
         .from('user_organizations')
         .select('organization_id')
         .eq('user_id', userData?.user?.id)
         .single();
 
-      const { error } = await supabase
+      await supabase
         .from('driver_transfer_receipts')
         .insert({
           driver_id: selectedDriverId,
@@ -201,15 +216,14 @@ const DriversPaymentReport = () => {
           created_by: userData?.user?.id
         });
 
-      if (error) throw error;
-
       toast({
         title: "تم الإضافة",
         description: "تم إضافة سند التحويل بنجاح"
       });
 
       setQuickReceiptDialogOpen(false);
-      loadDriversData();
+      // Reload data to update totals
+      await loadDriversData();
     } catch (error: any) {
       toast({
         title: "خطأ",
