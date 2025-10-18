@@ -110,6 +110,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          level: number | null
           name_ar: string
           name_en: string
           organization_id: string | null
@@ -123,6 +124,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          level?: number | null
           name_ar: string
           name_en: string
           organization_id?: string | null
@@ -136,6 +138,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          level?: number | null
           name_ar?: string
           name_en?: string
           organization_id?: string | null
@@ -2263,6 +2266,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_account_level: {
+        Args: { account_id: string }
+        Returns: number
+      }
       create_journal_entry_with_number: {
         Args: { p_date: string; p_description: string }
         Returns: {

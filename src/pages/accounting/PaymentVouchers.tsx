@@ -87,51 +87,16 @@ export default function PaymentVouchers() {
 
   const fetchAccounts = async () => {
     try {
+      // Fetch only level 4 accounts with a single optimized query
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("*")
-        .is("parent_id", null)
+        .select("id, code, name_ar, name_en, parent_id")
+        .eq("level", 4)
         .eq("is_active", true)
         .order("code");
 
       if (error) throw error;
-
-      // Get all level 4 accounts (accounts that have parent -> parent -> parent)
-      const level4Accounts: Account[] = [];
-      
-      for (const account of data || []) {
-        const { data: children } = await supabase
-          .from("chart_of_accounts")
-          .select("*")
-          .eq("parent_id", account.id)
-          .eq("is_active", true);
-
-        if (children) {
-          for (const child of children) {
-            const { data: grandchildren } = await supabase
-              .from("chart_of_accounts")
-              .select("*")
-              .eq("parent_id", child.id)
-              .eq("is_active", true);
-
-            if (grandchildren) {
-              for (const grandchild of grandchildren) {
-                const { data: greatgrandchildren } = await supabase
-                  .from("chart_of_accounts")
-                  .select("*")
-                  .eq("parent_id", grandchild.id)
-                  .eq("is_active", true);
-
-                if (greatgrandchildren && greatgrandchildren.length > 0) {
-                  level4Accounts.push(...greatgrandchildren);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      setAccounts(level4Accounts);
+      setAccounts(data || []);
     } catch (error: any) {
       toast.error("خطأ في تحميل الحسابات: " + error.message);
     }
