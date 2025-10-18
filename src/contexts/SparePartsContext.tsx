@@ -39,6 +39,8 @@ interface SparePartsContextType {
   updateSparePart: (id: string, part: Partial<SparePart>) => Promise<void>;
   deleteSparePart: (id: string) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, "id">) => Promise<void>;
+  updatePurchase: (id: string, purchase: Partial<Omit<Purchase, "id">>) => Promise<void>;
+  deletePurchase: (id: string) => Promise<void>;
   deductQuantity: (sparePartId: string, quantity: number, reference: string, notes: string) => Promise<boolean>;
 }
 
@@ -364,6 +366,92 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updatePurchase = async (id: string, updatedData: Partial<Omit<Purchase, "id">>) => {
+    try {
+      // Delete old purchase records
+      const { error: deleteError } = await supabase
+        .from('spare_parts_purchases')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      // If spareParts are being updated, insert new records
+      if (updatedData.spareParts) {
+        const purchaseRecords = updatedData.spareParts.map(item => ({
+          spare_part_id: item.sparePartId,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.quantity * item.price,
+          supplier: updatedData.supplier || purchases.find(p => p.id === id)?.supplier,
+          purchase_date: updatedData.date || purchases.find(p => p.id === id)?.date,
+          invoice_number: `INV-${Date.now()}`,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('spare_parts_purchases')
+          .insert(purchaseRecords);
+
+        if (insertError) throw insertError;
+
+        // Update spare parts quantities
+        for (const item of updatedData.spareParts) {
+          const part = spareParts.find(p => p.id === item.sparePartId);
+          if (part) {
+            const { error: updateError } = await supabase
+              .from('spare_parts')
+              .update({ quantity: part.quantity + item.quantity })
+              .eq('id', item.sparePartId);
+
+            if (updateError) throw updateError;
+          }
+        }
+      }
+
+      await loadPurchases();
+      await loadSpareParts();
+
+      toast({
+        title: 'تم التحديث',
+        description: 'تم تحديث عملية الشراء بنجاح',
+      });
+    } catch (error) {
+      console.error('Error updating purchase:', error);
+      toast({
+        title: 'خطأ',
+        description: 'حدث خطأ أثناء تحديث عملية الشراء',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  const deletePurchase = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('spare_parts_purchases')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await loadPurchases();
+
+      toast({
+        title: 'تم الحذف',
+        description: 'تم حذف عملية الشراء بنجاح',
+      });
+    } catch (error) {
+      console.error('Error deleting purchase:', error);
+      toast({
+        title: 'خطأ',
+        description: 'حدث خطأ أثناء حذف عملية الشراء',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   return (
     <SparePartsContext.Provider
       value={{
@@ -374,6 +462,8 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
         updateSparePart,
         deleteSparePart,
         addPurchase,
+        updatePurchase,
+        deletePurchase,
         deductQuantity,
       }}
     >

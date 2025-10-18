@@ -41,16 +41,30 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store, Calendar, TrendingUp } from "lucide-react";
+import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store, Calendar, TrendingUp, Eye, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useSpareParts } from "@/contexts/SparePartsContext";
+import { useSpareParts, Purchase } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Purchases = () => {
-  const { spareParts, purchases, addPurchase, addSparePart } = useSpareParts();
+  const { spareParts, purchases, addPurchase, addSparePart, updatePurchase, deletePurchase } = useSpareParts();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addPartDialogOpen, setAddPartDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     supplier: "",
@@ -625,6 +639,7 @@ const Purchases = () => {
                     <TableHead className="text-right">قطع الغيار</TableHead>
                     <TableHead className="text-right">التكلفة الإجمالية</TableHead>
                     <TableHead className="text-right">الملاحظات</TableHead>
+                    <TableHead className="text-right">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -652,6 +667,46 @@ const Purchases = () => {
                         <TableCell className="max-w-xs truncate">
                           {purchase.notes || "-"}
                         </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedPurchase(purchase);
+                                setViewDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedPurchase(purchase);
+                                setFormData({
+                                  date: purchase.date,
+                                  supplier: purchase.supplier,
+                                  notes: purchase.notes,
+                                });
+                                setSelectedParts(purchase.spareParts);
+                                setEditDialogOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedPurchase(purchase);
+                                setDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                 </TableBody>
@@ -659,6 +714,230 @@ const Purchases = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* View Purchase Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent className="sm:max-w-2xl" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تفاصيل عملية الشراء</DialogTitle>
+            </DialogHeader>
+            {selectedPurchase && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">التاريخ</Label>
+                    <p className="font-medium">{selectedPurchase.date}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">المورد</Label>
+                    <p className="font-medium">{selectedPurchase.supplier}</p>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">قطع الغيار</Label>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">القطعة</TableHead>
+                        <TableHead className="text-right">الكمية</TableHead>
+                        <TableHead className="text-right">السعر</TableHead>
+                        <TableHead className="text-right">الإجمالي</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedPurchase.spareParts.map((item, idx) => {
+                        const part = spareParts.find((p) => p.id === item.sparePartId);
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell>{part?.name || "غير معروف"}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{item.price.toFixed(2)} ر.س</TableCell>
+                            <TableCell>{(item.quantity * item.price).toFixed(2)} ر.س</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">التكلفة الإجمالية</Label>
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedPurchase.totalCost.toLocaleString()} ر.س
+                  </p>
+                </div>
+                {selectedPurchase.notes && (
+                  <div>
+                    <Label className="text-muted-foreground">الملاحظات</Label>
+                    <p className="font-medium">{selectedPurchase.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Purchase Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تعديل عملية الشراء</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!selectedPurchase) return;
+
+                try {
+                  await updatePurchase(selectedPurchase.id, {
+                    date: formData.date,
+                    supplier: formData.supplier,
+                    notes: formData.notes,
+                    spareParts: selectedParts,
+                    totalCost: selectedParts.reduce((sum, item) => sum + item.quantity * item.price, 0),
+                  });
+                  setEditDialogOpen(false);
+                  setSelectedPurchase(null);
+                } catch (error) {
+                  console.error(error);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-date">التاريخ</Label>
+                  <Input
+                    id="edit-date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-supplier">المورد</Label>
+                  <Input
+                    id="edit-supplier"
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>قطع الغيار</Label>
+                <div className="space-y-3 mt-2">
+                  {selectedParts.map((item, index) => (
+                    <div key={index} className="flex gap-2 items-end p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <Label className="text-xs">القطعة</Label>
+                        <Select
+                          value={item.sparePartId}
+                          onValueChange={(value) => handlePartChange(index, "sparePartId", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر القطعة" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {spareParts.map((part) => (
+                              <SelectItem key={part.id} value={part.id}>
+                                {part.name} - {part.price} ر.س
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-24">
+                        <Label className="text-xs">الكمية</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handlePartChange(index, "quantity", e.target.value)}
+                        />
+                      </div>
+                      <div className="w-28">
+                        <Label className="text-xs">السعر</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.price}
+                          onChange={(e) => handlePartChange(index, "price", e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemovePart(index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" onClick={handleAddPart} className="w-full">
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة قطعة
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-notes">الملاحظات</Label>
+                <Textarea
+                  id="edit-notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t">
+                <span>الإجمالي:</span>
+                <span className="text-xl font-bold">
+                  {selectedParts.reduce((sum, item) => sum + item.quantity * item.price, 0).toLocaleString()} ر.س
+                </span>
+              </div>
+
+              <Button type="submit" className="w-full">
+                حفظ التعديلات
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من حذف عملية الشراء هذه؟ هذا الإجراء لا يمكن التراجع عنه.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (selectedPurchase) {
+                    try {
+                      await deletePurchase(selectedPurchase.id);
+                      setDeleteDialogOpen(false);
+                      setSelectedPurchase(null);
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }
+                }}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                حذف
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
