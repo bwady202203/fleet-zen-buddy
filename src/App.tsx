@@ -17,6 +17,7 @@ import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UsersManagement from "./pages/UsersManagement";
+import OrganizationsManagement from "./pages/OrganizationsManagement";
 import Accounting from "./pages/Accounting";
 import CustodyHome from "./pages/custody/CustodyHome";
 import CustodyRepresentatives from "./pages/custody/CustodyRepresentatives";
@@ -98,6 +99,7 @@ const App = () => {
                                 <Routes>
                                   <Route path="/" element={<Dashboard />} />
                                   <Route path="/users" element={<UsersManagement />} />
+                                  <Route path="/organizations" element={<OrganizationsManagement />} />
                                   <Route path="/fleet" element={<Index />} />
                                   <Route path="/accounting" element={<Accounting />} />
                                   <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />

@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: string | null;
+  currentOrganizationId: string | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -18,6 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentOrganizationId, setCurrentOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,9 +33,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id);
+            fetchCurrentOrganization(session.user.id);
           }, 0);
         } else {
           setUserRole(null);
+          setCurrentOrganizationId(null);
         }
       }
     );
@@ -44,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchUserRole(session.user.id);
+        fetchCurrentOrganization(session.user.id);
       }
       setLoading(false);
     });
@@ -87,6 +92,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchCurrentOrganization = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching current organization:', error);
+        setCurrentOrganizationId(null);
+        return;
+      }
+
+      setCurrentOrganizationId(data?.organization_id || null);
+    } catch (error) {
+      console.error('Error in fetchCurrentOrganization:', error);
+      setCurrentOrganizationId(null);
+    }
+  };
+
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
@@ -114,10 +141,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await supabase.auth.signOut();
     setUserRole(null);
+    setCurrentOrganizationId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, userRole, currentOrganizationId, loading, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
