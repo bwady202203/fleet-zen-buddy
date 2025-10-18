@@ -105,128 +105,193 @@ const Payroll = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card print:hidden">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/hr" className="hover:text-primary transition-colors">
-                <ArrowRight className="h-6 w-6" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold">كشف الرواتب</h1>
-                <p className="text-muted-foreground mt-1">
-                  إصدار وطباعة كشوف رواتب الموظفين
-                </p>
+    <>
+      <style>
+        {`
+          @media print {
+            @page {
+              size: landscape;
+              margin: 1cm;
+            }
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .print-header {
+              background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+              color: white;
+              padding: 20px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+            }
+            .print-table {
+              border-collapse: collapse;
+              width: 100%;
+              font-size: 11px;
+            }
+            .print-table th {
+              background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+              color: white;
+              padding: 10px 8px;
+              font-weight: 600;
+              border: 1px solid #2563eb;
+            }
+            .print-table td {
+              padding: 8px;
+              border: 1px solid #e5e7eb;
+            }
+            .print-table tr:nth-child(even) {
+              background-color: #f9fafb;
+            }
+            .print-total-row {
+              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+              font-weight: 700;
+              font-size: 12px;
+            }
+            .print-footer {
+              margin-top: 30px;
+              padding-top: 20px;
+              border-top: 2px solid #3b82f6;
+            }
+          }
+        `}
+      </style>
+      <div className="min-h-screen bg-background" dir="rtl">
+        <header className="border-b bg-card print:hidden">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link to="/hr" className="hover:text-primary transition-colors">
+                  <ArrowRight className="h-6 w-6" />
+                </Link>
+                <div>
+                  <h1 className="text-3xl font-bold">كشف الرواتب</h1>
+                  <p className="text-muted-foreground mt-1">
+                    إصدار وطباعة كشوف رواتب الموظفين
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="gap-2" onClick={handlePrint}>
-                <Printer className="h-4 w-4" />
-                طباعة
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                تصدير PDF
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="gap-2" onClick={handlePrint}>
+                  <Printer className="h-4 w-4" />
+                  طباعة
+                </Button>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  تصدير PDF
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader className="print:hidden">
-            <div className="flex items-center justify-between">
-              <CardTitle>كشف الرواتب الشهري</CardTitle>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">الشهر:</span>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2025-01">يناير 2025</SelectItem>
-                    <SelectItem value="2024-12">ديسمبر 2024</SelectItem>
-                    <SelectItem value="2024-11">نوفمبر 2024</SelectItem>
-                  </SelectContent>
-                </Select>
+        <main className="container mx-auto px-4 py-8">
+          <Card>
+            <CardHeader className="print:hidden">
+              <div className="flex items-center justify-between">
+                <CardTitle>كشف الرواتب الشهري</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">الشهر:</span>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2025-01">يناير 2025</SelectItem>
+                      <SelectItem value="2024-12">ديسمبر 2024</SelectItem>
+                      <SelectItem value="2024-11">نوفمبر 2024</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="print:block hidden mb-8">
-              <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold mb-2">كشف الرواتب</h1>
-                <p className="text-lg">شهر يناير 2025</p>
+            </CardHeader>
+            <CardContent>
+              {/* Print Preview Header */}
+              <div className="print:block hidden">
+                <div className="print-header text-center">
+                  <h1 className="text-4xl font-bold mb-3">كشف رواتب الموظفين</h1>
+                  <div className="flex justify-between items-center text-lg">
+                    <div>شهر يناير 2025</div>
+                    <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')}</div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">اسم الموظف</TableHead>
-                    <TableHead className="text-right">الراتب الأساسي</TableHead>
-                    <TableHead className="text-right">البدلات</TableHead>
-                    <TableHead className="text-right">الإضافي</TableHead>
-                    <TableHead className="text-right">الخصومات</TableHead>
-                    <TableHead className="text-right">السلف</TableHead>
-                    <TableHead className="text-right font-bold">صافي الراتب</TableHead>
-                    <TableHead className="text-right no-print">الإجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payroll.map((employee) => (
-                    <TableRow key={employee.id}>
-                      <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                      <TableCell>{employee.basicSalary.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-green-600">+{employee.allowances.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-green-600">
-                        {employee.additions > 0 ? `+${employee.additions.toLocaleString()} ر.س` : "-"}
-                      </TableCell>
-                      <TableCell className="text-red-600">
-                        {employee.deductions > 0 ? `-${employee.deductions.toLocaleString()} ر.س` : "-"}
-                      </TableCell>
-                      <TableCell className="text-red-600">
-                        {employee.advances > 0 ? `-${employee.advances.toLocaleString()} ر.س` : "-"}
-                      </TableCell>
-                      <TableCell className="font-bold text-primary">{employee.netSalary.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="no-print">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(employee)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table className="print:print-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">اسم الموظف</TableHead>
+                      <TableHead className="text-right">الراتب الأساسي</TableHead>
+                      <TableHead className="text-right">البدلات</TableHead>
+                      <TableHead className="text-right">الإضافي</TableHead>
+                      <TableHead className="text-right">الخصومات</TableHead>
+                      <TableHead className="text-right">السلف</TableHead>
+                      <TableHead className="text-right font-bold">صافي الراتب</TableHead>
+                      <TableHead className="text-right print:hidden">الإجراءات</TableHead>
                     </TableRow>
-                  ))}
-                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell>الإجمالي</TableCell>
-                    <TableCell>{totalBasicSalary.toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-green-600">+{totalAllowances.toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-green-600">+{totalAdditions.toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-red-600">-{totalDeductions.toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-red-600">-{totalAdvances.toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-primary text-lg">{totalNetSalary.toLocaleString()} ر.س</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {payroll.map((employee) => (
+                      <TableRow key={employee.id}>
+                        <TableCell className="font-medium">{employee.employeeName}</TableCell>
+                        <TableCell>{employee.basicSalary.toLocaleString()} ر.س</TableCell>
+                        <TableCell className="text-green-600">+{employee.allowances.toLocaleString()} ر.س</TableCell>
+                        <TableCell className="text-green-600">
+                          {employee.additions > 0 ? `+${employee.additions.toLocaleString()} ر.س` : "-"}
+                        </TableCell>
+                        <TableCell className="text-red-600">
+                          {employee.deductions > 0 ? `-${employee.deductions.toLocaleString()} ر.س` : "-"}
+                        </TableCell>
+                        <TableCell className="text-red-600">
+                          {employee.advances > 0 ? `-${employee.advances.toLocaleString()} ر.س` : "-"}
+                        </TableCell>
+                        <TableCell className="font-bold text-primary">{employee.netSalary.toLocaleString()} ر.س</TableCell>
+                        <TableCell className="print:hidden">
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(employee)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold print:print-total-row">
+                      <TableCell>الإجمالي</TableCell>
+                      <TableCell>{totalBasicSalary.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="text-green-600">+{totalAllowances.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="text-green-600">+{totalAdditions.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="text-red-600">-{totalDeductions.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="text-red-600">-{totalAdvances.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="text-primary text-lg">{totalNetSalary.toLocaleString()} ر.س</TableCell>
+                      <TableCell className="print:hidden"></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
 
-            <div className="mt-8 pt-6 border-t print:block hidden">
-              <div className="flex justify-between text-sm">
-                <div>
-                  <p>التوقيع: _________________</p>
-                  <p className="mt-4">التاريخ: _________________</p>
-                </div>
-                <div>
-                  <p>الختم: _________________</p>
+              {/* Print Footer */}
+              <div className="print:block hidden print-footer">
+                <div className="grid grid-cols-3 gap-8 text-center">
+                  <div>
+                    <p className="font-semibold mb-2">المدير المالي</p>
+                    <p className="border-t-2 border-gray-400 pt-2 mt-8">التوقيع</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold mb-2">مدير الموارد البشرية</p>
+                    <p className="border-t-2 border-gray-400 pt-2 mt-8">التوقيع</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold mb-2">المدير العام</p>
+                    <p className="border-t-2 border-gray-400 pt-2 mt-8">التوقيع والختم</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 print:hidden">
+        </main>
+
+        <div className="container mx-auto px-4 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 print:hidden">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الرواتب الأساسية</CardTitle>
@@ -252,9 +317,9 @@ const Payroll = () => {
             </CardContent>
           </Card>
         </div>
-      </main>
+        </div>
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]" dir="rtl">
           <DialogHeader>
             <DialogTitle>تعديل كشف الراتب - {editingEmployee?.employeeName}</DialogTitle>
@@ -302,7 +367,8 @@ const Payroll = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 };
 
