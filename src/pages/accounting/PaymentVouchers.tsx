@@ -180,19 +180,17 @@ export default function PaymentVouchers() {
   };
 
   const generateVoucherNumber = async () => {
-    const year = new Date().getFullYear();
     const { data } = await supabase
       .from("payment_vouchers")
       .select("voucher_number")
-      .like("voucher_number", `PV-${year}%`)
       .order("voucher_number", { ascending: false })
       .limit(1);
 
     if (data && data.length > 0) {
-      const lastNumber = parseInt(data[0].voucher_number.slice(-6));
-      return `PV-${year}${String(lastNumber + 1).padStart(6, "0")}`;
+      const lastNumber = parseInt(data[0].voucher_number);
+      return String(lastNumber + 1).padStart(6, "0");
     }
-    return `PV-${year}000001`;
+    return "000001";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -210,31 +208,48 @@ export default function PaymentVouchers() {
 
     try {
       const voucherNumber = editingVoucher ? editingVoucher.voucher_number : await generateVoucherNumber();
+      const amount = parseFloat(formData.amount);
 
       const voucherData = {
         voucher_number: voucherNumber,
         voucher_date: formData.voucher_date,
         debit_account_id: formData.debit_account_id,
         credit_account_id: formData.credit_account_id,
-        amount: parseFloat(formData.amount),
+        amount: amount,
         description: formData.description,
         created_by: user?.id,
       };
 
       if (editingVoucher) {
+        // Delete old journal entry
+        await supabase
+          .from("journal_entries")
+          .delete()
+          .eq("reference", `payment_voucher_${editingVoucher.id}`);
+
         const { error } = await supabase
           .from("payment_vouchers")
           .update(voucherData)
           .eq("id", editingVoucher.id);
 
         if (error) throw error;
+
+        // Create new journal entry
+        await createJournalEntry(editingVoucher.id, voucherNumber, formData.voucher_date, amount);
+        
         toast.success("تم تحديث السند بنجاح");
       } else {
-        const { error } = await supabase
+        const { data: newVoucher, error } = await supabase
           .from("payment_vouchers")
-          .insert([voucherData]);
+          .insert([voucherData])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Create journal entry
+        await createJournalEntry(newVoucher.id, voucherNumber, formData.voucher_date, amount);
+
         toast.success("تم إضافة السند بنجاح");
       }
 
@@ -242,6 +257,96 @@ export default function PaymentVouchers() {
       resetForm();
     } catch (error: any) {
       toast.error("خطأ في حفظ السند: " + error.message);
+    }
+  };
+
+  const createJournalEntry = async (voucherId: string, voucherNumber: string, date: string, amount: number) => {
+    try {
+      // Generate journal entry number
+      const year = new Date().getFullYear();
+      const { data: lastEntry } = await supabase
+        .from("journal_entries")
+        .select("entry_number")
+        .like("entry_number", `JE-${year}%`)
+        .order("entry_number", { ascending: false })
+        .limit(1);
+
+      let entryNumber = `JE-${year}000001`;
+      if (lastEntry && lastEntry.length > 0) {
+        const lastNumber = parseInt(lastEntry[0].entry_number.slice(-6));
+        entryNumber = `JE-${year}${String(lastNumber + 1).padStart(6, "0")}`;
+      }
+
+      // Create journal entry
+      const { data: journalEntry, error: entryError } = await supabase
+        .from("journal_entries")
+        .insert([{
+          entry_number: entryNumber,
+          date: date,
+          description: `سند صرف رقم ${voucherNumber}`,
+          reference: `payment_voucher_${voucherId}`,
+          created_by: user?.id,
+        }])
+        .select()
+        .single();
+
+      if (entryError) throw entryError;
+
+      // Create journal entry lines
+      const { error: linesError } = await supabase
+        .from("journal_entry_lines")
+        .insert([
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: formData.debit_account_id,
+            debit: amount,
+            credit: 0,
+            description: formData.description || `سند صرف رقم ${voucherNumber}`,
+          },
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: formData.credit_account_id,
+            debit: 0,
+            credit: amount,
+            description: formData.description || `سند صرف رقم ${voucherNumber}`,
+          },
+        ]);
+
+      if (linesError) throw linesError;
+
+      // Update account balances
+      await updateAccountBalance(formData.debit_account_id, amount, true);
+      await updateAccountBalance(formData.credit_account_id, amount, false);
+    } catch (error: any) {
+      console.error("Error creating journal entry:", error);
+      throw error;
+    }
+  };
+
+  const updateAccountBalance = async (accountId: string, amount: number, isDebit: boolean) => {
+    const { data: account } = await supabase
+      .from("chart_of_accounts")
+      .select("balance, type")
+      .eq("id", accountId)
+      .single();
+
+    if (account) {
+      let newBalance = account.balance || 0;
+      
+      // For debit accounts (assets, expenses): debit increases, credit decreases
+      // For credit accounts (liabilities, equity, revenue): credit increases, debit decreases
+      const isDebitAccount = ["asset", "expense"].includes(account.type.toLowerCase());
+      
+      if (isDebitAccount) {
+        newBalance = isDebit ? newBalance + amount : newBalance - amount;
+      } else {
+        newBalance = isDebit ? newBalance - amount : newBalance + amount;
+      }
+
+      await supabase
+        .from("chart_of_accounts")
+        .update({ balance: newBalance })
+        .eq("id", accountId);
     }
   };
 
@@ -261,6 +366,12 @@ export default function PaymentVouchers() {
     if (!confirm("هل أنت متأكد من حذف هذا السند؟")) return;
 
     try {
+      // Delete associated journal entry
+      await supabase
+        .from("journal_entries")
+        .delete()
+        .eq("reference", `payment_voucher_${id}`);
+
       const { error } = await supabase
         .from("payment_vouchers")
         .delete()
@@ -310,6 +421,22 @@ export default function PaymentVouchers() {
               border: 2px solid #333;
               padding: 30px;
               background: white;
+            }
+            .company-header {
+              text-align: center;
+              margin-bottom: 20px;
+              padding-bottom: 15px;
+              border-bottom: 2px solid #333;
+            }
+            .company-name {
+              font-size: 24px;
+              font-weight: bold;
+              color: #2c3e50;
+              margin-bottom: 5px;
+            }
+            .company-name-en {
+              font-size: 16px;
+              color: #7f8c8d;
             }
             .header {
               text-align: center;
@@ -412,6 +539,11 @@ export default function PaymentVouchers() {
         </head>
         <body>
           <div class="voucher-container">
+            <div class="company-header">
+              <div class="company-name">شركة الرمال الناعمة</div>
+              <div class="company-name-en">Soft Sands Company</div>
+            </div>
+            
             <div class="header">
               <h1>سند صرف</h1>
               <div style="font-size: 14px; color: #666; margin-top: 5px;">Payment Voucher</div>
