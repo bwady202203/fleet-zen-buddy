@@ -585,27 +585,7 @@ const UsersManagement = () => {
     }
   };
 
-  if (userRole !== 'admin') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold mb-2">غير مصرح</h2>
-            <p className="text-muted-foreground mb-6">
-              هذه الصفحة متاحة للمسؤولين فقط
-            </p>
-            <Link to="/">
-              <Button>
-                العودة للرئيسية
-                <ArrowRight className="mr-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // الصفحة متاحة للجميع الآن
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
