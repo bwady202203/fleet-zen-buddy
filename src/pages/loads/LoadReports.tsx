@@ -1143,6 +1143,323 @@ const LoadReports = () => {
     setExpandedDriverId(expandedDriverId === driverId ? null : driverId);
   };
 
+  const handlePrintPaymentReport = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const today = new Date();
+      const hijriDate = toHijri(today.getFullYear(), today.getMonth() + 1, today.getDate());
+      const hijriString = `${hijriDate.hd}/${hijriDate.hm}/${hijriDate.hy}`;
+      
+      const driversRows = paymentDrivers.map((driver) => {
+        const driverReceipts = receipts[driver.id] || [];
+        const receiptsRows = driverReceipts.length > 0 
+          ? driverReceipts.map(receipt => `
+              <tr style="background-color: #f8fafc;">
+                <td colspan="2" style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0;">
+                  <strong>سند رقم:</strong> ${receipt.receipt_number}
+                </td>
+                <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0;">
+                  ${new Date(receipt.transfer_date).toLocaleDateString('ar-SA')}
+                </td>
+                <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; color: #16a34a;">
+                  ${receipt.amount.toFixed(2)} ر.س
+                </td>
+                <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0;">
+                  ${receipt.description || '-'}
+                </td>
+              </tr>
+            `).join('')
+          : '';
+
+        return `
+          <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <td colspan="5" style="padding: 15px; font-weight: bold; font-size: 1.1em; text-align: right;">
+              ${driver.name} ${driver.phone ? '- ' + driver.phone : ''}
+            </td>
+          </tr>
+          <tr style="background-color: #f1f5f9;">
+            <td style="padding: 12px 15px; border-bottom: 2px solid #cbd5e1; font-weight: bold;">المستحق</td>
+            <td style="padding: 12px 15px; border-bottom: 2px solid #cbd5e1; font-weight: bold;">المدفوع</td>
+            <td style="padding: 12px 15px; border-bottom: 2px solid #cbd5e1; font-weight: bold;">المتبقي</td>
+            <td colspan="2" style="padding: 12px 15px; border-bottom: 2px solid #cbd5e1; font-weight: bold;">عدد السندات</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #2563eb; font-weight: bold;">
+              ${driver.total_due.toFixed(2)} ر.س
+            </td>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #16a34a; font-weight: bold;">
+              ${driver.total_paid.toFixed(2)} ر.س
+            </td>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: ${driver.remaining > 0 ? '#dc2626' : '#64748b'}; font-weight: bold;">
+              ${driver.remaining.toFixed(2)} ر.س
+            </td>
+            <td colspan="2" style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">
+              ${driverReceipts.length} سند
+            </td>
+          </tr>
+          ${receiptsRows}
+          <tr style="height: 20px;"><td colspan="5"></td></tr>
+        `;
+      }).join('');
+
+      const totalDue = paymentDrivers.reduce((sum, d) => sum + d.total_due, 0);
+      const totalPaid = paymentDrivers.reduce((sum, d) => sum + d.total_paid, 0);
+      const totalRemaining = paymentDrivers.reduce((sum, d) => sum + d.remaining, 0);
+
+      printWindow.document.write(`
+        <html dir="rtl">
+          <head>
+            <title>تقرير مستحقات السائقين</title>
+            <meta charset="UTF-8">
+            <style>
+              * { 
+                margin: 0; 
+                padding: 0; 
+                box-sizing: border-box; 
+                direction: rtl;
+              }
+              body { 
+                font-family: 'Arial', 'Tahoma', sans-serif; 
+                padding: 40px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+              }
+              .container {
+                background: white;
+                border-radius: 20px;
+                padding: 40px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 40px;
+                padding-bottom: 30px;
+                border-bottom: 3px solid #667eea;
+              }
+              .logo {
+                font-size: 2.5em;
+                font-weight: bold;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 10px;
+              }
+              .report-title {
+                font-size: 1.8em;
+                color: #1e293b;
+                margin-bottom: 10px;
+                font-weight: 600;
+              }
+              .report-subtitle {
+                color: #64748b;
+                font-size: 1.1em;
+              }
+              table { 
+                width: 100%; 
+                border-collapse: separate;
+                border-spacing: 0;
+                margin: 30px 0;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+                border-radius: 12px;
+                overflow: hidden;
+              }
+              td { 
+                text-align: right;
+              }
+              .summary-section {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 15px;
+                margin: 30px 0;
+              }
+              .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                margin-top: 20px;
+              }
+              .summary-card {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(10px);
+                padding: 20px;
+                border-radius: 12px;
+                text-align: center;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+              }
+              .summary-label {
+                font-size: 0.9em;
+                opacity: 0.95;
+                margin-bottom: 10px;
+              }
+              .summary-value {
+                font-size: 1.8em;
+                font-weight: bold;
+              }
+              .footer {
+                margin-top: 80px;
+                padding-top: 30px;
+                border-top: 2px solid #e2e8f0;
+              }
+              .date-info {
+                display: flex;
+                justify-content: space-between;
+                color: #64748b;
+                font-size: 0.95em;
+                margin-bottom: 40px;
+              }
+              .signature-section {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 60px;
+                margin-top: 60px;
+              }
+              .signature-box {
+                text-align: center;
+                padding: 20px;
+              }
+              .signature-label {
+                color: #64748b;
+                font-weight: 600;
+                margin-bottom: 10px;
+                font-size: 1.1em;
+              }
+              .signature-line {
+                margin-top: 60px;
+                border-top: 2px solid #94a3b8;
+                padding-top: 10px;
+                color: #64748b;
+              }
+              @media print {
+                body {
+                  background: white;
+                  padding: 0;
+                }
+                .container {
+                  box-shadow: none;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="logo">🚛 نظام إدارة الشحنات</div>
+                <div class="report-title">تقرير مستحقات السائقين</div>
+                <div class="report-subtitle">كشف حساب تفصيلي</div>
+              </div>
+
+              <div class="summary-section">
+                <h3 style="text-align: center; font-size: 1.5em; margin-bottom: 20px;">الملخص الإجمالي</h3>
+                <div class="summary-grid">
+                  <div class="summary-card">
+                    <div class="summary-label">إجمالي المستحق</div>
+                    <div class="summary-value">${totalDue.toFixed(2)} ر.س</div>
+                  </div>
+                  <div class="summary-card">
+                    <div class="summary-label">إجمالي المدفوع</div>
+                    <div class="summary-value">${totalPaid.toFixed(2)} ر.س</div>
+                  </div>
+                  <div class="summary-card">
+                    <div class="summary-label">إجمالي المتبقي</div>
+                    <div class="summary-value">${totalRemaining.toFixed(2)} ر.س</div>
+                  </div>
+                </div>
+              </div>
+
+              <table>
+                ${driversRows}
+              </table>
+
+              <div class="footer">
+                <div class="date-info">
+                  <span>تاريخ الطباعة (ميلادي): ${new Date().toLocaleDateString('ar-SA')} - ${new Date().toLocaleTimeString('ar-SA')}</span>
+                  <span>تاريخ الطباعة (هجري): ${hijriString} هـ</span>
+                </div>
+                
+                <div class="signature-section">
+                  <div class="signature-box">
+                    <div class="signature-label">المحاسب</div>
+                    <div class="signature-line">التوقيع</div>
+                  </div>
+                  <div class="signature-box">
+                    <div class="signature-label">المدير المالي</div>
+                    <div class="signature-line">التوقيع</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <script>window.print(); window.close();</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const handleExportPaymentToExcel = () => {
+    const excelData: any[] = [];
+
+    paymentDrivers.forEach(driver => {
+      excelData.push({
+        'اسم السائق': driver.name,
+        'رقم الهاتف': driver.phone || '-',
+        'المستحق': driver.total_due.toFixed(2),
+        'المدفوع': driver.total_paid.toFixed(2),
+        'المتبقي': driver.remaining.toFixed(2),
+        'عدد السندات': receipts[driver.id]?.length || 0
+      });
+
+      const driverReceipts = receipts[driver.id] || [];
+      if (driverReceipts.length > 0) {
+        driverReceipts.forEach(receipt => {
+          excelData.push({
+            'اسم السائق': '',
+            'رقم الهاتف': `سند: ${receipt.receipt_number}`,
+            'المستحق': '',
+            'المدفوع': receipt.amount.toFixed(2),
+            'المتبقي': new Date(receipt.transfer_date).toLocaleDateString('ar-SA'),
+            'عدد السندات': receipt.description || '-'
+          });
+        });
+      }
+
+      excelData.push({
+        'اسم السائق': '',
+        'رقم الهاتف': '',
+        'المستحق': '',
+        'المدفوع': '',
+        'المتبقي': '',
+        'عدد السندات': ''
+      });
+    });
+
+    const totalDue = paymentDrivers.reduce((sum, d) => sum + d.total_due, 0);
+    const totalPaid = paymentDrivers.reduce((sum, d) => sum + d.total_paid, 0);
+    const totalRemaining = paymentDrivers.reduce((sum, d) => sum + d.remaining, 0);
+
+    excelData.push({
+      'اسم السائق': 'الإجمالي',
+      'رقم الهاتف': '',
+      'المستحق': totalDue.toFixed(2),
+      'المدفوع': totalPaid.toFixed(2),
+      'المتبقي': totalRemaining.toFixed(2),
+      'عدد السندات': ''
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'مستحقات السائقين');
+    
+    const fileName = `تقرير_مستحقات_السائقين_${new Date().toLocaleDateString('ar-SA')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({
+      title: "نجح",
+      description: "تم تصدير التقرير بنجاح",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
@@ -1651,7 +1968,19 @@ const LoadReports = () => {
           <TabsContent value="payments">
             <Card>
               <CardHeader>
-                <CardTitle>ملخص مستحقات السائقين</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>ملخص مستحقات السائقين</CardTitle>
+                  <div className="flex gap-2">
+                    <Button onClick={handlePrintPaymentReport} variant="outline" size="sm">
+                      <Printer className="h-4 w-4 ml-2" />
+                      طباعة
+                    </Button>
+                    <Button onClick={handleExportPaymentToExcel} variant="outline" size="sm">
+                      <Download className="h-4 w-4 ml-2" />
+                      تصدير Excel
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {loadingPaymentReport ? (
