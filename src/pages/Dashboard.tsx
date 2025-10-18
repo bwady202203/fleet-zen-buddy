@@ -1,15 +1,86 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/StatsCard";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
   const { hasPermission } = usePermissions();
+
+  const handleExportData = async () => {
+    try {
+      toast.loading('جاري تصدير البيانات...');
+
+      const tables: string[] = [
+        'organizations',
+        'employees',
+        'vehicles',
+        'spare_parts',
+        'spare_parts_purchases',
+        'mileage_records',
+        'oil_change_records',
+        'maintenance_requests',
+        'loads',
+        'companies',
+        'drivers',
+        'load_types',
+        'custody_representatives',
+        'custody_transfers',
+        'custody_expenses',
+        'chart_of_accounts',
+        'journal_entries',
+        'journal_entry_lines',
+        'invoices',
+        'invoice_items',
+      ];
+
+      const exportData: any = {
+        exported_at: new Date().toISOString(),
+        exported_by: user?.email,
+        data: {} as Record<string, any[]>
+      };
+
+      for (const table of tables) {
+        try {
+          const { data, error } = await (supabase as any)
+            .from(table)
+            .select('*');
+
+          if (error) {
+            console.error(`Error fetching ${table}:`, error);
+            continue;
+          }
+
+          exportData.data[table] = data || [];
+        } catch (err) {
+          console.error(`Exception fetching ${table}:`, err);
+        }
+      }
+
+      // تحويل إلى JSON وتنزيله
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `system-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('تم تصدير البيانات بنجاح');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast.error('حدث خطأ أثناء تصدير البيانات');
+    }
+  };
   
   const allModules = [
     {
@@ -66,9 +137,22 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
       <main className="container mx-auto px-4 py-12">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-            نظام الإدارة المتكامل
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+              نظام الإدارة المتكامل
+            </h1>
+            {userRole === 'admin' && (
+              <Button
+                onClick={handleExportData}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                تصدير البيانات
+              </Button>
+            )}
+          </div>
           <h2 className="text-3xl font-bold mb-2">اختر النظام المناسب</h2>
           <p className="text-muted-foreground">جميع الأنظمة متكاملة لإدارة أعمالك بكفاءة</p>
         </div>
