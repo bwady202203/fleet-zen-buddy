@@ -1084,11 +1084,16 @@ const JournalEntries = () => {
                                   </TableCell>
                                   <TableCell>
                                     <Input
-                                      value={line.debit || ""}
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={line.debit > 0 ? line.debit : ""}
                                       onChange={(e) => {
-                                        const value = e.target.value.replace(/[^\d.]/g, '');
-                                        const debit = value ? parseFloat(value) : 0;
-                                        updateLine(line.id, { debit, credit: 0 });
+                                        const value = e.target.value;
+                                        // السماح بالأرقام والنقطة فقط
+                                        if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                                          const debit = value === "" ? 0 : parseFloat(value) || 0;
+                                          updateLine(line.id, { debit, credit: 0 });
+                                        }
                                       }}
                                       placeholder="0.00"
                                       className="text-sm"
@@ -1096,11 +1101,16 @@ const JournalEntries = () => {
                                   </TableCell>
                                   <TableCell>
                                     <Input
-                                      value={line.credit || ""}
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={line.credit > 0 ? line.credit : ""}
                                       onChange={(e) => {
-                                        const value = e.target.value.replace(/[^\d.]/g, '');
-                                        const credit = value ? parseFloat(value) : 0;
-                                        updateLine(line.id, { credit, debit: 0 });
+                                        const value = e.target.value;
+                                        // السماح بالأرقام والنقطة فقط
+                                        if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                                          const credit = value === "" ? 0 : parseFloat(value) || 0;
+                                          updateLine(line.id, { credit, debit: 0 });
+                                        }
                                       }}
                                       placeholder="0.00"
                                       className="text-sm"
