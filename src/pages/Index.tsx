@@ -3,7 +3,7 @@ import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { useState, useMemo } from "react";
@@ -29,6 +29,43 @@ const Index = () => {
     });
   }, [vehicles, searchQuery, statusFilter]);
 
+  const exportToJSON = () => {
+    const dataStr = JSON.stringify(vehicles, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `vehicles-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToCSV = () => {
+    const headers = ['الاسم', 'النوع', 'الحالة', 'الكيلومترات', 'تاريخ آخر صيانة', 'تاريخ الصيانة القادمة'];
+    const csvData = vehicles.map(v => [
+      v.name,
+      v.type,
+      v.status === 'active' ? 'نشطة' : v.status === 'maintenance' ? 'قيد الصيانة' : v.status === 'warning' ? 'تحتاج صيانة' : 'غير نشطة',
+      v.mileage,
+      v.lastService || '-',
+      v.nextService || '-'
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+    
+    const BOM = '\uFEFF';
+    const dataBlob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `vehicles-data-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b">
@@ -41,6 +78,12 @@ const Index = () => {
               <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
             <div className="flex items-center gap-3">
+              <Button variant="outline" size="icon" onClick={exportToJSON} title="تحميل JSON">
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={exportToCSV} title="تحميل CSV">
+                <FileText className="h-4 w-4" />
+              </Button>
               <Link to="/spare-parts">
                 <Button variant="outline">
                   <Package className="h-4 w-4 ml-2" />
