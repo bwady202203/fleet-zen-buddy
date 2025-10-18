@@ -253,6 +253,9 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
   const addPurchase = async (purchase: Omit<Purchase, "id">) => {
     try {
+      // توليد رقم فاتورة فريد إذا لم يكن موجود
+      const invoiceNum = `INV-${Date.now()}`;
+      
       // إضافة سجلات الشراء
       const purchaseRecords = purchase.spareParts.map(item => ({
         spare_part_id: item.sparePartId,
@@ -261,7 +264,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
         total_price: item.quantity * item.price,
         purchase_date: purchase.date,
         supplier: purchase.supplier,
-        invoice_number: `INV-${Date.now()}`,
+        invoice_number: invoiceNum,
       }));
 
       const { error: purchaseError } = await supabase

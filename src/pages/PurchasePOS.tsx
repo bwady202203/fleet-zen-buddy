@@ -24,6 +24,7 @@ export default function PurchasePOS() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [supplierName, setSupplierName] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
+  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
 
   const filteredParts = spareParts.filter(
     (part) =>
@@ -83,6 +84,7 @@ export default function PurchasePOS() {
     setCart([]);
     setSupplierName("");
     setPurchaseDate(new Date().toISOString().split("T")[0]);
+    setInvoiceNumber(`INV-${Date.now()}`);
     toast.success("تم تفريغ السلة");
   };
 
@@ -244,6 +246,18 @@ export default function PurchasePOS() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Invoice Number */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    رقم الفاتورة
+                  </label>
+                  <Input
+                    value={invoiceNumber}
+                    onChange={(e) => setInvoiceNumber(e.target.value)}
+                    placeholder="رقم الفاتورة"
+                  />
+                </div>
+
                 {/* Date Input */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
