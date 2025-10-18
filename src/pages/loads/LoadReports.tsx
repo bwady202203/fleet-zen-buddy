@@ -1670,18 +1670,29 @@ const LoadReports = () => {
                           <CollapsibleTrigger asChild>
                             <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                               <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickReceipt(driver.id);
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4 ml-2" />
+                                    سند تحويل
+                                  </Button>
+                                  {expandedDriverId === driver.id ? (
+                                    <ChevronUp className="h-5 w-5" />
+                                  ) : (
+                                    <ChevronDown className="h-5 w-5" />
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-4 flex-1">
-                                  <div className="flex-1">
-                                    <h3 className="text-lg font-semibold">{driver.name}</h3>
-                                    {driver.phone && (
-                                      <p className="text-sm text-muted-foreground">{driver.phone}</p>
-                                    )}
-                                  </div>
                                   <div className="flex gap-6">
                                     <div className="text-center">
-                                      <p className="text-sm text-muted-foreground">المستحق</p>
-                                      <p className="text-lg font-bold text-primary">
-                                        {driver.total_due.toFixed(2)} ريال
+                                      <p className="text-sm text-muted-foreground">المتبقي</p>
+                                      <p className={`text-lg font-bold ${driver.remaining > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                        {driver.remaining.toFixed(2)} ريال
                                       </p>
                                     </div>
                                     <div className="text-center">
@@ -1691,27 +1702,16 @@ const LoadReports = () => {
                                       </p>
                                     </div>
                                     <div className="text-center">
-                                      <p className="text-sm text-muted-foreground">المتبقي</p>
-                                      <p className={`text-lg font-bold ${driver.remaining > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                        {driver.remaining.toFixed(2)} ريال
+                                      <p className="text-sm text-muted-foreground">المستحق</p>
+                                      <p className="text-lg font-bold text-primary">
+                                        {driver.total_due.toFixed(2)} ريال
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleQuickReceipt(driver.id);
-                                      }}
-                                    >
-                                      <Plus className="h-4 w-4 ml-2" />
-                                      سند تحويل
-                                    </Button>
-                                    {expandedDriverId === driver.id ? (
-                                      <ChevronUp className="h-5 w-5" />
-                                    ) : (
-                                      <ChevronDown className="h-5 w-5" />
+                                  <div className="flex-1 text-right">
+                                    <h3 className="text-lg font-semibold">{driver.name}</h3>
+                                    {driver.phone && (
+                                      <p className="text-sm text-muted-foreground">{driver.phone}</p>
                                     )}
                                   </div>
                                 </div>
