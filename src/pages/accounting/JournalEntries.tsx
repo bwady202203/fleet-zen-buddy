@@ -342,6 +342,19 @@ const JournalEntries = () => {
     }));
   };
 
+  // دالة لتحويل الأرقام العربية إلى إنجليزية
+  const convertArabicToEnglishNumbers = (str: string): string => {
+    if (!str) return str;
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    
+    let result = str;
+    for (let i = 0; i < arabicNumbers.length; i++) {
+      result = result.replace(new RegExp(arabicNumbers[i], 'g'), englishNumbers[i]);
+    }
+    return result;
+  };
+
   const handlePasteFromExcel = async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -362,9 +375,13 @@ const JournalEntries = () => {
         const cells = rows[i].split('\t');
         if (cells.length < 2) continue;
 
-        // البحث عن الحساب بالكود
-        const accountCode = cells[0]?.trim();
+        // البحث عن الحساب بالكود (مع دعم الأرقام العربية)
+        const accountCode = convertArabicToEnglishNumbers(cells[0]?.trim() || "");
         const account = accounts.find(acc => acc.code === accountCode);
+        
+        // تحويل الأرقام العربية في المدين والدائن
+        const debitStr = convertArabicToEnglishNumbers(cells[2]?.trim() || "0");
+        const creditStr = convertArabicToEnglishNumbers(cells[3]?.trim() || "0");
         
         newLines.push({
           id: `line-${Date.now()}-${i}`,
@@ -372,8 +389,8 @@ const JournalEntries = () => {
           accountCode: account?.code || accountCode,
           accountName: account?.name_ar || "",
           description: cells[1]?.trim() || "",
-          debit: parseFloat(cells[2]?.trim()) || 0,
-          credit: parseFloat(cells[3]?.trim()) || 0,
+          debit: parseFloat(debitStr) || 0,
+          credit: parseFloat(creditStr) || 0,
           costCenter: cells[4]?.trim() || "",
           projectName: cells[5]?.trim() || "",
         });
