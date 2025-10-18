@@ -104,6 +104,17 @@ export default function PurchasePOS() {
       return;
     }
 
+    console.log("Attempting purchase with data:", {
+      date: purchaseDate,
+      supplier: supplierName,
+      spareParts: cart.map((item) => ({
+        sparePartId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      totalCost: totalAmount,
+    });
+
     try {
       await addPurchase({
         date: purchaseDate,
@@ -120,7 +131,8 @@ export default function PurchasePOS() {
       toast.success("تمت عملية الشراء بنجاح");
       clearCart();
     } catch (error) {
-      toast.error("حدث خطأ أثناء عملية الشراء");
+      console.error("Purchase error:", error);
+      toast.error(`حدث خطأ أثناء عملية الشراء: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
     }
   };
 
