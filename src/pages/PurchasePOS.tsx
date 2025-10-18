@@ -23,6 +23,7 @@ export default function PurchasePOS() {
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [supplierName, setSupplierName] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
 
   const filteredParts = spareParts.filter(
     (part) =>
@@ -65,6 +66,14 @@ export default function PurchasePOS() {
     );
   };
 
+  const updatePrice = (id: string, newPrice: number) => {
+    setCart(
+      cart.map((item) =>
+        item.id === id ? { ...item, price: newPrice } : item
+      )
+    );
+  };
+
   const removeFromCart = (id: string) => {
     setCart(cart.filter((item) => item.id !== id));
     toast.success("تم حذف المنتج من السلة");
@@ -73,6 +82,7 @@ export default function PurchasePOS() {
   const clearCart = () => {
     setCart([]);
     setSupplierName("");
+    setPurchaseDate(new Date().toISOString().split("T")[0]);
     toast.success("تم تفريغ السلة");
   };
 
@@ -94,7 +104,7 @@ export default function PurchasePOS() {
 
     try {
       await addPurchase({
-        date: new Date().toISOString().split("T")[0],
+        date: purchaseDate,
         supplier: supplierName,
         notes: "",
         spareParts: cart.map((item) => ({
@@ -162,7 +172,7 @@ export default function PurchasePOS() {
                 {filteredParts.map((part) => (
                   <Card
                     key={part.id}
-                    className="hover:shadow-lg transition-all cursor-pointer group"
+                    className="hover:shadow-lg transition-all cursor-pointer"
                     onClick={() => addToCart(part)}
                   >
                     <CardHeader className="pb-3">
@@ -172,7 +182,6 @@ export default function PurchasePOS() {
                             {part.name}
                           </CardTitle>
                         </div>
-                        <Plus className="h-6 w-6 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -235,6 +244,18 @@ export default function PurchasePOS() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Date Input */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    تاريخ الشراء
+                  </label>
+                  <Input
+                    type="date"
+                    value={purchaseDate}
+                    onChange={(e) => setPurchaseDate(e.target.value)}
+                  />
+                </div>
+
                 {/* Supplier Input */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
@@ -300,10 +321,20 @@ export default function PurchasePOS() {
                               </Button>
                             </div>
                             <div className="text-left">
-                              <p className="text-xs text-muted-foreground">
-                                {item.price.toFixed(2)} × {item.quantity}
-                              </p>
-                              <p className="font-bold text-primary">
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.price}
+                                  onChange={(e) =>
+                                    updatePrice(item.id, parseFloat(e.target.value) || 0)
+                                  }
+                                  className="w-20 h-7 text-xs text-left"
+                                />
+                                <span className="text-xs">×</span>
+                                <span className="text-xs">{item.quantity}</span>
+                              </div>
+                              <p className="font-bold text-primary mt-1">
                                 {(item.price * item.quantity).toFixed(2)} ر.س
                               </p>
                             </div>

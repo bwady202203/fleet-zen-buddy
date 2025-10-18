@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +40,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store, Calendar, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
@@ -202,6 +203,34 @@ const Purchases = () => {
     setSelectedParts([]);
   };
 
+  // إحصائيات التكاليف
+  const costStats = useMemo(() => {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    
+    const todayCost = purchases
+      .filter((p) => p.date === today)
+      .reduce((sum, p) => sum + p.totalCost, 0);
+
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    const weekCost = purchases
+      .filter((p) => new Date(p.date) >= weekStart)
+      .reduce((sum, p) => sum + p.totalCost, 0);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthCost = purchases
+      .filter((p) => new Date(p.date) >= monthStart)
+      .reduce((sum, p) => sum + p.totalCost, 0);
+
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const yearCost = purchases
+      .filter((p) => new Date(p.date) >= yearStart)
+      .reduce((sum, p) => sum + p.totalCost, 0);
+
+    return { todayCost, weekCost, monthCost, yearCost };
+  }, [purchases]);
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b">
@@ -236,7 +265,63 @@ const Purchases = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* إحصائيات */}
+        {/* إحصائيات التكاليف */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <CardTitle>إحصائيات التكاليف</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="today" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="today">اليوم</TabsTrigger>
+                <TabsTrigger value="week">الأسبوع</TabsTrigger>
+                <TabsTrigger value="month">الشهر</TabsTrigger>
+                <TabsTrigger value="year">السنة</TabsTrigger>
+              </TabsList>
+              <TabsContent value="today" className="mt-4">
+                <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <p className="text-sm text-muted-foreground mb-1">تكلفة اليوم</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {costStats.todayCost.toLocaleString()} ر.س
+                  </p>
+                </div>
+              </TabsContent>
+              <TabsContent value="week" className="mt-4">
+                <div className="text-center p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                  <p className="text-sm text-muted-foreground mb-1">تكلفة آخر 7 أيام</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {costStats.weekCost.toLocaleString()} ر.س
+                  </p>
+                </div>
+              </TabsContent>
+              <TabsContent value="month" className="mt-4">
+                <div className="text-center p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                  <p className="text-sm text-muted-foreground mb-1">تكلفة هذا الشهر</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {costStats.monthCost.toLocaleString()} ر.س
+                  </p>
+                </div>
+              </TabsContent>
+              <TabsContent value="year" className="mt-4">
+                <div className="text-center p-6 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 text-orange-600" />
+                  <p className="text-sm text-muted-foreground mb-1">تكلفة هذه السنة</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {costStats.yearCost.toLocaleString()} ر.س
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* إحصائيات عامة */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-3">
