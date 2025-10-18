@@ -111,7 +111,7 @@ const Payroll = () => {
           @media print {
             @page {
               size: landscape;
-              margin: 1.5cm;
+              margin: 2cm;
             }
             body {
               print-color-adjust: exact;
@@ -121,49 +121,54 @@ const Payroll = () => {
               display: none !important;
             }
             .print-header {
-              background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-              color: white;
+              border: 3px solid #000;
               padding: 24px;
-              border-radius: 12px;
-              margin-bottom: 24px;
+              margin-bottom: 30px;
               text-align: center;
+            }
+            .print-header h1 {
+              border-bottom: 2px solid #000;
+              padding-bottom: 16px;
+              margin-bottom: 16px;
             }
             .print-table {
               border-collapse: collapse;
               width: 100%;
               font-size: 11px;
               margin-top: 20px;
+              border: 2px solid #000;
             }
             .print-table th {
-              background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-              color: white;
+              background: #fff;
+              color: #000;
               padding: 12px 8px;
-              font-weight: 600;
-              border: 1px solid #2563eb;
+              font-weight: 700;
+              border: 1px solid #000;
               text-align: center;
             }
             .print-table td {
               padding: 10px 8px;
-              border: 1px solid #e5e7eb;
+              border: 1px solid #000;
               text-align: center;
-            }
-            .print-table tr:nth-child(even) {
-              background-color: #f9fafb;
+              background: #fff;
             }
             .print-total-row {
-              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+              background: #fff !important;
               font-weight: 700;
               font-size: 12px;
+              border-top: 3px double #000 !important;
             }
             .print-footer {
-              margin-top: 40px;
+              margin-top: 50px;
               padding-top: 20px;
-              border-top: 3px solid #3b82f6;
+              border-top: 3px solid #000;
             }
             .print-card {
               background: white;
-              border-radius: 12px;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              box-shadow: none;
+            }
+            header {
+              display: none !important;
             }
           }
         `}
@@ -198,7 +203,7 @@ const Payroll = () => {
         </header>
 
         <main className="container mx-auto px-4 py-8">
-          <Card className="print:print-card print:shadow-none">
+          <Card className="print:print-card print:shadow-none print:border-0">
             <CardHeader className="print:hidden">
               <div className="flex items-center justify-between">
                 <CardTitle>كشف الرواتب الشهري</CardTitle>
@@ -217,14 +222,14 @@ const Payroll = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="print:p-8">
+            <CardContent className="print:p-0">
               {/* Print Preview Header */}
               <div className="print:block hidden">
                 <div className="print-header">
                   <h1 className="text-4xl font-bold mb-4">كشف رواتب الموظفين</h1>
-                  <div className="flex justify-between items-center text-lg px-4">
-                    <div>شهر يناير 2025</div>
-                    <div>تاريخ الإعداد: {new Date().toLocaleDateString('ar-SA')}</div>
+                  <div className="flex justify-between items-center text-base px-4">
+                    <div><strong>الشهر:</strong> يناير 2025</div>
+                    <div><strong>التاريخ:</strong> {new Date().toLocaleDateString('ar-SA')}</div>
                   </div>
                 </div>
               </div>
