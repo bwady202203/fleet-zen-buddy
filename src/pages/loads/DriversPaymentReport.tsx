@@ -31,6 +31,7 @@ interface TransferReceipt {
 }
 
 const DriversPaymentReport = () => {
+  console.log('DriversPaymentReport component loaded');
   const { toast } = useToast();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [receipts, setReceipts] = useState<Record<string, TransferReceipt[]>>({});
@@ -48,6 +49,7 @@ const DriversPaymentReport = () => {
   });
 
   useEffect(() => {
+    console.log('useEffect called, loading drivers data');
     loadDriversData();
   }, []);
 
