@@ -36,8 +36,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface Account {
   id: string;
@@ -355,6 +357,103 @@ export default function PaymentVouchers() {
     setShowView(true);
   };
 
+  const handleDownloadPDF = async (voucher: PaymentVoucher) => {
+    const debitAccount = voucher.debit_account;
+    const creditAccount = voucher.credit_account;
+
+    // Create a temporary div for rendering
+    const tempDiv = document.createElement("div");
+    tempDiv.style.position = "absolute";
+    tempDiv.style.left = "-9999px";
+    tempDiv.style.width = "800px";
+    tempDiv.style.background = "white";
+    tempDiv.innerHTML = `
+      <div style="font-family: 'Arial', sans-serif; padding: 40px; direction: rtl; text-align: right; background: white;">
+        <div style="max-width: 800px; margin: 0 auto; border: 2px solid #333; padding: 30px; background: white;">
+          <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #333;">
+            <div style="font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 5px;">شركة الرمال الناعمة</div>
+            <div style="font-size: 16px; color: #7f8c8d;">Soft Sands Company</div>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px double #333; padding-bottom: 20px;">
+            <h1 style="font-size: 28px; color: #333; margin-bottom: 10px;">سند صرف</h1>
+            <div style="font-size: 14px; color: #666; margin-top: 5px;">Payment Voucher</div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; margin-bottom: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+            <div style="font-size: 16px;"><strong>رقم السند:</strong> ${voucher.voucher_number}</div>
+            <div style="font-size: 16px;"><strong>التاريخ:</strong> ${format(new Date(voucher.voucher_date), "dd/MM/yyyy", { locale: ar })}</div>
+          </div>
+
+          <table style="width: 100%; margin: 20px 0; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 12px; border: 1px solid #ddd; font-size: 16px; background: #f9f9f9; font-weight: bold; width: 30%; color: #555;">الحساب المدين</td>
+              <td style="padding: 12px; border: 1px solid #ddd; font-size: 16px;">${debitAccount?.code} - ${debitAccount?.name_ar}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px; border: 1px solid #ddd; font-size: 16px; background: #f9f9f9; font-weight: bold; width: 30%; color: #555;">الحساب الدائن</td>
+              <td style="padding: 12px; border: 1px solid #ddd; font-size: 16px;">${creditAccount?.code} - ${creditAccount?.name_ar}</td>
+            </tr>
+          </table>
+
+          <div style="text-align: center; margin: 30px 0; padding: 20px; background: #f0f0f0; border: 2px solid #333; border-radius: 8px;">
+            <div style="font-size: 18px; font-weight: bold; color: #555; margin-bottom: 10px;">المبلغ</div>
+            <div style="font-size: 32px; font-weight: bold; color: #2c3e50;">${voucher.amount.toLocaleString('ar-SA')} ريال</div>
+          </div>
+
+          ${voucher.description ? `
+            <div style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
+              <div style="font-weight: bold; margin-bottom: 8px; color: #555;">البيان:</div>
+              <div>${voucher.description}</div>
+            </div>
+          ` : ''}
+
+          <div style="display: flex; justify-content: space-between; margin-top: 60px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <div style="text-align: center; width: 30%;">
+              <div style="border-top: 2px solid #333; margin-top: 60px; padding-top: 10px; font-weight: bold;">المحاسب</div>
+            </div>
+            <div style="text-align: center; width: 30%;">
+              <div style="border-top: 2px solid #333; margin-top: 60px; padding-top: 10px; font-weight: bold;">المدير المالي</div>
+            </div>
+            <div style="text-align: center; width: 30%;">
+              <div style="border-top: 2px solid #333; margin-top: 60px; padding-top: 10px; font-weight: bold;">المستلم</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(tempDiv);
+
+    try {
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save(`payment-voucher-${voucher.voucher_number}.pdf`);
+
+      toast.success("تم تحميل ملف PDF بنجاح");
+    } catch (error) {
+      toast.error("خطأ في تحميل ملف PDF");
+      console.error(error);
+    } finally {
+      document.body.removeChild(tempDiv);
+    }
+  };
+
   const handlePrint = (voucher: PaymentVoucher) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -636,13 +735,23 @@ export default function PaymentVouchers() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleView(voucher)}
+                          title="عرض"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleDownloadPDF(voucher)}
+                          title="تحميل PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handlePrint(voucher)}
+                          title="طباعة"
                         >
                           <Printer className="h-4 w-4" />
                         </Button>
@@ -650,6 +759,7 @@ export default function PaymentVouchers() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(voucher)}
+                          title="تعديل"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -657,6 +767,7 @@ export default function PaymentVouchers() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(voucher.id)}
+                          title="حذف"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -890,6 +1001,10 @@ export default function PaymentVouchers() {
                 </div>
               )}
               <div className="flex gap-2 justify-end">
+                <Button onClick={() => handleDownloadPDF(viewingVoucher)} variant="outline">
+                  <Download className="h-4 w-4 ml-2" />
+                  تحميل PDF
+                </Button>
                 <Button onClick={() => handlePrint(viewingVoucher)}>
                   <Printer className="h-4 w-4 ml-2" />
                   طباعة
