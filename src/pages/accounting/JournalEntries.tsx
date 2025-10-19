@@ -19,10 +19,12 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, Download } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { supabase } from "@/integrations/supabase/client";
 
 interface Account {
@@ -611,6 +613,60 @@ const JournalEntries = () => {
     setTimeout(() => {
       window.print();
     }, 100);
+  };
+
+  const handleDownloadPDF = async (entry: any) => {
+    try {
+      setSelectedEntry(entry);
+      
+      // انتظار قصير لتحديث الـ DOM
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const printContent = document.getElementById('journal-entry-print-content');
+      if (!printContent) {
+        toast({
+          title: "خطأ",
+          description: "فشل في إيجاد محتوى القيد",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const canvas = await html2canvas(printContent, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`journal-entry-${entry.entryNumber}.pdf`);
+
+      toast({
+        title: "تم التحميل بنجاح",
+        description: "تم تحميل ملف PDF بنجاح",
+      });
+
+      setSelectedEntry(null);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إنشاء ملف PDF",
+        variant: "destructive",
+      });
+      setSelectedEntry(null);
+    }
   };
 
   const handlePreview = (entry: any) => {
@@ -1540,6 +1596,14 @@ const JournalEntries = () => {
                                 title="طباعة / Print"
                               >
                                 <Printer className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDownloadPDF(entry)}
+                                title="تحميل PDF / Download PDF"
+                              >
+                                <Download className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
