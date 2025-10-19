@@ -1673,7 +1673,7 @@ const JournalEntries = () => {
 
         {/* Print Template */}
         {selectedEntry && (
-          <div className="print-content">
+          <div id="journal-entry-print-content" className="print-content">
             <div className="print-inner bg-white" dir="rtl">
               <div className="text-center mb-4 border-b-2 border-gray-800 pb-3">
                 <h1 className="text-2xl font-bold mb-1">سند قيد يومية</h1>
