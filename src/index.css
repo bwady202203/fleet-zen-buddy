@@ -117,7 +117,7 @@ All colors MUST be HSL.
 @media print {
   @page {
     size: A4;
-    margin: 0;
+    margin: 15mm;
   }
   
   body {
@@ -135,5 +135,15 @@ All colors MUST be HSL.
   
   .print\:max-w-full {
     max-width: 100% !important;
+  }
+
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .page-break:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
   }
 }
