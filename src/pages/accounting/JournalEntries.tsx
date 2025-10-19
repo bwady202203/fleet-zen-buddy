@@ -1590,58 +1590,58 @@ const JournalEntries = () => {
         {selectedEntry && (
           <div className="print-content">
             <div className="max-w-4xl mx-auto bg-white p-8" dir="rtl">
-              <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
-                <h1 className="text-3xl font-bold mb-2">سند قيد يومية</h1>
+              <div className="text-center mb-8 border-b-2 border-gray-400 pb-4">
+                <h1 className="text-3xl font-bold mb-2 text-gray-800">سند قيد يومية</h1>
                 <h2 className="text-xl text-gray-600">Journal Entry Voucher</h2>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
                 <div>
                   <div className="text-sm text-gray-600">رقم القيد</div>
-                  <div className="font-bold text-lg">{selectedEntry.entryNumber}</div>
+                  <div className="font-bold text-lg text-gray-800">{selectedEntry.entryNumber}</div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">التاريخ</div>
-                  <div className="font-bold text-lg">
+                  <div className="font-bold text-lg text-gray-800">
                     {format(new Date(selectedEntry.date), 'dd/MM/yyyy')}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">البيان / Description</div>
-                  <div className="font-bold text-lg">{selectedEntry.description || '-'}</div>
+                  <div className="font-bold text-lg text-gray-800">{selectedEntry.description || '-'}</div>
                 </div>
               </div>
 
-              <table className="w-full border-collapse border-2 border-gray-800 mb-6">
+              <table className="w-full border-collapse border border-gray-400 mb-6">
                 <thead>
-                  <tr className="bg-gray-800 text-white">
-                    <th className="border border-gray-800 p-3 text-right">
+                  <tr className="bg-gray-100 border-b border-gray-400">
+                    <th className="border border-gray-400 p-3 text-right text-gray-800 font-semibold">
                       رمز الحساب<br/>Account Code
                     </th>
-                    <th className="border border-gray-800 p-3 text-right">
+                    <th className="border border-gray-400 p-3 text-right text-gray-800 font-semibold">
                       اسم الحساب<br/>Account Name
                     </th>
-                    <th className="border border-gray-800 p-3 text-right">
+                    <th className="border border-gray-400 p-3 text-right text-gray-800 font-semibold">
                       البيان<br/>Description
                     </th>
-                    <th className="border border-gray-800 p-3 text-right">
+                    <th className="border border-gray-400 p-3 text-right text-gray-800 font-semibold">
                       الفرع<br/>Branch
                     </th>
-                    <th className="border border-gray-800 p-3 text-right">
+                    <th className="border border-gray-400 p-3 text-right text-gray-800 font-semibold">
                       المدين<br/>Debit
                     </th>
-                    <th className="border border-gray-800 p-3 text-right">
+                    <th className="border border-gray-400 p-3 text-right text-gray-800 font-semibold">
                       الدائن<br/>Credit
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedEntry.lines.map((line: any, index: number) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 p-3">{line.accountCode}</td>
-                      <td className="border border-gray-300 p-3">{line.accountName}</td>
-                      <td className="border border-gray-300 p-3">{line.description}</td>
-                      <td className="border border-gray-300 p-3">{line.branchName || '-'}</td>
+                    <tr key={index} className="bg-white">
+                      <td className="border border-gray-300 p-3 text-gray-800">{line.accountCode}</td>
+                      <td className="border border-gray-300 p-3 text-gray-800">{line.accountName}</td>
+                      <td className="border border-gray-300 p-3 text-gray-800">{line.description}</td>
+                      <td className="border border-gray-300 p-3 text-gray-800">{line.branchName || '-'}</td>
                       <td className="border border-gray-300 p-3 text-red-600 font-bold">
                         {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </td>
@@ -1650,36 +1650,36 @@ const JournalEntries = () => {
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-gray-100 font-bold text-lg">
-                    <td colSpan={4} className="border border-gray-800 p-3 text-left">
+                  <tr className="bg-gray-50 font-bold text-lg border-t-2 border-gray-400">
+                    <td colSpan={4} className="border border-gray-400 p-3 text-left text-gray-800">
                       الإجمالي / Total
                     </td>
-                    <td className="border border-gray-800 p-3 text-red-600">
+                    <td className="border border-gray-400 p-3 text-red-600">
                       {selectedEntry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="border border-gray-800 p-3 text-green-600">
+                    <td className="border border-gray-400 p-3 text-green-600">
                       {selectedEntry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tbody>
               </table>
 
-              <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-gray-300">
+              <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-gray-400">
                 <div className="text-center">
-                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
-                    <div className="font-bold">المحاسب</div>
+                  <div className="border-t border-gray-400 pt-2 mt-16">
+                    <div className="font-bold text-gray-800">المحاسب</div>
                     <div className="text-sm text-gray-600">Accountant</div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
-                    <div className="font-bold">المدير المالي</div>
+                  <div className="border-t border-gray-400 pt-2 mt-16">
+                    <div className="font-bold text-gray-800">المدير المالي</div>
                     <div className="text-sm text-gray-600">Financial Manager</div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
-                    <div className="font-bold">المعتمد</div>
+                  <div className="border-t border-gray-400 pt-2 mt-16">
+                    <div className="font-bold text-gray-800">المعتمد</div>
                     <div className="text-sm text-gray-600">Approved By</div>
                   </div>
                 </div>
