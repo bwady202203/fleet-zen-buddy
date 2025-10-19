@@ -1494,7 +1494,7 @@ const JournalEntries = () => {
                               )}
                             </Button>
                           </TableCell>
-                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell className="font-medium">{filteredEntries.length - index}</TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
                           <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{entry.description}</TableCell>
