@@ -1348,6 +1348,19 @@ const JournalEntries = () => {
     <>
       <style>{`
         @media print {
+          @page {
+            size: A4;
+            margin: 1cm;
+          }
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body * {
             visibility: hidden;
           }
@@ -1360,8 +1373,13 @@ const JournalEntries = () => {
             top: 0;
             width: 100%;
             background: white;
+            page-break-after: avoid;
+            page-break-inside: avoid;
           }
           .no-print {
+            display: none !important;
+          }
+          header {
             display: none !important;
           }
         }
@@ -1588,8 +1606,8 @@ const JournalEntries = () => {
 
         {/* Print Template */}
         {selectedEntry && (
-          <div className="print-content">
-            <div className="max-w-4xl mx-auto bg-white p-8" dir="rtl">
+          <div className="print-content" style={{ pageBreakAfter: 'avoid', pageBreakInside: 'avoid' }}>
+            <div className="max-w-4xl mx-auto bg-white p-6" dir="rtl" style={{ maxHeight: '100vh', overflow: 'hidden' }}>
               <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
                 <h1 className="text-3xl font-bold mb-2">سند قيد يومية</h1>
                 <h2 className="text-xl text-gray-600">Journal Entry Voucher</h2>
@@ -1664,30 +1682,29 @@ const JournalEntries = () => {
                 </tbody>
               </table>
 
-              <div className="grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-gray-300">
+              <div className="grid grid-cols-3 gap-8 mt-8 pt-6 border-t border-gray-300">
                 <div className="text-center">
-                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
+                  <div className="border-t-2 border-gray-800 pt-2 mt-12">
                     <div className="font-bold">المحاسب</div>
                     <div className="text-sm text-gray-600">Accountant</div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
+                  <div className="border-t-2 border-gray-800 pt-2 mt-12">
                     <div className="font-bold">المدير المالي</div>
                     <div className="text-sm text-gray-600">Financial Manager</div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="border-t-2 border-gray-800 pt-2 mt-16">
+                  <div className="border-t-2 border-gray-800 pt-2 mt-12">
                     <div className="font-bold">المعتمد</div>
                     <div className="text-sm text-gray-600">Approved By</div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 text-center text-sm text-gray-500">
+              <div className="mt-6 text-center text-sm text-gray-500">
                 <div>تاريخ الطباعة: {format(new Date(), 'dd/MM/yyyy')} - {new Date().toLocaleTimeString('en-US')}</div>
-                <div>Print Date: {new Date().toLocaleDateString('en-US')} - {new Date().toLocaleTimeString('en-US')}</div>
               </div>
             </div>
           </div>
