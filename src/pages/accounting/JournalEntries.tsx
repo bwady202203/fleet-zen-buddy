@@ -1467,6 +1467,7 @@ const JournalEntries = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right w-12"></TableHead>
+                      <TableHead className="text-right">م</TableHead>
                       <TableHead className="text-right">رقم القيد</TableHead>
                       <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">البيان</TableHead>
@@ -1476,7 +1477,7 @@ const JournalEntries = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEntries.map((entry) => (
+                    {filteredEntries.map((entry, index) => (
                       <Fragment key={entry.id}>
                         <TableRow className="hover:bg-muted/50">
                           <TableCell>
@@ -1493,6 +1494,7 @@ const JournalEntries = () => {
                               )}
                             </Button>
                           </TableCell>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
                           <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{entry.description}</TableCell>
@@ -1534,7 +1536,7 @@ const JournalEntries = () => {
                         </TableRow>
                         {expandedEntries.has(entry.id) && (
                           <TableRow key={`${entry.id}-details`}>
-                            <TableCell colSpan={7} className="bg-muted/20 p-0">
+                            <TableCell colSpan={8} className="bg-muted/20 p-0">
                               <div className="p-4">
                                 <div className="bg-card rounded-lg border">
                                   <div className="p-3 bg-muted/50 border-b">
