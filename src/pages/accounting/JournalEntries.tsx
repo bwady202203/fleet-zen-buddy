@@ -157,8 +157,8 @@ const JournalEntries = () => {
             branches (code, name_ar)
           )
         `)
-        .order('date', { ascending: false })
-        .order('entry_number', { ascending: false });
+        .order('date', { ascending: true })
+        .order('entry_number', { ascending: true });
 
       if (entriesError) throw entriesError;
 
