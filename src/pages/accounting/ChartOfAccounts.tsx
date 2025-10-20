@@ -908,15 +908,32 @@ const ChartOfAccounts = () => {
                         <SelectTrigger>
                           <SelectValue placeholder="بدون حساب رئيسي" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background z-50">
                           <SelectItem value="none">بدون حساب رئيسي</SelectItem>
                           {accounts
                             .filter(acc => {
+                              // Don't allow selecting the account itself as parent
+                              if (editingAccount && acc.id === editingAccount.id) return false;
+                              
                               // Filter by type
                               if (acc.type !== formData.type) return false;
+                              
                               // Calculate level and exclude level 4 accounts
                               const level = getAccountLevel(acc);
-                              return level < 4;
+                              if (level >= 4) return false;
+                              
+                              // Prevent circular reference - don't allow selecting a child as parent
+                              if (editingAccount) {
+                                let currentParent = acc;
+                                while (currentParent.parent_id) {
+                                  if (currentParent.parent_id === editingAccount.id) return false;
+                                  const parent = accounts.find(a => a.id === currentParent.parent_id);
+                                  if (!parent) break;
+                                  currentParent = parent;
+                                }
+                              }
+                              
+                              return true;
                             })
                             .map(acc => (
                               <SelectItem key={acc.id} value={acc.id}>
