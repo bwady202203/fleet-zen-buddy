@@ -76,7 +76,6 @@ const JournalEntries = () => {
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
 
   
@@ -85,7 +84,6 @@ const JournalEntries = () => {
     fetchCostCenters();
     fetchProjects();
     fetchBranches();
-    fetchOrganizations();
     fetchJournalEntries();
     
     // Realtime subscription for journal entries
@@ -170,7 +168,6 @@ const JournalEntries = () => {
         entryNumber: entry.entry_number,
         date: entry.date,
         description: entry.description,
-        organizationId: entry.organization_id,
         organizationName: entry.organizations?.name,
         lines: entry.journal_entry_lines.map((line: any) => ({
           id: line.id,
@@ -230,20 +227,6 @@ const JournalEntries = () => {
     }
   };
 
-  const fetchOrganizations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      setOrganizations(data || []);
-    } catch (error) {
-      console.error('Error fetching organizations:', error);
-    }
-  };
   const calculateLevel = (account: Account): number => {
     if (!account.parent_id) return 1;
     const parent = accounts.find(a => a.id === account.parent_id);
@@ -713,8 +696,6 @@ const JournalEntries = () => {
       entryNumber: entry.entryNumber,
       date: entry.date,
       description: entry.description,
-      organizationId: entry.organizationId,
-      organizationName: entry.organizationName,
       lines: entry.lines.map((line: any) => ({
         id: line.id,
         accountId: line.accountId,
@@ -777,7 +758,6 @@ const JournalEntries = () => {
         .update({
           date: editingEntry.date,
           description: editingEntry.description,
-          organization_id: editingEntry.organizationId || null,
         })
         .eq('id', editingEntry.id);
 
@@ -1809,25 +1789,11 @@ const JournalEntries = () => {
                   </div>
                   <div>
                     <Label className="text-sm">الشركة / Organization</Label>
-                    <select
-                      value={editingEntry.organizationId || ""}
-                      onChange={(e) => {
-                        const selectedOrg = organizations.find(org => org.id === e.target.value);
-                        setEditingEntry({
-                          ...editingEntry, 
-                          organizationId: e.target.value,
-                          organizationName: selectedOrg?.name || ""
-                        });
-                      }}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">اختر الشركة</option>
-                      {organizations.map(org => (
-                        <option key={org.id} value={org.id}>
-                          {org.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Input
+                      value={editingEntry.organizationName || "غير محدد"}
+                      disabled
+                      className="bg-muted"
+                    />
                   </div>
                   <div>
                     <Label className="text-sm">البيان / Description</Label>
