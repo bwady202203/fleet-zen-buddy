@@ -165,6 +165,96 @@ export default function PurchaseOrder() {
     return "000001";
   };
 
+  const createJournalEntry = async (orderId: string, orderNumber: string, date: string, amount: number) => {
+    try {
+      // Generate journal entry number
+      const year = new Date().getFullYear();
+      const { data: lastEntry } = await supabase
+        .from("journal_entries")
+        .select("entry_number")
+        .like("entry_number", `JE-${year}%`)
+        .order("entry_number", { ascending: false })
+        .limit(1);
+
+      let entryNumber = `JE-${year}000001`;
+      if (lastEntry && lastEntry.length > 0) {
+        const lastNumber = parseInt(lastEntry[0].entry_number.slice(-6));
+        entryNumber = `JE-${year}${String(lastNumber + 1).padStart(6, "0")}`;
+      }
+
+      // Create journal entry
+      const { data: journalEntry, error: entryError } = await supabase
+        .from("journal_entries")
+        .insert([{
+          entry_number: entryNumber,
+          date: date,
+          description: `طلب شراء رقم ${orderNumber} - ${formData.supplier_name}`,
+          reference: `purchase_order_${orderId}`,
+          created_by: user?.id,
+        }])
+        .select()
+        .single();
+
+      if (entryError) throw entryError;
+
+      // Create journal entry lines
+      const { error: linesError } = await supabase
+        .from("journal_entry_lines")
+        .insert([
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: formData.debit_account_id,
+            debit: amount,
+            credit: 0,
+            description: formData.description || `طلب شراء رقم ${orderNumber}`,
+          },
+          {
+            journal_entry_id: journalEntry.id,
+            account_id: formData.credit_account_id,
+            debit: 0,
+            credit: amount,
+            description: formData.description || `طلب شراء رقم ${orderNumber}`,
+          },
+        ]);
+
+      if (linesError) throw linesError;
+
+      // Update account balances
+      await updateAccountBalance(formData.debit_account_id, amount, true);
+      await updateAccountBalance(formData.credit_account_id, amount, false);
+    } catch (error: any) {
+      console.error("Error creating journal entry:", error);
+      throw error;
+    }
+  };
+
+  const updateAccountBalance = async (accountId: string, amount: number, isDebit: boolean) => {
+    const { data: account } = await supabase
+      .from("chart_of_accounts")
+      .select("balance, type")
+      .eq("id", accountId)
+      .single();
+
+    if (account) {
+      let newBalance = account.balance || 0;
+      
+      // For debit accounts (assets, expenses): debit increases, credit decreases
+      // For credit accounts (liabilities, equity, revenue): credit increases, debit decreases
+      const isDebitAccount = ["asset", "expense"].includes(account.type.toLowerCase());
+      
+      if (isDebitAccount) {
+        newBalance = isDebit ? newBalance + amount : newBalance - amount;
+      } else {
+        newBalance = isDebit ? newBalance - amount : newBalance + amount;
+      }
+
+      await supabase
+        .from("chart_of_accounts")
+        .update({ balance: newBalance })
+        .eq("id", accountId);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -204,19 +294,35 @@ export default function PurchaseOrder() {
       };
 
       if (editingOrder) {
+        // Delete old journal entry
+        await supabase
+          .from("journal_entries")
+          .delete()
+          .eq("reference", `purchase_order_${editingOrder.id}`);
+
         const { error } = await supabase
           .from("purchase_orders")
           .update(orderData)
           .eq("id", editingOrder.id);
 
         if (error) throw error;
+
+        // Create new journal entry
+        await createJournalEntry(editingOrder.id, orderNumber, formData.order_date, amount);
+        
         toast.success("تم تحديث طلب الشراء بنجاح");
       } else {
-        const { error } = await supabase
+        const { data: newOrder, error } = await supabase
           .from("purchase_orders")
-          .insert([orderData]);
+          .insert([orderData])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Create journal entry
+        await createJournalEntry(newOrder.id, orderNumber, formData.order_date, amount);
+
         toast.success("تم إضافة طلب الشراء بنجاح");
       }
 
@@ -244,6 +350,12 @@ export default function PurchaseOrder() {
     if (!confirm("هل أنت متأكد من حذف هذا الطلب؟")) return;
 
     try {
+      // Delete associated journal entry
+      await supabase
+        .from("journal_entries")
+        .delete()
+        .eq("reference", `purchase_order_${id}`);
+
       const { error } = await supabase
         .from("purchase_orders")
         .delete()
