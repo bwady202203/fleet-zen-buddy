@@ -7,6 +7,20 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Trash2 } from "lucide-react";
 
+const getUserOrganization = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data } = await supabase
+    .from('user_organizations')
+    .select('organization_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle();
+  
+  return data?.organization_id || null;
+};
+
 interface CompanyDriverCommissionsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,23 +83,43 @@ export const CompanyDriverCommissionsDialog = ({
     try {
       setSaving(true);
 
+      const organizationId = await getUserOrganization();
+
       for (const type of commissionTypes) {
         const amount = commissions[type.key] || "0";
         
-        const { error } = await supabase
+        // Check if commission exists
+        const { data: existing } = await supabase
           .from("company_driver_commissions")
-          .upsert(
-            {
+          .select("id")
+          .eq("company_id", companyId)
+          .eq("commission_type", type.key as any)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing
+          const { error } = await supabase
+            .from("company_driver_commissions")
+            .update({
+              amount: parseFloat(amount),
+              organization_id: organizationId,
+            })
+            .eq("id", existing.id);
+          
+          if (error) throw error;
+        } else {
+          // Insert new
+          const { error } = await supabase
+            .from("company_driver_commissions")
+            .insert({
               company_id: companyId,
               commission_type: type.key as any,
               amount: parseFloat(amount),
-            },
-            {
-              onConflict: 'company_id,commission_type'
-            }
-          );
-
-        if (error) throw error;
+              organization_id: organizationId,
+            });
+          
+          if (error) throw error;
+        }
       }
 
       toast({
