@@ -1063,9 +1063,9 @@ const LoadInvoices = () => {
                       )}
                       <div className="mt-3 pt-3 border-t">
                         <p className="text-xs text-gray-700">رقم الفاتورة: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
-                        <p className="text-xs text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
-                        <p className="text-xs text-gray-700">تاريخ الإصدار: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
-                        <p className="text-xs text-gray-700">تاريخ الاستحقاق: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('ar-SA')}</span></p>
+                        <p className="text-xs text-gray-700">التاريخ: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-GB')}</span></p>
+                        <p className="text-xs text-gray-700">تاريخ الإصدار: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-GB')}</span></p>
+                        <p className="text-xs text-gray-700">تاريخ الاستحقاق: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-GB')}</span></p>
                       </div>
                     </div>
 
@@ -1106,9 +1106,9 @@ const LoadInvoices = () => {
                       )}
                       <div className="mt-3 pt-3 border-t">
                         <p className="text-xs text-gray-700">Invoice Number: <span className="font-semibold">{selectedInvoice.invoice_number}</span></p>
-                        <p className="text-xs text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
-                        <p className="text-xs text-gray-700">Issue Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
-                        <p className="text-xs text-gray-700">Due Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-US')}</span></p>
+                        <p className="text-xs text-gray-700">Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-GB')}</span></p>
+                        <p className="text-xs text-gray-700">Issue Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-GB')}</span></p>
+                        <p className="text-xs text-gray-700">Due Date: <span className="font-semibold">{new Date(selectedInvoice.date).toLocaleDateString('en-GB')}</span></p>
                       </div>
                     </div>
                   </div>
