@@ -1885,6 +1885,51 @@ export type Database = {
           },
         ]
       }
+      purchase_orders: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          credit_account_id: string
+          debit_account_id: string
+          description: string
+          id: string
+          order_date: string
+          order_number: string
+          organization_id: string | null
+          supplier_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          credit_account_id: string
+          debit_account_id: string
+          description: string
+          id?: string
+          order_date: string
+          order_number: string
+          organization_id?: string | null
+          supplier_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          credit_account_id?: string
+          debit_account_id?: string
+          description?: string
+          id?: string
+          order_date?: string
+          order_number?: string
+          organization_id?: string | null
+          supplier_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       spare_parts: {
         Row: {
           category: string | null
