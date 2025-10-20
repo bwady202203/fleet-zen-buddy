@@ -149,6 +149,7 @@ const JournalEntries = () => {
         .from('journal_entries')
         .select(`
           *,
+          organizations (name),
           journal_entry_lines (
             *,
             chart_of_accounts (code, name_ar),
@@ -167,6 +168,7 @@ const JournalEntries = () => {
         entryNumber: entry.entry_number,
         date: entry.date,
         description: entry.description,
+        organizationName: entry.organizations?.name,
         lines: entry.journal_entry_lines.map((line: any) => ({
           id: line.id,
           accountId: line.account_id,
@@ -1756,7 +1758,7 @@ const JournalEntries = () => {
             </DialogHeader>
             {editingEntry && (
               <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)] px-2">
-                <div className="grid grid-cols-3 gap-4 p-4 bg-accent/50 rounded-lg">
+                <div className="grid grid-cols-4 gap-4 p-4 bg-accent/50 rounded-lg">
                   <div>
                     <Label className="text-sm">رقم القيد</Label>
                     <Input 
@@ -1771,6 +1773,14 @@ const JournalEntries = () => {
                       type="date"
                       value={editingEntry.date}
                       onChange={(e) => setEditingEntry({...editingEntry, date: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">الشركة / Organization</Label>
+                    <Input
+                      value={editingEntry.organizationName || "غير محدد"}
+                      disabled
+                      className="bg-muted"
                     />
                   </div>
                   <div>
