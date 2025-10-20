@@ -1661,6 +1661,7 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean | null
+          last_accessed_at: string | null
           name: string
           name_en: string | null
           phone: string | null
@@ -1675,6 +1676,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          last_accessed_at?: string | null
           name: string
           name_en?: string | null
           phone?: string | null
@@ -1689,6 +1691,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          last_accessed_at?: string | null
           name?: string
           name_en?: string | null
           phone?: string | null

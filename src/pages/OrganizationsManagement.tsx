@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Building2, Trash2, Edit, Users, UserPlus, FileText, Calendar } from "lucide-react";
+import { Plus, Building2, Trash2, Edit, Users, UserPlus, FileText, Calendar, Monitor, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatDistanceToNow } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface Organization {
   id: string;
@@ -23,8 +25,10 @@ interface Organization {
   commercial_registration: string | null;
   is_active: boolean;
   created_at: string;
+  last_accessed_at: string | null;
   users_count?: number;
   journal_entries_count?: number;
+  active_sessions?: number;
 }
 
 interface UserOrganization {
@@ -51,6 +55,7 @@ const OrganizationsManagement = () => {
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [orgUsers, setOrgUsers] = useState<UserWithRole[]>([]);
+  const [activeSessions, setActiveSessions] = useState<Record<string, number>>({});
   const [formData, setFormData] = useState({
     name: "",
     name_en: "",
@@ -66,6 +71,62 @@ const OrganizationsManagement = () => {
     fullName: "",
     role: "user",
   });
+
+  // تحديث آخر دخول للمستخدم
+  useEffect(() => {
+    const updateLastAccessed = async () => {
+      if (!user) return;
+
+      // الحصول على الشركة الحالية للمستخدم
+      const { data: userOrg } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single();
+
+      if (userOrg?.organization_id) {
+        await supabase
+          .from('organizations')
+          .update({ last_accessed_at: new Date().toISOString() })
+          .eq('id', userOrg.organization_id);
+      }
+    };
+
+    updateLastAccessed();
+  }, [user]);
+
+  // تتبع الجلسات النشطة
+  useEffect(() => {
+    if (!user || organizations.length === 0) return;
+
+    const channels: any[] = [];
+
+    organizations.forEach(org => {
+      const channel = supabase.channel(`org-presence-${org.id}`)
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          const activeCount = Object.keys(state).length;
+          setActiveSessions(prev => ({ ...prev, [org.id]: activeCount }));
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.track({
+              user_id: user.id,
+              online_at: new Date().toISOString(),
+            });
+          }
+        });
+
+      channels.push(channel);
+    });
+
+    return () => {
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, [user, organizations]);
 
   useEffect(() => {
     if (user) {
@@ -612,7 +673,7 @@ const OrganizationsManagement = () => {
                   )}
                   
                   {/* إحصائيات */}
-                  <div className="grid grid-cols-3 gap-2 py-3 border-y">
+                  <div className="grid grid-cols-2 gap-2 py-3 border-y">
                     <div className="flex flex-col items-center gap-1 p-2 bg-primary/5 rounded">
                       <Users className="h-4 w-4 text-primary" />
                       <span className="text-xs text-muted-foreground">المستخدمين</span>
@@ -624,10 +685,23 @@ const OrganizationsManagement = () => {
                       <span className="text-lg font-bold">{org.journal_entries_count || 0}</span>
                     </div>
                     <div className="flex flex-col items-center gap-1 p-2 bg-green-500/5 rounded">
-                      <Calendar className="h-4 w-4 text-green-500" />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">تاريخ الإنشاء</span>
+                      <Monitor className="h-4 w-4 text-green-500" />
+                      <span className="text-xs text-muted-foreground">جلسات نشطة</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {activeSessions[org.id] || 0}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2 bg-orange-500/5 rounded">
+                      <Clock className="h-4 w-4 text-orange-500" />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">آخر دخول</span>
                       <span className="text-xs font-bold">
-                        {new Date(org.created_at).toLocaleDateString('ar-SA')}
+                        {org.last_accessed_at 
+                          ? formatDistanceToNow(new Date(org.last_accessed_at), { 
+                              addSuffix: true, 
+                              locale: ar 
+                            })
+                          : 'لا يوجد'
+                        }
                       </span>
                     </div>
                   </div>
