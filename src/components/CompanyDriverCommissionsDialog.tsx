@@ -29,12 +29,12 @@ interface CompanyDriverCommissionsDialogProps {
 }
 
 const commissionTypes = [
-  { key: 'weight_less_40', label: 'أقل من 40 كيلو' },
-  { key: 'weight_40_44', label: 'من 40-44 كيلو' },
-  { key: 'weight_44_49', label: 'من 44-49 كيلو' },
-  { key: 'weight_more_49', label: 'أكثر من 49 كيلو' },
-  { key: 'fixed', label: 'عمولة ثابتة' },
-];
+  { key: 'weight_less_40' as const, label: 'أقل من 40 كيلو' },
+  { key: 'weight_40_44' as const, label: 'من 40-44 كيلو' },
+  { key: 'weight_44_49' as const, label: 'من 44-49 كيلو' },
+  { key: 'weight_more_49' as const, label: 'أكثر من 49 كيلو' },
+  { key: 'fixed' as const, label: 'عمولة ثابتة' },
+] as const;
 
 export const CompanyDriverCommissionsDialog = ({
   open,
@@ -85,20 +85,40 @@ export const CompanyDriverCommissionsDialog = ({
       setSaving(true);
 
       const organizationId = await getUserOrganization();
+      if (!organizationId) {
+        throw new Error("Organization ID not found");
+      }
+
+      console.log("Saving commissions for company:", companyId);
+      console.log("Organization ID:", organizationId);
+      console.log("Commission types:", commissionTypes.map(t => t.key));
 
       for (const type of commissionTypes) {
         const amount = commissions[type.key] || "0";
         
+        // Skip if no amount entered
+        if (parseFloat(amount) === 0) {
+          continue;
+        }
+
+        console.log(`Processing commission type: ${type.key}, amount: ${amount}`);
+        
         // Check if commission exists
-        const { data: existing } = await supabase
+        const { data: existing, error: selectError } = await supabase
           .from("company_driver_commissions")
           .select("id")
           .eq("company_id", companyId)
           .eq("commission_type", type.key as any)
           .maybeSingle();
 
+        if (selectError) {
+          console.error("Error checking existing commission:", selectError);
+          throw selectError;
+        }
+
         if (existing) {
           // Update existing
+          console.log(`Updating existing commission ID: ${existing.id}`);
           const { error } = await supabase
             .from("company_driver_commissions")
             .update({
@@ -107,9 +127,13 @@ export const CompanyDriverCommissionsDialog = ({
             })
             .eq("id", existing.id);
           
-          if (error) throw error;
+          if (error) {
+            console.error("Update error:", error);
+            throw error;
+          }
         } else {
           // Insert new
+          console.log(`Inserting new commission for type: ${type.key}`);
           const { error } = await supabase
             .from("company_driver_commissions")
             .insert({
@@ -119,7 +143,10 @@ export const CompanyDriverCommissionsDialog = ({
               organization_id: organizationId,
             });
           
-          if (error) throw error;
+          if (error) {
+            console.error("Insert error:", error);
+            throw error;
+          }
         }
       }
 
@@ -129,11 +156,12 @@ export const CompanyDriverCommissionsDialog = ({
       });
       
       onOpenChange(false);
-    } catch (error) {
+      loadCommissions(); // Reload to ensure fresh data
+    } catch (error: any) {
       console.error("Error saving commissions:", error);
       toast({
         title: "خطأ",
-        description: "فشل حفظ العمولات",
+        description: error.message || "فشل حفظ العمولات",
         variant: "destructive",
       });
     } finally {
