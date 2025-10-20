@@ -307,6 +307,8 @@ const JournalEntries = () => {
       showCostCenterSearch: boolean;
       projectSearch: string;
       showProjectSearch: boolean;
+      branchSearch: string;
+      showBranchSearch: boolean;
       selectedAccountIndex: number;
       selectedCostCenterIndex: number;
       selectedProjectIndex: number;
@@ -321,6 +323,8 @@ const JournalEntries = () => {
       showCostCenterSearch: false,
       projectSearch: "",
       showProjectSearch: false,
+      branchSearch: "",
+      showBranchSearch: false,
       selectedAccountIndex: -1,
       selectedCostCenterIndex: -1,
       selectedProjectIndex: -1,
@@ -844,6 +848,14 @@ const JournalEntries = () => {
     toast({
       title: "تم التصدير بنجاح",
       description: "تم تصدير القيود إلى ملف Excel",
+    });
+  };
+
+  const deleteEditingLine = (lineId: string) => {
+    if (!editingEntry) return;
+    setEditingEntry({
+      ...editingEntry,
+      lines: editingEntry.lines.filter((line: any) => line.id !== lineId),
     });
   };
 
@@ -1807,9 +1819,13 @@ const JournalEntries = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-right min-w-[250px]">الحساب</TableHead>
+                          <TableHead className="text-right min-w-[150px]">الفرع</TableHead>
+                          <TableHead className="text-right min-w-[150px]">مركز التكلفة</TableHead>
+                          <TableHead className="text-right min-w-[150px]">المشروع</TableHead>
                           <TableHead className="text-right min-w-[200px]">البيان</TableHead>
                           <TableHead className="text-right min-w-[120px]">المدين</TableHead>
                           <TableHead className="text-right min-w-[120px]">الدائن</TableHead>
+                          <TableHead className="text-right w-[60px]">حذف</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1822,6 +1838,18 @@ const JournalEntries = () => {
                                 acc.name_ar.includes(searchState.accountSearch)
                               )
                             : level4Accounts;
+
+                          const filteredBranches = searchState.branchSearch?.length > 0
+                            ? branches.filter(b => b.code.includes(searchState.branchSearch) || b.name_ar.includes(searchState.branchSearch))
+                            : branches;
+
+                          const filteredCostCenters = searchState.costCenterSearch?.length > 0
+                            ? costCenters.filter(cc => cc.code.includes(searchState.costCenterSearch) || cc.name_ar.includes(searchState.costCenterSearch))
+                            : costCenters;
+
+                          const filteredProjects = searchState.projectSearch?.length > 0
+                            ? projects.filter(p => p.code.includes(searchState.projectSearch) || p.name_ar.includes(searchState.projectSearch))
+                            : projects;
 
                           return (
                             <TableRow key={line.id}>
@@ -1868,6 +1896,129 @@ const JournalEntries = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
+                                <div className="relative">
+                                  <Input
+                                    value={searchState.branchSearch || (line.branchName ? `${line.branchName}` : "")}
+                                    onChange={(e) => {
+                                      updateSearchState(line.id, {
+                                        branchSearch: e.target.value,
+                                        showBranchSearch: true,
+                                      });
+                                    }}
+                                    placeholder="ابحث عن الفرع..."
+                                    onFocus={() => updateSearchState(line.id, { showBranchSearch: true })}
+                                    onBlur={() => setTimeout(() => updateSearchState(line.id, { showBranchSearch: false }), 200)}
+                                  />
+                                  {searchState.showBranchSearch && filteredBranches.length > 0 && (
+                                    <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
+                                      <CardContent className="p-2">
+                                        {filteredBranches.map(branch => (
+                                          <div
+                                            key={branch.id}
+                                            className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              updateEditingLine(line.id, {
+                                                branchId: branch.id,
+                                                branchName: branch.name_ar,
+                                              });
+                                              updateSearchState(line.id, {
+                                                branchSearch: "",
+                                                showBranchSearch: false,
+                                              });
+                                            }}
+                                          >
+                                            <div className="font-medium">{branch.name_ar}</div>
+                                          </div>
+                                        ))}
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="relative">
+                                  <Input
+                                    value={searchState.costCenterSearch || (line.costCenterName ? `${line.costCenterName}` : "")}
+                                    onChange={(e) => {
+                                      updateSearchState(line.id, {
+                                        costCenterSearch: e.target.value,
+                                        showCostCenterSearch: true,
+                                      });
+                                    }}
+                                    placeholder="ابحث عن مركز التكلفة..."
+                                    onFocus={() => updateSearchState(line.id, { showCostCenterSearch: true })}
+                                    onBlur={() => setTimeout(() => updateSearchState(line.id, { showCostCenterSearch: false }), 200)}
+                                  />
+                                  {searchState.showCostCenterSearch && filteredCostCenters.length > 0 && (
+                                    <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
+                                      <CardContent className="p-2">
+                                        {filteredCostCenters.map(cc => (
+                                          <div
+                                            key={cc.id}
+                                            className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              updateEditingLine(line.id, {
+                                                costCenterId: cc.id,
+                                                costCenterName: cc.name_ar,
+                                              });
+                                              updateSearchState(line.id, {
+                                                costCenterSearch: "",
+                                                showCostCenterSearch: false,
+                                              });
+                                            }}
+                                          >
+                                            <div className="font-medium">{cc.name_ar}</div>
+                                          </div>
+                                        ))}
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="relative">
+                                  <Input
+                                    value={searchState.projectSearch || (line.projectName ? `${line.projectName}` : "")}
+                                    onChange={(e) => {
+                                      updateSearchState(line.id, {
+                                        projectSearch: e.target.value,
+                                        showProjectSearch: true,
+                                      });
+                                    }}
+                                    placeholder="ابحث عن المشروع..."
+                                    onFocus={() => updateSearchState(line.id, { showProjectSearch: true })}
+                                    onBlur={() => setTimeout(() => updateSearchState(line.id, { showProjectSearch: false }), 200)}
+                                  />
+                                  {searchState.showProjectSearch && filteredProjects.length > 0 && (
+                                    <Card className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-card shadow-lg border">
+                                      <CardContent className="p-2">
+                                        {filteredProjects.map(project => (
+                                          <div
+                                            key={project.id}
+                                            className="p-2 hover:bg-accent cursor-pointer rounded text-sm"
+                                            onMouseDown={(e) => {
+                                              e.preventDefault();
+                                              updateEditingLine(line.id, {
+                                                projectId: project.id,
+                                                projectName: project.name_ar,
+                                              });
+                                              updateSearchState(line.id, {
+                                                projectSearch: "",
+                                                showProjectSearch: false,
+                                              });
+                                            }}
+                                          >
+                                            <div className="font-medium">{project.name_ar}</div>
+                                          </div>
+                                        ))}
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
                                 <Input
                                   value={line.description}
                                   onChange={(e) => updateEditingLine(line.id, { description: e.target.value })}
@@ -1896,11 +2047,20 @@ const JournalEntries = () => {
                                   placeholder="0.00"
                                 />
                               </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteEditingLine(line.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           );
                         })}
                         <TableRow className="bg-muted/50 font-bold">
-                          <TableCell colSpan={2} className="text-left">
+                          <TableCell colSpan={5} className="text-left">
                             الإجمالي / Total
                           </TableCell>
                           <TableCell className="text-red-600">
@@ -1909,6 +2069,7 @@ const JournalEntries = () => {
                           <TableCell className="text-green-600">
                             {editingEntry.lines.reduce((sum: number, line: any) => sum + (line.credit || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                           </TableCell>
+                          <TableCell></TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
