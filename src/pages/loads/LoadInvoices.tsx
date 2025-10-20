@@ -1248,8 +1248,8 @@ const LoadInvoices = () => {
                       </div>
                     </div>
                     <div className="border rounded-lg p-4 text-center" style={{ borderColor: '#2563eb', minHeight: '100px' }}>
-                      <p className="text-sm font-bold mb-2" style={{ color: '#2563eb' }}>اعتمد بواسطة</p>
-                      <p className="text-xs text-gray-600">Approved By</p>
+                      <p className="text-sm font-bold mb-2" style={{ color: '#2563eb' }}>توقيع المورد</p>
+                      <p className="text-xs text-gray-600">Supplier Signature</p>
                       <div className="mt-4 border-t pt-2" style={{ borderColor: '#d1d5db' }}>
                         <div className="h-8"></div>
                       </div>
