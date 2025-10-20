@@ -89,16 +89,22 @@ export default function PaymentVouchers() {
 
   const fetchAccounts = async () => {
     try {
-      // Fetch only level 4 accounts with a single optimized query
-      const { data, error } = await supabase
+      // Fetch all active accounts
+      const { data: allAccounts, error } = await supabase
         .from("chart_of_accounts")
         .select("id, code, name_ar, name_en, parent_id")
-        .eq("level", 4)
         .eq("is_active", true)
         .order("code");
 
       if (error) throw error;
-      setAccounts(data || []);
+      
+      // Filter to get only leaf accounts (accounts with no children)
+      const accountIds = new Set(allAccounts?.map(acc => acc.id) || []);
+      const parentIds = new Set(allAccounts?.map(acc => acc.parent_id).filter(Boolean) || []);
+      
+      const leafAccounts = allAccounts?.filter(acc => !parentIds.has(acc.id)) || [];
+      
+      setAccounts(leafAccounts);
     } catch (error: any) {
       toast.error("خطأ في تحميل الحسابات: " + error.message);
     }
