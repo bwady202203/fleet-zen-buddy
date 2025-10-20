@@ -76,7 +76,6 @@ const JournalEntries = () => {
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
 
   
@@ -85,7 +84,6 @@ const JournalEntries = () => {
     fetchCostCenters();
     fetchProjects();
     fetchBranches();
-    fetchOrganizations();
     fetchJournalEntries();
     
     // Realtime subscription for journal entries
@@ -151,7 +149,6 @@ const JournalEntries = () => {
         .from('journal_entries')
         .select(`
           *,
-          organizations (name),
           journal_entry_lines (
             *,
             chart_of_accounts (code, name_ar),
@@ -170,8 +167,6 @@ const JournalEntries = () => {
         entryNumber: entry.entry_number,
         date: entry.date,
         description: entry.description,
-        organizationId: entry.organization_id,
-        organizationName: entry.organizations?.name,
         lines: entry.journal_entry_lines.map((line: any) => ({
           id: line.id,
           accountId: line.account_id,
@@ -230,20 +225,6 @@ const JournalEntries = () => {
     }
   };
 
-  const fetchOrganizations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      setOrganizations(data || []);
-    } catch (error) {
-      console.error('Error fetching organizations:', error);
-    }
-  };
   const calculateLevel = (account: Account): number => {
     if (!account.parent_id) return 1;
     const parent = accounts.find(a => a.id === account.parent_id);
@@ -777,7 +758,6 @@ const JournalEntries = () => {
         .update({
           date: editingEntry.date,
           description: editingEntry.description,
-          organization_id: editingEntry.organizationId || null,
         })
         .eq('id', editingEntry.id);
 
@@ -791,7 +771,7 @@ const JournalEntries = () => {
 
       if (deleteError) throw deleteError;
 
-      // إضافة السطور الجديدة
+      // إضافة السطور الجديدة مع الفرع المحدد
       const lines = validLines.map((line: any) => ({
         journal_entry_id: editingEntry.id,
         account_id: line.accountId,
@@ -800,7 +780,7 @@ const JournalEntries = () => {
         credit: line.credit || 0,
         cost_center_id: line.costCenterId || null,
         project_id: line.projectId || null,
-        branch_id: line.branchId || null,
+        branch_id: selectedBranch || line.branchId || null,
       }));
 
       const { error: linesError } = await supabase
@@ -1808,23 +1788,16 @@ const JournalEntries = () => {
                     />
                   </div>
                   <div>
-                    <Label className="text-sm">الشركة / Organization</Label>
+                    <Label className="text-sm">الفرع / Branch</Label>
                     <select
-                      value={editingEntry.organizationId || ""}
-                      onChange={(e) => {
-                        const selectedOrg = organizations.find(org => org.id === e.target.value);
-                        setEditingEntry({
-                          ...editingEntry, 
-                          organizationId: e.target.value,
-                          organizationName: selectedOrg?.name || ""
-                        });
-                      }}
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <option value="">اختر الشركة</option>
-                      {organizations.map(org => (
-                        <option key={org.id} value={org.id}>
-                          {org.name}
+                      <option value="">اختر الفرع</option>
+                      {branches.map(branch => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.code} - {branch.name_ar}
                         </option>
                       ))}
                     </select>
