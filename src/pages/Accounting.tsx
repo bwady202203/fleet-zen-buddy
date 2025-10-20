@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -250,6 +250,13 @@ const Accounting = () => {
       icon: Receipt,
       link: "/accounting/payment-vouchers",
       color: "from-red-500 to-red-600"
+    },
+    {
+      title: "طلبات الشراء",
+      description: "إدارة طلبات الشراء من الموردين",
+      icon: ClipboardList,
+      link: "/accounting/purchase-order",
+      color: "from-lime-500 to-lime-600"
     },
     {
       title: "تقارير القيود اليومية",
