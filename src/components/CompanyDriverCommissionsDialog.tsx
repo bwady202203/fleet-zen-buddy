@@ -30,8 +30,8 @@ interface CompanyDriverCommissionsDialogProps {
 
 const commissionTypes = [
   { key: 'weight_less_40', label: 'أقل من 40 كيلو' },
-  { key: 'weight_40_44', label: 'من 40-44 كيلو' },
-  { key: 'weight_45_49', label: 'من 45-49 كيلو' },
+  { key: 'weight_40_45', label: 'من 40-44 كيلو' },
+  { key: 'weight_46_49', label: 'من 45-49 كيلو' },
   { key: 'weight_more_49', label: 'أكثر من 49 كيلو' },
 ];
 
