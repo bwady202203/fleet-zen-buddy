@@ -682,148 +682,169 @@ export default function PurchaseOrder() {
       </Card>
 
       <Dialog open={showForm} onOpenChange={(open) => !open && resetForm()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-4 pb-4 border-b">
+            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
               {editingOrder ? "تعديل طلب الشراء" : "طلب شراء جديد"}
             </DialogTitle>
+            <p className="text-center text-sm text-muted-foreground">
+              {editingOrder ? "قم بتعديل بيانات طلب الشراء" : "أدخل بيانات طلب الشراء الجديد"}
+            </p>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="order_date">التاريخ</Label>
+                <Label htmlFor="order_date" className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  التاريخ
+                </Label>
                 <Input
                   id="order_date"
                   type="date"
                   value={formData.order_date}
                   onChange={(e) => setFormData({ ...formData, order_date: e.target.value })}
                   required
+                  className="border-primary/20 focus:border-primary"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="supplier_name">اسم المورد</Label>
+                <Label htmlFor="supplier_name" className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  اسم المورد
+                </Label>
                 <Input
                   id="supplier_name"
                   value={formData.supplier_name}
                   onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
                   placeholder="أدخل اسم المورد"
                   required
+                  className="border-primary/20 focus:border-primary"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">وصف المواد المشتراة</Label>
+              <Label htmlFor="description" className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                وصف المواد المشتراة
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="أدخل وصف تفصيلي للمواد المشتراة"
-                rows={3}
+                rows={4}
                 required
+                className="border-primary/20 focus:border-primary resize-none"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>الحساب المدين</Label>
-                <Popover open={debitOpen} onOpenChange={setDebitOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={debitOpen}
-                      className="w-full justify-between"
-                    >
-                      {selectedDebitAccount
-                        ? `${selectedDebitAccount.code} - ${selectedDebitAccount.name_ar}`
-                        : "اختر الحساب المدين"}
-                      <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
-                    <Command>
-                      <CommandInput placeholder="ابحث عن حساب..." />
-                      <CommandList>
-                        <CommandEmpty>لا توجد نتائج</CommandEmpty>
-                        <CommandGroup>
-                          {accounts.map((account) => (
-                            <CommandItem
-                              key={account.id}
-                              value={`${account.code} ${account.name_ar}`}
-                              onSelect={() => {
-                                setFormData({ ...formData, debit_account_id: account.id });
-                                setDebitOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "ml-2 h-4 w-4",
-                                  formData.debit_account_id === account.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {account.code} - {account.name_ar}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+              <h3 className="text-sm font-semibold text-primary mb-3">الحسابات المحاسبية</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">الحساب المدين</Label>
+                  <Popover open={debitOpen} onOpenChange={setDebitOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={debitOpen}
+                        className="w-full justify-between border-primary/20 hover:border-primary"
+                      >
+                        {selectedDebitAccount
+                          ? `${selectedDebitAccount.code} - ${selectedDebitAccount.name_ar}`
+                          : "اختر الحساب المدين"}
+                        <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                      <Command>
+                        <CommandInput placeholder="ابحث عن حساب..." />
+                        <CommandList>
+                          <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                          <CommandGroup>
+                            {accounts.map((account) => (
+                              <CommandItem
+                                key={account.id}
+                                value={`${account.code} ${account.name_ar}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, debit_account_id: account.id });
+                                  setDebitOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "ml-2 h-4 w-4",
+                                    formData.debit_account_id === account.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {account.code} - {account.name_ar}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
-              <div className="space-y-2">
-                <Label>الحساب الدائن</Label>
-                <Popover open={creditOpen} onOpenChange={setCreditOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={creditOpen}
-                      className="w-full justify-between"
-                    >
-                      {selectedCreditAccount
-                        ? `${selectedCreditAccount.code} - ${selectedCreditAccount.name_ar}`
-                        : "اختر الحساب الدائن"}
-                      <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
-                    <Command>
-                      <CommandInput placeholder="ابحث عن حساب..." />
-                      <CommandList>
-                        <CommandEmpty>لا توجد نتائج</CommandEmpty>
-                        <CommandGroup>
-                          {accounts.map((account) => (
-                            <CommandItem
-                              key={account.id}
-                              value={`${account.code} ${account.name_ar}`}
-                              onSelect={() => {
-                                setFormData({ ...formData, credit_account_id: account.id });
-                                setCreditOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "ml-2 h-4 w-4",
-                                  formData.credit_account_id === account.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {account.code} - {account.name_ar}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">الحساب الدائن</Label>
+                  <Popover open={creditOpen} onOpenChange={setCreditOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={creditOpen}
+                        className="w-full justify-between border-primary/20 hover:border-primary"
+                      >
+                        {selectedCreditAccount
+                          ? `${selectedCreditAccount.code} - ${selectedCreditAccount.name_ar}`
+                          : "اختر الحساب الدائن"}
+                        <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                      <Command>
+                        <CommandInput placeholder="ابحث عن حساب..." />
+                        <CommandList>
+                          <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                          <CommandGroup>
+                            {accounts.map((account) => (
+                              <CommandItem
+                                key={account.id}
+                                value={`${account.code} ${account.name_ar}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, credit_account_id: account.id });
+                                  setCreditOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "ml-2 h-4 w-4",
+                                    formData.credit_account_id === account.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {account.code} - {account.name_ar}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">المبلغ (ريال)</Label>
+              <Label htmlFor="amount" className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                المبلغ (ريال سعودي)
+              </Label>
               <Input
                 id="amount"
                 type="number"
@@ -832,15 +853,16 @@ export default function PurchaseOrder() {
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0.00"
                 required
+                className="border-primary/20 focus:border-primary text-lg font-semibold"
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={resetForm}>
+            <div className="flex gap-3 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={resetForm} className="px-6">
                 إلغاء
               </Button>
-              <Button type="submit">
-                {editingOrder ? "تحديث" : "حفظ"}
+              <Button type="submit" className="px-8 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                {editingOrder ? "تحديث الطلب" : "حفظ الطلب"}
               </Button>
             </div>
           </form>
