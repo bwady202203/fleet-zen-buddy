@@ -159,7 +159,7 @@ const TrialBalance = () => {
         supabase.from('journal_entry_lines').select(`
           *,
           branches (id, code, name_ar)
-        `)
+        `).limit(50000)
       ]);
 
       console.log('Accounts fetched:', accountsRes.data?.length);
