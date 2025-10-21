@@ -480,8 +480,8 @@ const TrialBalance = () => {
 
       // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
-        // Include entries with OPENING_BALANCE or opening_entry reference regardless of date
-        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return true;
+        // Include entries with OPENING_BALANCE reference regardless of date
+        if (entry.reference === 'OPENING_BALANCE') return true;
         // Include entries before startDate
         if (startDate && entry.date < startDate) return true;
         return false;
@@ -515,7 +515,7 @@ const TrialBalance = () => {
       // Calculate period movement - excludes opening balance entries
       const periodEntries = journalEntries.filter(entry => {
         // Exclude opening balance entries
-        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return false;
+        if (entry.reference === 'OPENING_BALANCE') return false;
         // Only include entries within the date range
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
@@ -594,7 +594,7 @@ const TrialBalance = () => {
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
         // Include opening balance entries regardless of date
-        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
+        if (entry.reference === 'OPENING_BALANCE') {
           const entryLines = journalLines.filter(line => {
             // Apply no branch filter
             if (showOnlyNoBranch && line.branch_id !== null) {
@@ -1299,7 +1299,7 @@ const TrialBalance = () => {
                     const accountsToCalculate = hasChildren ? childAccounts : [childAcc];
 
                     const openingEntries = journalEntries.filter(entry => {
-                      if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return true;
+                      if (entry.reference === 'OPENING_BALANCE') return true;
                       if (startDate && entry.date < startDate) return true;
                       return false;
                     });
@@ -1316,7 +1316,7 @@ const TrialBalance = () => {
                     const openingCredit = openingNet < 0 ? Math.abs(openingNet) : 0;
 
                     const periodEntries = journalEntries.filter(entry => {
-                      if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return false;
+                      if (entry.reference === 'OPENING_BALANCE') return false;
                       if (startDate && entry.date < startDate) return false;
                       if (endDate && entry.date > endDate) return false;
                       return true;

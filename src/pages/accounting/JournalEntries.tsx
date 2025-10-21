@@ -169,6 +169,11 @@ const JournalEntries = () => {
         .order('code');
       
       if (error) throw error;
+      
+      console.log('📊 جميع الحسابات المجلوبة:', data?.length);
+      console.log('📊 حسابات المستوى 4:', data?.filter(acc => acc.level === 4).length);
+      console.log('📊 حسابات تحت العملاء (1112):', data?.filter(acc => acc.code?.startsWith('1112') && acc.level === 4));
+      
       setAccounts(data || []);
     } catch (error) {
       console.error('Error fetching accounts:', error);
@@ -1021,6 +1026,16 @@ const JournalEntries = () => {
                         
                         // البحث في الحسابات - المستوى الرابع فقط
                         const level4Accounts = accounts.filter(acc => acc.level === 4);
+                        
+                        // Log for debugging customer accounts
+                        if (line.id && searchState.accountSearch.includes('1112')) {
+                          console.log('🔍 البحث عن حسابات 1112:', {
+                            searchTerm: searchState.accountSearch,
+                            level4Count: level4Accounts.length,
+                            customerAccounts: level4Accounts.filter(acc => acc.code?.startsWith('1112'))
+                          });
+                        }
+                        
                         const filteredAccounts = searchState.accountSearch.length > 0
                           ? level4Accounts.filter(acc => 
                               acc.code.includes(searchState.accountSearch) || 
@@ -1675,8 +1690,8 @@ const JournalEntries = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="text-center w-[250px]">رمز الحساب</TableHead>
-                    <TableHead className="text-center w-[250px]">اسم الحساب</TableHead>
+                    <TableHead className="text-center w-[100px]">رمز الحساب</TableHead>
+                    <TableHead className="text-center">اسم الحساب</TableHead>
                     <TableHead className="text-center w-[200px]">البيان</TableHead>
                     <TableHead className="text-center w-[120px]">مدين</TableHead>
                     <TableHead className="text-center w-[120px]">دائن</TableHead>
@@ -1687,53 +1702,26 @@ const JournalEntries = () => {
                   {openingEntryData.lines.map((line) => {
                     const lineSearchState = getSearchState(line.id);
                     const level4Accounts = accounts.filter(acc => acc.level === 4);
-                    
-                    // عرض جميع الحسابات عند الفوكس، أو تصفيتها حسب البحث (case-insensitive)
-                    const filteredAccounts = lineSearchState.accountSearch 
-                      ? level4Accounts.filter(acc => {
-                          const searchLower = lineSearchState.accountSearch.toLowerCase();
-                          return acc.code.toLowerCase().includes(searchLower) || 
-                                 acc.name_ar.toLowerCase().includes(searchLower) ||
-                                 acc.name_en.toLowerCase().includes(searchLower);
-                        })
-                      : level4Accounts; // عرض الكل عند الفوكس
+                    const filteredAccounts = level4Accounts.filter(acc =>
+                      acc.code.includes(lineSearchState.accountSearch) || acc.name_ar.includes(lineSearchState.accountSearch)
+                    ).slice(0, 10);
 
                     return (
                       <TableRow key={line.id}>
                         <TableCell>
                           <div className="relative">
-                            <Input 
-                              value={lineSearchState.accountSearch || (line.accountCode ? `${line.accountCode} - ${line.accountName}` : "")} 
-                              onChange={(e) => updateSearchState(line.id, { accountSearch: e.target.value, showAccountSearch: true })} 
-                              onFocus={() => updateSearchState(line.id, { showAccountSearch: true })} 
-                              onBlur={() => setTimeout(() => updateSearchState(line.id, { showAccountSearch: false }), 200)}
-                              placeholder="ابحث بالرمز أو الاسم..." 
-                              className="text-sm"
-                            />
+                            <Input value={lineSearchState.accountSearch || line.accountCode} onChange={(e) => updateSearchState(line.id, { accountSearch: e.target.value, showAccountSearch: true })} onFocus={() => updateSearchState(line.id, { showAccountSearch: true })} placeholder="رمز" className="text-center" />
                             {lineSearchState.showAccountSearch && filteredAccounts.length > 0 && (
-                              <Card className="absolute z-50 mt-1 w-[500px] bg-card border shadow-lg max-h-[300px] overflow-y-auto">
-                                <CardContent className="p-2">
-                                  {filteredAccounts.map((account) => (
-                                    <div 
-                                      key={account.id} 
-                                      className="p-2 cursor-pointer hover:bg-accent rounded text-sm"
-                                      onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        setOpeningEntryData(prev => ({
-                                          ...prev, 
-                                          lines: prev.lines.map(l => l.id === line.id 
-                                            ? { ...l, accountId: account.id, accountCode: account.code, accountName: account.name_ar } 
-                                            : l
-                                          )
-                                        }));
-                                        updateSearchState(line.id, {accountSearch: "", showAccountSearch: false});
-                                      }}
-                                    >
-                                      <div className="font-medium">{account.code} - {account.name_ar}</div>
-                                    </div>
-                                  ))}
-                                </CardContent>
-                              </Card>
+                              <div className="absolute z-50 mt-1 w-[400px] bg-background border rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+                                {filteredAccounts.map((account) => (
+                                  <div key={account.id} className="p-2 cursor-pointer hover:bg-accent" onClick={() => {
+                                    setOpeningEntryData(prev => ({...prev, lines: prev.lines.map(l => l.id === line.id ? { ...l, accountId: account.id, accountCode: account.code, accountName: account.name_ar } : l)}));
+                                    updateSearchState(line.id, {accountSearch: "", showAccountSearch: false});
+                                  }}>
+                                    <div className="font-medium">{account.code} - {account.name_ar}</div>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </TableCell>
