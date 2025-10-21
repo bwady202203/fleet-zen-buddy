@@ -1685,8 +1685,10 @@ const JournalEntries = () => {
                 <TableBody>
                   {openingEntryData.lines.map((line) => {
                     const lineSearchState = getSearchState(line.id);
-                    const level4Accounts = accounts.filter(acc => calculateLevel(acc) === 4);
-                    const filteredAccounts = level4Accounts.filter(acc => 
+                    const level4AssetsLiabilities = accounts.filter(acc => 
+                      calculateLevel(acc) === 4 && (acc.type === 'asset' || acc.type === 'liability')
+                    );
+                    const filteredAccounts = level4AssetsLiabilities.filter(acc => 
                       acc.code.includes(lineSearchState.accountSearch) || acc.name_ar.includes(lineSearchState.accountSearch)
                     ).slice(0, 10);
 
