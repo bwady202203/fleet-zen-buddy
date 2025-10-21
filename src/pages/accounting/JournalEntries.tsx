@@ -33,6 +33,7 @@ interface Account {
   type: string;
   parent_id: string | null;
   is_active: boolean;
+  level?: number;
 }
 
 interface CostCenter {
@@ -1686,7 +1687,7 @@ const JournalEntries = () => {
                   {openingEntryData.lines.map((line) => {
                     const lineSearchState = getSearchState(line.id);
                     const level4Accounts = accounts.filter(acc => 
-                      calculateLevel(acc) === 4 && 
+                      acc.level === 4 && 
                       (acc.type === 'asset' || acc.type === 'liability')
                     );
                     const filteredAccounts = level4Accounts.filter(acc => 
@@ -2002,7 +2003,7 @@ const JournalEntries = () => {
                         {editingEntry.lines.map((line: any) => {
                           const searchState = getSearchState(line.id);
                           const level4Accounts = accounts.filter(acc => 
-                            calculateLevel(acc) === 4 && 
+                            acc.level === 4 && 
                             (acc.type === 'asset' || acc.type === 'liability')
                           );
                           const filteredAccounts = searchState.accountSearch.length > 0 
