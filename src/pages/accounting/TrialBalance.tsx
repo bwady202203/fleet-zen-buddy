@@ -1308,7 +1308,16 @@ const TrialBalance = () => {
 
                     const openingLines = journalLines.filter(line => {
                       const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
-                      return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+                      const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+                      
+                      if (!matchesAccount) return false;
+                      
+                      // Apply branch filter
+                      if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+                        return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
+                      }
+                      
+                      return true;
                     });
 
                     const openingDebitTotal = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
@@ -1326,14 +1335,26 @@ const TrialBalance = () => {
 
                     const periodLines = journalLines.filter(line => {
                       const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
-                      return lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+                      const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+                      
+                      if (!matchesAccount) return false;
+                      
+                      // Apply branch filter
+                      if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+                        return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
+                      }
+                      
+                      return true;
                     });
 
                     const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
                     const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+                    
+                    // Period movement shows TOTAL debit and TOTAL credit (not net)
+                    const periodDebit = periodDebitTotal;
+                    const periodCredit = periodCreditTotal;
+                    
                     const periodNet = periodDebitTotal - periodCreditTotal;
-                    const periodDebit = periodNet > 0 ? periodNet : 0;
-                    const periodCredit = periodNet < 0 ? Math.abs(periodNet) : 0;
 
                     const closingNet = openingNet + periodNet;
                     const closingDebit = closingNet > 0 ? closingNet : 0;
