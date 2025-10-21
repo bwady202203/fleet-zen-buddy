@@ -169,11 +169,6 @@ const JournalEntries = () => {
         .order('code');
       
       if (error) throw error;
-      
-      console.log('📊 جميع الحسابات المجلوبة:', data?.length);
-      console.log('📊 حسابات المستوى 4:', data?.filter(acc => acc.level === 4).length);
-      console.log('📊 حسابات تحت العملاء (1112):', data?.filter(acc => acc.code?.startsWith('1112') && acc.level === 4));
-      
       setAccounts(data || []);
     } catch (error) {
       console.error('Error fetching accounts:', error);
@@ -1026,16 +1021,6 @@ const JournalEntries = () => {
                         
                         // البحث في الحسابات - المستوى الرابع فقط
                         const level4Accounts = accounts.filter(acc => acc.level === 4);
-                        
-                        // Log for debugging customer accounts
-                        if (line.id && searchState.accountSearch.includes('1112')) {
-                          console.log('🔍 البحث عن حسابات 1112:', {
-                            searchTerm: searchState.accountSearch,
-                            level4Count: level4Accounts.length,
-                            customerAccounts: level4Accounts.filter(acc => acc.code?.startsWith('1112'))
-                          });
-                        }
-                        
                         const filteredAccounts = searchState.accountSearch.length > 0
                           ? level4Accounts.filter(acc => 
                               acc.code.includes(searchState.accountSearch) || 
