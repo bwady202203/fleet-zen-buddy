@@ -1301,7 +1301,7 @@ const TrialBalance = () => {
                     const accountsToCalculate = hasChildren ? childAccounts : [childAcc];
 
                     const openingEntries = journalEntries.filter(entry => {
-                      if (entry.reference === 'OPENING_BALANCE') return true;
+                      if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return true;
                       if (startDate && entry.date < startDate) return true;
                       return false;
                     });
@@ -1318,7 +1318,7 @@ const TrialBalance = () => {
                     const openingCredit = openingNet < 0 ? Math.abs(openingNet) : 0;
 
                     const periodEntries = journalEntries.filter(entry => {
-                      if (entry.reference === 'OPENING_BALANCE') return false;
+                      if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return false;
                       if (startDate && entry.date < startDate) return false;
                       if (endDate && entry.date > endDate) return false;
                       return true;
@@ -1331,9 +1331,11 @@ const TrialBalance = () => {
 
                     const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
                     const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+                    
+                    // Period movement shows TOTAL debit and TOTAL credit (not net)
+                    const periodDebit = periodDebitTotal;
+                    const periodCredit = periodCreditTotal;
                     const periodNet = periodDebitTotal - periodCreditTotal;
-                    const periodDebit = periodNet > 0 ? periodNet : 0;
-                    const periodCredit = periodNet < 0 ? Math.abs(periodNet) : 0;
 
                     const closingNet = openingNet + periodNet;
                     const closingDebit = closingNet > 0 ? closingNet : 0;
