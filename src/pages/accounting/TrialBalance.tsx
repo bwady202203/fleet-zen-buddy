@@ -481,9 +481,10 @@ const TrialBalance = () => {
       // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
         // Include entries with OPENING_BALANCE reference regardless of date
-        if (entry.reference === 'OPENING_BALANCE') return true;
-        // Include entries before startDate
+        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return true;
+        // Include entries before startDate if startDate is set
         if (startDate && entry.date < startDate) return true;
+        // If no startDate, don't include any regular entries in opening
         return false;
       });
 
@@ -515,10 +516,11 @@ const TrialBalance = () => {
       // Calculate period movement - excludes opening balance entries
       const periodEntries = journalEntries.filter(entry => {
         // Exclude opening balance entries
-        if (entry.reference === 'OPENING_BALANCE') return false;
-        // Only include entries within the date range
+        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return false;
+        // Only include entries within the date range if dates are set
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
+        // If no date filter, include all non-opening entries
         return true;
       });
 
@@ -594,7 +596,7 @@ const TrialBalance = () => {
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
         // Include opening balance entries regardless of date
-        if (entry.reference === 'OPENING_BALANCE') {
+        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
           const entryLines = journalLines.filter(line => {
             // Apply no branch filter
             if (showOnlyNoBranch && line.branch_id !== null) {
