@@ -152,6 +152,7 @@ const TrialBalance = () => {
 
   const fetchData = async () => {
     try {
+      console.log('=== Fetching data from database ===');
       const [accountsRes, entriesRes, linesRes] = await Promise.all([
         supabase.from('chart_of_accounts').select('*').eq('is_active', true),
         supabase.from('journal_entries').select('*').order('date', { ascending: true }),
@@ -160,6 +161,11 @@ const TrialBalance = () => {
           branches (id, code, name_ar)
         `)
       ]);
+
+      console.log('Accounts fetched:', accountsRes.data?.length);
+      console.log('Entries fetched:', entriesRes.data?.length);
+      console.log('Lines fetched:', linesRes.data?.length);
+      console.log('Lines sample:', linesRes.data?.slice(0, 3));
 
       if (accountsRes.error) throw accountsRes.error;
       if (entriesRes.error) throw entriesRes.error;
@@ -467,13 +473,17 @@ const TrialBalance = () => {
     console.log('Journal entries count:', journalEntries.length);
     console.log('Journal lines count:', journalLines.length);
     console.log('Selected branch:', selectedBranch);
+    console.log('All journal lines sample:', journalLines.slice(0, 3));
+    console.log('All journal entries sample:', journalEntries.slice(0, 3));
     
     // Find العجمي specifically
     const ajamiAccount = accounts.find(acc => acc.code === '111212');
     if (ajamiAccount) {
       console.log('العجمي Account Found:', ajamiAccount);
+      console.log('العجمي Account ID:', ajamiAccount.id);
       const ajamiLines = journalLines.filter(line => line.account_id === ajamiAccount.id);
       console.log('العجمي Journal Lines:', ajamiLines);
+      console.log('All account IDs in journal lines:', [...new Set(journalLines.map(l => l.account_id))].slice(0, 10));
       const ajamiEntries = journalEntries.filter(entry => 
         ajamiLines.some(line => line.journal_entry_id === entry.id)
       );
