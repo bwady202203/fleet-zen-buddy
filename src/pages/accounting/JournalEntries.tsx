@@ -2245,9 +2245,8 @@ const JournalEntries = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-    </>
-  );
-};
+      </>
+    );
+  };
 
 export default JournalEntries;
