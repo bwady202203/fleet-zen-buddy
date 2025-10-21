@@ -312,14 +312,6 @@ const Ledger = () => {
             background-color: #e8e8e8;
             font-weight: bold;
           }
-          .print-only {
-            display: table-cell !important;
-          }
-          @media screen {
-            .print-only {
-              display: none !important;
-            }
-          }
         }
       `}</style>
       <header className="border-b bg-card">
@@ -447,9 +439,9 @@ const Ledger = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {startDate && openingBalance !== 0 && (
+                  {(openingBalance !== 0 || startDate) && (
                     <TableRow className="bg-accent/30 font-semibold">
-                      <TableCell colSpan={3}>الرصيد الافتتاحي</TableCell>
+                      <TableCell colSpan={3} className="text-right">الرصيد الافتتاحي</TableCell>
                       <TableCell className="text-left">
                         {openingBalance > 0 ? openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
@@ -470,7 +462,6 @@ const Ledger = () => {
                       >
                         {entry.entryNumber}
                       </TableCell>
-                      <TableCell className="print-only hidden">{entry.entryNumber}</TableCell>
                       <TableCell>{entry.description}</TableCell>
                       <TableCell className="text-left font-medium">
                         {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
