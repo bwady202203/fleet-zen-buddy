@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -71,12 +71,40 @@ const JournalEntries = () => {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [openingEntryDialogOpen, setOpeningEntryDialogOpen] = useState(false);
+  const [openingEntryData, setOpeningEntryData] = useState<{
+    entryNumber: string;
+    date: string;
+    description: string;
+    lines: JournalEntryLine[];
+  }>({
+    entryNumber: "",
+    date: new Date().toISOString().split('T')[0],
+    description: "قيد افتتاحي - الأرصدة الافتتاحية",
+    lines: [],
+  });
   
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
+
+  const createInitialEmptyLines = () => {
+    return Array.from({ length: 6 }, (_, i) => ({
+      id: `line-${Date.now()}-${i}`,
+      accountId: "",
+      accountCode: "",
+      accountName: "",
+      description: "",
+      debit: 0,
+      credit: 0,
+      debitText: "",
+      creditText: "",
+      costCenter: "",
+      projectName: "",
+    }));
+  };
 
   
   useEffect(() => {
@@ -107,6 +135,29 @@ const JournalEntries = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Initialize opening entry lines after mount
+  useEffect(() => {
+    if (openingEntryData.lines.length === 0) {
+      const initialLines = Array.from({ length: 6 }, (_, i) => ({
+        id: `line-${Date.now()}-${i}`,
+        accountId: "",
+        accountCode: "",
+        accountName: "",
+        description: "",
+        debit: 0,
+        credit: 0,
+        debitText: "",
+        creditText: "",
+        costCenter: "",
+        projectName: "",
+      }));
+      setOpeningEntryData(prev => ({
+        ...prev,
+        lines: initialLines as JournalEntryLine[],
+      }));
+    }
+  }, [openingEntryData.lines.length]);
 
   const fetchAccounts = async () => {
     try {
@@ -232,22 +283,6 @@ const JournalEntries = () => {
     return calculateLevel(parent) + 1;
   };
   
-  const createInitialEmptyLines = () => {
-    return Array.from({ length: 6 }, (_, i) => ({
-      id: `line-${Date.now()}-${i}`,
-      accountId: "",
-      accountCode: "",
-      accountName: "",
-      description: "",
-      debit: 0,
-      credit: 0,
-      debitText: "",
-      creditText: "",
-      costCenter: "",
-      projectName: "",
-    }));
-  };
-
   const [formData, setFormData] = useState({
     entryNumber: "",
     date: new Date().toISOString().split('T')[0],
@@ -1401,10 +1436,19 @@ const JournalEntries = () => {
                   </p>
                 </div>
               </div>
-              <Button onClick={() => navigate('/accounting/journal-entries/new')}>
-                <Plus className="h-4 w-4 ml-2" />
-                قيد جديد
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => navigate('/accounting/journal-entries/new')}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  قيد جديد
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setOpeningEntryDialogOpen(true);
+                  generateNextEntryNumber();
+                }}>
+                  <BookOpen className="h-4 w-4 ml-2" />
+                  قيد افتتاحي
+                </Button>
+              </div>
             </div>
           </div>
         </header>
@@ -1601,9 +1645,124 @@ const JournalEntries = () => {
             </CardContent>
           </Card>
         </main>
+      </div>
 
-        {/* Print Template */}
-        {selectedEntry && (
+      {/* Opening Entry Dialog */}
+      <Dialog open={openingEntryDialogOpen} onOpenChange={setOpeningEntryDialogOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">قيد افتتاحي - الأرصدة الافتتاحية</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>رقم القيد</Label>
+                <Input value={formData.entryNumber} disabled className="bg-muted" />
+              </div>
+              <div>
+                <Label>التاريخ</Label>
+                <Input type="date" value={openingEntryData.date} onChange={(e) => setOpeningEntryData(prev => ({ ...prev, date: e.target.value }))} />
+              </div>
+              <div>
+                <Label>البيان</Label>
+                <Input value={openingEntryData.description} onChange={(e) => setOpeningEntryData(prev => ({ ...prev, description: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-center w-[100px]">رمز الحساب</TableHead>
+                    <TableHead className="text-center">اسم الحساب</TableHead>
+                    <TableHead className="text-center w-[200px]">البيان</TableHead>
+                    <TableHead className="text-center w-[120px]">مدين</TableHead>
+                    <TableHead className="text-center w-[120px]">دائن</TableHead>
+                    <TableHead className="text-center w-[80px]">حذف</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {openingEntryData.lines.map((line) => {
+                    const lineSearchState = getSearchState(line.id);
+                    const filteredAccounts = accounts.filter(acc => 
+                      acc.code.includes(lineSearchState.accountSearch) || acc.name_ar.includes(lineSearchState.accountSearch)
+                    ).slice(0, 10);
+
+                    return (
+                      <TableRow key={line.id}>
+                        <TableCell>
+                          <div className="relative">
+                            <Input value={lineSearchState.accountSearch || line.accountCode} onChange={(e) => updateSearchState(line.id, { accountSearch: e.target.value, showAccountSearch: true })} onFocus={() => updateSearchState(line.id, { showAccountSearch: true })} placeholder="رمز" className="text-center" />
+                            {lineSearchState.showAccountSearch && filteredAccounts.length > 0 && (
+                              <div className="absolute z-50 mt-1 w-[400px] bg-background border rounded-md shadow-lg max-h-[300px] overflow-y-auto">
+                                {filteredAccounts.map((account) => (
+                                  <div key={account.id} className="p-2 cursor-pointer hover:bg-accent" onClick={() => {
+                                    setOpeningEntryData(prev => ({...prev, lines: prev.lines.map(l => l.id === line.id ? { ...l, accountId: account.id, accountCode: account.code, accountName: account.name_ar } : l)}));
+                                    updateSearchState(line.id, {accountSearch: "", showAccountSearch: false});
+                                  }}>
+                                    <div className="font-medium">{account.code} - {account.name_ar}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{line.accountName}</TableCell>
+                        <TableCell><Input value={line.description} onChange={(e) => setOpeningEntryData(prev => ({...prev, lines: prev.lines.map(l => l.id === line.id ? { ...l, description: e.target.value } : l)}))} placeholder="البيان" /></TableCell>
+                        <TableCell><Input type="number" value={line.debit || ""} onChange={(e) => setOpeningEntryData(prev => ({...prev, lines: prev.lines.map(l => l.id === line.id ? { ...l, debit: parseFloat(e.target.value) || 0 } : l)}))} className="text-center" /></TableCell>
+                        <TableCell><Input type="number" value={line.credit || ""} onChange={(e) => setOpeningEntryData(prev => ({...prev, lines: prev.lines.map(l => l.id === line.id ? { ...l, credit: parseFloat(e.target.value) || 0 } : l)}))} className="text-center" /></TableCell>
+                        <TableCell className="text-center"><Button variant="ghost" size="sm" onClick={() => setOpeningEntryData(prev => ({...prev, lines: prev.lines.filter(l => l.id !== line.id)}))}><X className="h-4 w-4" /></Button></TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <Button variant="outline" onClick={() => setOpeningEntryData(prev => ({...prev, lines: [...prev.lines, {id: `line-${Date.now()}`, accountId: "", accountCode: "", accountName: "", description: "", debit: 0, credit: 0, debitText: "", creditText: "", costCenter: "", projectName: ""}]}))}>
+                <Plus className="h-4 w-4 ml-2" />إضافة سطر
+              </Button>
+              <div className="flex gap-4 text-lg font-semibold">
+                <div>مدين: {openingEntryData.lines.reduce((s, l) => s + (l.debit || 0), 0).toFixed(2)}</div>
+                <div>دائن: {openingEntryData.lines.reduce((s, l) => s + (l.credit || 0), 0).toFixed(2)}</div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => {setOpeningEntryDialogOpen(false); setOpeningEntryData({entryNumber: "", date: new Date().toISOString().split('T')[0], description: "قيد افتتاحي - الأرصدة الافتتاحية", lines: createInitialEmptyLines() as JournalEntryLine[]});}}>إلغاء</Button>
+              <Button onClick={async () => {
+                const validLines = openingEntryData.lines.filter(line => line.accountId && (line.debit > 0 || line.credit > 0));
+                if (validLines.length === 0 || validLines.reduce((s,l) => s + l.debit, 0) !== validLines.reduce((s,l) => s + l.credit, 0)) {
+                  toast({title: "تنبيه", description: "القيد غير متوازن", variant: "destructive"});
+                  return;
+                }
+                try {
+                  setIsSaving(true);
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const { data: entryData, error: entryError } = await supabase.from('journal_entries').insert({entry_number: formData.entryNumber, date: openingEntryData.date, description: openingEntryData.description, reference: 'opening_entry', created_by: user?.id}).select().single();
+                  if (entryError) throw entryError;
+                  const { error: linesError } = await supabase.from('journal_entry_lines').insert(validLines.map(line => ({journal_entry_id: entryData.id, account_id: line.accountId, debit: line.debit || 0, credit: line.credit || 0, description: line.description || openingEntryData.description})));
+                  if (linesError) throw linesError;
+                  toast({title: "تم الحفظ بنجاح"});
+                  setOpeningEntryDialogOpen(false);
+                  fetchJournalEntries();
+                } catch (error) {
+                  toast({title: "خطأ", description: "فشل في حفظ القيد", variant: "destructive"});
+                } finally {
+                  setIsSaving(false);
+                }
+              }} disabled={isSaving}>
+                <Save className="h-4 w-4 ml-2" />{isSaving ? "جاري الحفظ..." : "حفظ"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Template */}
+      {selectedEntry && (
           <div className="print-content">
             {(() => {
               const LINES_PER_PAGE = 15;
