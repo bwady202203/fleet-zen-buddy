@@ -1686,7 +1686,10 @@ const JournalEntries = () => {
                 <TableBody>
                   {openingEntryData.lines.map((line) => {
                     const lineSearchState = getSearchState(line.id);
-                    const level4Accounts = accounts.filter(acc => acc.level === 4);
+                    const level4Accounts = accounts.filter(acc => 
+                      acc.level === 4 && 
+                      (acc.type === 'asset' || acc.type === 'liability')
+                    );
                     const filteredAccounts = level4Accounts.filter(acc => 
                       acc.code.includes(lineSearchState.accountSearch) || acc.name_ar.includes(lineSearchState.accountSearch)
                     ).slice(0, 10);
@@ -1999,7 +2002,10 @@ const JournalEntries = () => {
                       <TableBody>
                         {editingEntry.lines.map((line: any) => {
                           const searchState = getSearchState(line.id);
-                          const level4Accounts = accounts.filter(acc => acc.level === 4);
+                          const level4Accounts = accounts.filter(acc => 
+                            acc.level === 4 && 
+                            (acc.type === 'asset' || acc.type === 'liability')
+                          );
                           const filteredAccounts = searchState.accountSearch.length > 0 
                             ? level4Accounts.filter(acc => 
                                 acc.code.includes(searchState.accountSearch) || 
