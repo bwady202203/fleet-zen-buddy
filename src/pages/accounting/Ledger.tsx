@@ -312,14 +312,6 @@ const Ledger = () => {
             background-color: #e8e8e8;
             font-weight: bold;
           }
-          .print-only {
-            display: table-cell !important;
-          }
-          @media screen {
-            .print-only {
-              display: none !important;
-            }
-          }
         }
       `}</style>
       <header className="border-b bg-card">
@@ -426,10 +418,18 @@ const Ledger = () => {
                   <CardTitle>{selectedAccountData.code} - {selectedAccountData.name_ar}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">{selectedAccountData.name_en}</p>
                 </div>
-                <div className="text-left">
-                  <div className="text-sm text-muted-foreground">الرصيد الحالي</div>
-                  <div className="text-2xl font-bold">
-                    {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                <div className="flex gap-8 text-left">
+                  <div>
+                    <div className="text-sm text-muted-foreground">الرصيد الافتتاحي</div>
+                    <div className="text-2xl font-bold">
+                      {openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">الرصيد الحالي</div>
+                    <div className="text-2xl font-bold">
+                      {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -438,61 +438,60 @@ const Ledger = () => {
               <Table className="print-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right w-[120px]">التاريخ</TableHead>
-                    <TableHead className="text-right w-[120px]">رقم القيد</TableHead>
-                    <TableHead className="text-right">البيان</TableHead>
-                    <TableHead className="text-right w-[140px]">مدين</TableHead>
-                    <TableHead className="text-right w-[140px]">دائن</TableHead>
-                    <TableHead className="text-right w-[140px]">الرصيد</TableHead>
+                    <TableHead className="text-center w-[120px]">التاريخ</TableHead>
+                    <TableHead className="text-center w-[120px]">رقم القيد</TableHead>
+                    <TableHead className="text-center">البيان</TableHead>
+                    <TableHead className="text-center w-[140px]">مدين</TableHead>
+                    <TableHead className="text-center w-[140px]">دائن</TableHead>
+                    <TableHead className="text-center w-[140px]">الرصيد</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {startDate && openingBalance !== 0 && (
+                  {startDate && (
                     <TableRow className="bg-accent/30 font-semibold">
-                      <TableCell colSpan={3}>الرصيد الافتتاحي</TableCell>
-                      <TableCell className="text-left">
+                      <TableCell colSpan={3} className="text-center">الرصيد الافتتاحي</TableCell>
+                      <TableCell className="text-center">
                         {openingBalance > 0 ? openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
-                      <TableCell className="text-left">
+                      <TableCell className="text-center">
                         {openingBalance < 0 ? Math.abs(openingBalance).toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
-                      <TableCell className="text-left font-bold">
+                      <TableCell className="text-center font-bold">
                         {openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
                     </TableRow>
                   )}
                   {ledgerWithBalance.map((entry, index) => (
                     <TableRow key={index}>
-                      <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
+                      <TableCell className="text-center">{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
                       <TableCell 
-                        className="font-medium text-primary cursor-pointer hover:underline no-print"
+                        className="font-medium text-primary cursor-pointer hover:underline no-print text-center"
                         onClick={() => handleOpenEntry(entry.entryId)}
                       >
                         {entry.entryNumber}
                       </TableCell>
-                      <TableCell className="print-only hidden">{entry.entryNumber}</TableCell>
-                      <TableCell>{entry.description}</TableCell>
-                      <TableCell className="text-left font-medium">
+                      <TableCell className="text-center">{entry.description}</TableCell>
+                      <TableCell className="text-center font-medium">
                         {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
-                      <TableCell className="text-left font-medium">
+                      <TableCell className="text-center font-medium">
                         {entry.credit > 0 ? entry.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
-                      <TableCell className="text-left font-bold">
+                      <TableCell className="text-center font-bold">
                         {entry.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
                     </TableRow>
                   ))}
                   {ledgerWithBalance.length > 0 && (
                     <TableRow className="font-bold bg-accent/50 print-total">
-                      <TableCell colSpan={3} className="text-right">الإجمالي</TableCell>
-                      <TableCell className="text-left">
+                      <TableCell colSpan={3} className="text-center">الإجمالي</TableCell>
+                      <TableCell className="text-center">
                         {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-left">
+                      <TableCell className="text-center">
                         {totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-left">
+                      <TableCell className="text-center">
                         {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
                     </TableRow>
