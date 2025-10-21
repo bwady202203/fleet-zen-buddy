@@ -460,6 +460,26 @@ const TrialBalance = () => {
       ? accounts 
       : accounts.filter(acc => calculateLevel(acc) === displayLevel);
     
+    console.log('=== DEBUG Trial Balance ===');
+    console.log('Total accounts:', accounts.length);
+    console.log('Display level:', displayLevel);
+    console.log('Accounts to show:', accountsToShow.length);
+    console.log('Journal entries count:', journalEntries.length);
+    console.log('Journal lines count:', journalLines.length);
+    console.log('Selected branch:', selectedBranch);
+    
+    // Find العجمي specifically
+    const ajamiAccount = accounts.find(acc => acc.code === '111212');
+    if (ajamiAccount) {
+      console.log('العجمي Account Found:', ajamiAccount);
+      const ajamiLines = journalLines.filter(line => line.account_id === ajamiAccount.id);
+      console.log('العجمي Journal Lines:', ajamiLines);
+      const ajamiEntries = journalEntries.filter(entry => 
+        ajamiLines.some(line => line.journal_entry_id === entry.id)
+      );
+      console.log('العجمي Journal Entries:', ajamiEntries);
+    }
+    
     return accountsToShow.map(account => {
       // Get all child accounts recursively
       const getChildAccounts = (parentId: string): Account[] => {
