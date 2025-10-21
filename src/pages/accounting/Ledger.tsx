@@ -206,6 +206,31 @@ const Ledger = () => {
     }));
   });
 
+  // Calculate opening balance (before startDate)
+  const openingBalanceEntries = journalEntries.filter(entry => {
+    if (!startDate || entry.date >= startDate) return false;
+    const entryLines = journalLines.filter(line => {
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
+    });
+    return entryLines.length > 0;
+  }).flatMap(entry => {
+    const entryLines = journalLines.filter(line => {
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
+    });
+    return entryLines.map(line => ({
+      debit: Number(line.debit) || 0,
+      credit: Number(line.credit) || 0,
+    }));
+  });
+
+  const openingBalance = openingBalanceEntries.reduce((sum, entry) => sum + entry.debit - entry.credit, 0);
+
   const handleOpenEntry = (entryId: string) => {
     const entry = journalEntries.find(e => e.id === entryId);
     if (entry) {
@@ -220,7 +245,7 @@ const Ledger = () => {
   const previewTotalDebit = previewEntryLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
   const previewTotalCredit = previewEntryLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
 
-  let runningBalance = 0;
+  let runningBalance = openingBalance;
   const ledgerWithBalance = ledgerEntries.map(entry => {
     runningBalance += entry.debit - entry.credit;
     return {
@@ -286,6 +311,14 @@ const Ledger = () => {
           .print-total {
             background-color: #e8e8e8;
             font-weight: bold;
+          }
+          .print-only {
+            display: table-cell !important;
+          }
+          @media screen {
+            .print-only {
+              display: none !important;
+            }
           }
         }
       `}</style>
@@ -405,24 +438,39 @@ const Ledger = () => {
               <Table className="print-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">رقم القيد</TableHead>
+                    <TableHead className="text-right w-[120px]">التاريخ</TableHead>
+                    <TableHead className="text-right w-[120px]">رقم القيد</TableHead>
                     <TableHead className="text-right">البيان</TableHead>
-                    <TableHead className="text-right">المدين</TableHead>
-                    <TableHead className="text-right">الدائن</TableHead>
-                    <TableHead className="text-right">الرصيد</TableHead>
+                    <TableHead className="text-right w-[140px]">مدين</TableHead>
+                    <TableHead className="text-right w-[140px]">دائن</TableHead>
+                    <TableHead className="text-right w-[140px]">الرصيد</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {startDate && openingBalance !== 0 && (
+                    <TableRow className="bg-accent/30 font-semibold">
+                      <TableCell colSpan={3}>الرصيد الافتتاحي</TableCell>
+                      <TableCell className="text-left">
+                        {openingBalance > 0 ? openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                      </TableCell>
+                      <TableCell className="text-left">
+                        {openingBalance < 0 ? Math.abs(openingBalance).toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                      </TableCell>
+                      <TableCell className="text-left font-bold">
+                        {openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {ledgerWithBalance.map((entry, index) => (
                     <TableRow key={index}>
                       <TableCell>{new Date(entry.date).toLocaleDateString('en-GB')}</TableCell>
                       <TableCell 
-                        className="font-medium text-primary cursor-pointer hover:underline"
+                        className="font-medium text-primary cursor-pointer hover:underline no-print"
                         onClick={() => handleOpenEntry(entry.entryId)}
                       >
                         {entry.entryNumber}
                       </TableCell>
+                      <TableCell className="print-only hidden">{entry.entryNumber}</TableCell>
                       <TableCell>{entry.description}</TableCell>
                       <TableCell className="text-left font-medium">
                         {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
