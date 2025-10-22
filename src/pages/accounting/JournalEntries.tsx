@@ -215,7 +215,8 @@ const JournalEntries = () => {
           )
         `)
         .order('date', { ascending: false })
-        .order('entry_number', { ascending: false });
+        .order('entry_number', { ascending: false })
+        .limit(50000);
 
       if (entriesError) throw entriesError;
 

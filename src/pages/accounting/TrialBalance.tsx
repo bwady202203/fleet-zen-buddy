@@ -152,14 +152,14 @@ const TrialBalance = () => {
 
   const fetchData = async () => {
     try {
-      console.log('=== Fetching ALL data (no limit) ===');
+      console.log('=== Fetching ALL data (unlimited) ===');
       const [accountsRes, entriesRes, linesRes] = await Promise.all([
-        supabase.from('chart_of_accounts').select('*').eq('is_active', true),
-        supabase.from('journal_entries').select('*').order('date', { ascending: true }),
+        supabase.from('chart_of_accounts').select('*').eq('is_active', true).limit(10000),
+        supabase.from('journal_entries').select('*').order('date', { ascending: true }).limit(50000),
         supabase.from('journal_entry_lines').select(`
           *,
           branches (id, code, name_ar)
-        `)
+        `).limit(100000)
       ]);
 
       console.log('Accounts fetched:', accountsRes.data?.length);
