@@ -644,10 +644,17 @@ const TrialBalance = () => {
       })
     : [];
 
+  console.log(`=== دفتر الأستاذ للحساب ${selectedAccountForLedger?.code} ===`);
+  console.log('عدد القيود المفلترة:', ledgerFilteredEntries.length);
+  console.log('تاريخ البداية:', startDate);
+  console.log('تاريخ النهاية:', endDate);
+  console.log('الفرع المختار:', selectedBranch);
+  
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
     const entryLines = journalLines.filter(line => 
       line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
     );
+    console.log(`القيد ${entry.entry_number}: عدد السطور = ${entryLines.length}`);
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
@@ -657,6 +664,8 @@ const TrialBalance = () => {
       branchName: line.branches?.name_ar || '-',
     }));
   });
+  
+  console.log('عدد السطور الإجمالي في دفتر الأستاذ:', ledgerEntries.length);
 
   let runningBalance = 0;
   const ledgerWithBalance = ledgerEntries.map(entry => {
