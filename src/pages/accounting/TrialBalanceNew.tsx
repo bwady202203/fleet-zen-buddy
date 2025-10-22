@@ -129,62 +129,86 @@ export default function TrialBalanceNew() {
 
     setLoading(true);
     try {
+      // Fetch ALL journal entry lines with journal entries
+      let allLinesQuery = supabase
+        .from("journal_entry_lines")
+        .select(`
+          account_id,
+          debit,
+          credit,
+          branch_id,
+          journal_entries!inner(
+            date
+          )
+        `);
+
+      if (selectedBranch !== "all") {
+        allLinesQuery = allLinesQuery.eq("branch_id", selectedBranch);
+      }
+
+      const { data: allLines, error: allLinesError } = await allLinesQuery;
+
+      if (allLinesError) throw allLinesError;
+
+      // Group data by account
+      const accountMap = new Map<string, {
+        openingDebit: number;
+        openingCredit: number;
+        periodDebit: number;
+        periodCredit: number;
+      }>();
+
+      // Initialize all accounts
+      accounts.forEach(account => {
+        accountMap.set(account.id, {
+          openingDebit: 0,
+          openingCredit: 0,
+          periodDebit: 0,
+          periodCredit: 0,
+        });
+      });
+
+      // Process all lines
+      allLines?.forEach((line: any) => {
+        const entryDate = line.journal_entries?.date;
+        if (!entryDate) return;
+
+        const accountData = accountMap.get(line.account_id);
+        if (!accountData) return;
+
+        const debit = line.debit || 0;
+        const credit = line.credit || 0;
+
+        // Check if this is opening balance (before start date)
+        if (entryDate < startDate) {
+          accountData.openingDebit += debit;
+          accountData.openingCredit += credit;
+        }
+        // Check if this is within the period
+        else if (entryDate >= startDate && entryDate <= endDate) {
+          accountData.periodDebit += debit;
+          accountData.periodCredit += credit;
+        }
+      });
+
+      // Build trial balance rows
       const balanceRows: TrialBalanceRow[] = [];
 
-      for (const account of accounts) {
-        // Fetch opening balance (before start date)
-        let openingQuery = supabase
-          .from("journal_entry_lines")
-          .select(`
-            debit,
-            credit,
-            journal_entries!inner(date)
-          `)
-          .eq("account_id", account.id)
-          .lt("journal_entries.date", startDate);
+      accounts.forEach(account => {
+        const data = accountMap.get(account.id);
+        if (!data) return;
 
-        if (selectedBranch !== "all") {
-          openingQuery = openingQuery.eq("branch_id", selectedBranch);
-        }
-
-        const { data: openingData } = await openingQuery;
-
-        const openingDebit = openingData?.reduce((sum, line) => sum + (line.debit || 0), 0) || 0;
-        const openingCredit = openingData?.reduce((sum, line) => sum + (line.credit || 0), 0) || 0;
-        const openingBalance = openingDebit - openingCredit;
-
-        // Fetch period movement (between start and end date)
-        let periodQuery = supabase
-          .from("journal_entry_lines")
-          .select(`
-            debit,
-            credit,
-            journal_entries!inner(date)
-          `)
-          .eq("account_id", account.id)
-          .gte("journal_entries.date", startDate)
-          .lte("journal_entries.date", endDate);
-
-        if (selectedBranch !== "all") {
-          periodQuery = periodQuery.eq("branch_id", selectedBranch);
-        }
-
-        const { data: periodData } = await periodQuery;
-
-        const periodDebit = periodData?.reduce((sum, line) => sum + (line.debit || 0), 0) || 0;
-        const periodCredit = periodData?.reduce((sum, line) => sum + (line.credit || 0), 0) || 0;
-
-        // Calculate closing balance
-        const closingBalance = openingBalance + periodDebit - periodCredit;
+        const openingBalance = data.openingDebit - data.openingCredit;
+        const closingBalance = openingBalance + data.periodDebit - data.periodCredit;
         const closingDebit = closingBalance > 0 ? closingBalance : 0;
         const closingCredit = closingBalance < 0 ? Math.abs(closingBalance) : 0;
 
         // Only include accounts with activity
         if (
-          openingDebit !== 0 ||
-          openingCredit !== 0 ||
-          periodDebit !== 0 ||
-          periodCredit !== 0 ||
+          data.openingDebit !== 0 ||
+          data.openingCredit !== 0 ||
+          data.periodDebit !== 0 ||
+          data.periodCredit !== 0 ||
           closingDebit !== 0 ||
           closingCredit !== 0
         ) {
@@ -193,20 +217,21 @@ export default function TrialBalanceNew() {
             account_code: account.code,
             account_name: account.name_ar,
             level: account.level || 1,
-            opening_debit: openingDebit,
-            opening_credit: openingCredit,
+            opening_debit: data.openingDebit,
+            opening_credit: data.openingCredit,
             opening_balance: openingBalance,
-            period_debit: periodDebit,
-            period_credit: periodCredit,
+            period_debit: data.periodDebit,
+            period_credit: data.periodCredit,
             closing_debit: closingDebit,
             closing_credit: closingCredit,
             closing_balance: closingBalance,
           });
         }
-      }
+      });
 
       setTrialBalanceData(balanceRows);
     } catch (error: any) {
+      console.error("Trial balance error:", error);
       toast.error("خطأ في حساب ميزان المراجعة: " + error.message);
     } finally {
       setLoading(false);
