@@ -508,11 +508,18 @@ const TrialBalance = () => {
       // This prevents duplication - balances should only be on leaf accounts
       const accountsToCalculate = hasChildren ? childAccounts : [account];
 
-      // Calculate opening balance - includes entries before startDate AND opening balance entries
+      // Calculate opening balance - includes entries before startDate AND opening balance entries that are before or on startDate
       const openingEntries = journalEntries.filter(entry => {
-        // Include entries with OPENING_BALANCE reference regardless of date
-        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return true;
-        // Include entries before startDate if startDate is set
+        // For opening balance entries, only include them if they are before the startDate
+        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
+          // If startDate is set, opening balance entries must be before or on startDate
+          if (startDate) {
+            return entry.date < startDate;
+          }
+          // If no startDate filter, include all opening balance entries
+          return true;
+        }
+        // Include regular entries before startDate if startDate is set
         if (startDate && entry.date < startDate) return true;
         // If no startDate, don't include any regular entries in opening
         return false;
