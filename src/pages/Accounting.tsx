@@ -273,6 +273,13 @@ const Accounting = () => {
       color: "from-indigo-500 to-indigo-600"
     },
     {
+      title: "دفتر الأستاذ الجديد",
+      description: "دفتر أستاذ محسّن مع بيانات دقيقة",
+      icon: BarChart3,
+      link: "/accounting/ledger-new",
+      color: "from-cyan-500 to-cyan-600"
+    },
+    {
       title: "ميزان المراجعة",
       description: "عرض ميزان المراجعة",
       icon: DollarSign,

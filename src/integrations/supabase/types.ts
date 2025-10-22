@@ -1239,6 +1239,76 @@ export type Database = {
           },
         ]
       }
+      ledger_entries: {
+        Row: {
+          account_id: string
+          balance: number | null
+          branch_id: string | null
+          created_at: string | null
+          created_by: string | null
+          credit: number | null
+          debit: number | null
+          description: string | null
+          entry_date: string
+          id: string
+          journal_entry_id: string | null
+          organization_id: string | null
+          reference: string | null
+        }
+        Insert: {
+          account_id: string
+          balance?: number | null
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          credit?: number | null
+          debit?: number | null
+          description?: string | null
+          entry_date: string
+          id?: string
+          journal_entry_id?: string | null
+          organization_id?: string | null
+          reference?: string | null
+        }
+        Update: {
+          account_id?: string
+          balance?: number | null
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          credit?: number | null
+          debit?: number | null
+          description?: string | null
+          entry_date?: string
+          id?: string
+          journal_entry_id?: string | null
+          organization_id?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       load_invoice_items: {
         Row: {
           created_at: string | null
@@ -2314,10 +2384,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_account_level: {
-        Args: { account_id: string }
-        Returns: number
-      }
+      calculate_account_level: { Args: { account_id: string }; Returns: number }
       create_journal_entry_with_number: {
         Args: { p_date: string; p_description: string }
         Returns: {
@@ -2328,14 +2395,8 @@ export type Database = {
           id: string
         }[]
       }
-      get_user_organization: {
-        Args: { _user_id: string }
-        Returns: string
-      }
-      get_user_role: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_organization: { Args: { _user_id: string }; Returns: string }
+      get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
