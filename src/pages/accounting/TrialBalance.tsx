@@ -678,33 +678,89 @@ const TrialBalance = () => {
   const totalClosingDebit = trialBalanceData.reduce((sum, acc) => sum + acc.closingDebit, 0);
   const totalClosingCredit = trialBalanceData.reduce((sum, acc) => sum + acc.closingCredit, 0);
 
-  // معاينة دفتر الأستاذ - عرض كل القيود بغض النظر عن فلتر الفرع
+  // معاينة دفتر الأستاذ
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
         // Include opening balance entries regardless of date
         if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
-          const entryLines = journalLines.filter(line => 
-            line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger.id
-          );
-          return entryLines.length > 0;
+          const entryLines = journalLines.filter(line => {
+            // Apply no branch filter
+            if (showOnlyNoBranch && line.branch_id !== null) {
+              return false;
+            }
+            
+            // Apply branch filter
+            if (selectedBranch && selectedBranch !== 'all') {
+              // Show lines for the selected branch OR lines with no branch (old entries)
+              if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+                return false;
+              }
+            }
+            return line.journal_entry_id === entry.id;
+          });
+          return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
         }
         
-        // For regular entries, apply date filter only
+        // For regular entries, apply date filter
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        
-        const entryLines = journalLines.filter(line => 
-          line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger.id
-        );
-        return entryLines.length > 0;
+        const entryLines = journalLines.filter(line => {
+          // Apply no branch filter
+          if (showOnlyNoBranch && line.branch_id !== null) {
+            return false;
+          }
+          
+          // Apply branch filter
+          if (selectedBranch && selectedBranch !== 'all') {
+            // Show lines for the selected branch OR lines with no branch (old entries)
+            if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+              return false;
+            }
+          }
+          return line.journal_entry_id === entry.id;
+        });
+        return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
       })
     : [];
 
-  const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(line => 
-      line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
-    );
+  // Debug log for ledger
+  if (selectedAccountForLedger) {
+    console.log('=== LEDGER DEBUG ===');
+    console.log('Account:', selectedAccountForLedger.code, selectedAccountForLedger.name_ar);
+    console.log('Date filter:', { startDate, endDate });
+    console.log('Branch filter:', selectedBranch);
+    console.log('Total journal entries:', journalEntries.length);
+    console.log('Filtered ledger entries:', ledgerFilteredEntries.length);
     
+    // Check specific date
+    const oct2Entries = journalEntries.filter(e => e.date === '2025-10-02');
+    console.log('Total entries on 2025-10-02:', oct2Entries.length);
+    
+    const oct2LedgerEntries = ledgerFilteredEntries.filter(e => e.date === '2025-10-02');
+    console.log('Ledger entries on 2025-10-02:', oct2LedgerEntries.length);
+    
+    if (oct2Entries.length !== oct2LedgerEntries.length) {
+      console.log('MISSING ENTRIES on 2025-10-02!');
+      const missingEntries = oct2Entries.filter(e => !ledgerFilteredEntries.includes(e));
+      console.log('Missing entries:', missingEntries.map(e => ({
+        entry_number: e.entry_number,
+        description: e.description,
+        date: e.date
+      })));
+    }
+  }
+
+  const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
+    const entryLines = journalLines.filter(line => {
+      // Apply branch filter
+      if (selectedBranch && selectedBranch !== 'all') {
+        // Show lines for the selected branch OR lines with no branch (old entries)
+        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+          return false;
+        }
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id;
+    });
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
