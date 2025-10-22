@@ -125,8 +125,7 @@ const BalanceSheet = () => {
           credit,
           branch_id,
           journal_entries!inner (date)
-        `)
-        .limit(100000);
+        `);
 
       if (startDate) {
         query = query.gte('journal_entries.date', startDate);

@@ -116,8 +116,7 @@ const IncomeStatement = () => {
           journal_entries!inner (date)
         `)
         .gte('journal_entries.date', fromDate)
-        .lte('journal_entries.date', toDate)
-        .limit(100000);
+        .lte('journal_entries.date', toDate);
 
       if (entriesError) throw entriesError;
 

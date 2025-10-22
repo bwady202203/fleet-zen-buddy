@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -16,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -28,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { ArrowRight, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -71,10 +69,6 @@ const Ledger = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [previewEntry, setPreviewEntry] = useState<JournalEntry | null>(null);
-  
-  // Data Verification
-  const [verificationDialog, setVerificationDialog] = useState(false);
-  const [verificationData, setVerificationData] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -90,9 +84,9 @@ const Ledger = () => {
           schema: 'public',
           table: 'journal_entries'
         },
-        (payload) => {
-          console.log('Journal entries changed', payload);
-          setTimeout(() => fetchData(), 100); // Small delay to ensure data is committed
+        () => {
+          console.log('Journal entries changed');
+          fetchData();
         }
       )
       .on(
@@ -102,14 +96,12 @@ const Ledger = () => {
           schema: 'public',
           table: 'journal_entry_lines'
         },
-        (payload) => {
-          console.log('Journal lines changed', payload);
-          setTimeout(() => fetchData(), 100); // Small delay to ensure data is committed
+        () => {
+          console.log('Journal lines changed');
+          fetchData();
         }
       )
-      .subscribe((status) => {
-        console.log('Ledger realtime subscription status:', status);
-      });
+      .subscribe();
 
     const accountsChannel = supabase
       .channel('accounts-changes')
@@ -136,12 +128,12 @@ const Ledger = () => {
   const fetchData = async () => {
     try {
       const [accountsRes, entriesRes, linesRes] = await Promise.all([
-        supabase.from('chart_of_accounts').select('*').eq('is_active', true).limit(10000),
-        supabase.from('journal_entries').select('*').order('date', { ascending: true }).limit(50000),
+        supabase.from('chart_of_accounts').select('*').eq('is_active', true),
+        supabase.from('journal_entries').select('*').order('date', { ascending: true }),
         supabase.from('journal_entry_lines').select(`
           *,
           branches (id, code, name_ar)
-        `).limit(100000)
+        `)
       ]);
 
       if (accountsRes.error) throw accountsRes.error;
@@ -183,20 +175,27 @@ const Ledger = () => {
   
   const selectedAccountData = accounts.find(acc => acc.id === selectedAccount);
   
-  // عرض جميع القيود للحساب المختار بغض النظر عن الفرع
   const filteredEntries = journalEntries.filter(entry => {
     if (startDate && entry.date < startDate) return false;
     if (endDate && entry.date > endDate) return false;
-    const entryLines = journalLines.filter(line => 
-      line.journal_entry_id === entry.id
-    );
+    const entryLines = journalLines.filter(line => {
+      // Filter by branch first
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id;
+    });
     return entryLines.some(line => line.account_id === selectedAccount);
   });
 
   const ledgerEntries = filteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(line => 
-      line.journal_entry_id === entry.id && line.account_id === selectedAccount
-    );
+    const entryLines = journalLines.filter(line => {
+      // Apply branch filter
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
+    });
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
@@ -204,21 +203,26 @@ const Ledger = () => {
       description: line.description || entry.description,
       debit: Number(line.debit) || 0,
       credit: Number(line.credit) || 0,
-      branchName: line.branches?.name_ar || '-',
     }));
   });
 
   // Calculate opening balance (before startDate)
   const openingBalanceEntries = journalEntries.filter(entry => {
     if (!startDate || entry.date >= startDate) return false;
-    const entryLines = journalLines.filter(line => 
-      line.journal_entry_id === entry.id && line.account_id === selectedAccount
-    );
+    const entryLines = journalLines.filter(line => {
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
+    });
     return entryLines.length > 0;
   }).flatMap(entry => {
-    const entryLines = journalLines.filter(line => 
-      line.journal_entry_id === entry.id && line.account_id === selectedAccount
-    );
+    const entryLines = journalLines.filter(line => {
+      if (selectedBranch && selectedBranch !== 'all') {
+        if (line.branch_id !== selectedBranch) return false;
+      }
+      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
+    });
     return entryLines.map(line => ({
       debit: Number(line.debit) || 0,
       credit: Number(line.credit) || 0,
@@ -252,42 +256,6 @@ const Ledger = () => {
 
   const totalDebit = ledgerEntries.reduce((sum, entry) => sum + entry.debit, 0);
   const totalCredit = ledgerEntries.reduce((sum, entry) => sum + entry.credit, 0);
-
-  // Get data verification
-  const getDataVerification = async () => {
-    if (!selectedAccount) {
-      toast.error('يرجى اختيار حساب أولاً');
-      return;
-    }
-
-    try {
-      const { data: allEntries } = await supabase
-        .from('journal_entries')
-        .select('id, date')
-        .gte('date', startDate || '2000-01-01')
-        .lte('date', endDate || '2099-12-31');
-
-      const { data: allLines } = await supabase
-        .from('journal_entry_lines')
-        .select('id, branch_id, branches(name_ar)')
-        .eq('account_id', selectedAccount);
-
-      const filteredLines = allLines?.filter(line => 
-        !selectedBranch || selectedBranch === 'all' || line.branch_id === selectedBranch || !line.branch_id
-      ) || [];
-
-      setVerificationData({
-        accountCode: selectedAccountData?.code,
-        accountName: selectedAccountData?.name_ar,
-        totalLines: allLines?.length || 0,
-        displayedLines: filteredLines.length,
-        hiddenLines: (allLines?.length || 0) - filteredLines.length,
-      });
-      setVerificationDialog(true);
-    } catch (error) {
-      toast.error('حدث خطأ في التحقق');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -374,7 +342,23 @@ const Ledger = () => {
             <CardTitle>فلترة البيانات</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <Label>الفرع</Label>
+                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الفرع" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الفروع</SelectItem>
+                    {branches.map(branch => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.code} - {branch.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>الحساب</Label>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
@@ -456,7 +440,6 @@ const Ledger = () => {
                   <TableRow>
                     <TableHead className="text-center w-[120px]">التاريخ</TableHead>
                     <TableHead className="text-center w-[120px]">رقم القيد</TableHead>
-                    <TableHead className="text-center w-[140px]">الفرع</TableHead>
                     <TableHead className="text-center">البيان</TableHead>
                     <TableHead className="text-center w-[140px]">مدين</TableHead>
                     <TableHead className="text-center w-[140px]">دائن</TableHead>
@@ -466,7 +449,7 @@ const Ledger = () => {
                 <TableBody>
                   {startDate && (
                     <TableRow className="bg-accent/30 font-semibold">
-                      <TableCell colSpan={4} className="text-center">الرصيد الافتتاحي</TableCell>
+                      <TableCell colSpan={3} className="text-center">الرصيد الافتتاحي</TableCell>
                       <TableCell className="text-center">
                         {openingBalance > 0 ? openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
@@ -487,7 +470,6 @@ const Ledger = () => {
                       >
                         {entry.entryNumber}
                       </TableCell>
-                      <TableCell className="text-center text-sm">{entry.branchName}</TableCell>
                       <TableCell className="text-center">{entry.description}</TableCell>
                       <TableCell className="text-center font-medium">
                         {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
@@ -502,7 +484,7 @@ const Ledger = () => {
                   ))}
                   {ledgerWithBalance.length > 0 && (
                     <TableRow className="font-bold bg-accent/50 print-total">
-                      <TableCell colSpan={4} className="text-center">الإجمالي</TableCell>
+                      <TableCell colSpan={3} className="text-center">الإجمالي</TableCell>
                       <TableCell className="text-center">
                         {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>

@@ -113,8 +113,7 @@ const JournalEntriesReports = () => {
           )
         `)
         .order('date', { ascending: true })
-        .order('entry_number', { ascending: true })
-        .limit(50000);
+        .order('entry_number', { ascending: true });
 
       // Apply date filters
       if (filters.fromDate) {

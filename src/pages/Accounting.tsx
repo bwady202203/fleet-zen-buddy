@@ -61,14 +61,14 @@ const Accounting = () => {
         invoices,
         invoiceItems,
       ] = await Promise.all([
-        supabase.from('chart_of_accounts').select('*').limit(10000),
-        supabase.from('journal_entries').select('*').limit(50000),
-        supabase.from('journal_entry_lines').select('*').limit(100000),
-        supabase.from('cost_centers').select('*').limit(5000),
-        supabase.from('projects').select('*').limit(5000),
-        supabase.from('branches').select('*').limit(5000),
-        supabase.from('invoices').select('*').limit(50000),
-        supabase.from('invoice_items').select('*').limit(100000),
+        supabase.from('chart_of_accounts').select('*'),
+        supabase.from('journal_entries').select('*'),
+        supabase.from('journal_entry_lines').select('*'),
+        supabase.from('cost_centers').select('*'),
+        supabase.from('projects').select('*'),
+        supabase.from('branches').select('*'),
+        supabase.from('invoices').select('*'),
+        supabase.from('invoice_items').select('*'),
       ]);
 
       // Create metadata file describing the structure
