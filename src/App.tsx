@@ -32,6 +32,7 @@ import JournalEntriesReports from "./pages/accounting/JournalEntriesReports";
 import Ledger from "./pages/accounting/Ledger";
 import LedgerNew from "./pages/accounting/LedgerNew";
 import TrialBalance from "./pages/accounting/TrialBalance";
+import TrialBalanceNew from "./pages/accounting/TrialBalanceNew";
 import SalesInvoice from "./pages/accounting/SalesInvoice";
 import PurchaseInvoice from "./pages/accounting/PurchaseInvoice";
 import SalesReturn from "./pages/accounting/SalesReturn";
@@ -116,6 +117,7 @@ const App = () => {
                                   <Route path="/accounting/ledger" element={<Ledger />} />
                                   <Route path="/accounting/ledger-new" element={<LedgerNew />} />
                                   <Route path="/accounting/trial-balance" element={<TrialBalance />} />
+                                  <Route path="/accounting/trial-balance-new" element={<TrialBalanceNew />} />
                                   <Route path="/accounting/sales-invoice" element={<SalesInvoice />} />
                                   <Route path="/accounting/purchase-invoice" element={<PurchaseInvoice />} />
                                   <Route path="/accounting/sales-return" element={<SalesReturn />} />

@@ -2223,6 +2223,78 @@ export type Database = {
           },
         ]
       }
+      trial_balance_entries: {
+        Row: {
+          account_id: string
+          branch_id: string | null
+          closing_balance: number | null
+          closing_credit: number | null
+          closing_debit: number | null
+          created_at: string | null
+          id: string
+          opening_balance: number | null
+          opening_credit: number | null
+          opening_debit: number | null
+          organization_id: string | null
+          period_credit: number | null
+          period_debit: number | null
+          period_end: string
+          period_start: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          branch_id?: string | null
+          closing_balance?: number | null
+          closing_credit?: number | null
+          closing_debit?: number | null
+          created_at?: string | null
+          id?: string
+          opening_balance?: number | null
+          opening_credit?: number | null
+          opening_debit?: number | null
+          organization_id?: string | null
+          period_credit?: number | null
+          period_debit?: number | null
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          branch_id?: string | null
+          closing_balance?: number | null
+          closing_credit?: number | null
+          closing_debit?: number | null
+          created_at?: string | null
+          id?: string
+          opening_balance?: number | null
+          opening_credit?: number | null
+          opening_debit?: number | null
+          organization_id?: string | null
+          period_credit?: number | null
+          period_debit?: number | null
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_balance_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trial_balance_entries_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_module_permissions: {
         Row: {
           can_create: boolean | null

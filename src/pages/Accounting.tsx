@@ -287,6 +287,13 @@ const Accounting = () => {
       color: "from-purple-500 to-purple-600"
     },
     {
+      title: "ميزان المراجعة الجديد",
+      description: "ميزان محسّن مع بيانات دقيقة ومعاينة دفتر الأستاذ",
+      icon: DollarSign,
+      link: "/accounting/trial-balance-new",
+      color: "from-violet-500 to-violet-600"
+    },
+    {
       title: "الميزانية العمومية",
       description: "عرض الميزانية العمومية",
       icon: DollarSign,
