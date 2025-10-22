@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store, Filter } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store, Filter, AlertCircle, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -94,6 +95,10 @@ const TrialBalance = () => {
   // Delete Level 4 Accounts Dialog
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [deleteSecretCode, setDeleteSecretCode] = useState("");
+  
+  // Data Verification
+  const [verificationDialog, setVerificationDialog] = useState(false);
+  const [verificationData, setVerificationData] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -619,6 +624,124 @@ const TrialBalance = () => {
 
   const trialBalanceData = getDisplayAccounts();
 
+  // Calculate data verification statistics
+  const getDataVerification = async () => {
+    try {
+      // Get total entries in date range
+      const { data: allEntries, error: entriesError } = await supabase
+        .from('journal_entries')
+        .select('id, date, entry_number', { count: 'exact' })
+        .gte('date', startDate || '2000-01-01')
+        .lte('date', endDate || '2099-12-31');
+
+      if (entriesError) throw entriesError;
+
+      // Get total lines in date range
+      const { data: allLines, error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          id, 
+          journal_entry_id, 
+          account_id,
+          branch_id,
+          debit,
+          credit,
+          branches(id, name_ar)
+        `)
+        .in('journal_entry_id', allEntries?.map(e => e.id) || []);
+
+      if (linesError) throw linesError;
+
+      // Calculate filtered data
+      const filteredEntries = journalEntries.filter(entry => {
+        if (startDate && entry.date < startDate) return false;
+        if (endDate && entry.date > endDate) return false;
+        return true;
+      });
+
+      const filteredLines = journalLines.filter(line => {
+        const lineEntry = journalEntries.find(e => e.id === line.journal_entry_id);
+        if (!lineEntry) return false;
+        if (startDate && lineEntry.date < startDate) return false;
+        if (endDate && lineEntry.date > endDate) return false;
+        
+        // Apply branch filter
+        if (selectedBranch && selectedBranch !== 'all') {
+          return line.branch_id === selectedBranch || !line.branch_id;
+        }
+        return true;
+      });
+
+      // Group by branch
+      const linesByBranch: { [key: string]: number } = {};
+      allLines?.forEach(line => {
+        const branchName = line.branches?.name_ar || 'بدون فرع';
+        linesByBranch[branchName] = (linesByBranch[branchName] || 0) + 1;
+      });
+
+      // Calculate hidden entries
+      const hiddenEntriesCount = (allEntries?.length || 0) - filteredEntries.length;
+      const hiddenLinesCount = (allLines?.length || 0) - filteredLines.length;
+
+      setVerificationData({
+        totalEntries: allEntries?.length || 0,
+        displayedEntries: filteredEntries.length,
+        hiddenEntries: hiddenEntriesCount,
+        totalLines: allLines?.length || 0,
+        displayedLines: filteredLines.length,
+        hiddenLines: hiddenLinesCount,
+        linesByBranch,
+        selectedBranch: selectedBranch === 'all' ? 'جميع الفروع' : branches.find(b => b.id === selectedBranch)?.name_ar || 'غير محدد',
+        dateRange: {
+          start: startDate || 'غير محدد',
+          end: endDate || 'غير محدد'
+        }
+      });
+
+      setVerificationDialog(true);
+    } catch (error) {
+      console.error('Error verifying data:', error);
+      toast.error('حدث خطأ في التحقق من البيانات');
+    }
+  };
+
+  // Check for hidden entries due to branch filter
+  const hiddenEntriesWarning = () => {
+    if (selectedBranch === 'all') return null;
+
+    const allLinesInPeriod = journalLines.filter(line => {
+      const lineEntry = journalEntries.find(e => e.id === line.journal_entry_id);
+      if (!lineEntry) return false;
+      if (startDate && lineEntry.date < startDate) return false;
+      if (endDate && lineEntry.date > endDate) return false;
+      return true;
+    });
+
+    const hiddenLines = allLinesInPeriod.filter(line => {
+      if (selectedBranch && line.branch_id !== selectedBranch && line.branch_id !== null) {
+        return true;
+      }
+      return false;
+    });
+
+    if (hiddenLines.length === 0) return null;
+
+    const hiddenEntriesIds = new Set(hiddenLines.map(l => l.journal_entry_id));
+    const hiddenEntriesCount = hiddenEntriesIds.size;
+
+    return (
+      <Alert className="mb-4 border-amber-500 bg-amber-50">
+        <AlertCircle className="h-4 w-4 text-amber-600" />
+        <AlertTitle className="text-amber-800">تنبيه: قيود مخفية</AlertTitle>
+        <AlertDescription className="text-amber-700">
+          يوجد <strong>{hiddenEntriesCount}</strong> قيد يومية ({hiddenLines.length} سطر) مخفية بسبب فلتر الفرع المحدد.
+          <br />
+          اختر "جميع الفروع" لعرض جميع القيود.
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
   const totalOpeningDebit = trialBalanceData.reduce((sum, acc) => sum + acc.openingDebit, 0);
   const totalOpeningCredit = trialBalanceData.reduce((sum, acc) => sum + acc.openingCredit, 0);
   const totalPeriodDebit = trialBalanceData.reduce((sum, acc) => sum + acc.periodDebit, 0);
@@ -763,6 +886,15 @@ const TrialBalance = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={getDataVerification}
+              >
+                <CheckCircle2 className="h-4 w-4 ml-2" />
+                التحقق من اكتمال البيانات
+              </Button>
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -987,6 +1119,123 @@ const TrialBalance = () => {
           </TabsList>
 
           <TabsContent value="general">
+            {/* Data Verification Dialog */}
+            <Dialog open={verificationDialog} onOpenChange={setVerificationDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    تقرير التحقق من اكتمال البيانات
+                  </DialogTitle>
+                </DialogHeader>
+                {verificationData && (
+                  <div className="space-y-4">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <Card className="border-blue-200 bg-blue-50">
+                        <CardContent className="pt-4">
+                          <div className="text-center">
+                            <Info className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                            <p className="text-sm text-blue-600 mb-1">القيود اليومية</p>
+                            <p className="text-2xl font-bold text-blue-700">
+                              {verificationData.displayedEntries} / {verificationData.totalEntries}
+                            </p>
+                            {verificationData.hiddenEntries > 0 && (
+                              <p className="text-xs text-amber-600 mt-1">
+                                ({verificationData.hiddenEntries} مخفية)
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="border-green-200 bg-green-50">
+                        <CardContent className="pt-4">
+                          <div className="text-center">
+                            <Info className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                            <p className="text-sm text-green-600 mb-1">سطور القيود</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              {verificationData.displayedLines} / {verificationData.totalLines}
+                            </p>
+                            {verificationData.hiddenLines > 0 && (
+                              <p className="text-xs text-amber-600 mt-1">
+                                ({verificationData.hiddenLines} مخفية)
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Filter Info */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">الفلاتر المطبقة</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">الفرع:</span>
+                          <span className="font-medium">{verificationData.selectedBranch}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">من تاريخ:</span>
+                          <span className="font-medium">{verificationData.dateRange.start}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">إلى تاريخ:</span>
+                          <span className="font-medium">{verificationData.dateRange.end}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Lines by Branch */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">توزيع السطور حسب الفروع</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {Object.entries(verificationData.linesByBranch).map(([branch, count]: [string, any]) => (
+                            <div key={branch} className="flex justify-between items-center py-2 border-b">
+                              <span>{branch}</span>
+                              <span className="font-bold">{count} سطر</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Status Message */}
+                    {verificationData.hiddenEntries === 0 && verificationData.hiddenLines === 0 ? (
+                      <Alert className="border-green-500 bg-green-50">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <AlertTitle className="text-green-800">البيانات مكتملة ✓</AlertTitle>
+                        <AlertDescription className="text-green-700">
+                          جميع القيود والسطور ظاهرة بشكل صحيح في الفترة المحددة.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <Alert className="border-amber-500 bg-amber-50">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <AlertTitle className="text-amber-800">يوجد قيود مخفية</AlertTitle>
+                        <AlertDescription className="text-amber-700">
+                          بعض القيود غير ظاهرة بسبب فلتر الفرع. اختر "جميع الفروع" لعرض كل القيود.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button onClick={() => setVerificationDialog(false)}>
+                    إغلاق
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Hidden Entries Warning */}
+            {hiddenEntriesWarning()}
+
             <Card className="mb-6 no-print">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 justify-end">

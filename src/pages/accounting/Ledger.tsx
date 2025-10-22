@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -15,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -26,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer } from "lucide-react";
+import { ArrowRight, Printer, AlertCircle, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface Account {
@@ -69,6 +71,10 @@ const Ledger = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [previewEntry, setPreviewEntry] = useState<JournalEntry | null>(null);
+  
+  // Data Verification
+  const [verificationDialog, setVerificationDialog] = useState(false);
+  const [verificationData, setVerificationData] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -246,6 +252,42 @@ const Ledger = () => {
 
   const totalDebit = ledgerEntries.reduce((sum, entry) => sum + entry.debit, 0);
   const totalCredit = ledgerEntries.reduce((sum, entry) => sum + entry.credit, 0);
+
+  // Get data verification
+  const getDataVerification = async () => {
+    if (!selectedAccount) {
+      toast.error('يرجى اختيار حساب أولاً');
+      return;
+    }
+
+    try {
+      const { data: allEntries } = await supabase
+        .from('journal_entries')
+        .select('id, date')
+        .gte('date', startDate || '2000-01-01')
+        .lte('date', endDate || '2099-12-31');
+
+      const { data: allLines } = await supabase
+        .from('journal_entry_lines')
+        .select('id, branch_id, branches(name_ar)')
+        .eq('account_id', selectedAccount);
+
+      const filteredLines = allLines?.filter(line => 
+        !selectedBranch || selectedBranch === 'all' || line.branch_id === selectedBranch || !line.branch_id
+      ) || [];
+
+      setVerificationData({
+        accountCode: selectedAccountData?.code,
+        accountName: selectedAccountData?.name_ar,
+        totalLines: allLines?.length || 0,
+        displayedLines: filteredLines.length,
+        hiddenLines: (allLines?.length || 0) - filteredLines.length,
+      });
+      setVerificationDialog(true);
+    } catch (error) {
+      toast.error('حدث خطأ في التحقق');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
