@@ -508,18 +508,11 @@ const TrialBalance = () => {
       // This prevents duplication - balances should only be on leaf accounts
       const accountsToCalculate = hasChildren ? childAccounts : [account];
 
-      // Calculate opening balance - includes entries before startDate AND opening balance entries that are before or on startDate
+      // Calculate opening balance - includes entries before startDate AND opening balance entries
       const openingEntries = journalEntries.filter(entry => {
-        // For opening balance entries, only include them if they are before the startDate
-        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
-          // If startDate is set, opening balance entries must be before or on startDate
-          if (startDate) {
-            return entry.date < startDate;
-          }
-          // If no startDate filter, include all opening balance entries
-          return true;
-        }
-        // Include regular entries before startDate if startDate is set
+        // Include entries with OPENING_BALANCE reference regardless of date
+        if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return true;
+        // Include entries before startDate if startDate is set
         if (startDate && entry.date < startDate) return true;
         // If no startDate, don't include any regular entries in opening
         return false;
@@ -554,12 +547,10 @@ const TrialBalance = () => {
       const periodEntries = journalEntries.filter(entry => {
         // Exclude opening balance entries
         if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return false;
-        // If no date filter is set, period movement should be empty
-        if (!startDate && !endDate) return false;
         // Only include entries within the date range if dates are set
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        // Include entries within the specified date range
+        // If no date filter, include all non-opening entries
         return true;
       });
 
