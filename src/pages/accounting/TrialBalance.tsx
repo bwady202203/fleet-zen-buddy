@@ -109,9 +109,10 @@ const TrialBalance = () => {
           schema: 'public',
           table: 'journal_entries'
         },
-        () => {
-          console.log('Journal entries changed - updating trial balance');
-          fetchData();
+        (payload) => {
+          console.log('Journal entries changed - updating trial balance', payload);
+          toast.info('تم تحديث القيود اليومية');
+          setTimeout(() => fetchData(), 100); // Small delay to ensure data is committed
         }
       )
       .on(
@@ -121,12 +122,15 @@ const TrialBalance = () => {
           schema: 'public',
           table: 'journal_entry_lines'
         },
-        () => {
-          console.log('Journal lines changed - updating trial balance');
-          fetchData();
+        (payload) => {
+          console.log('Journal lines changed - updating trial balance', payload);
+          toast.info('تم تحديث سطور القيود');
+          setTimeout(() => fetchData(), 100); // Small delay to ensure data is committed
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Trial Balance realtime subscription status:', status);
+      });
 
     const accountsChannel = supabase
       .channel('trial-balance-accounts-changes')
@@ -643,18 +647,11 @@ const TrialBalance = () => {
         return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
       })
     : [];
-
-  console.log(`=== دفتر الأستاذ للحساب ${selectedAccountForLedger?.code} ===`);
-  console.log('عدد القيود المفلترة:', ledgerFilteredEntries.length);
-  console.log('تاريخ البداية:', startDate);
-  console.log('تاريخ النهاية:', endDate);
-  console.log('الفرع المختار:', selectedBranch);
   
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
     const entryLines = journalLines.filter(line => 
       line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
     );
-    console.log(`القيد ${entry.entry_number}: عدد السطور = ${entryLines.length}`);
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
@@ -664,8 +661,6 @@ const TrialBalance = () => {
       branchName: line.branches?.name_ar || '-',
     }));
   });
-  
-  console.log('عدد السطور الإجمالي في دفتر الأستاذ:', ledgerEntries.length);
 
   let runningBalance = 0;
   const ledgerWithBalance = ledgerEntries.map(entry => {
@@ -768,6 +763,18 @@ const TrialBalance = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  fetchData();
+                  toast.success('تم تحديث البيانات');
+                }}
+              >
+                <Calendar className="h-4 w-4 ml-2" />
+                تحديث البيانات
+              </Button>
+              
               <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
                 <DialogTrigger asChild>
                   <Button variant="destructive">

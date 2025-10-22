@@ -84,9 +84,9 @@ const Ledger = () => {
           schema: 'public',
           table: 'journal_entries'
         },
-        () => {
-          console.log('Journal entries changed');
-          fetchData();
+        (payload) => {
+          console.log('Journal entries changed', payload);
+          setTimeout(() => fetchData(), 100); // Small delay to ensure data is committed
         }
       )
       .on(
@@ -96,12 +96,14 @@ const Ledger = () => {
           schema: 'public',
           table: 'journal_entry_lines'
         },
-        () => {
-          console.log('Journal lines changed');
-          fetchData();
+        (payload) => {
+          console.log('Journal lines changed', payload);
+          setTimeout(() => fetchData(), 100); // Small delay to ensure data is committed
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Ledger realtime subscription status:', status);
+      });
 
     const accountsChannel = supabase
       .channel('accounts-changes')
