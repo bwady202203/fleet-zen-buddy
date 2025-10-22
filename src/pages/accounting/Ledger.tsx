@@ -179,9 +179,11 @@ const Ledger = () => {
     if (startDate && entry.date < startDate) return false;
     if (endDate && entry.date > endDate) return false;
     const entryLines = journalLines.filter(line => {
-      // Filter by branch first
+      // Apply branch filter - show selected branch OR old entries without branch
       if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
+        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+          return false;
+        }
       }
       return line.journal_entry_id === entry.id;
     });
@@ -190,9 +192,11 @@ const Ledger = () => {
 
   const ledgerEntries = filteredEntries.flatMap(entry => {
     const entryLines = journalLines.filter(line => {
-      // Apply branch filter
+      // Apply branch filter - show selected branch OR old entries without branch
       if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
+        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+          return false;
+        }
       }
       return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
     });
@@ -210,16 +214,22 @@ const Ledger = () => {
   const openingBalanceEntries = journalEntries.filter(entry => {
     if (!startDate || entry.date >= startDate) return false;
     const entryLines = journalLines.filter(line => {
+      // Apply branch filter - show selected branch OR old entries without branch
       if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
+        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+          return false;
+        }
       }
       return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
     });
     return entryLines.length > 0;
   }).flatMap(entry => {
     const entryLines = journalLines.filter(line => {
+      // Apply branch filter - show selected branch OR old entries without branch
       if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
+        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
+          return false;
+        }
       }
       return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
     });
