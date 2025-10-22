@@ -623,61 +623,31 @@ const TrialBalance = () => {
   const totalClosingCredit = trialBalanceData.reduce((sum, acc) => sum + acc.closingCredit, 0);
 
   // معاينة دفتر الأستاذ
+  // معاينة دفتر الأستاذ - عرض جميع القيود بغض النظر عن فلتر الفرع
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
         // Include opening balance entries regardless of date
         if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
-          const entryLines = journalLines.filter(line => {
-            // Apply no branch filter
-            if (showOnlyNoBranch && line.branch_id !== null) {
-              return false;
-            }
-            
-            // Apply branch filter
-            if (selectedBranch && selectedBranch !== 'all') {
-              // Show lines for the selected branch OR lines with no branch (old entries)
-              if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
-                return false;
-              }
-            }
-            return line.journal_entry_id === entry.id;
-          });
+          const entryLines = journalLines.filter(line => 
+            line.journal_entry_id === entry.id
+          );
           return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
         }
         
-        // For regular entries, apply date filter
+        // For regular entries, apply date filter only
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        const entryLines = journalLines.filter(line => {
-          // Apply no branch filter
-          if (showOnlyNoBranch && line.branch_id !== null) {
-            return false;
-          }
-          
-          // Apply branch filter
-          if (selectedBranch && selectedBranch !== 'all') {
-            // Show lines for the selected branch OR lines with no branch (old entries)
-            if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
-              return false;
-            }
-          }
-          return line.journal_entry_id === entry.id;
-        });
+        const entryLines = journalLines.filter(line => 
+          line.journal_entry_id === entry.id
+        );
         return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
       })
     : [];
 
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(line => {
-      // Apply branch filter
-      if (selectedBranch && selectedBranch !== 'all') {
-        // Show lines for the selected branch OR lines with no branch (old entries)
-        if (line.branch_id !== selectedBranch && line.branch_id !== null && line.branch_id) {
-          return false;
-        }
-      }
-      return line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id;
-    });
+    const entryLines = journalLines.filter(line => 
+      line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
+    );
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
