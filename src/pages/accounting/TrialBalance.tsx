@@ -665,9 +665,9 @@ const TrialBalance = () => {
         if (startDate && lineEntry.date < startDate) return false;
         if (endDate && lineEntry.date > endDate) return false;
         
-        // Apply branch filter - only filter if a specific branch is selected
-        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
+        // Apply branch filter
+        if (selectedBranch && selectedBranch !== 'all') {
+          return line.branch_id === selectedBranch || !line.branch_id;
         }
         return true;
       });
@@ -691,7 +691,7 @@ const TrialBalance = () => {
         displayedLines: filteredLines.length,
         hiddenLines: hiddenLinesCount,
         linesByBranch,
-        selectedBranch: (!selectedBranch || selectedBranch === 'all') ? 'جميع الفروع' : branches.find(b => b.id === selectedBranch)?.name_ar || 'غير محدد',
+        selectedBranch: selectedBranch === 'all' ? 'جميع الفروع' : branches.find(b => b.id === selectedBranch)?.name_ar || 'غير محدد',
         dateRange: {
           start: startDate || 'غير محدد',
           end: endDate || 'غير محدد'
@@ -707,8 +707,7 @@ const TrialBalance = () => {
 
   // Check for hidden entries due to branch filter
   const hiddenEntriesWarning = () => {
-    // Don't show warning if showing all branches
-    if (!selectedBranch || selectedBranch === 'all' || selectedBranch === '') return null;
+    if (selectedBranch === 'all') return null;
 
     const allLinesInPeriod = journalLines.filter(line => {
       const lineEntry = journalEntries.find(e => e.id === line.journal_entry_id);
