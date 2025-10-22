@@ -723,33 +723,6 @@ const TrialBalance = () => {
       })
     : [];
 
-  // Debug log for ledger
-  if (selectedAccountForLedger) {
-    console.log('=== LEDGER DEBUG ===');
-    console.log('Account:', selectedAccountForLedger.code, selectedAccountForLedger.name_ar);
-    console.log('Date filter:', { startDate, endDate });
-    console.log('Branch filter:', selectedBranch);
-    console.log('Total journal entries:', journalEntries.length);
-    console.log('Filtered ledger entries:', ledgerFilteredEntries.length);
-    
-    // Check specific date
-    const oct2Entries = journalEntries.filter(e => e.date === '2025-10-02');
-    console.log('Total entries on 2025-10-02:', oct2Entries.length);
-    
-    const oct2LedgerEntries = ledgerFilteredEntries.filter(e => e.date === '2025-10-02');
-    console.log('Ledger entries on 2025-10-02:', oct2LedgerEntries.length);
-    
-    if (oct2Entries.length !== oct2LedgerEntries.length) {
-      console.log('MISSING ENTRIES on 2025-10-02!');
-      const missingEntries = oct2Entries.filter(e => !ledgerFilteredEntries.includes(e));
-      console.log('Missing entries:', missingEntries.map(e => ({
-        entry_number: e.entry_number,
-        description: e.description,
-        date: e.date
-      })));
-    }
-  }
-
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
     const entryLines = journalLines.filter(line => {
       // Apply branch filter
