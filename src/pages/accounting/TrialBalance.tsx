@@ -627,16 +627,17 @@ const TrialBalance = () => {
   // Calculate data verification statistics
   const getDataVerification = async () => {
     try {
-      // Get ALL entries (no date filter) to calculate hidden entries accurately
-      const { data: allEntriesFromDB, error: entriesError } = await supabase
+      // Get total entries in date range
+      const { data: allEntries, error: entriesError } = await supabase
         .from('journal_entries')
         .select('id, date, entry_number', { count: 'exact' })
-        .order('date', { ascending: true });
+        .gte('date', startDate || '2000-01-01')
+        .lte('date', endDate || '2099-12-31');
 
       if (entriesError) throw entriesError;
 
-      // Get ALL lines
-      const { data: allLinesFromDB, error: linesError } = await supabase
+      // Get total lines in date range
+      const { data: allLines, error: linesError } = await supabase
         .from('journal_entry_lines')
         .select(`
           id, 
@@ -646,88 +647,51 @@ const TrialBalance = () => {
           debit,
           credit,
           branches(id, name_ar)
-        `);
+        `)
+        .in('journal_entry_id', allEntries?.map(e => e.id) || []);
 
       if (linesError) throw linesError;
 
-      // Calculate what's actually displayed based on current filters
-      const displayedEntries = allEntriesFromDB?.filter(entry => {
-        // Apply date filter
+      // Calculate filtered data
+      const filteredEntries = journalEntries.filter(entry => {
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        
-        // Check if this entry has any lines that match branch filter
-        const entryLines = allLinesFromDB?.filter(line => line.journal_entry_id === entry.id) || [];
-        if (entryLines.length === 0) return false;
-        
-        // Apply branch filter
-        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          return entryLines.some(line => line.branch_id === selectedBranch || !line.branch_id);
-        }
-        
         return true;
-      }) || [];
+      });
 
-      const displayedLines = allLinesFromDB?.filter(line => {
-        const lineEntry = allEntriesFromDB?.find(e => e.id === line.journal_entry_id);
+      const filteredLines = journalLines.filter(line => {
+        const lineEntry = journalEntries.find(e => e.id === line.journal_entry_id);
         if (!lineEntry) return false;
-        
-        // Apply date filter
         if (startDate && lineEntry.date < startDate) return false;
         if (endDate && lineEntry.date > endDate) return false;
         
-        // Apply branch filter
+        // Apply branch filter - only filter if a specific branch is selected
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          return line.branch_id === selectedBranch || !line.branch_id;
+          return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
         }
         return true;
-      }) || [];
-
-      // Calculate hidden by date
-      const hiddenByDate = allEntriesFromDB?.filter(entry => {
-        if (startDate && entry.date < startDate) return true;
-        if (endDate && entry.date > endDate) return true;
-        return false;
-      }) || [];
-
-      // Calculate hidden by branch (in date range)
-      const hiddenByBranch = allEntriesFromDB?.filter(entry => {
-        // Must be in date range
-        if (startDate && entry.date < startDate) return false;
-        if (endDate && entry.date > endDate) return false;
-        
-        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          const entryLines = allLinesFromDB?.filter(line => line.journal_entry_id === entry.id) || [];
-          // Hidden if NO lines match the branch filter
-          return !entryLines.some(line => line.branch_id === selectedBranch || !line.branch_id);
-        }
-        return false;
-      }) || [];
+      });
 
       // Group by branch
       const linesByBranch: { [key: string]: number } = {};
-      allLinesFromDB?.forEach(line => {
+      allLines?.forEach(line => {
         const branchName = line.branches?.name_ar || 'بدون فرع';
         linesByBranch[branchName] = (linesByBranch[branchName] || 0) + 1;
       });
 
-      // Calculate totals
-      const totalEntries = allEntriesFromDB?.length || 0;
-      const totalLines = allLinesFromDB?.length || 0;
-      const hiddenEntriesCount = totalEntries - displayedEntries.length;
-      const hiddenLinesCount = totalLines - displayedLines.length;
+      // Calculate hidden entries
+      const hiddenEntriesCount = (allEntries?.length || 0) - filteredEntries.length;
+      const hiddenLinesCount = (allLines?.length || 0) - filteredLines.length;
 
       setVerificationData({
-        totalEntries,
-        displayedEntries: displayedEntries.length,
+        totalEntries: allEntries?.length || 0,
+        displayedEntries: filteredEntries.length,
         hiddenEntries: hiddenEntriesCount,
-        hiddenByDate: hiddenByDate.length,
-        hiddenByBranch: hiddenByBranch.length,
-        totalLines,
-        displayedLines: displayedLines.length,
+        totalLines: allLines?.length || 0,
+        displayedLines: filteredLines.length,
         hiddenLines: hiddenLinesCount,
         linesByBranch,
-        selectedBranch: !selectedBranch || selectedBranch === 'all' ? 'جميع الفروع' : branches.find(b => b.id === selectedBranch)?.name_ar || 'غير محدد',
+        selectedBranch: (!selectedBranch || selectedBranch === 'all') ? 'جميع الفروع' : branches.find(b => b.id === selectedBranch)?.name_ar || 'غير محدد',
         dateRange: {
           start: startDate || 'غير محدد',
           end: endDate || 'غير محدد'
@@ -741,79 +705,39 @@ const TrialBalance = () => {
     }
   };
 
-  // Check for hidden entries due to filters (branch or date)
+  // Check for hidden entries due to branch filter
   const hiddenEntriesWarning = () => {
-    // Count all entries in database
-    const totalEntries = journalEntries.length;
-    
-    // Count entries that are displayed (match all filters)
-    const displayedEntries = journalEntries.filter(entry => {
-      // Apply date filter
-      if (startDate && entry.date < startDate) return false;
-      if (endDate && entry.date > endDate) return false;
-      
-      // Apply branch filter
-      if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-        const entryLines = journalLines.filter(line => line.journal_entry_id === entry.id);
-        const hasMatchingBranch = entryLines.some(line => 
-          line.branch_id === selectedBranch || !line.branch_id
-        );
-        if (!hasMatchingBranch) return false;
-      }
-      
+    // Don't show warning if showing all branches
+    if (!selectedBranch || selectedBranch === 'all' || selectedBranch === '') return null;
+
+    const allLinesInPeriod = journalLines.filter(line => {
+      const lineEntry = journalEntries.find(e => e.id === line.journal_entry_id);
+      if (!lineEntry) return false;
+      if (startDate && lineEntry.date < startDate) return false;
+      if (endDate && lineEntry.date > endDate) return false;
       return true;
     });
 
-    const hiddenCount = totalEntries - displayedEntries.length;
-    
-    if (hiddenCount === 0) return null;
-
-    // Calculate breakdown
-    const hiddenByDate = journalEntries.filter(entry => {
-      if (startDate && entry.date < startDate) return true;
-      if (endDate && entry.date > endDate) return true;
-      return false;
-    }).length;
-
-    const hiddenByBranch = journalEntries.filter(entry => {
-      // Must be in date range
-      if (startDate && entry.date < startDate) return false;
-      if (endDate && entry.date > endDate) return false;
-      
-      // Check branch filter
-      if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-        const entryLines = journalLines.filter(line => line.journal_entry_id === entry.id);
-        return !entryLines.some(line => line.branch_id === selectedBranch || !line.branch_id);
+    const hiddenLines = allLinesInPeriod.filter(line => {
+      if (selectedBranch && line.branch_id !== selectedBranch && line.branch_id !== null) {
+        return true;
       }
       return false;
-    }).length;
+    });
+
+    if (hiddenLines.length === 0) return null;
+
+    const hiddenEntriesIds = new Set(hiddenLines.map(l => l.journal_entry_id));
+    const hiddenEntriesCount = hiddenEntriesIds.size;
 
     return (
       <Alert className="mb-4 border-amber-500 bg-amber-50">
         <AlertCircle className="h-4 w-4 text-amber-600" />
         <AlertTitle className="text-amber-800">تنبيه: قيود مخفية</AlertTitle>
-        <AlertDescription className="text-amber-700 space-y-1">
-          <div>
-            يوجد <strong>{hiddenCount}</strong> قيد يومية غير ظاهرة:
-          </div>
-          {hiddenByDate > 0 && (
-            <div className="pr-4">
-              • <strong>{hiddenByDate}</strong> قيد خارج نطاق التاريخ المحدد
-            </div>
-          )}
-          {hiddenByBranch > 0 && (
-            <div className="pr-4">
-              • <strong>{hiddenByBranch}</strong> قيد بسبب فلتر الفرع
-            </div>
-          )}
-          <div className="mt-2 text-sm">
-            {hiddenByDate > 0 && (
-              <span>قم بتعديل نطاق التاريخ لإظهار المزيد من القيود. </span>
-            )}
-            {hiddenByBranch > 0 && (
-              <span>اختر "جميع الفروع" لعرض قيود جميع الفروع.</span>
-            )}
-          </div>
+        <AlertDescription className="text-amber-700">
+          يوجد <strong>{hiddenEntriesCount}</strong> قيد يومية ({hiddenLines.length} سطر) مخفية بسبب فلتر الفرع المحدد.
+          <br />
+          اختر "جميع الفروع" لعرض جميع القيود.
         </AlertDescription>
       </Alert>
     );
@@ -826,54 +750,32 @@ const TrialBalance = () => {
   const totalClosingDebit = trialBalanceData.reduce((sum, acc) => sum + acc.closingDebit, 0);
   const totalClosingCredit = trialBalanceData.reduce((sum, acc) => sum + acc.closingCredit, 0);
 
-  // معاينة دفتر الأستاذ - تطبيق فلتر الفرع والتاريخ
+  // معاينة دفتر الأستاذ
+  // معاينة دفتر الأستاذ - عرض جميع القيود بغض النظر عن فلتر الفرع
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
         // Include opening balance entries regardless of date
         if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
-          const entryLines = journalLines.filter(line => {
-            if (line.journal_entry_id !== entry.id) return false;
-            if (line.account_id !== selectedAccountForLedger.id) return false;
-            
-            // تطبيق فلتر الفرع
-            if (selectedBranch && selectedBranch !== 'all') {
-              return line.branch_id === selectedBranch || !line.branch_id;
-            }
-            return true;
-          });
-          return entryLines.length > 0;
+          const entryLines = journalLines.filter(line => 
+            line.journal_entry_id === entry.id
+          );
+          return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
         }
         
-        // For regular entries, apply date and branch filters
+        // For regular entries, apply date filter only
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        
-        const entryLines = journalLines.filter(line => {
-          if (line.journal_entry_id !== entry.id) return false;
-          if (line.account_id !== selectedAccountForLedger.id) return false;
-          
-          // تطبيق فلتر الفرع
-          if (selectedBranch && selectedBranch !== 'all') {
-            return line.branch_id === selectedBranch || !line.branch_id;
-          }
-          return true;
-        });
-        return entryLines.length > 0;
+        const entryLines = journalLines.filter(line => 
+          line.journal_entry_id === entry.id
+        );
+        return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
       })
     : [];
   
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(line => {
-      if (line.journal_entry_id !== entry.id) return false;
-      if (line.account_id !== selectedAccountForLedger?.id) return false;
-      
-      // تطبيق فلتر الفرع
-      if (selectedBranch && selectedBranch !== 'all') {
-        return line.branch_id === selectedBranch || !line.branch_id;
-      }
-      return true;
-    });
-    
+    const entryLines = journalLines.filter(line => 
+      line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
+    );
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
@@ -1317,28 +1219,8 @@ const TrialBalance = () => {
                       <Alert className="border-amber-500 bg-amber-50">
                         <AlertCircle className="h-4 w-4 text-amber-600" />
                         <AlertTitle className="text-amber-800">يوجد قيود مخفية</AlertTitle>
-                        <AlertDescription className="text-amber-700 space-y-2">
-                          <div>
-                            هناك <strong>{verificationData.hiddenEntries}</strong> قيد يومية غير ظاهرة:
-                          </div>
-                          {verificationData.hiddenByDate > 0 && (
-                            <div className="pr-4">
-                              • <strong>{verificationData.hiddenByDate}</strong> قيد خارج نطاق التاريخ المحدد
-                            </div>
-                          )}
-                          {verificationData.hiddenByBranch > 0 && (
-                            <div className="pr-4">
-                              • <strong>{verificationData.hiddenByBranch}</strong> قيد بسبب فلتر الفرع
-                            </div>
-                          )}
-                          <div className="mt-2 text-sm">
-                            {verificationData.hiddenByDate > 0 && !startDate && !endDate && (
-                              <span>لعرض جميع القيود، تأكد من تحديد نطاق التاريخ الصحيح. </span>
-                            )}
-                            {verificationData.hiddenByBranch > 0 && (
-                              <span>لعرض قيود جميع الفروع، اختر "جميع الفروع".</span>
-                            )}
-                          </div>
+                        <AlertDescription className="text-amber-700">
+                          بعض القيود غير ظاهرة بسبب فلتر الفرع. اختر "جميع الفروع" لعرض كل القيود.
                         </AlertDescription>
                       </Alert>
                     )}

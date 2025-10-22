@@ -5,20 +5,15 @@ import { cn } from "@/lib/utils";
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, onChange, ...props }, ref) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      // Convert Arabic numerals and decimal separators to English format
+      // Convert Arabic numerals to English numerals
       const arabicToEnglish = (str: string) => {
         const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
         const englishNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         
-        let result = str.split('').map(char => {
+        return str.split('').map(char => {
           const index = arabicNumerals.indexOf(char);
           return index !== -1 ? englishNumerals[index] : char;
         }).join('');
-        
-        // Convert Arabic decimal separator (٫) and comma (,) to English decimal point (.)
-        result = result.replace(/٫/g, '.').replace(/،/g, '.');
-        
-        return result;
       };
 
       // Convert the value
