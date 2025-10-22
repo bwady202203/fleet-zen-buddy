@@ -89,10 +89,10 @@ export default function TrialBalanceNew() {
   }, []);
 
   useEffect(() => {
-    if (startDate && endDate) {
+    if (startDate && endDate && accounts.length > 0) {
       calculateTrialBalance();
     }
-  }, [selectedBranch, startDate, endDate]);
+  }, [selectedBranch, startDate, endDate, accounts]);
 
   const fetchAccounts = async () => {
     try {
@@ -125,10 +125,21 @@ export default function TrialBalanceNew() {
   };
 
   const calculateTrialBalance = async () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate) {
+      toast.error("يرجى اختيار تاريخ البداية والنهاية");
+      return;
+    }
+
+    if (accounts.length === 0) {
+      toast.error("لا توجد حسابات محملة");
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log("Calculating trial balance for period:", startDate, "to", endDate);
+      console.log("Number of accounts:", accounts.length);
+      
       // Fetch ALL journal entry lines with journal entries
       let allLinesQuery = supabase
         .from("journal_entry_lines")
@@ -148,7 +159,12 @@ export default function TrialBalanceNew() {
 
       const { data: allLines, error: allLinesError } = await allLinesQuery;
 
-      if (allLinesError) throw allLinesError;
+      if (allLinesError) {
+        console.error("Error fetching journal lines:", allLinesError);
+        throw allLinesError;
+      }
+
+      console.log("Fetched journal lines:", allLines?.length || 0);
 
       // Group data by account
       const accountMap = new Map<string, {
