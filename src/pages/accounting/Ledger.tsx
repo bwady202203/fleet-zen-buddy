@@ -175,27 +175,20 @@ const Ledger = () => {
   
   const selectedAccountData = accounts.find(acc => acc.id === selectedAccount);
   
+  // عرض جميع القيود للحساب المختار بغض النظر عن الفرع
   const filteredEntries = journalEntries.filter(entry => {
     if (startDate && entry.date < startDate) return false;
     if (endDate && entry.date > endDate) return false;
-    const entryLines = journalLines.filter(line => {
-      // Filter by branch first
-      if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
-      }
-      return line.journal_entry_id === entry.id;
-    });
+    const entryLines = journalLines.filter(line => 
+      line.journal_entry_id === entry.id
+    );
     return entryLines.some(line => line.account_id === selectedAccount);
   });
 
   const ledgerEntries = filteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(line => {
-      // Apply branch filter
-      if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
-      }
-      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
-    });
+    const entryLines = journalLines.filter(line => 
+      line.journal_entry_id === entry.id && line.account_id === selectedAccount
+    );
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
@@ -203,26 +196,21 @@ const Ledger = () => {
       description: line.description || entry.description,
       debit: Number(line.debit) || 0,
       credit: Number(line.credit) || 0,
+      branchName: line.branches?.name_ar || '-',
     }));
   });
 
   // Calculate opening balance (before startDate)
   const openingBalanceEntries = journalEntries.filter(entry => {
     if (!startDate || entry.date >= startDate) return false;
-    const entryLines = journalLines.filter(line => {
-      if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
-      }
-      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
-    });
+    const entryLines = journalLines.filter(line => 
+      line.journal_entry_id === entry.id && line.account_id === selectedAccount
+    );
     return entryLines.length > 0;
   }).flatMap(entry => {
-    const entryLines = journalLines.filter(line => {
-      if (selectedBranch && selectedBranch !== 'all') {
-        if (line.branch_id !== selectedBranch) return false;
-      }
-      return line.journal_entry_id === entry.id && line.account_id === selectedAccount;
-    });
+    const entryLines = journalLines.filter(line => 
+      line.journal_entry_id === entry.id && line.account_id === selectedAccount
+    );
     return entryLines.map(line => ({
       debit: Number(line.debit) || 0,
       credit: Number(line.credit) || 0,
@@ -342,23 +330,7 @@ const Ledger = () => {
             <CardTitle>فلترة البيانات</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-4">
-              <div>
-                <Label>الفرع</Label>
-                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الفرع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع الفروع</SelectItem>
-                    {branches.map(branch => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.code} - {branch.name_ar}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label>الحساب</Label>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
@@ -440,6 +412,7 @@ const Ledger = () => {
                   <TableRow>
                     <TableHead className="text-center w-[120px]">التاريخ</TableHead>
                     <TableHead className="text-center w-[120px]">رقم القيد</TableHead>
+                    <TableHead className="text-center w-[140px]">الفرع</TableHead>
                     <TableHead className="text-center">البيان</TableHead>
                     <TableHead className="text-center w-[140px]">مدين</TableHead>
                     <TableHead className="text-center w-[140px]">دائن</TableHead>
@@ -449,7 +422,7 @@ const Ledger = () => {
                 <TableBody>
                   {startDate && (
                     <TableRow className="bg-accent/30 font-semibold">
-                      <TableCell colSpan={3} className="text-center">الرصيد الافتتاحي</TableCell>
+                      <TableCell colSpan={4} className="text-center">الرصيد الافتتاحي</TableCell>
                       <TableCell className="text-center">
                         {openingBalance > 0 ? openingBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                       </TableCell>
@@ -470,6 +443,7 @@ const Ledger = () => {
                       >
                         {entry.entryNumber}
                       </TableCell>
+                      <TableCell className="text-center text-sm">{entry.branchName}</TableCell>
                       <TableCell className="text-center">{entry.description}</TableCell>
                       <TableCell className="text-center font-medium">
                         {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
@@ -484,7 +458,7 @@ const Ledger = () => {
                   ))}
                   {ledgerWithBalance.length > 0 && (
                     <TableRow className="font-bold bg-accent/50 print-total">
-                      <TableCell colSpan={3} className="text-center">الإجمالي</TableCell>
+                      <TableCell colSpan={4} className="text-center">الإجمالي</TableCell>
                       <TableCell className="text-center">
                         {totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                       </TableCell>
