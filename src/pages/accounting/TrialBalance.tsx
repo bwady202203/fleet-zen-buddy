@@ -554,10 +554,12 @@ const TrialBalance = () => {
       const periodEntries = journalEntries.filter(entry => {
         // Exclude opening balance entries
         if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') return false;
+        // If no date filter is set, period movement should be empty
+        if (!startDate && !endDate) return false;
         // Only include entries within the date range if dates are set
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        // If no date filter, include all non-opening entries
+        // Include entries within the specified date range
         return true;
       });
 
