@@ -166,6 +166,19 @@ const TrialBalance = () => {
       console.log('Entries fetched:', entriesRes.data?.length);
       console.log('Lines fetched:', linesRes.data?.length);
       console.log('Lines sample:', linesRes.data?.slice(0, 3));
+      
+      // Log entries for October to debug missing entries
+      const octoberEntries = entriesRes.data?.filter(e => 
+        e.date >= '2025-10-01' && e.date <= '2025-10-31'
+      );
+      console.log('October 2025 entries count:', octoberEntries?.length);
+      console.log('October entries by date:', 
+        octoberEntries?.reduce((acc, e) => {
+          const dateKey = e.date;
+          acc[dateKey] = (acc[dateKey] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      );
 
       if (accountsRes.error) throw accountsRes.error;
       if (entriesRes.error) throw entriesRes.error;
@@ -562,6 +575,21 @@ const TrialBalance = () => {
         // Include entries within the specified date range
         return true;
       });
+
+      // Debug log for first account only
+      if (account.code === '111001') {
+        console.log('==== DEBUG for account', account.code, account.name_ar, '====');
+        console.log('Filter dates:', { startDate, endDate });
+        console.log('Total journal entries:', journalEntries.length);
+        console.log('Period entries count:', periodEntries.length);
+        console.log('Period entries sample:', periodEntries.slice(0, 5).map(e => ({
+          entry_number: e.entry_number,
+          date: e.date,
+          description: e.description,
+          reference: e.reference
+        })));
+        console.log('Opening entries count:', openingEntries.length);
+      }
 
       const periodLines = journalLines.filter(line => {
         const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
