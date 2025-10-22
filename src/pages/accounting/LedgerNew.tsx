@@ -37,6 +37,13 @@ interface Branch {
   name_en: string;
 }
 
+interface JournalEntry {
+  id: string;
+  entry_number: string;
+  date: string;
+  description: string | null;
+}
+
 interface LedgerEntry {
   id: string;
   entry_date: string;
@@ -45,9 +52,7 @@ interface LedgerEntry {
   debit: number;
   credit: number;
   balance: number;
-  branch?: {
-    name_ar: string;
-  };
+  branch_name?: string;
 }
 
 export default function LedgerNew() {
@@ -108,49 +113,57 @@ export default function LedgerNew() {
 
     setLoading(true);
     try {
-      let query = supabase
-        .from("ledger_entries")
+      // Build query for journal entry lines
+      let linesQuery = supabase
+        .from("journal_entry_lines")
         .select(`
           id,
-          entry_date,
-          description,
-          reference,
+          journal_entry_id,
           debit,
           credit,
-          balance,
-          branch:branches(name_ar)
+          description,
+          branch_id,
+          journal_entries!inner(
+            id,
+            entry_number,
+            date,
+            description
+          ),
+          branches(
+            name_ar
+          )
         `)
-        .eq("account_id", selectedAccount)
-        .order("entry_date", { ascending: true })
-        .order("created_at", { ascending: true });
+        .eq("account_id", selectedAccount);
 
       // Apply branch filter
       if (selectedBranch !== "all") {
-        query = query.eq("branch_id", selectedBranch);
+        linesQuery = linesQuery.eq("branch_id", selectedBranch);
       }
 
-      // Apply date filter
+      // Apply date filter on journal entries
       if (startDate) {
-        query = query.gte("entry_date", startDate);
+        linesQuery = linesQuery.gte("journal_entries.date", startDate);
       }
       if (endDate) {
-        query = query.lte("entry_date", endDate);
+        linesQuery = linesQuery.lte("journal_entries.date", endDate);
       }
 
-      const { data, error } = await query;
+      const { data: linesData, error: linesError } = await linesQuery;
 
-      if (error) throw error;
+      if (linesError) throw linesError;
 
       // Calculate opening balance (entries before start date)
+      let calculatedOpeningBalance = 0;
       if (startDate) {
         let openingQuery = supabase
-          .from("ledger_entries")
-          .select("balance")
+          .from("journal_entry_lines")
+          .select(`
+            debit,
+            credit,
+            journal_entries!inner(date)
+          `)
           .eq("account_id", selectedAccount)
-          .lt("entry_date", startDate)
-          .order("entry_date", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(1);
+          .lt("journal_entries.date", startDate);
 
         if (selectedBranch !== "all") {
           openingQuery = openingQuery.eq("branch_id", selectedBranch);
@@ -158,16 +171,44 @@ export default function LedgerNew() {
 
         const { data: openingData, error: openingError } = await openingQuery;
 
-        if (!openingError && openingData && openingData.length > 0) {
-          setOpeningBalance(openingData[0].balance);
-        } else {
-          setOpeningBalance(0);
+        if (!openingError && openingData) {
+          calculatedOpeningBalance = openingData.reduce(
+            (sum, line) => sum + (line.debit || 0) - (line.credit || 0),
+            0
+          );
         }
-      } else {
-        setOpeningBalance(0);
+      }
+      setOpeningBalance(calculatedOpeningBalance);
+
+      // Transform data to ledger entries with running balance
+      const entries: LedgerEntry[] = [];
+      let runningBalance = calculatedOpeningBalance;
+
+      // Sort by date first
+      const sortedLines = (linesData || []).sort((a: any, b: any) => {
+        const dateA = new Date(a.journal_entries.date).getTime();
+        const dateB = new Date(b.journal_entries.date).getTime();
+        return dateA - dateB;
+      });
+
+      for (const line of sortedLines) {
+        const debit = line.debit || 0;
+        const credit = line.credit || 0;
+        runningBalance += debit - credit;
+
+        entries.push({
+          id: line.id,
+          entry_date: line.journal_entries.date,
+          description: line.description || line.journal_entries.description || "",
+          reference: line.journal_entries.entry_number,
+          debit,
+          credit,
+          balance: runningBalance,
+          branch_name: line.branches?.name_ar || undefined,
+        });
       }
 
-      setLedgerEntries(data || []);
+      setLedgerEntries(entries);
     } catch (error: any) {
       toast.error("خطأ في جلب قيود دفتر الأستاذ: " + error.message);
     } finally {
@@ -323,7 +364,7 @@ export default function LedgerNew() {
                       <TableCell>{entry.description || "-"}</TableCell>
                       <TableCell>{entry.reference || "-"}</TableCell>
                       <TableCell>
-                        {entry.branch?.name_ar || "-"}
+                        {entry.branch_name || "-"}
                       </TableCell>
                       <TableCell>
                         {entry.debit > 0 ? entry.debit.toFixed(2) : "-"}
