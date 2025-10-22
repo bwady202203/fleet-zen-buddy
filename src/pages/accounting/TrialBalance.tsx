@@ -576,21 +576,6 @@ const TrialBalance = () => {
         return true;
       });
 
-      // Debug log for first account only
-      if (account.code === '111001') {
-        console.log('==== DEBUG for account', account.code, account.name_ar, '====');
-        console.log('Filter dates:', { startDate, endDate });
-        console.log('Total journal entries:', journalEntries.length);
-        console.log('Period entries count:', periodEntries.length);
-        console.log('Period entries sample:', periodEntries.slice(0, 5).map(e => ({
-          entry_number: e.entry_number,
-          date: e.date,
-          description: e.description,
-          reference: e.reference
-        })));
-        console.log('Opening entries count:', openingEntries.length);
-      }
-
       const periodLines = journalLines.filter(line => {
         const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
         const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
@@ -611,6 +596,40 @@ const TrialBalance = () => {
 
       const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
       const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+      
+      // Debug log for specific accounts AFTER calculating totals
+      if (account.code === '111003' || account.code === '5111') {
+        console.log('==== DEBUG for account', account.code, account.name_ar, '====');
+        console.log('Filter dates:', { startDate, endDate });
+        console.log('Selected branch:', selectedBranch);
+        console.log('Period entries count:', periodEntries.length);
+        
+        // Check if entry JE-2025530174 is in periodEntries
+        const targetEntry = periodEntries.find(e => e.entry_number === 'JE-2025530174');
+        console.log('Entry JE-2025530174 in periodEntries?', targetEntry ? 'YES' : 'NO');
+        if (targetEntry) {
+          console.log('Entry details:', {
+            date: targetEntry.date,
+            description: targetEntry.description
+          });
+        } else {
+          // Check all entries to see why it's filtered out
+          const allTargetEntries = journalEntries.filter(e => e.entry_number === 'JE-2025530174');
+          console.log('Entry JE-2025530174 in ALL entries?', allTargetEntries.length > 0 ? 'YES' : 'NO');
+          if (allTargetEntries.length > 0) {
+            const e = allTargetEntries[0];
+            console.log('Entry date:', e.date, 'startDate:', startDate, 'endDate:', endDate);
+            console.log('Date checks:', {
+              'is opening': e.reference === 'OPENING_BALANCE' || e.reference === 'opening_entry',
+              'before startDate': startDate && e.date < startDate,
+              'after endDate': endDate && e.date > endDate
+            });
+          }
+        }
+        
+        console.log('Period lines for this account:', periodLines.length);
+        console.log('Period debit:', periodDebitTotal, 'Period credit:', periodCreditTotal);
+      }
       
       // Period movement shows TOTAL debit and TOTAL credit (not net)
       const periodDebit = periodDebitTotal;
