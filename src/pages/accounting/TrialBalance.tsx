@@ -749,32 +749,54 @@ const TrialBalance = () => {
   const totalClosingDebit = trialBalanceData.reduce((sum, acc) => sum + acc.closingDebit, 0);
   const totalClosingCredit = trialBalanceData.reduce((sum, acc) => sum + acc.closingCredit, 0);
 
-  // معاينة دفتر الأستاذ
-  // معاينة دفتر الأستاذ - عرض جميع القيود بغض النظر عن فلتر الفرع
+  // معاينة دفتر الأستاذ - تطبيق فلتر الفرع والتاريخ
   const ledgerFilteredEntries = selectedAccountForLedger 
     ? journalEntries.filter(entry => {
         // Include opening balance entries regardless of date
         if (entry.reference === 'OPENING_BALANCE' || entry.reference === 'opening_entry') {
-          const entryLines = journalLines.filter(line => 
-            line.journal_entry_id === entry.id
-          );
-          return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
+          const entryLines = journalLines.filter(line => {
+            if (line.journal_entry_id !== entry.id) return false;
+            if (line.account_id !== selectedAccountForLedger.id) return false;
+            
+            // تطبيق فلتر الفرع
+            if (selectedBranch && selectedBranch !== 'all') {
+              return line.branch_id === selectedBranch || !line.branch_id;
+            }
+            return true;
+          });
+          return entryLines.length > 0;
         }
         
-        // For regular entries, apply date filter only
+        // For regular entries, apply date and branch filters
         if (startDate && entry.date < startDate) return false;
         if (endDate && entry.date > endDate) return false;
-        const entryLines = journalLines.filter(line => 
-          line.journal_entry_id === entry.id
-        );
-        return entryLines.some(line => line.account_id === selectedAccountForLedger.id);
+        
+        const entryLines = journalLines.filter(line => {
+          if (line.journal_entry_id !== entry.id) return false;
+          if (line.account_id !== selectedAccountForLedger.id) return false;
+          
+          // تطبيق فلتر الفرع
+          if (selectedBranch && selectedBranch !== 'all') {
+            return line.branch_id === selectedBranch || !line.branch_id;
+          }
+          return true;
+        });
+        return entryLines.length > 0;
       })
     : [];
   
   const ledgerEntries = ledgerFilteredEntries.flatMap(entry => {
-    const entryLines = journalLines.filter(line => 
-      line.journal_entry_id === entry.id && line.account_id === selectedAccountForLedger?.id
-    );
+    const entryLines = journalLines.filter(line => {
+      if (line.journal_entry_id !== entry.id) return false;
+      if (line.account_id !== selectedAccountForLedger?.id) return false;
+      
+      // تطبيق فلتر الفرع
+      if (selectedBranch && selectedBranch !== 'all') {
+        return line.branch_id === selectedBranch || !line.branch_id;
+      }
+      return true;
+    });
+    
     return entryLines.map(line => ({
       date: entry.date,
       entryNumber: entry.entry_number,
