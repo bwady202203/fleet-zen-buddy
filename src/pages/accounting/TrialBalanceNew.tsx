@@ -95,6 +95,8 @@ export default function TrialBalanceNew() {
         .order("code");
 
       if (error) throw error;
+      console.log("Fetched accounts:", data?.length, "accounts");
+      console.log("Level 4 accounts:", data?.filter(a => a.level === 4).length);
       setAccounts(data || []);
     } catch (error: any) {
       toast.error("خطأ في جلب الحسابات: " + error.message);
@@ -206,15 +208,16 @@ export default function TrialBalanceNew() {
         const closing_debit = closing_balance > 0 ? closing_balance : 0;
         const closing_credit = closing_balance < 0 ? Math.abs(closing_balance) : 0;
 
-        // Only include accounts with activity
-        if (
+        // Include ALL accounts with any activity (including level 4)
+        const hasActivity = 
           balance.opening_debit !== 0 ||
           balance.opening_credit !== 0 ||
           balance.period_debit !== 0 ||
           balance.period_credit !== 0 ||
           closing_debit !== 0 ||
-          closing_credit !== 0
-        ) {
+          closing_credit !== 0;
+
+        if (hasActivity) {
           rows.push({
             account_id: account.id,
             account_code: account.code,
@@ -228,6 +231,12 @@ export default function TrialBalanceNew() {
             closing_credit,
           });
         }
+      });
+
+      console.log("Trial balance rows by level:");
+      [1, 2, 3, 4, 5].forEach(lvl => {
+        const count = rows.filter(r => r.level === lvl).length;
+        console.log(`Level ${lvl}: ${count} accounts`);
       });
 
       console.log("Trial balance rows:", rows.length);
@@ -489,10 +498,13 @@ export default function TrialBalanceNew() {
               <TableBody>
                 {trialBalanceData.map((row) => (
                   <TableRow key={row.account_id}>
-                    <TableCell className="font-medium">{row.account_code}</TableCell>
+                    <TableCell className="font-medium text-sm">{row.account_code}</TableCell>
                     <TableCell
-                      style={{ paddingRight: `${row.level * 20}px` }}
-                      className="font-medium"
+                      style={{ 
+                        paddingRight: `${row.level * 20}px`,
+                        fontWeight: row.level <= 2 ? 'bold' : 'normal'
+                      }}
+                      className="text-sm"
                     >
                       {row.account_name}
                     </TableCell>
@@ -640,21 +652,30 @@ export default function TrialBalanceNew() {
       {/* Print Styles */}
       <style>{`
         @media print {
+          @page {
+            size: A4 landscape;
+            margin: 1cm;
+          }
+          
           body * {
             visibility: hidden;
           }
+          
           .container, .container * {
             visibility: visible;
           }
+          
           .ledger-dialog, .ledger-dialog * {
             visibility: visible;
           }
+          
           .container {
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
           }
+          
           .ledger-dialog {
             position: fixed !important;
             left: 0 !important;
@@ -670,11 +691,49 @@ export default function TrialBalanceNew() {
             border: none !important;
             box-shadow: none !important;
           }
+          
           .print\\:hidden {
             display: none !important;
           }
+          
           .print\\:block {
             display: block !important;
+          }
+          
+          table {
+            page-break-inside: auto;
+          }
+          
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          
+          thead {
+            display: table-header-group;
+          }
+          
+          tfoot {
+            display: table-footer-group;
+          }
+          
+          /* Ensure account hierarchy is visible with indentation */
+          td[style*="paddingRight"] {
+            padding-right: inherit !important;
+          }
+          
+          /* Better spacing for printed content */
+          th, td {
+            padding: 8px !important;
+            font-size: 11pt !important;
+          }
+          
+          h1 {
+            font-size: 18pt !important;
+          }
+          
+          .text-sm {
+            font-size: 10pt !important;
           }
         }
       `}</style>
