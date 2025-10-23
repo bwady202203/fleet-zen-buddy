@@ -1024,25 +1024,14 @@ const JournalEntries = () => {
                       {formData.lines.map((line) => {
                         const searchState = getSearchState(line.id);
                         
-                        // البحث في الحسابات - المستوى الرابع فقط
-                        const level4Accounts = accounts.filter(acc => acc.level === 4);
-                        
-                        // Log for debugging customer accounts
-                        if (line.id && searchState.accountSearch.includes('1112')) {
-                          console.log('🔍 البحث عن حسابات 1112:', {
-                            searchTerm: searchState.accountSearch,
-                            level4Count: level4Accounts.length,
-                            customerAccounts: level4Accounts.filter(acc => acc.code?.startsWith('1112'))
-                          });
-                        }
-                        
+                        // عرض جميع الحسابات النشطة بدون تصفية حسب المستوى
                         const filteredAccounts = searchState.accountSearch.length > 0
-                          ? level4Accounts.filter(acc => 
+                          ? accounts.filter(acc => 
                               acc.code.includes(searchState.accountSearch) || 
                               acc.name_ar.includes(searchState.accountSearch) ||
                               acc.name_en.toLowerCase().includes(searchState.accountSearch.toLowerCase())
                             )
-                          : level4Accounts;
+                          : accounts;
                         
                         // تحسين البحث في مراكز التكلفة - يظهر النتائج فوراً من أول حرف
                         const filteredCostCenters = searchState.costCenterSearch 
@@ -1701,17 +1690,16 @@ const JournalEntries = () => {
                 <TableBody>
                   {openingEntryData.lines.map((line) => {
                     const lineSearchState = getSearchState(line.id);
-                    const level4Accounts = accounts.filter(acc => acc.level === 4);
                     
-                    // عرض جميع الحسابات عند الفوكس، أو تصفيتها حسب البحث (case-insensitive)
+                    // عرض جميع الحسابات النشطة بدون تصفية حسب المستوى
                     const filteredAccounts = lineSearchState.accountSearch 
-                      ? level4Accounts.filter(acc => {
+                      ? accounts.filter(acc => {
                           const searchLower = lineSearchState.accountSearch.toLowerCase();
                           return acc.code.toLowerCase().includes(searchLower) || 
                                  acc.name_ar.toLowerCase().includes(searchLower) ||
                                  acc.name_en.toLowerCase().includes(searchLower);
                         })
-                      : level4Accounts; // عرض الكل عند الفوكس
+                      : accounts; // عرض الكل عند الفوكس
 
                     return (
                       <TableRow key={line.id}>
@@ -2041,13 +2029,14 @@ const JournalEntries = () => {
                       <TableBody>
                         {editingEntry.lines.map((line: any) => {
                           const searchState = getSearchState(line.id);
-                          const level4Accounts = accounts.filter(acc => acc.level === 4);
+                          
+                          // عرض جميع الحسابات النشطة بدون تصفية حسب المستوى
                           const filteredAccounts = searchState.accountSearch.length > 0
-                            ? level4Accounts.filter(acc => 
+                            ? accounts.filter(acc => 
                                 acc.code.includes(searchState.accountSearch) || 
                                 acc.name_ar.includes(searchState.accountSearch)
                               )
-                            : level4Accounts;
+                            : accounts;
 
                           const filteredBranches = searchState.branchSearch?.length > 0
                             ? branches.filter(b => b.code.includes(searchState.branchSearch) || b.name_ar.includes(searchState.branchSearch))
