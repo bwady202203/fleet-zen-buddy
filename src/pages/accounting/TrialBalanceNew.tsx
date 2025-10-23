@@ -52,18 +52,16 @@ interface TrialBalanceRow {
   level: number;
   opening_debit: number;
   opening_credit: number;
-  opening_balance: number;
   period_debit: number;
   period_credit: number;
   closing_debit: number;
   closing_credit: number;
-  closing_balance: number;
 }
 
 interface LedgerEntry {
   entry_date: string;
+  entry_number: string;
   description: string;
-  reference: string;
   branch_name: string;
   debit: number;
   credit: number;
@@ -87,12 +85,6 @@ export default function TrialBalanceNew() {
     fetchAccounts();
     fetchBranches();
   }, []);
-
-  useEffect(() => {
-    if (startDate && endDate) {
-      calculateTrialBalance();
-    }
-  }, [selectedBranch, startDate, endDate]);
 
   const fetchAccounts = async () => {
     try {
@@ -125,12 +117,15 @@ export default function TrialBalanceNew() {
   };
 
   const calculateTrialBalance = async () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate) {
+      toast.error("يرجى تحديد تاريخ البداية والنهاية");
+      return;
+    }
 
     setLoading(true);
     try {
-      // Fetch ALL journal entry lines with journal entries - no branch filter by default
-      const { data: allLines, error: allLinesError } = await supabase
+      // Build query for journal entry lines
+      let query = supabase
         .from("journal_entry_lines")
         .select(`
           account_id,
@@ -138,100 +133,109 @@ export default function TrialBalanceNew() {
           credit,
           branch_id,
           journal_entries!inner(
-            date
+            id,
+            date,
+            entry_number,
+            description
           )
         `);
 
-      if (allLinesError) throw allLinesError;
+      // Apply branch filter if selected
+      if (selectedBranch !== "all") {
+        query = query.eq("branch_id", selectedBranch);
+      }
 
-      console.log("Fetched journal entry lines:", allLines?.length);
+      const { data: journalLines, error } = await query;
 
-      // Group data by account
-      const accountMap = new Map<string, {
-        openingDebit: number;
-        openingCredit: number;
-        periodDebit: number;
-        periodCredit: number;
+      if (error) throw error;
+
+      console.log("Fetched journal lines:", journalLines?.length || 0);
+
+      // Initialize account map
+      const accountBalances = new Map<string, {
+        opening_debit: number;
+        opening_credit: number;
+        period_debit: number;
+        period_credit: number;
       }>();
 
-      // Initialize all accounts
+      // Initialize all accounts with zero values
       accounts.forEach(account => {
-        accountMap.set(account.id, {
-          openingDebit: 0,
-          openingCredit: 0,
-          periodDebit: 0,
-          periodCredit: 0,
+        accountBalances.set(account.id, {
+          opening_debit: 0,
+          opening_credit: 0,
+          period_debit: 0,
+          period_credit: 0,
         });
       });
 
-      // Process all lines - filter by branch if selected
-      allLines?.forEach((line: any) => {
-        // Apply branch filter if not "all"
-        if (selectedBranch !== "all" && line.branch_id !== selectedBranch) {
-          return;
-        }
-
+      // Process journal lines
+      journalLines?.forEach((line: any) => {
         const entryDate = line.journal_entries?.date;
         if (!entryDate) return;
 
-        const accountData = accountMap.get(line.account_id);
-        if (!accountData) return;
+        const balance = accountBalances.get(line.account_id);
+        if (!balance) return;
 
         const debit = Number(line.debit) || 0;
         const credit = Number(line.credit) || 0;
 
-        // Check if this is opening balance (before start date)
+        // Classify by date
         if (entryDate < startDate) {
-          accountData.openingDebit += debit;
-          accountData.openingCredit += credit;
-        }
-        // Check if this is within the period
-        else if (entryDate >= startDate && entryDate <= endDate) {
-          accountData.periodDebit += debit;
-          accountData.periodCredit += credit;
+          // Opening balance
+          balance.opening_debit += debit;
+          balance.opening_credit += credit;
+        } else if (entryDate >= startDate && entryDate <= endDate) {
+          // Period movement
+          balance.period_debit += debit;
+          balance.period_credit += credit;
         }
       });
 
       // Build trial balance rows
-      const balanceRows: TrialBalanceRow[] = [];
+      const rows: TrialBalanceRow[] = [];
 
       accounts.forEach(account => {
-        const data = accountMap.get(account.id);
-        if (!data) return;
+        const balance = accountBalances.get(account.id);
+        if (!balance) return;
 
-        const openingBalance = data.openingDebit - data.openingCredit;
-        const closingBalance = openingBalance + data.periodDebit - data.periodCredit;
-        const closingDebit = closingBalance > 0 ? closingBalance : 0;
-        const closingCredit = closingBalance < 0 ? Math.abs(closingBalance) : 0;
+        // Calculate closing balance
+        const opening_balance = balance.opening_debit - balance.opening_credit;
+        const closing_balance = opening_balance + balance.period_debit - balance.period_credit;
+        
+        const closing_debit = closing_balance > 0 ? closing_balance : 0;
+        const closing_credit = closing_balance < 0 ? Math.abs(closing_balance) : 0;
 
         // Only include accounts with activity
         if (
-          data.openingDebit !== 0 ||
-          data.openingCredit !== 0 ||
-          data.periodDebit !== 0 ||
-          data.periodCredit !== 0 ||
-          closingDebit !== 0 ||
-          closingCredit !== 0
+          balance.opening_debit !== 0 ||
+          balance.opening_credit !== 0 ||
+          balance.period_debit !== 0 ||
+          balance.period_credit !== 0 ||
+          closing_debit !== 0 ||
+          closing_credit !== 0
         ) {
-          balanceRows.push({
+          rows.push({
             account_id: account.id,
             account_code: account.code,
             account_name: account.name_ar,
             level: account.level || 1,
-            opening_debit: data.openingDebit,
-            opening_credit: data.openingCredit,
-            opening_balance: openingBalance,
-            period_debit: data.periodDebit,
-            period_credit: data.periodCredit,
-            closing_debit: closingDebit,
-            closing_credit: closingCredit,
-            closing_balance: closingBalance,
+            opening_debit: balance.opening_debit,
+            opening_credit: balance.opening_credit,
+            period_debit: balance.period_debit,
+            period_credit: balance.period_credit,
+            closing_debit,
+            closing_credit,
           });
         }
       });
 
-      console.log("Trial balance rows:", balanceRows.length);
-      setTrialBalanceData(balanceRows);
+      console.log("Trial balance rows:", rows.length);
+      setTrialBalanceData(rows);
+      
+      if (rows.length === 0) {
+        toast.info("لا توجد حركات في الفترة المحددة");
+      }
     } catch (error: any) {
       console.error("Trial balance error:", error);
       toast.error("خطأ في حساب ميزان المراجعة: " + error.message);
@@ -242,14 +246,19 @@ export default function TrialBalanceNew() {
 
   const fetchLedgerForAccount = async (accountId: string) => {
     try {
-      let linesQuery = supabase
+      setLoading(true);
+
+      // Build query
+      let query = supabase
         .from("journal_entry_lines")
         .select(`
           id,
           debit,
           credit,
           description,
+          branch_id,
           journal_entries!inner(
+            id,
             entry_number,
             date,
             description
@@ -258,13 +267,15 @@ export default function TrialBalanceNew() {
         `)
         .eq("account_id", accountId)
         .gte("journal_entries.date", startDate)
-        .lte("journal_entries.date", endDate);
+        .lte("journal_entries.date", endDate)
+        .order("journal_entries(date)");
 
+      // Apply branch filter
       if (selectedBranch !== "all") {
-        linesQuery = linesQuery.eq("branch_id", selectedBranch);
+        query = query.eq("branch_id", selectedBranch);
       }
 
-      const { data: linesData, error } = await linesQuery;
+      const { data: lines, error } = await query;
 
       if (error) throw error;
 
@@ -283,27 +294,28 @@ export default function TrialBalanceNew() {
         openingQuery = openingQuery.eq("branch_id", selectedBranch);
       }
 
-      const { data: openingData } = await openingQuery;
+      const { data: openingLines } = await openingQuery;
 
-      let runningBalance = openingData?.reduce(
-        (sum, line) => sum + (line.debit || 0) - (line.credit || 0),
+      let runningBalance = openingLines?.reduce(
+        (sum, line) => sum + (Number(line.debit) || 0) - (Number(line.credit) || 0),
         0
       ) || 0;
 
-      // Sort by date
-      const sortedLines = (linesData || []).sort((a: any, b: any) => {
+      // Sort lines by date
+      const sortedLines = (lines || []).sort((a: any, b: any) => {
         return new Date(a.journal_entries.date).getTime() - new Date(b.journal_entries.date).getTime();
       });
 
+      // Build ledger entries
       const entries: LedgerEntry[] = sortedLines.map((line: any) => {
-        const debit = line.debit || 0;
-        const credit = line.credit || 0;
+        const debit = Number(line.debit) || 0;
+        const credit = Number(line.credit) || 0;
         runningBalance += debit - credit;
 
         return {
           entry_date: line.journal_entries.date,
-          description: line.description || line.journal_entries.description || "",
-          reference: line.journal_entries.entry_number,
+          entry_number: line.journal_entries.entry_number || "-",
+          description: line.description || line.journal_entries.description || "-",
           branch_name: line.branches?.name_ar || "-",
           debit,
           credit,
@@ -315,6 +327,8 @@ export default function TrialBalanceNew() {
       setShowLedgerDialog(true);
     } catch (error: any) {
       toast.error("خطأ في جلب دفتر الأستاذ: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -331,6 +345,7 @@ export default function TrialBalanceNew() {
     window.print();
   };
 
+  // Calculate totals
   const totals = trialBalanceData.reduce(
     (acc, row) => ({
       opening_debit: acc.opening_debit + row.opening_debit,
@@ -365,7 +380,7 @@ export default function TrialBalanceNew() {
         </div>
         <Button
           onClick={handlePrint}
-          disabled={!startDate || !endDate || trialBalanceData.length === 0}
+          disabled={trialBalanceData.length === 0}
         >
           <Printer className="ml-2" />
           طباعة
@@ -374,7 +389,7 @@ export default function TrialBalanceNew() {
 
       {/* Filters */}
       <Card className="p-6 mb-6 print:hidden">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <Label>الفرع</Label>
             <Select value={selectedBranch} onValueChange={setSelectedBranch}>
@@ -409,11 +424,21 @@ export default function TrialBalanceNew() {
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
+
+          <div className="flex items-end">
+            <Button 
+              onClick={calculateTrialBalance}
+              disabled={!startDate || !endDate || loading}
+              className="w-full"
+            >
+              {loading ? "جاري الحساب..." : "احسب ميزان المراجعة"}
+            </Button>
+          </div>
         </div>
       </Card>
 
       {/* Trial Balance Report */}
-      {(startDate && endDate) && (
+      {trialBalanceData.length > 0 && (
         <Card className="p-6">
           {/* Print Header */}
           <div className="hidden print:block text-center mb-6">
@@ -421,6 +446,11 @@ export default function TrialBalanceNew() {
             <p className="text-sm text-muted-foreground">
               من {startDate} إلى {endDate}
             </p>
+            {selectedBranch !== "all" && (
+              <p className="text-sm text-muted-foreground">
+                الفرع: {branches.find(b => b.id === selectedBranch)?.name_ar}
+              </p>
+            )}
           </div>
 
           {/* Trial Balance Table */}
@@ -457,84 +487,69 @@ export default function TrialBalanceNew() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      جاري التحميل...
+                {trialBalanceData.map((row) => (
+                  <TableRow key={row.account_id}>
+                    <TableCell className="font-medium">{row.account_code}</TableCell>
+                    <TableCell
+                      style={{ paddingRight: `${row.level * 20}px` }}
+                      className="font-medium"
+                    >
+                      {row.account_name}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.opening_debit > 0 ? row.opening_debit.toFixed(2) : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.opening_credit > 0 ? row.opening_credit.toFixed(2) : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.period_debit > 0 ? row.period_debit.toFixed(2) : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.period_credit > 0 ? row.period_credit.toFixed(2) : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.closing_debit > 0 ? row.closing_debit.toFixed(2) : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.closing_credit > 0 ? row.closing_credit.toFixed(2) : "-"}
+                    </TableCell>
+                    <TableCell className="text-center print:hidden">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAccountClick(row.account_id)}
+                        title="عرض دفتر الأستاذ"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ) : trialBalanceData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      لا توجد بيانات لهذه الفترة
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <>
-                    {trialBalanceData.map((row) => (
-                      <TableRow key={row.account_id}>
-                        <TableCell>{row.account_code}</TableCell>
-                        <TableCell
-                          className="cursor-pointer hover:text-primary hover:underline print:cursor-default print:hover:no-underline"
-                          style={{ paddingRight: `${row.level * 20}px` }}
-                        >
-                          {row.account_name}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.opening_debit > 0 ? row.opening_debit.toFixed(2) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.opening_credit > 0 ? row.opening_credit.toFixed(2) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.period_debit > 0 ? row.period_debit.toFixed(2) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.period_credit > 0 ? row.period_credit.toFixed(2) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.closing_debit > 0 ? row.closing_debit.toFixed(2) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.closing_credit > 0 ? row.closing_credit.toFixed(2) : "-"}
-                        </TableCell>
-                        <TableCell className="text-center print:hidden">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleAccountClick(row.account_id)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                ))}
 
-                    {/* Totals Row */}
-                    <TableRow className="font-bold bg-muted">
-                      <TableCell colSpan={2}>الإجمالي</TableCell>
-                      <TableCell className="text-right">
-                        {totals.opening_debit.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {totals.opening_credit.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {totals.period_debit.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {totals.period_credit.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {totals.closing_debit.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {totals.closing_credit.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="print:hidden"></TableCell>
-                    </TableRow>
-                  </>
-                )}
+                {/* Totals Row */}
+                <TableRow className="font-bold bg-muted">
+                  <TableCell colSpan={2} className="text-lg">الإجمالي</TableCell>
+                  <TableCell className="text-right">
+                    {totals.opening_debit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {totals.opening_credit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {totals.period_debit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {totals.period_credit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {totals.closing_debit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {totals.closing_credit.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="print:hidden"></TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </div>
@@ -582,8 +597,8 @@ export default function TrialBalanceNew() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">التاريخ</TableHead>
+                  <TableHead className="text-right">رقم القيد</TableHead>
                   <TableHead className="text-right">البيان</TableHead>
-                  <TableHead className="text-right">المرجع</TableHead>
                   <TableHead className="text-right">الفرع</TableHead>
                   <TableHead className="text-right">مدين</TableHead>
                   <TableHead className="text-right">دائن</TableHead>
@@ -594,23 +609,25 @@ export default function TrialBalanceNew() {
                 {ledgerPreview.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
-                      لا توجد قيود لهذا الحساب
+                      لا توجد قيود لهذا الحساب في الفترة المحددة
                     </TableCell>
                   </TableRow>
                 ) : (
                   ledgerPreview.map((entry, index) => (
                     <TableRow key={index}>
                       <TableCell>{entry.entry_date}</TableCell>
+                      <TableCell>{entry.entry_number}</TableCell>
                       <TableCell>{entry.description}</TableCell>
-                      <TableCell>{entry.reference}</TableCell>
                       <TableCell>{entry.branch_name}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">
                         {entry.debit > 0 ? entry.debit.toFixed(2) : "-"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">
                         {entry.credit > 0 ? entry.credit.toFixed(2) : "-"}
                       </TableCell>
-                      <TableCell>{entry.balance.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        {entry.balance.toFixed(2)}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -658,16 +675,6 @@ export default function TrialBalanceNew() {
           }
           .print\\:block {
             display: block !important;
-          }
-          .print\\:cursor-default {
-            cursor: default !important;
-          }
-          .print\\:hover\\:no-underline:hover {
-            text-decoration: none !important;
-          }
-          [role="dialog"] {
-            position: fixed !important;
-            inset: 0 !important;
           }
         }
       `}</style>
