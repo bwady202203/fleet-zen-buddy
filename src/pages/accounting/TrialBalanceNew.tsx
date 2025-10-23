@@ -129,8 +129,8 @@ export default function TrialBalanceNew() {
 
     setLoading(true);
     try {
-      // Fetch ALL journal entry lines with journal entries
-      let allLinesQuery = supabase
+      // Fetch ALL journal entry lines with journal entries - no branch filter by default
+      const { data: allLines, error: allLinesError } = await supabase
         .from("journal_entry_lines")
         .select(`
           account_id,
@@ -142,13 +142,9 @@ export default function TrialBalanceNew() {
           )
         `);
 
-      if (selectedBranch !== "all") {
-        allLinesQuery = allLinesQuery.eq("branch_id", selectedBranch);
-      }
-
-      const { data: allLines, error: allLinesError } = await allLinesQuery;
-
       if (allLinesError) throw allLinesError;
+
+      console.log("Fetched journal entry lines:", allLines?.length);
 
       // Group data by account
       const accountMap = new Map<string, {
@@ -168,16 +164,21 @@ export default function TrialBalanceNew() {
         });
       });
 
-      // Process all lines
+      // Process all lines - filter by branch if selected
       allLines?.forEach((line: any) => {
+        // Apply branch filter if not "all"
+        if (selectedBranch !== "all" && line.branch_id !== selectedBranch) {
+          return;
+        }
+
         const entryDate = line.journal_entries?.date;
         if (!entryDate) return;
 
         const accountData = accountMap.get(line.account_id);
         if (!accountData) return;
 
-        const debit = line.debit || 0;
-        const credit = line.credit || 0;
+        const debit = Number(line.debit) || 0;
+        const credit = Number(line.credit) || 0;
 
         // Check if this is opening balance (before start date)
         if (entryDate < startDate) {
@@ -229,6 +230,7 @@ export default function TrialBalanceNew() {
         }
       });
 
+      console.log("Trial balance rows:", balanceRows.length);
       setTrialBalanceData(balanceRows);
     } catch (error: any) {
       console.error("Trial balance error:", error);
@@ -322,6 +324,10 @@ export default function TrialBalanceNew() {
   };
 
   const handlePrint = () => {
+    window.print();
+  };
+
+  const handlePrintLedger = () => {
     window.print();
   };
 
@@ -537,15 +543,39 @@ export default function TrialBalanceNew() {
 
       {/* Ledger Preview Dialog */}
       <Dialog open={showLedgerDialog} onOpenChange={setShowLedgerDialog}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto" dir="rtl">
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto ledger-dialog" dir="rtl">
           <DialogHeader>
-            <DialogTitle>
-              دفتر الأستاذ -{" "}
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                دفتر الأستاذ -{" "}
+                {selectedAccount
+                  ? `${selectedAccount.code} - ${selectedAccount.name_ar}`
+                  : ""}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrintLedger}
+                className="print:hidden"
+              >
+                <Printer className="ml-2 h-4 w-4" />
+                طباعة
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Print Header for Ledger */}
+          <div className="hidden print:block text-center mb-6">
+            <h1 className="text-2xl font-bold mb-2">دفتر الأستاذ</h1>
+            <p className="text-lg font-semibold">
               {selectedAccount
                 ? `${selectedAccount.code} - ${selectedAccount.name_ar}`
                 : ""}
-            </DialogTitle>
-          </DialogHeader>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              من {startDate} إلى {endDate}
+            </p>
+          </div>
 
           <div className="overflow-x-auto">
             <Table>
@@ -599,11 +629,29 @@ export default function TrialBalanceNew() {
           .container, .container * {
             visibility: visible;
           }
+          .ledger-dialog, .ledger-dialog * {
+            visibility: visible;
+          }
           .container {
             position: absolute;
             left: 0;
             top: 0;
             width: 100%;
+          }
+          .ledger-dialog {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 20px !important;
+            overflow: visible !important;
+            background: white !important;
+            border: none !important;
+            box-shadow: none !important;
           }
           .print\\:hidden {
             display: none !important;
@@ -616,6 +664,10 @@ export default function TrialBalanceNew() {
           }
           .print\\:hover\\:no-underline:hover {
             text-decoration: none !important;
+          }
+          [role="dialog"] {
+            position: fixed !important;
+            inset: 0 !important;
           }
         }
       `}</style>
