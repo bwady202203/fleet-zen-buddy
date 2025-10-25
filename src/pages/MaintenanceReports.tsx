@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { Printer } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -218,6 +219,153 @@ const MaintenanceReports = () => {
     }
   };
 
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير طلبات الصيانة</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            direction: rtl;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+          }
+          .summary {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+          }
+          .summary-item {
+            text-align: center;
+          }
+          .summary-item .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+          }
+          .summary-item .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: right;
+          }
+          th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+          }
+          .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+          }
+          .status-completed { background-color: #d4edda; color: #155724; }
+          .status-in_progress { background-color: #d1ecf1; color: #0c5460; }
+          .status-pending { background-color: #fff3cd; color: #856404; }
+          .status-cancelled { background-color: #f8d7da; color: #721c24; }
+          .total-row {
+            font-weight: bold;
+            background-color: #e9ecef;
+          }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>تقرير طلبات الصيانة</h1>
+          <p>تاريخ الطباعة: ${format(new Date(), "dd/MM/yyyy", { locale: ar })}</p>
+        </div>
+
+        <div class="summary">
+          <div class="summary-item">
+            <div class="label">إجمالي الطلبات</div>
+            <div class="value">${filteredRequests.length}</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">مكتملة</div>
+            <div class="value" style="color: #28a745;">${completedCount}</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">قيد الانتظار</div>
+            <div class="value" style="color: #ffc107;">${pendingCount}</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">التكلفة الإجمالية</div>
+            <div class="value" style="color: #007bff;">${totalCost.toLocaleString()} ر.س</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>رقم الطلب</th>
+              <th>المركبة</th>
+              <th>التاريخ</th>
+              <th>الحالة</th>
+              <th>التكلفة</th>
+              <th>الوصف</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredRequests.map(request => `
+              <tr>
+                <td>${request.id.slice(0, 8)}</td>
+                <td>${request.vehicle_name}</td>
+                <td>${format(new Date(request.created_at), "dd/MM/yyyy", { locale: ar })}</td>
+                <td>
+                  <span class="status-badge status-${request.status}">
+                    ${getStatusText(request.status)}
+                  </span>
+                </td>
+                <td>${(request.cost || 0).toLocaleString()} ر.س</td>
+                <td>${request.description}</td>
+              </tr>
+            `).join('')}
+            <tr class="total-row">
+              <td colspan="4" style="text-align: left;">الإجمالي:</td>
+              <td>${totalCost.toLocaleString()} ر.س</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b">
@@ -333,9 +481,9 @@ const MaintenanceReports = () => {
                 </Select>
               </div>
               <div className="flex items-end">
-                <Button variant="outline" className="w-full">
-                  <Download className="h-4 w-4 ml-2" />
-                  تصدير PDF
+                <Button variant="outline" className="w-full" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 ml-2" />
+                  طباعة التقرير
                 </Button>
               </div>
             </div>
