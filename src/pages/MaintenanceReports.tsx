@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import {
   Select,
   SelectContent,
@@ -380,7 +382,7 @@ const MaintenanceReports = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {new Date(request.created_at).toLocaleDateString('ar-SA')}
+                          {format(new Date(request.created_at), "dd/MM/yyyy", { locale: ar })}
                         </div>
                       </TableCell>
                       <TableCell>
