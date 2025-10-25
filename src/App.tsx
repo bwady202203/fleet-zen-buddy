@@ -74,6 +74,7 @@ import StockMovement from "./pages/StockMovement";
 import VehicleMileageReport from "./pages/VehicleMileageReport";
 import PurchasePriceHistory from "./pages/PurchasePriceHistory";
 import BulkVehicles from "./pages/BulkVehicles";
+import VehicleMaintenanceCosts from "./pages/VehicleMaintenanceCosts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -151,6 +152,7 @@ const App = () => {
                                   <Route path="/loads/suppliers" element={<SuppliersManagement />} />
                                   <Route path="/loads/delivery-receipts" element={<DeliveryReceipts />} />
                                   <Route path="/reports" element={<MaintenanceReports />} />
+                                  <Route path="/maintenance-costs" element={<VehicleMaintenanceCosts />} />
                                   <Route path="/spare-parts" element={<SpareParts />} />
                                   <Route path="/purchases" element={<Purchases />} />
                                   <Route path="/purchases/pos" element={<PurchasePOS />} />

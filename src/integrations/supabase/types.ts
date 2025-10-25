@@ -1566,6 +1566,59 @@ export type Database = {
           },
         ]
       }
+      maintenance_cost_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_name: string
+          item_type: string
+          maintenance_request_id: string
+          notes: string | null
+          organization_id: string | null
+          quantity: number
+          spare_part_id: string | null
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_name: string
+          item_type?: string
+          maintenance_request_id: string
+          notes?: string | null
+          organization_id?: string | null
+          quantity?: number
+          spare_part_id?: string | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_name?: string
+          item_type?: string
+          maintenance_request_id?: string
+          notes?: string | null
+          organization_id?: string | null
+          quantity?: number
+          spare_part_id?: string | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_cost_items_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           completed_date: string | null

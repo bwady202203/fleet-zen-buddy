@@ -58,7 +58,7 @@ export const MaintenanceRequestDialog = ({
   
   const { spareParts, deductQuantity, addSparePart } = useSpareParts();
   const [date, setDate] = useState<Date | undefined>(
-    maintenanceRequest ? new Date(maintenanceRequest.created_at) : undefined
+    maintenanceRequest ? new Date(maintenanceRequest.created_at) : new Date()
   );
   const [selectedParts, setSelectedParts] = useState<Record<string, number>>({});
   const [description, setDescription] = useState(maintenanceRequest?.description || "");
@@ -79,7 +79,7 @@ export const MaintenanceRequestDialog = ({
       setDescription(maintenanceRequest.description);
       setStatus(maintenanceRequest.status);
     } else if (!open) {
-      setDate(undefined);
+      setDate(new Date());
       setSelectedParts({});
       setDescription("");
       setStatus("pending");
@@ -148,13 +148,12 @@ export const MaintenanceRequestDialog = ({
 
     try {
       if (isEditMode && maintenanceRequest) {
-        // Update existing maintenance request
+        // Update existing maintenance request (keep cost unchanged)
         const { error: updateError } = await supabase
           .from('maintenance_requests')
           .update({
             description,
             status,
-            cost: calculateTotal(),
             updated_at: new Date().toISOString(),
           })
           .eq('id', maintenanceRequest.id);
@@ -205,6 +204,28 @@ export const MaintenanceRequestDialog = ({
 
         if (maintenanceError) throw maintenanceError;
 
+        // حفظ تفاصيل تكاليف الصيانة
+        const costItems = Object.entries(selectedParts).map(([partId, quantity]) => {
+          const part = spareParts.find(p => p.id === partId);
+          return {
+            maintenance_request_id: maintenanceData.id,
+            item_name: part?.name || 'قطعة غيار',
+            item_type: 'spare_part',
+            quantity,
+            unit_price: part?.price || 0,
+            total_price: (part?.price || 0) * quantity,
+            spare_part_id: partId,
+          };
+        });
+
+        if (costItems.length > 0) {
+          const { error: costItemsError } = await supabase
+            .from('maintenance_cost_items')
+            .insert(costItems);
+
+          if (costItemsError) throw costItemsError;
+        }
+
         // خصم الكميات من المخزون
         for (const [partId, quantity] of Object.entries(selectedParts)) {
           const part = spareParts.find(p => p.id === partId);
@@ -223,7 +244,7 @@ export const MaintenanceRequestDialog = ({
       }
 
       // Reset form
-      setDate(undefined);
+      setDate(new Date());
       setSelectedParts({});
       setDescription("");
       setStatus("pending");
@@ -333,7 +354,7 @@ export const MaintenanceRequestDialog = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
-                  <Command>
+                  <Command shouldFilter={true}>
                     <CommandInput placeholder="ابحث عن قطعة..." />
                     <CommandList>
                       <CommandEmpty>لا توجد قطع غيار.</CommandEmpty>
@@ -342,6 +363,7 @@ export const MaintenanceRequestDialog = ({
                           <CommandItem
                             key={part.id}
                             value={part.name}
+                            keywords={[part.name]}
                             onSelect={() => {
                               handleQuantityChange(part.id, 1);
                               setSearchOpen(false);
