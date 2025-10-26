@@ -311,7 +311,7 @@ export default function Level4Balances() {
                       {account.type === "expense" && "مصروفات"}
                     </TableCell>
                     <TableCell className="font-bold text-green-600">
-                      {account.balance.toFixed(2)}
+                      {(account.balance || 0).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-center print:hidden">
                       <Button
@@ -330,7 +330,7 @@ export default function Level4Balances() {
                     إجمالي الأرصدة المدينة
                   </TableCell>
                   <TableCell className="text-green-600">
-                    {totalDebit.toFixed(2)}
+                    {(totalDebit || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="print:hidden"></TableCell>
                 </TableRow>
@@ -366,7 +366,7 @@ export default function Level4Balances() {
                       {account.type === "expense" && "مصروفات"}
                     </TableCell>
                     <TableCell className="font-bold text-red-600">
-                      {Math.abs(account.balance).toFixed(2)}
+                      {Math.abs(account.balance || 0).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-center print:hidden">
                       <Button
@@ -385,7 +385,7 @@ export default function Level4Balances() {
                     إجمالي الأرصدة الدائنة
                   </TableCell>
                   <TableCell className="text-red-600">
-                    {totalCredit.toFixed(2)}
+                    {(totalCredit || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="print:hidden"></TableCell>
                 </TableRow>
@@ -475,16 +475,16 @@ export default function Level4Balances() {
                           locale: ar,
                         })}
                       </TableCell>
-                      <TableCell>{entry.description}</TableCell>
-                      <TableCell>{entry.reference}</TableCell>
+                      <TableCell>{entry.description || "-"}</TableCell>
+                      <TableCell>{entry.reference || "-"}</TableCell>
                       <TableCell className="text-green-600">
-                        {entry.debit > 0 ? entry.debit.toFixed(2) : "-"}
+                        {(entry.debit || 0) > 0 ? (entry.debit || 0).toFixed(2) : "-"}
                       </TableCell>
                       <TableCell className="text-red-600">
-                        {entry.credit > 0 ? entry.credit.toFixed(2) : "-"}
+                        {(entry.credit || 0) > 0 ? (entry.credit || 0).toFixed(2) : "-"}
                       </TableCell>
                       <TableCell className="font-bold">
-                        {entry.balance.toFixed(2)}
+                        {(entry.balance || 0).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))
@@ -497,7 +497,7 @@ export default function Level4Balances() {
                 <div>عدد القيود: {ledgerEntries.length}</div>
                 <div>
                   الرصيد النهائي:{" "}
-                  {ledgerEntries[ledgerEntries.length - 1]?.balance.toFixed(2)}
+                  {(ledgerEntries[ledgerEntries.length - 1]?.balance || 0).toFixed(2)}
                 </div>
               </div>
             )}
