@@ -362,6 +362,13 @@ const Accounting = () => {
       icon: FolderKanban,
       link: "/accounting/projects",
       color: "from-fuchsia-500 to-fuchsia-600"
+    },
+    {
+      title: "أرصدة المستوى الرابع",
+      description: "عرض أرصدة حسابات المستوى الرابع مع كشف الحساب",
+      icon: BarChart3,
+      link: "/accounting/level4-balances",
+      color: "from-amber-500 to-amber-600"
     }
   ];
 

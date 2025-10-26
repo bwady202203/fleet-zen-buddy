@@ -44,6 +44,7 @@ import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import PurchaseOrder from "./pages/accounting/PurchaseOrder";
+import Level4Balances from "./pages/accounting/Level4Balances";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import LoadsRegister from "./pages/loads/LoadsRegister";
@@ -128,6 +129,7 @@ const App = () => {
                                   <Route path="/accounting/cost-centers" element={<CostCenters />} />
                                   <Route path="/accounting/branches" element={<Branches />} />
                                   <Route path="/accounting/projects" element={<Projects />} />
+                                  <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />
                                   <Route path="/hr/payroll" element={<Payroll />} />
