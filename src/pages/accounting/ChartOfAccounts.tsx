@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2, Trash2, Download, FileSpreadsheet } from "lucide-react";
+import { ArrowRight, Plus, Edit, Search, ChevronDown, ChevronLeft, List, Table2, Trash2, Download, FileSpreadsheet, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -120,6 +120,102 @@ const ChartOfAccounts = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshLedger = async () => {
+    try {
+      toast({
+        title: "جاري تحديث الترحيل...",
+        description: "يتم الآن تحديث دفتر الأستاذ وميزان المراجعة",
+      });
+
+      // إعادة بناء دفتر الأستاذ من القيود المحاسبية
+      const { error: truncateError } = await supabase
+        .from('ledger_entries')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // حذف جميع السجلات
+
+      if (truncateError) throw truncateError;
+
+      // الحصول على جميع القيود المحاسبية
+      const { data: journalLines, error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .select(`
+          *,
+          journal_entries!inner(*)
+        `)
+        .order('journal_entries(date)', { ascending: true });
+
+      if (linesError) throw linesError;
+
+      // إعادة ترحيل جميع القيود
+      for (const line of journalLines || []) {
+        const je = (line as any).journal_entries;
+        
+        // حساب الرصيد التراكمي
+        const { data: previousBalance } = await supabase
+          .from('ledger_entries')
+          .select('balance')
+          .eq('account_id', line.account_id)
+          .order('entry_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const prevBalance = previousBalance?.balance || 0;
+        const newBalance = prevBalance + (line.debit || 0) - (line.credit || 0);
+
+        await supabase
+          .from('ledger_entries')
+          .insert({
+            account_id: line.account_id,
+            entry_date: je.date,
+            description: line.description,
+            reference: je.entry_number,
+            debit: line.debit || 0,
+            credit: line.credit || 0,
+            balance: newBalance,
+            branch_id: line.branch_id,
+            journal_entry_id: line.journal_entry_id,
+            organization_id: je.organization_id,
+            created_by: je.created_by
+          });
+      }
+
+      // تحديث أرصدة الحسابات
+      const { data: ledgerBalances } = await supabase
+        .from('ledger_entries')
+        .select('account_id, debit, credit');
+
+      const accountBalances = new Map<string, number>();
+      (ledgerBalances || []).forEach((entry: any) => {
+        const balance = accountBalances.get(entry.account_id) || 0;
+        accountBalances.set(entry.account_id, balance + (entry.debit || 0) - (entry.credit || 0));
+      });
+
+      // تحديث أرصدة جميع الحسابات
+      for (const [accountId, balance] of accountBalances) {
+        await supabase
+          .from('chart_of_accounts')
+          .update({ balance })
+          .eq('id', accountId);
+      }
+
+      // إعادة تحميل الحسابات
+      await fetchAccounts();
+
+      toast({
+        title: "تم التحديث بنجاح",
+        description: "تم تحديث دفتر الأستاذ وأرصدة الحسابات بنجاح",
+      });
+    } catch (error) {
+      console.error('Error refreshing ledger:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تحديث الترحيل",
+        variant: "destructive",
+      });
     }
   };
 
@@ -854,6 +950,10 @@ const ChartOfAccounts = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button onClick={handleRefreshLedger} variant="outline" className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                تحديث الترحيل
+              </Button>
               <Button onClick={exportToExcel} variant="outline">
                 <Download className="h-4 w-4 ml-2" />
                 تحميل Excel

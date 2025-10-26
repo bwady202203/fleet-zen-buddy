@@ -141,21 +141,21 @@ export default function Level4Balances() {
   const calculateAccountBalance = async (accountId: string): Promise<number> => {
     let query = supabase
       .from("ledger_entries")
-      .select("debit, credit")
-      .eq("account_id", accountId);
+      .select("balance")
+      .eq("account_id", accountId)
+      .order("entry_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
 
     if (selectedBranch !== "all") {
       query = query.eq("branch_id", selectedBranch);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.maybeSingle();
 
-    if (error) return 0;
+    if (error || !data) return 0;
 
-    const totalDebit = data?.reduce((sum, entry) => sum + (entry.debit || 0), 0) || 0;
-    const totalCredit = data?.reduce((sum, entry) => sum + (entry.credit || 0), 0) || 0;
-
-    return totalDebit - totalCredit;
+    return data.balance || 0;
   };
 
   const fetchLedgerForAccount = async (account: Account) => {
@@ -165,7 +165,10 @@ export default function Level4Balances() {
     try {
       let query = supabase
         .from("ledger_entries")
-        .select("*")
+        .select(`
+          *,
+          branches(name_ar)
+        `)
         .eq("account_id", account.id)
         .order("entry_date", { ascending: true })
         .order("created_at", { ascending: true });
