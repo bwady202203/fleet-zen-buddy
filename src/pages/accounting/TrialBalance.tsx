@@ -63,7 +63,6 @@ const TrialBalance = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [journalLines, setJournalLines] = useState<JournalLine[]>([]);
-  const [storedLedgerEntries, setStoredLedgerEntries] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [showOnlyNoBranch, setShowOnlyNoBranch] = useState(false);
@@ -153,25 +152,22 @@ const TrialBalance = () => {
 
   const fetchData = async () => {
     try {
-      const [accountsRes, entriesRes, linesRes, ledgerRes] = await Promise.all([
+      const [accountsRes, entriesRes, linesRes] = await Promise.all([
         supabase.from('chart_of_accounts').select('*').eq('is_active', true),
         supabase.from('journal_entries').select('*').order('date', { ascending: true }),
         supabase.from('journal_entry_lines').select(`
           *,
           branches (id, code, name_ar)
-        `),
-        supabase.from('ledger_entries').select('*').order('entry_date', { ascending: true })
+        `)
       ]);
 
       if (accountsRes.error) throw accountsRes.error;
       if (entriesRes.error) throw entriesRes.error;
       if (linesRes.error) throw linesRes.error;
-      if (ledgerRes.error) throw ledgerRes.error;
 
       setAccounts(accountsRes.data || []);
       setJournalEntries(entriesRes.data || []);
       setJournalLines(linesRes.data || []);
-      setStoredLedgerEntries(ledgerRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('حدث خطأ في تحميل البيانات');
@@ -482,49 +478,70 @@ const TrialBalance = () => {
       // This prevents duplication - balances should only be on leaf accounts
       const accountsToCalculate = hasChildren ? childAccounts : [account];
 
-      // Calculate opening balance from ledger_entries
-      const openingLedgerEntries = storedLedgerEntries.filter(entry => {
-        const matchesAccount = accountsToCalculate.some(acc => acc.id === entry.account_id);
+      // Calculate opening balance - includes entries before startDate AND opening balance entries
+      const openingEntries = journalEntries.filter(entry => {
+        // Include entries with OPENING_BALANCE reference regardless of date
+        if (entry.reference === 'OPENING_BALANCE') return true;
+        // Include entries before startDate
+        if (startDate && entry.date < startDate) return true;
+        return false;
+      });
+
+      const openingLines = journalLines.filter(line => {
+        const lineEntry = openingEntries.find(e => e.id === line.journal_entry_id);
+        const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+        
         if (!matchesAccount) return false;
         
-        // Include entries before startDate
-        if (startDate && entry.entry_date < startDate) return true;
-        return false;
-      }).filter(entry => {
         // Apply branch filter
         if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          return entry.branch_id === selectedBranch || !entry.branch_id || entry.branch_id === null;
+          // When a specific branch is selected:
+          // Show lines for the selected branch OR lines with no branch (old entries)
+          return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
         }
+        
+        // For "all": show everything
         return true;
       });
 
-      const openingDebitTotal = openingLedgerEntries.reduce((sum, entry) => sum + (Number(entry.debit) || 0), 0);
-      const openingCreditTotal = openingLedgerEntries.reduce((sum, entry) => sum + (Number(entry.credit) || 0), 0);
+      const openingDebitTotal = openingLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+      const openingCreditTotal = openingLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
       
       // Calculate net opening balance
       const openingNet = openingDebitTotal - openingCreditTotal;
       const openingDebit = openingNet > 0 ? openingNet : 0;
       const openingCredit = openingNet < 0 ? Math.abs(openingNet) : 0;
 
-      // Calculate period movement from ledger_entries
-      const periodLedgerEntries = storedLedgerEntries.filter(entry => {
-        const matchesAccount = accountsToCalculate.some(acc => acc.id === entry.account_id);
-        if (!matchesAccount) return false;
-        
+      // Calculate period movement - excludes opening balance entries
+      const periodEntries = journalEntries.filter(entry => {
+        // Exclude opening balance entries
+        if (entry.reference === 'OPENING_BALANCE') return false;
         // Only include entries within the date range
-        if (startDate && entry.entry_date < startDate) return false;
-        if (endDate && entry.entry_date > endDate) return false;
-        return true;
-      }).filter(entry => {
-        // Apply branch filter
-        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
-          return entry.branch_id === selectedBranch || !entry.branch_id || entry.branch_id === null;
-        }
+        if (startDate && entry.date < startDate) return false;
+        if (endDate && entry.date > endDate) return false;
         return true;
       });
 
-      const periodDebitTotal = periodLedgerEntries.reduce((sum, entry) => sum + (Number(entry.debit) || 0), 0);
-      const periodCreditTotal = periodLedgerEntries.reduce((sum, entry) => sum + (Number(entry.credit) || 0), 0);
+      const periodLines = journalLines.filter(line => {
+        const lineEntry = periodEntries.find(e => e.id === line.journal_entry_id);
+        const matchesAccount = lineEntry && accountsToCalculate.some(acc => acc.id === line.account_id);
+        
+        if (!matchesAccount) return false;
+        
+        // Apply branch filter
+        if (selectedBranch && selectedBranch !== 'all' && selectedBranch !== '') {
+          // When a specific branch is selected:
+          // Show lines for the selected branch OR lines with no branch (old entries)
+          return line.branch_id === selectedBranch || !line.branch_id || line.branch_id === null;
+        }
+        
+        // For "all": show everything
+        return true;
+      });
+
+
+      const periodDebitTotal = periodLines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
+      const periodCreditTotal = periodLines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
       
       // Period movement shows TOTAL debit and TOTAL credit (not net)
       const periodDebit = periodDebitTotal;

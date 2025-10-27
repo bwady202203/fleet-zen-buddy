@@ -126,15 +126,20 @@ export default function TrialBalanceNew() {
 
     setLoading(true);
     try {
-      // Build query for ledger entries (using ledger_entries as single source of truth)
+      // Build query for journal entry lines
       let query = supabase
-        .from("ledger_entries")
+        .from("journal_entry_lines")
         .select(`
           account_id,
           debit,
           credit,
           branch_id,
-          entry_date
+          journal_entries!inner(
+            id,
+            date,
+            entry_number,
+            description
+          )
         `);
 
       // Apply branch filter if selected
@@ -142,11 +147,11 @@ export default function TrialBalanceNew() {
         query = query.eq("branch_id", selectedBranch);
       }
 
-      const { data: ledgerEntries, error } = await query;
+      const { data: journalLines, error } = await query;
 
       if (error) throw error;
 
-      console.log("Fetched ledger entries:", ledgerEntries?.length || 0);
+      console.log("Fetched journal lines:", journalLines?.length || 0);
 
       // Initialize account map
       const accountBalances = new Map<string, {
@@ -166,16 +171,16 @@ export default function TrialBalanceNew() {
         });
       });
 
-      // Process ledger entries
-      ledgerEntries?.forEach((entry: any) => {
-        const entryDate = entry.entry_date;
+      // Process journal lines
+      journalLines?.forEach((line: any) => {
+        const entryDate = line.journal_entries?.date;
         if (!entryDate) return;
 
-        const balance = accountBalances.get(entry.account_id);
+        const balance = accountBalances.get(line.account_id);
         if (!balance) return;
 
-        const debit = Number(entry.debit) || 0;
-        const credit = Number(entry.credit) || 0;
+        const debit = Number(line.debit) || 0;
+        const credit = Number(line.credit) || 0;
 
         // Classify by date
         if (entryDate < startDate) {
@@ -252,49 +257,82 @@ export default function TrialBalanceNew() {
     try {
       setLoading(true);
 
-      // Build query from ledger_entries
+      // Build query
       let query = supabase
-        .from("ledger_entries")
+        .from("journal_entry_lines")
         .select(`
           id,
           debit,
           credit,
           description,
-          reference,
           branch_id,
-          entry_date,
-          balance,
+          journal_entries!inner(
+            id,
+            entry_number,
+            date,
+            description
+          ),
           branches(name_ar)
         `)
         .eq("account_id", accountId)
-        .gte("entry_date", startDate)
-        .lte("entry_date", endDate)
-        .order("entry_date", { ascending: true })
-        .order("created_at", { ascending: true });
+        .gte("journal_entries.date", startDate)
+        .lte("journal_entries.date", endDate)
+        .order("journal_entries(date)");
 
       // Apply branch filter
       if (selectedBranch !== "all") {
         query = query.eq("branch_id", selectedBranch);
       }
 
-      const { data: entries, error } = await query;
+      const { data: lines, error } = await query;
 
       if (error) throw error;
 
+      // Calculate opening balance
+      let openingQuery = supabase
+        .from("journal_entry_lines")
+        .select(`
+          debit,
+          credit,
+          journal_entries!inner(date)
+        `)
+        .eq("account_id", accountId)
+        .lt("journal_entries.date", startDate);
+
+      if (selectedBranch !== "all") {
+        openingQuery = openingQuery.eq("branch_id", selectedBranch);
+      }
+
+      const { data: openingLines } = await openingQuery;
+
+      let runningBalance = openingLines?.reduce(
+        (sum, line) => sum + (Number(line.debit) || 0) - (Number(line.credit) || 0),
+        0
+      ) || 0;
+
+      // Sort lines by date
+      const sortedLines = (lines || []).sort((a: any, b: any) => {
+        return new Date(a.journal_entries.date).getTime() - new Date(b.journal_entries.date).getTime();
+      });
+
       // Build ledger entries
-      const ledgerEntries: LedgerEntry[] = (entries || []).map((entry: any) => {
+      const entries: LedgerEntry[] = sortedLines.map((line: any) => {
+        const debit = Number(line.debit) || 0;
+        const credit = Number(line.credit) || 0;
+        runningBalance += debit - credit;
+
         return {
-          entry_date: entry.entry_date,
-          entry_number: entry.reference || "-",
-          description: entry.description || "-",
-          branch_name: entry.branches?.name_ar || "-",
-          debit: Number(entry.debit) || 0,
-          credit: Number(entry.credit) || 0,
-          balance: Number(entry.balance) || 0,
+          entry_date: line.journal_entries.date,
+          entry_number: line.journal_entries.entry_number || "-",
+          description: line.description || line.journal_entries.description || "-",
+          branch_name: line.branches?.name_ar || "-",
+          debit,
+          credit,
+          balance: runningBalance,
         };
       });
 
-      setLedgerPreview(ledgerEntries);
+      setLedgerPreview(entries);
       setShowLedgerDialog(true);
     } catch (error: any) {
       toast.error("خطأ في جلب دفتر الأستاذ: " + error.message);
