@@ -20,6 +20,9 @@ const mockEmployees = [
     phone: "0501234567",
     email: "ahmed@company.com",
     nationalId: "1234567890",
+    residenceNumber: "2345678901",
+    bankName: "البنك الأهلي",
+    bankAccountNumber: "SA1234567890123456789012",
     joinDate: "2020-01-15",
     basicSalary: 15000,
     housingAllowance: 3000,
@@ -35,6 +38,9 @@ const mockEmployees = [
     phone: "0509876543",
     email: "fatima@company.com",
     nationalId: "9876543210",
+    residenceNumber: "3456789012",
+    bankName: "بنك الراجحي",
+    bankAccountNumber: "SA9876543210987654321098",
     joinDate: "2021-03-10",
     basicSalary: 12000,
     housingAllowance: 2500,
@@ -50,6 +56,9 @@ const mockEmployees = [
     phone: "0551122334",
     email: "mohammed@company.com",
     nationalId: "5544332211",
+    residenceNumber: "4567890123",
+    bankName: "البنك السعودي الفرنسي",
+    bankAccountNumber: "SA5544332211445566778899",
     joinDate: "2019-06-20",
     basicSalary: 8000,
     housingAllowance: 2000,
@@ -166,12 +175,24 @@ const Employees = () => {
                         <p className="font-semibold">{employee.nationalId}</p>
                       </div>
                       <div>
+                        <p className="text-sm text-muted-foreground">رقم الإقامة</p>
+                        <p className="font-semibold">{employee.residenceNumber || "-"}</p>
+                      </div>
+                      <div>
                         <p className="text-sm text-muted-foreground">الهاتف</p>
                         <p className="font-semibold">{employee.phone}</p>
                       </div>
-                      <div className="col-span-2">
+                      <div>
                         <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
                         <p className="font-semibold">{employee.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">اسم البنك</p>
+                        <p className="font-semibold">{employee.bankName || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">رقم الحساب البنكي</p>
+                        <p className="font-semibold font-mono text-sm">{employee.bankAccountNumber || "-"}</p>
                       </div>
                     </div>
                   </TabsContent>

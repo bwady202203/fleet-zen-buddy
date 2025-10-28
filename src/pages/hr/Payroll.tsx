@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Download, Edit } from "lucide-react";
+import { ArrowRight, Printer, Download, Edit, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +9,8 @@ import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // بيانات الموظفين الأساسية
 const baseEmployees = [
@@ -16,19 +18,28 @@ const baseEmployees = [
     id: "emp1",
     employeeName: "أحمد محمد علي",
     basicSalary: 15000,
-    allowances: 5000
+    allowances: 5000,
+    bankName: "البنك الأهلي",
+    bankAccountNumber: "SA1234567890123456789012",
+    residenceNumber: "2345678901"
   },
   {
     id: "emp2",
     employeeName: "فاطمة أحمد",
     basicSalary: 12000,
-    allowances: 4000
+    allowances: 4000,
+    bankName: "بنك الراجحي",
+    bankAccountNumber: "SA9876543210987654321098",
+    residenceNumber: "3456789012"
   },
   {
     id: "emp3",
     employeeName: "محمد سالم",
     basicSalary: 8000,
-    allowances: 3000
+    allowances: 3000,
+    bankName: "البنك السعودي الفرنسي",
+    bankAccountNumber: "SA5544332211445566778899",
+    residenceNumber: "4567890123"
   }
 ];
 
@@ -41,6 +52,19 @@ const Payroll = () => {
     advances: 0,
     additions: 0,
     deductions: 0
+  });
+  
+  const [visibleColumns, setVisibleColumns] = useState({
+    employeeName: true,
+    bankName: true,
+    bankAccountNumber: true,
+    residenceNumber: true,
+    basicSalary: true,
+    allowances: true,
+    additions: true,
+    deductions: true,
+    advances: true,
+    netSalary: true
   });
 
   // حساب كشف الرواتب من البيانات المسجلة
@@ -62,6 +86,9 @@ const Payroll = () => {
     return {
       id: emp.id,
       employeeName: emp.employeeName,
+      bankName: emp.bankName,
+      bankAccountNumber: emp.bankAccountNumber,
+      residenceNumber: emp.residenceNumber,
       basicSalary: emp.basicSalary,
       allowances: emp.allowances,
       additions,
@@ -189,6 +216,44 @@ const Payroll = () => {
                 </div>
               </div>
               <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Settings2 className="h-4 w-4" />
+                      إظهار/إخفاء الأعمدة
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end" dir="rtl">
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm">اختر الأعمدة المراد عرضها</h4>
+                      <div className="space-y-2">
+                        {Object.entries(visibleColumns).map(([key, value]) => (
+                          <div key={key} className="flex items-center gap-2">
+                            <Checkbox
+                              id={key}
+                              checked={value}
+                              onCheckedChange={(checked) => 
+                                setVisibleColumns(prev => ({ ...prev, [key]: checked as boolean }))
+                              }
+                            />
+                            <Label htmlFor={key} className="text-sm cursor-pointer">
+                              {key === 'employeeName' && 'اسم الموظف'}
+                              {key === 'bankName' && 'اسم البنك'}
+                              {key === 'bankAccountNumber' && 'رقم الحساب البنكي'}
+                              {key === 'residenceNumber' && 'رقم الإقامة'}
+                              {key === 'basicSalary' && 'الراتب الأساسي'}
+                              {key === 'allowances' && 'البدلات'}
+                              {key === 'additions' && 'الإضافي'}
+                              {key === 'deductions' && 'الخصومات'}
+                              {key === 'advances' && 'السلف'}
+                              {key === 'netSalary' && 'صافي الراتب'}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button variant="outline" className="gap-2" onClick={handlePrint}>
                   <Printer className="h-4 w-4" />
                   طباعة
@@ -238,32 +303,44 @@ const Payroll = () => {
                 <Table className="print:print-table">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-right">اسم الموظف</TableHead>
-                      <TableHead className="text-right">الراتب الأساسي</TableHead>
-                      <TableHead className="text-right">البدلات</TableHead>
-                      <TableHead className="text-right">الإضافي</TableHead>
-                      <TableHead className="text-right">الخصومات</TableHead>
-                      <TableHead className="text-right">السلف</TableHead>
-                      <TableHead className="text-right font-bold">صافي الراتب</TableHead>
+                      {visibleColumns.employeeName && <TableHead className="text-right">اسم الموظف</TableHead>}
+                      {visibleColumns.bankName && <TableHead className="text-right">اسم البنك</TableHead>}
+                      {visibleColumns.bankAccountNumber && <TableHead className="text-right">رقم الحساب البنكي</TableHead>}
+                      {visibleColumns.residenceNumber && <TableHead className="text-right">رقم الإقامة</TableHead>}
+                      {visibleColumns.basicSalary && <TableHead className="text-right">الراتب الأساسي</TableHead>}
+                      {visibleColumns.allowances && <TableHead className="text-right">البدلات</TableHead>}
+                      {visibleColumns.additions && <TableHead className="text-right">الإضافي</TableHead>}
+                      {visibleColumns.deductions && <TableHead className="text-right">الخصومات</TableHead>}
+                      {visibleColumns.advances && <TableHead className="text-right">السلف</TableHead>}
+                      {visibleColumns.netSalary && <TableHead className="text-right font-bold">صافي الراتب</TableHead>}
                       <TableHead className="text-right print:hidden">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {payroll.map((employee) => (
                       <TableRow key={employee.id}>
-                        <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                        <TableCell>{employee.basicSalary.toLocaleString()} ر.س</TableCell>
-                        <TableCell className="text-green-600">+{employee.allowances.toLocaleString()} ر.س</TableCell>
-                        <TableCell className="text-green-600">
-                          {employee.additions > 0 ? `+${employee.additions.toLocaleString()} ر.س` : "-"}
-                        </TableCell>
-                        <TableCell className="text-red-600">
-                          {employee.deductions > 0 ? `-${employee.deductions.toLocaleString()} ر.س` : "-"}
-                        </TableCell>
-                        <TableCell className="text-red-600">
-                          {employee.advances > 0 ? `-${employee.advances.toLocaleString()} ر.س` : "-"}
-                        </TableCell>
-                        <TableCell className="font-bold text-primary">{employee.netSalary.toLocaleString()} ر.س</TableCell>
+                        {visibleColumns.employeeName && <TableCell className="font-medium">{employee.employeeName}</TableCell>}
+                        {visibleColumns.bankName && <TableCell>{employee.bankName || "-"}</TableCell>}
+                        {visibleColumns.bankAccountNumber && <TableCell className="font-mono text-sm">{employee.bankAccountNumber || "-"}</TableCell>}
+                        {visibleColumns.residenceNumber && <TableCell>{employee.residenceNumber || "-"}</TableCell>}
+                        {visibleColumns.basicSalary && <TableCell>{employee.basicSalary.toLocaleString()} ر.س</TableCell>}
+                        {visibleColumns.allowances && <TableCell className="text-green-600">+{employee.allowances.toLocaleString()} ر.س</TableCell>}
+                        {visibleColumns.additions && (
+                          <TableCell className="text-green-600">
+                            {employee.additions > 0 ? `+${employee.additions.toLocaleString()} ر.س` : "-"}
+                          </TableCell>
+                        )}
+                        {visibleColumns.deductions && (
+                          <TableCell className="text-red-600">
+                            {employee.deductions > 0 ? `-${employee.deductions.toLocaleString()} ر.س` : "-"}
+                          </TableCell>
+                        )}
+                        {visibleColumns.advances && (
+                          <TableCell className="text-red-600">
+                            {employee.advances > 0 ? `-${employee.advances.toLocaleString()} ر.س` : "-"}
+                          </TableCell>
+                        )}
+                        {visibleColumns.netSalary && <TableCell className="font-bold text-primary">{employee.netSalary.toLocaleString()} ر.س</TableCell>}
                         <TableCell className="print-hidden">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(employee)}>
                             <Edit className="h-4 w-4" />
@@ -272,13 +349,16 @@ const Payroll = () => {
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-bold print:print-total-row">
-                      <TableCell>الإجمالي</TableCell>
-                      <TableCell>{totalBasicSalary.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-green-600">+{totalAllowances.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-green-600">+{totalAdditions.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-red-600">-{totalDeductions.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-red-600">-{totalAdvances.toLocaleString()} ر.س</TableCell>
-                      <TableCell className="text-primary text-lg">{totalNetSalary.toLocaleString()} ر.س</TableCell>
+                      {visibleColumns.employeeName && <TableCell>الإجمالي</TableCell>}
+                      {visibleColumns.bankName && <TableCell>-</TableCell>}
+                      {visibleColumns.bankAccountNumber && <TableCell>-</TableCell>}
+                      {visibleColumns.residenceNumber && <TableCell>-</TableCell>}
+                      {visibleColumns.basicSalary && <TableCell>{totalBasicSalary.toLocaleString()} ر.س</TableCell>}
+                      {visibleColumns.allowances && <TableCell className="text-green-600">+{totalAllowances.toLocaleString()} ر.س</TableCell>}
+                      {visibleColumns.additions && <TableCell className="text-green-600">+{totalAdditions.toLocaleString()} ر.س</TableCell>}
+                      {visibleColumns.deductions && <TableCell className="text-red-600">-{totalDeductions.toLocaleString()} ر.س</TableCell>}
+                      {visibleColumns.advances && <TableCell className="text-red-600">-{totalAdvances.toLocaleString()} ر.س</TableCell>}
+                      {visibleColumns.netSalary && <TableCell className="text-primary text-lg">{totalNetSalary.toLocaleString()} ر.س</TableCell>}
                       <TableCell className="print-hidden"></TableCell>
                     </TableRow>
                   </TableBody>

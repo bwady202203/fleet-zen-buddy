@@ -900,6 +900,8 @@ export type Database = {
       employees: {
         Row: {
           address: string | null
+          bank_account_number: string | null
+          bank_name: string | null
           created_at: string | null
           email: string | null
           hire_date: string
@@ -908,6 +910,7 @@ export type Database = {
           organization_id: string | null
           phone: string | null
           position: string
+          residence_number: string | null
           salary: number
           status: string | null
           updated_at: string | null
@@ -915,6 +918,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
           created_at?: string | null
           email?: string | null
           hire_date: string
@@ -923,6 +928,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           position: string
+          residence_number?: string | null
           salary: number
           status?: string | null
           updated_at?: string | null
@@ -930,6 +936,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
           created_at?: string | null
           email?: string | null
           hire_date?: string
@@ -938,6 +946,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           position?: string
+          residence_number?: string | null
           salary?: number
           status?: string | null
           updated_at?: string | null

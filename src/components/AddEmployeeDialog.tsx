@@ -24,7 +24,10 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
     basicSalary: 0,
     housingAllowance: 0,
     transportAllowance: 0,
-    otherAllowances: 0
+    otherAllowances: 0,
+    bankAccountNumber: "",
+    bankName: "",
+    residenceNumber: ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,7 +66,10 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
       basicSalary: 0,
       housingAllowance: 0,
       transportAllowance: 0,
-      otherAllowances: 0
+      otherAllowances: 0,
+      bankAccountNumber: "",
+      bankName: "",
+      residenceNumber: ""
     });
     
     onOpenChange(false);
@@ -122,6 +128,14 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               />
             </div>
             <div className="space-y-2">
+              <Label>رقم الإقامة</Label>
+              <Input
+                value={formData.residenceNumber}
+                onChange={(e) => setFormData(prev => ({ ...prev, residenceNumber: e.target.value }))}
+                placeholder="أدخل رقم الإقامة"
+              />
+            </div>
+            <div className="space-y-2">
               <Label>رقم الهاتف</Label>
               <Input
                 value={formData.phone}
@@ -136,6 +150,22 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="employee@company.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>اسم البنك</Label>
+              <Input
+                value={formData.bankName}
+                onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                placeholder="أدخل اسم البنك"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>رقم الحساب البنكي</Label>
+              <Input
+                value={formData.bankAccountNumber}
+                onChange={(e) => setFormData(prev => ({ ...prev, bankAccountNumber: e.target.value }))}
+                placeholder="أدخل رقم الحساب البنكي"
               />
             </div>
             <div className="space-y-2">
