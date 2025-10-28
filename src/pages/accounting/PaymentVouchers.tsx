@@ -36,7 +36,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download } from "lucide-react";
+import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -81,6 +81,8 @@ export default function PaymentVouchers() {
 
   const [debitOpen, setDebitOpen] = useState(false);
   const [creditOpen, setCreditOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     fetchVouchers();
@@ -110,13 +112,20 @@ export default function PaymentVouchers() {
     }
   };
 
-  const fetchVouchers = async () => {
+  const fetchVouchers = async (loadAll: boolean = false) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from("payment_vouchers")
         .select("*")
-        .order("voucher_date", { ascending: false });
+        .order("created_at", { ascending: false });
+
+      // Load only last 10 by default
+      if (!loadAll) {
+        query = query.limit(10);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -150,6 +159,59 @@ export default function PaymentVouchers() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchVouchers(showAll);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("payment_vouchers")
+        .select("*")
+        .or(`voucher_number.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const vouchersWithAccounts = await Promise.all(
+        (data || []).map(async (voucher) => {
+          const [debitAccountRes, creditAccountRes] = await Promise.all([
+            supabase
+              .from("chart_of_accounts")
+              .select("id, code, name_ar, name_en")
+              .eq("id", voucher.debit_account_id)
+              .single(),
+            supabase
+              .from("chart_of_accounts")
+              .select("id, code, name_ar, name_en")
+              .eq("id", voucher.credit_account_id)
+              .single(),
+          ]);
+
+          return {
+            ...voucher,
+            debit_account: debitAccountRes.data,
+            credit_account: creditAccountRes.data,
+          };
+        })
+      );
+
+      setVouchers(vouchersWithAccounts);
+    } catch (error: any) {
+      toast.error("خطأ في البحث: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadAll = () => {
+    setShowAll(true);
+    setSearchQuery("");
+    fetchVouchers(true);
   };
 
   const generateVoucherNumber = async () => {
@@ -696,15 +758,43 @@ export default function PaymentVouchers() {
   return (
     <div className="container mx-auto p-6" dir="rtl">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-6 w-6" />
-            سندات الصرف
-          </CardTitle>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 ml-2" />
-            سند صرف جديد
-          </Button>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-6 w-6" />
+              سندات الصرف
+            </CardTitle>
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4 ml-2" />
+              سند صرف جديد
+            </Button>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3 mt-4">
+            <div className="flex-1 flex gap-2">
+              <Input
+                placeholder="ابحث برقم السند أو البيان..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="flex-1"
+              />
+              <Button onClick={handleSearch} variant="secondary">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              onClick={handleLoadAll} 
+              variant="outline"
+              disabled={showAll && !searchQuery}
+            >
+              عرض جميع السندات
+            </Button>
+          </div>
+          {!showAll && !searchQuery && (
+            <p className="text-sm text-muted-foreground mt-2">
+              عرض آخر 10 سندات - استخدم البحث أو اضغط "عرض جميع السندات" للمزيد
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {loading ? (
