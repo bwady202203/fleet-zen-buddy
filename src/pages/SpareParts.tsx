@@ -19,13 +19,46 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History } from "lucide-react";
+import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History, Search, List, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
+import * as XLSX from 'xlsx';
 
 const SpareParts = () => {
   const { spareParts, addSparePart, updateSparePart, deleteSparePart } = useSpareParts();
+
+  const exportToExcel = () => {
+    const excelData = spareParts.map(part => ({
+      'الكود': part.code || '-',
+      'اسم القطعة': part.name,
+      'السعر (ر.س)': part.price,
+      'الكمية المتاحة': part.quantity,
+      'الوحدة': part.unit,
+      'الحد الأدنى': part.minQuantity,
+      'الحالة': part.quantity <= part.minQuantity ? 'مخزون منخفض' : 'متوفر',
+      'القيمة الإجمالية (ر.س)': part.price * part.quantity
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'قطع الغيار');
+    
+    // تنسيق العرض
+    const cols = [
+      { wch: 15 }, // الكود
+      { wch: 30 }, // اسم القطعة
+      { wch: 12 }, // السعر
+      { wch: 15 }, // الكمية
+      { wch: 10 }, // الوحدة
+      { wch: 12 }, // الحد الأدنى
+      { wch: 15 }, // الحالة
+      { wch: 18 }  // القيمة الإجمالية
+    ];
+    worksheet['!cols'] = cols;
+    
+    XLSX.writeFile(workbook, `spare-parts-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -114,6 +147,16 @@ const SpareParts = () => {
               <h1 className="text-2xl font-bold">إدارة قطع الغيار</h1>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" onClick={exportToExcel}>
+                <FileSpreadsheet className="h-4 w-4 ml-2" />
+                تصدير Excel
+              </Button>
+              <Link to="/bulk-spare-parts">
+                <Button variant="outline">
+                  <List className="h-4 w-4 ml-2" />
+                  إضافة من اكسل
+                </Button>
+              </Link>
               <Link to="/stock-movement">
                 <Button variant="outline">
                   <Activity className="h-4 w-4 ml-2" />

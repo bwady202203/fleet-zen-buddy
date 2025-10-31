@@ -41,11 +41,12 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store, Calendar, TrendingUp, Eye, Pencil } from "lucide-react";
+import { ShoppingCart, Plus, ArrowRight, Trash2, BarChart3, Check, ChevronsUpDown, PackagePlus, Store, Calendar, TrendingUp, Eye, Pencil, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts, Purchase } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import * as XLSX from 'xlsx';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,44 @@ import {
 
 const Purchases = () => {
   const { spareParts, purchases, addPurchase, addSparePart, updatePurchase, deletePurchase } = useSpareParts();
+
+  const exportToExcel = () => {
+    const excelData = purchases.map((purchase, index) => {
+      const purchaseParts = purchase.spareParts.map(sp => {
+        const part = spareParts.find(p => p.id === sp.sparePartId);
+        return {
+          'رقم الفاتورة': `#${index + 1}`,
+          'التاريخ': purchase.date,
+          'المورد': purchase.supplier,
+          'قطعة الغيار': part?.name || 'غير معروف',
+          'الكمية': sp.quantity,
+          'السعر': sp.price,
+          'الإجمالي': sp.quantity * sp.price,
+          'ملاحظات': purchase.notes || '-'
+        };
+      });
+      return purchaseParts;
+    }).flat();
+    
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'فواتير المشتريات');
+    
+    // تنسيق العرض
+    const cols = [
+      { wch: 12 }, // رقم الفاتورة
+      { wch: 12 }, // التاريخ
+      { wch: 20 }, // المورد
+      { wch: 30 }, // قطعة الغيار
+      { wch: 10 }, // الكمية
+      { wch: 12 }, // السعر
+      { wch: 12 }, // الإجمالي
+      { wch: 30 }  // ملاحظات
+    ];
+    worksheet['!cols'] = cols;
+    
+    XLSX.writeFile(workbook, `purchases-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addPartDialogOpen, setAddPartDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -256,6 +295,10 @@ const Purchases = () => {
               <h1 className="text-2xl font-bold">إدارة المشتريات</h1>
             </div>
             <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={exportToExcel}>
+                <FileSpreadsheet className="h-4 w-4 ml-2" />
+                تصدير Excel
+              </Button>
               <Link to="/purchases/pos">
                 <Button variant="default">
                   <Store className="h-4 w-4 ml-2" />

@@ -3,9 +3,11 @@ import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useState, useMemo } from "react";
 import {
   Select,
@@ -29,41 +31,52 @@ const Index = () => {
     });
   }, [vehicles, searchQuery, statusFilter]);
 
-  const exportToJSON = () => {
-    const dataStr = JSON.stringify(vehicles, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `vehicles-data-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const exportToExcel = async () => {
+    try {
+      // جلب البيانات الكاملة من قاعدة البيانات
+      const { data: vehiclesData } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const exportToCSV = () => {
-    const headers = ['الاسم', 'النوع', 'الحالة', 'الكيلومترات', 'تاريخ آخر صيانة', 'تاريخ الصيانة القادمة'];
-    const csvData = vehicles.map(v => [
-      v.name,
-      v.type,
-      v.status === 'active' ? 'نشطة' : v.status === 'maintenance' ? 'قيد الصيانة' : v.status === 'warning' ? 'تحتاج صيانة' : 'غير نشطة',
-      v.mileage,
-      v.lastService || '-',
-      v.nextService || '-'
-    ]);
-    
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.join(','))
-    ].join('\n');
-    
-    const BOM = '\uFEFF';
-    const dataBlob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `vehicles-data-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+      if (!vehiclesData) return;
+
+      const excelData = vehiclesData.map(v => ({
+        'رقم اللوحة': v.license_plate || '-',
+        'الموديل': v.model || '-',
+        'السنة': v.year || '-',
+        'اللون': v.color || '-',
+        'السائق': v.driver_name || '-',
+        'الحالة': v.status === 'available' ? 'متاحة' : v.status === 'in_use' ? 'قيد الاستخدام' : v.status === 'maintenance' ? 'قيد الصيانة' : 'غير متاحة',
+        'الكيلومترات الحالية': v.current_mileage || 0,
+        'آخر تغيير زيت (كم)': v.last_oil_change_mileage || '-',
+        'تاريخ آخر تغيير زيت': v.last_oil_change_date || '-',
+        'ملاحظات': v.notes || '-'
+      }));
+      
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'المركبات');
+      
+      // تنسيق العرض
+      const cols = [
+        { wch: 15 }, // رقم اللوحة
+        { wch: 20 }, // الموديل
+        { wch: 10 }, // السنة
+        { wch: 12 }, // اللون
+        { wch: 20 }, // السائق
+        { wch: 15 }, // الحالة
+        { wch: 15 }, // الكيلومترات
+        { wch: 18 }, // آخر تغيير زيت (كم)
+        { wch: 18 }, // تاريخ آخر تغيير زيت
+        { wch: 30 }  // ملاحظات
+      ];
+      worksheet['!cols'] = cols;
+      
+      XLSX.writeFile(workbook, `vehicles-${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+    }
   };
 
   return (
@@ -78,11 +91,9 @@ const Index = () => {
               <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={exportToJSON} title="تحميل JSON">
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={exportToCSV} title="تحميل CSV">
-                <FileText className="h-4 w-4" />
+              <Button variant="outline" onClick={exportToExcel} title="تصدير إلى Excel">
+                <FileSpreadsheet className="h-4 w-4 ml-2" />
+                تصدير Excel
               </Button>
               <Link to="/spare-parts">
                 <Button variant="outline">
