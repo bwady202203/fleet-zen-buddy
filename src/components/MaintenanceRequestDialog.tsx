@@ -118,6 +118,7 @@ export const MaintenanceRequestDialog = ({
 
     const newPart = {
       id: `part-${Date.now()}`,
+      code: `SP-${Date.now()}`,
       name: newPartForm.name,
       price: parseFloat(newPartForm.price),
       quantity: 0,

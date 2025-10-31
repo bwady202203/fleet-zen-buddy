@@ -128,6 +128,7 @@ const Purchases = () => {
 
     try {
       await addSparePart({
+        code: `SP-${Date.now()}`,
         name: newPartForm.name,
         price: newPartForm.price,
         quantity: 0,

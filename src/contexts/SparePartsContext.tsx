@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface SparePart {
   id: string;
+  code: string;
   name: string;
   price: number;
   quantity: number;
@@ -70,6 +71,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
       if (data) {
         const mapped: SparePart[] = data.map(p => ({
           id: p.id,
+          code: p.code || '',
           name: p.name,
           price: Number(p.unit_price) || 0,
           quantity: p.quantity || 0,
@@ -172,6 +174,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
       if (data) {
         const newPart: SparePart = {
           id: data.id,
+          code: data.code || '',
           name: data.name,
           price: Number(data.unit_price),
           quantity: data.quantity,

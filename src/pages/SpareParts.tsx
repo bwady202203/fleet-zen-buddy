@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity } from "lucide-react";
+import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ const SpareParts = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    code: "",
     name: "",
     price: "",
     quantity: "",
@@ -53,6 +54,7 @@ const SpareParts = () => {
       });
     } else {
       addSparePart({
+        code: formData.code || `SP-${Date.now()}`,
         name: formData.name,
         price: parseFloat(formData.price),
         quantity: parseInt(formData.quantity),
@@ -68,6 +70,7 @@ const SpareParts = () => {
     setDialogOpen(false);
     setEditingPart(null);
     setFormData({
+      code: "",
       name: "",
       price: "",
       quantity: "",
@@ -79,6 +82,7 @@ const SpareParts = () => {
   const handleEdit = (part: any) => {
     setEditingPart(part.id);
     setFormData({
+      code: part.code || '',
       name: part.name,
       price: part.price.toString(),
       quantity: part.quantity.toString(),
@@ -198,6 +202,7 @@ const SpareParts = () => {
                   <Button onClick={() => {
                     setEditingPart(null);
                     setFormData({
+                      code: "",
                       name: "",
                       price: "",
                       quantity: "",
@@ -216,6 +221,16 @@ const SpareParts = () => {
                     </DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="code">كود القطعة</Label>
+                      <Input
+                        id="code"
+                        value={formData.code}
+                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                        placeholder="اختياري - سيتم توليده تلقائياً"
+                        className="text-right"
+                      />
+                    </div>
                     <div>
                       <Label htmlFor="name">اسم القطعة</Label>
                       <Input
@@ -286,6 +301,7 @@ const SpareParts = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-right">الكود</TableHead>
                   <TableHead className="text-right">القطعة</TableHead>
                   <TableHead className="text-right">السعر</TableHead>
                   <TableHead className="text-right">الكمية المتاحة</TableHead>
@@ -298,6 +314,7 @@ const SpareParts = () => {
               <TableBody>
                 {spareParts.map((part) => (
                   <TableRow key={part.id}>
+                    <TableCell className="font-mono text-sm">{part.code}</TableCell>
                     <TableCell className="font-medium">{part.name}</TableCell>
                     <TableCell>{part.price.toLocaleString()} ر.س</TableCell>
                     <TableCell>
