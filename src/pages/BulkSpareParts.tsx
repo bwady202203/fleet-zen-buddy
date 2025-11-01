@@ -70,15 +70,31 @@ const BulkSpareParts = () => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "خطأ",
+          description: "يجب تسجيل الدخول أولاً",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const { data: orgData } = await supabase
         .from('user_organizations')
         .select('organization_id')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
 
       for (const row of rows) {
         // البحث عن قطعة غيار موجودة بنفس الكود
-        const existingPart = spareParts.find(p => p.code === row.code);
+        const { data: existingParts } = await supabase
+          .from('spare_parts')
+          .select('*')
+          .eq('code', row.code)
+          .eq('organization_id', orgData?.organization_id);
+
+        const existingPart = existingParts?.[0];
 
         if (existingPart) {
           // تحديث الكمية للقطعة الموجودة

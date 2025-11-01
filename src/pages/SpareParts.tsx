@@ -27,6 +27,13 @@ import * as XLSX from 'xlsx';
 
 const SpareParts = () => {
   const { spareParts, addSparePart, updateSparePart, deleteSparePart } = useSpareParts();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredSpareParts = spareParts.filter(part => 
+    part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.unit.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const exportToExcel = () => {
     const excelData = spareParts.map(part => ({
@@ -135,7 +142,7 @@ const SpareParts = () => {
     }
   };
 
-  const lowStockParts = spareParts.filter((part) => part.quantity <= part.minQuantity);
+  const lowStockParts = filteredSpareParts.filter((part) => part.quantity <= part.minQuantity);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -238,8 +245,9 @@ const SpareParts = () => {
         {/* قائمة قطع الغيار */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>قطع الغيار</CardTitle>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <CardTitle>قطع الغيار</CardTitle>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={() => {
@@ -338,6 +346,16 @@ const SpareParts = () => {
                   </form>
                 </DialogContent>
               </Dialog>
+              </div>
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="ابحث عن قطع الغيار بالاسم أو الكود..." 
+                  className="pr-9 text-right"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -355,7 +373,8 @@ const SpareParts = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {spareParts.map((part) => (
+                {filteredSpareParts.length > 0 ? (
+                  filteredSpareParts.map((part) => (
                   <TableRow key={part.id}>
                     <TableCell className="font-mono text-sm">{part.code}</TableCell>
                     <TableCell className="font-medium">{part.name}</TableCell>
@@ -399,7 +418,14 @@ const SpareParts = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      لا توجد قطع غيار تطابق البحث
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
