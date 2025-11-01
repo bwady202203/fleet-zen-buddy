@@ -137,44 +137,47 @@ const Payroll = () => {
         {`
           @media print {
             @page {
-              size: landscape;
-              margin: 2cm;
+              size: A4 landscape;
+              margin: 1cm;
             }
             body {
               print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
+              margin: 0;
+              padding: 0;
             }
             .print-hidden {
               display: none !important;
             }
             .print-header {
-              border: 3px solid #000;
-              padding: 24px;
-              margin-bottom: 30px;
+              border: 2px solid #000;
+              padding: 15px;
+              margin-bottom: 20px;
               text-align: center;
             }
             .print-header h1 {
               border-bottom: 2px solid #000;
-              padding-bottom: 16px;
-              margin-bottom: 16px;
+              padding-bottom: 10px;
+              margin-bottom: 10px;
+              font-size: 24px;
             }
             .print-table {
               border-collapse: collapse;
               width: 100%;
-              font-size: 11px;
-              margin-top: 20px;
+              font-size: 10px;
+              margin-top: 10px;
               border: 2px solid #000;
             }
             .print-table th {
               background: #fff;
               color: #000;
-              padding: 12px 8px;
+              padding: 8px 4px;
               font-weight: 700;
               border: 1px solid #000;
               text-align: center;
             }
             .print-table td {
-              padding: 10px 8px;
+              padding: 6px 4px;
               border: 1px solid #000;
               text-align: center;
               background: #fff;
@@ -182,20 +185,24 @@ const Payroll = () => {
             .print-total-row {
               background: #fff !important;
               font-weight: 700;
-              font-size: 12px;
+              font-size: 11px;
               border-top: 3px double #000 !important;
             }
             .print-footer {
-              margin-top: 50px;
-              padding-top: 20px;
-              border-top: 3px solid #000;
+              margin-top: 30px;
+              padding-top: 15px;
+              border-top: 2px solid #000;
             }
             .print-card {
               background: white;
               box-shadow: none;
             }
-            header {
+            header, nav {
               display: none !important;
+            }
+            main {
+              padding: 0 !important;
+              margin: 0 !important;
             }
           }
         `}
