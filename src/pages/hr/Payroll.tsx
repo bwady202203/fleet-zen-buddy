@@ -11,8 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 
 // بيانات الموظفين الأساسية
 const baseEmployees = [
@@ -109,139 +107,6 @@ const Payroll = () => {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleExportPDF = () => {
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    // إضافة دعم اللغة العربية
-    doc.setFont("helvetica");
-    doc.setFontSize(18);
-    
-    // العنوان الرئيسي
-    doc.setLineWidth(0.5);
-    doc.rect(10, 10, 277, 30);
-    doc.text("كشف رواتب الموظفين", 148.5, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`الشهر: يناير 2025`, 20, 30);
-    doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-SA')}`, 240, 30);
-
-    // تحضير البيانات للجدول
-    const headers: string[] = [];
-    const columnKeys: string[] = [];
-
-    if (visibleColumns.employeeName) { headers.push("اسم الموظف"); columnKeys.push("employeeName"); }
-    if (visibleColumns.bankName) { headers.push("اسم البنك"); columnKeys.push("bankName"); }
-    if (visibleColumns.bankAccountNumber) { headers.push("رقم الحساب البنكي"); columnKeys.push("bankAccountNumber"); }
-    if (visibleColumns.residenceNumber) { headers.push("رقم الإقامة"); columnKeys.push("residenceNumber"); }
-    if (visibleColumns.basicSalary) { headers.push("الراتب الأساسي"); columnKeys.push("basicSalary"); }
-    if (visibleColumns.allowances) { headers.push("البدلات"); columnKeys.push("allowances"); }
-    if (visibleColumns.additions) { headers.push("الإضافي"); columnKeys.push("additions"); }
-    if (visibleColumns.deductions) { headers.push("الخصومات"); columnKeys.push("deductions"); }
-    if (visibleColumns.advances) { headers.push("السلف"); columnKeys.push("advances"); }
-    if (visibleColumns.netSalary) { headers.push("صافي الراتب"); columnKeys.push("netSalary"); }
-
-    const data = payroll.map(emp => {
-      const row: any[] = [];
-      columnKeys.forEach(key => {
-        if (key === 'employeeName' || key === 'bankName' || key === 'residenceNumber') {
-          row.push(emp[key as keyof typeof emp] || "-");
-        } else if (key === 'bankAccountNumber') {
-          row.push(emp[key] || "-");
-        } else if (key === 'basicSalary' || key === 'allowances') {
-          row.push(`${emp[key as keyof typeof emp].toLocaleString()} ر.س`);
-        } else if (key === 'additions') {
-          row.push(emp.additions > 0 ? `+${emp.additions.toLocaleString()} ر.س` : "-");
-        } else if (key === 'deductions' || key === 'advances') {
-          const value = emp[key as keyof typeof emp] as number;
-          row.push(value > 0 ? `-${value.toLocaleString()} ر.س` : "-");
-        } else if (key === 'netSalary') {
-          row.push(`${emp.netSalary.toLocaleString()} ر.س`);
-        }
-      });
-      return row;
-    });
-
-    // صف الإجمالي
-    const totalRow: any[] = [];
-    columnKeys.forEach(key => {
-      if (key === 'employeeName') totalRow.push("الإجمالي");
-      else if (key === 'bankName' || key === 'bankAccountNumber' || key === 'residenceNumber') totalRow.push("-");
-      else if (key === 'basicSalary') totalRow.push(`${totalBasicSalary.toLocaleString()} ر.س`);
-      else if (key === 'allowances') totalRow.push(`+${totalAllowances.toLocaleString()} ر.س`);
-      else if (key === 'additions') totalRow.push(`+${totalAdditions.toLocaleString()} ر.س`);
-      else if (key === 'deductions') totalRow.push(`-${totalDeductions.toLocaleString()} ر.س`);
-      else if (key === 'advances') totalRow.push(`-${totalAdvances.toLocaleString()} ر.س`);
-      else if (key === 'netSalary') totalRow.push(`${totalNetSalary.toLocaleString()} ر.س`);
-    });
-
-    data.push(totalRow);
-
-    // إنشاء الجدول
-    (doc as any).autoTable({
-      head: [headers],
-      body: data,
-      startY: 45,
-      styles: {
-        font: 'helvetica',
-        fontSize: 8,
-        cellPadding: 2,
-        halign: 'center',
-        valign: 'middle',
-        lineColor: [0, 0, 0],
-        lineWidth: 0.1
-      },
-      headStyles: {
-        fillColor: [255, 255, 255],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        lineWidth: 0.2,
-        halign: 'center'
-      },
-      bodyStyles: {
-        fillColor: [255, 255, 255],
-        textColor: [0, 0, 0]
-      },
-      alternateRowStyles: {
-        fillColor: [250, 250, 250]
-      },
-      margin: { top: 45, left: 10, right: 10 },
-      didParseCell: function(data: any) {
-        // تنسيق صف الإجمالي
-        if (data.row.index === payroll.length) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [240, 240, 240];
-          data.cell.styles.lineWidth = 0.3;
-        }
-      }
-    });
-
-    // إضافة التوقيعات في الأسفل
-    const finalY = (doc as any).lastAutoTable.finalY || 150;
-    
-    doc.setLineWidth(0.3);
-    doc.line(10, finalY + 10, 287, finalY + 10);
-    
-    doc.setFontSize(10);
-    doc.text("المدير المالي", 60, finalY + 20, { align: 'center' });
-    doc.text("مدير الموارد البشرية", 148.5, finalY + 20, { align: 'center' });
-    doc.text("المدير العام", 237, finalY + 20, { align: 'center' });
-    
-    doc.line(40, finalY + 35, 80, finalY + 35);
-    doc.line(128.5, finalY + 35, 168.5, finalY + 35);
-    doc.line(217, finalY + 35, 257, finalY + 35);
-    
-    doc.setFontSize(8);
-    doc.text("التوقيع", 60, finalY + 40, { align: 'center' });
-    doc.text("التوقيع", 148.5, finalY + 40, { align: 'center' });
-    doc.text("التوقيع والختم", 237, finalY + 40, { align: 'center' });
-
-    // حفظ الملف
-    doc.save(`كشف_الرواتب_${selectedMonth}.pdf`);
   };
 
   const handleEdit = (employee: any) => {
@@ -400,7 +265,7 @@ const Payroll = () => {
                   <Printer className="h-4 w-4" />
                   طباعة
                 </Button>
-                <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
+                <Button variant="outline" className="gap-2">
                   <Download className="h-4 w-4" />
                   تصدير PDF
                 </Button>
