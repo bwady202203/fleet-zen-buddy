@@ -21,6 +21,9 @@ interface VehicleCost {
   license_plate: string;
   total_cost: number;
   maintenance_count: number;
+  loads_count: number;
+  maintenance_cost: number;
+  loads_cost: number;
 }
 
 const VehicleCostReport = () => {
@@ -68,29 +71,63 @@ const VehicleCostReport = () => {
 
       if (maintenanceError) throw maintenanceError;
 
+      // جلب الأحمال في الفترة المحددة
+      const { data: loadsData, error: loadsError } = await supabase
+        .from('loads')
+        .select('id, truck_number, total_amount, commission_amount, date')
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      if (loadsError) throw loadsError;
+
       // تجميع التكاليف حسب المركبة
       const costsByVehicle = new Map<string, VehicleCost>();
 
       // إضافة جميع المركبات بتكلفة 0 أولاً
       allVehicles?.forEach((vehicle) => {
-        costsByVehicle.set(vehicle.id, {
+        costsByVehicle.set(vehicle.license_plate, {
           vehicle_id: vehicle.id,
           vehicle_name: vehicle.model,
           license_plate: vehicle.license_plate,
           total_cost: 0,
           maintenance_count: 0,
+          loads_count: 0,
+          maintenance_cost: 0,
+          loads_cost: 0,
         });
+      });
+
+      // إنشاء خريطة للمركبات حسب vehicle_id
+      const vehicleIdMap = new Map<string, string>();
+      allVehicles?.forEach((vehicle) => {
+        vehicleIdMap.set(vehicle.id, vehicle.license_plate);
       });
 
       // تحديث التكاليف من سجلات الصيانة
       maintenanceData?.forEach((item: any) => {
-        const vehicleId = item.vehicle_id;
+        const licensePlate = vehicleIdMap.get(item.vehicle_id);
+        if (!licensePlate) return;
+
         const cost = parseFloat(item.cost || 0);
 
-        if (costsByVehicle.has(vehicleId)) {
-          const existing = costsByVehicle.get(vehicleId)!;
+        if (costsByVehicle.has(licensePlate)) {
+          const existing = costsByVehicle.get(licensePlate)!;
+          existing.maintenance_cost += cost;
           existing.total_cost += cost;
           existing.maintenance_count += 1;
+        }
+      });
+
+      // تحديث التكاليف من الأحمال
+      loadsData?.forEach((load: any) => {
+        const truckNumber = load.truck_number;
+        const loadCost = parseFloat(load.total_amount || 0);
+
+        if (costsByVehicle.has(truckNumber)) {
+          const existing = costsByVehicle.get(truckNumber)!;
+          existing.loads_cost += loadCost;
+          existing.total_cost += loadCost;
+          existing.loads_count += 1;
         }
       });
 
@@ -238,9 +275,11 @@ const VehicleCostReport = () => {
                       <TableHead className="text-right">#</TableHead>
                       <TableHead className="text-right">رقم اللوحة</TableHead>
                       <TableHead className="text-right">الموديل</TableHead>
+                      <TableHead className="text-right">تكاليف الصيانة</TableHead>
+                      <TableHead className="text-right">تكاليف الأحمال</TableHead>
                       <TableHead className="text-right">عدد الصيانات</TableHead>
+                      <TableHead className="text-right">عدد الأحمال</TableHead>
                       <TableHead className="text-right">إجمالي التكلفة</TableHead>
-                      <TableHead className="text-right">متوسط التكلفة</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -249,12 +288,16 @@ const VehicleCostReport = () => {
                         <TableCell className="font-medium">{index + 1}</TableCell>
                         <TableCell>{vehicle.license_plate}</TableCell>
                         <TableCell>{vehicle.vehicle_name}</TableCell>
-                        <TableCell>{vehicle.maintenance_count}</TableCell>
-                        <TableCell className="font-semibold text-primary">
-                          {formatCurrency(vehicle.total_cost)} ر.س
+                        <TableCell>
+                          {formatCurrency(vehicle.maintenance_cost)} ر.س
                         </TableCell>
                         <TableCell>
-                          {formatCurrency(vehicle.total_cost / vehicle.maintenance_count)} ر.س
+                          {formatCurrency(vehicle.loads_cost)} ر.س
+                        </TableCell>
+                        <TableCell>{vehicle.maintenance_count}</TableCell>
+                        <TableCell>{vehicle.loads_count}</TableCell>
+                        <TableCell className="font-semibold text-primary">
+                          {formatCurrency(vehicle.total_cost)} ر.س
                         </TableCell>
                       </TableRow>
                     ))}
@@ -262,13 +305,21 @@ const VehicleCostReport = () => {
                       <TableCell colSpan={3} className="text-left">
                         الإجمالي
                       </TableCell>
+                      <TableCell className="text-primary">
+                        {formatCurrency(vehicleCosts.reduce((sum, v) => sum + v.maintenance_cost, 0))} ر.س
+                      </TableCell>
+                      <TableCell className="text-primary">
+                        {formatCurrency(vehicleCosts.reduce((sum, v) => sum + v.loads_cost, 0))} ر.س
+                      </TableCell>
                       <TableCell>
                         {vehicleCosts.reduce((sum, v) => sum + v.maintenance_count, 0)}
+                      </TableCell>
+                      <TableCell>
+                        {vehicleCosts.reduce((sum, v) => sum + v.loads_count, 0)}
                       </TableCell>
                       <TableCell className="text-primary">
                         {formatCurrency(totalCost)} ر.س
                       </TableCell>
-                      <TableCell>-</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
