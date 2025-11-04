@@ -57,17 +57,17 @@ const VehicleCostReport = () => {
           id,
           vehicle_id,
           cost,
-          completed_date,
+          created_at,
           vehicles (
             id,
             model,
             license_plate
           )
         `)
-        .gte('completed_date', startDate)
-        .lte('completed_date', endDate)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate + 'T23:59:59')
         .not('cost', 'is', null)
-        .order('completed_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
