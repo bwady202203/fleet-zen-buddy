@@ -50,33 +50,40 @@ const VehicleCostReport = () => {
     try {
       setLoading(true);
 
-      // جلب طلبات الصيانة مع بيانات المركبات
-      const { data: maintenanceData, error } = await supabase
+      // جلب جميع المركبات
+      const { data: allVehicles, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('id, model, license_plate')
+        .order('license_plate', { ascending: true });
+
+      if (vehiclesError) throw vehiclesError;
+
+      // جلب طلبات الصيانة في الفترة المحددة
+      const { data: maintenanceData, error: maintenanceError } = await supabase
         .from('maintenance_requests')
-        .select(`
-          id,
-          vehicle_id,
-          cost,
-          created_at,
-          vehicles (
-            id,
-            model,
-            license_plate
-          )
-        `)
+        .select('id, vehicle_id, cost, created_at')
         .gte('created_at', startDate)
         .lte('created_at', endDate + 'T23:59:59')
-        .not('cost', 'is', null)
-        .order('created_at', { ascending: false });
+        .not('cost', 'is', null);
 
-      if (error) throw error;
+      if (maintenanceError) throw maintenanceError;
 
       // تجميع التكاليف حسب المركبة
       const costsByVehicle = new Map<string, VehicleCost>();
 
-      maintenanceData?.forEach((item: any) => {
-        if (!item.vehicles) return;
+      // إضافة جميع المركبات بتكلفة 0 أولاً
+      allVehicles?.forEach((vehicle) => {
+        costsByVehicle.set(vehicle.id, {
+          vehicle_id: vehicle.id,
+          vehicle_name: vehicle.model,
+          license_plate: vehicle.license_plate,
+          total_cost: 0,
+          maintenance_count: 0,
+        });
+      });
 
+      // تحديث التكاليف من سجلات الصيانة
+      maintenanceData?.forEach((item: any) => {
         const vehicleId = item.vehicle_id;
         const cost = parseFloat(item.cost || 0);
 
@@ -84,14 +91,6 @@ const VehicleCostReport = () => {
           const existing = costsByVehicle.get(vehicleId)!;
           existing.total_cost += cost;
           existing.maintenance_count += 1;
-        } else {
-          costsByVehicle.set(vehicleId, {
-            vehicle_id: vehicleId,
-            vehicle_name: item.vehicles.model,
-            license_plate: item.vehicles.license_plate,
-            total_cost: cost,
-            maintenance_count: 1,
-          });
         }
       });
 
