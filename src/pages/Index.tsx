@@ -3,7 +3,7 @@ import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
@@ -111,6 +111,12 @@ const Index = () => {
                 <Button variant="outline">
                   <FileText className="h-4 w-4 ml-2" />
                   تقرير الصيانة
+                </Button>
+              </Link>
+              <Link to="/vehicle-cost-report">
+                <Button variant="outline">
+                  <Receipt className="h-4 w-4 ml-2" />
+                  تقرير التكاليف
                 </Button>
               </Link>
               <Link to="/vehicle-mileage">
