@@ -55,14 +55,6 @@ export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const loadVehicles = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.log('No user logged in, skipping vehicle load');
-        setVehicles([]);
-        return;
-      }
-
       const { data, error } = await supabase
         .from('vehicles')
         .select('*')
