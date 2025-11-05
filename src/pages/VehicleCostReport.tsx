@@ -121,14 +121,17 @@ const VehicleCostReport = () => {
       // تحديث التكاليف من الأحمال
       loadsData?.forEach((load: any) => {
         const truckNumber = load.truck_number;
-        const loadCost = parseFloat(load.total_amount || 0);
-
-        if (costsByVehicle.has(truckNumber)) {
-          const existing = costsByVehicle.get(truckNumber)!;
-          existing.loads_cost += loadCost;
-          existing.total_cost += loadCost;
-          existing.loads_count += 1;
+        
+        // تخطي الأحمال بدون رقم شاحنة أو التي ليست موجودة في قائمة المركبات
+        if (!truckNumber || !costsByVehicle.has(truckNumber)) {
+          return;
         }
+
+        const loadCost = parseFloat(load.total_amount || 0);
+        const existing = costsByVehicle.get(truckNumber)!;
+        existing.loads_cost += loadCost;
+        existing.total_cost += loadCost;
+        existing.loads_count += 1;
       });
 
       const costsArray = Array.from(costsByVehicle.values())
