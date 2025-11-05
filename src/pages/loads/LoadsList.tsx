@@ -51,8 +51,16 @@ const LoadsList = () => {
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, invoiceStartDate, invoiceEndDate, sortOrder, sortField]);
+    // تطبيق الفلتر تلقائياً عند تحميل البيانات لأول مرة
+    if (loads.length > 0 && filteredLoads.length === 0) {
+      applyFilters();
+    }
+  }, [loads]);
+
+  useEffect(() => {
+    loadData();
+    loadFilterData();
+  }, []);
 
   const loadFilterData = async () => {
     try {
@@ -615,7 +623,14 @@ const LoadsList = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 flex justify-end">
+                <div className="mt-4 flex gap-2 justify-end">
+                  <Button 
+                    onClick={applyFilters}
+                    className="flex items-center gap-2"
+                  >
+                    <Filter className="h-4 w-4" />
+                    تطبيق الفلتر / Apply Filter
+                  </Button>
                   <Button 
                     variant="outline" 
                     onClick={resetFilters}
