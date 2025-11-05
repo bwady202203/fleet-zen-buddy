@@ -42,7 +42,8 @@ const LoadsList = () => {
   const [reportInvoiceEndDate, setReportInvoiceEndDate] = useState<string>("");
   const [reportCompany, setReportCompany] = useState<string>("all");
   const [driverReport, setDriverReport] = useState<any[]>([]);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<'driver' | 'date' | 'invoice_date'>('driver');
 
   useEffect(() => {
     loadData();
@@ -51,7 +52,7 @@ const LoadsList = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, invoiceStartDate, invoiceEndDate, sortOrder]);
+  }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, invoiceStartDate, invoiceEndDate, sortOrder, sortField]);
 
   const loadFilterData = async () => {
     try {
@@ -126,13 +127,24 @@ const LoadsList = () => {
       filtered = filtered.filter(load => load.invoice_date && load.invoice_date <= invoiceEndDate);
     }
 
-    // Sort by driver name
+    // Sort by selected field
     filtered.sort((a, b) => {
-      const nameA = (a.drivers?.name || '').toLowerCase();
-      const nameB = (b.drivers?.name || '').toLowerCase();
-      return sortOrder === 'asc' 
-        ? nameA.localeCompare(nameB, 'ar')
-        : nameB.localeCompare(nameA, 'ar');
+      if (sortField === 'driver') {
+        const nameA = (a.drivers?.name || '').toLowerCase();
+        const nameB = (b.drivers?.name || '').toLowerCase();
+        return sortOrder === 'asc' 
+          ? nameA.localeCompare(nameB, 'ar')
+          : nameB.localeCompare(nameA, 'ar');
+      } else if (sortField === 'date') {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      } else if (sortField === 'invoice_date') {
+        const dateA = a.invoice_date ? new Date(a.invoice_date).getTime() : 0;
+        const dateB = b.invoice_date ? new Date(b.invoice_date).getTime() : 0;
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      return 0;
     });
 
     setFilteredLoads(filtered);
@@ -140,6 +152,15 @@ const LoadsList = () => {
 
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
+
+  const handleSortFieldChange = (field: 'driver' | 'date' | 'invoice_date') => {
+    if (sortField === field) {
+      toggleSortOrder();
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
   };
 
   const resetFilters = () => {
@@ -648,19 +669,39 @@ const LoadsList = () => {
                     <Table>
                        <TableHeader>
                          <TableRow>
-                           <TableHead className="text-right">التاريخ / Date</TableHead>
+                           <TableHead className="text-right">
+                             <button 
+                               onClick={() => handleSortFieldChange('date')} 
+                               className="flex items-center gap-2 hover:text-primary transition-colors print:pointer-events-none"
+                             >
+                               التاريخ / Date
+                               <span className="text-xs print:hidden">
+                                 {sortField === 'date' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+                               </span>
+                             </button>
+                           </TableHead>
                            <TableHead className="text-right">رقم الشحنة / Load Number</TableHead>
-                           <TableHead className="text-right">تاريخ الفاتورة / Invoice Date</TableHead>
+                           <TableHead className="text-right">
+                             <button 
+                               onClick={() => handleSortFieldChange('invoice_date')} 
+                               className="flex items-center gap-2 hover:text-primary transition-colors print:pointer-events-none"
+                             >
+                               تاريخ الفاتورة / Invoice Date
+                               <span className="text-xs print:hidden">
+                                 {sortField === 'invoice_date' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+                               </span>
+                             </button>
+                           </TableHead>
                            <TableHead className="text-right">الشركة / Company</TableHead>
                            <TableHead className="text-right">نوع الشحنة / Load Type</TableHead>
                            <TableHead className="text-right">
                              <button 
-                               onClick={toggleSortOrder} 
+                               onClick={() => handleSortFieldChange('driver')} 
                                className="flex items-center gap-2 hover:text-primary transition-colors print:pointer-events-none"
                              >
                                السائق / Driver
                                <span className="text-xs print:hidden">
-                                 {sortOrder === 'asc' ? '↑' : '↓'}
+                                 {sortField === 'driver' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
                                </span>
                              </button>
                            </TableHead>
