@@ -44,6 +44,7 @@ const LoadsList = () => {
   const [driverReport, setDriverReport] = useState<any[]>([]);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortField, setSortField] = useState<'driver' | 'date' | 'invoice_date'>('driver');
+  const [searchText, setSearchText] = useState<string>("");
 
   useEffect(() => {
     loadData();
@@ -135,6 +136,15 @@ const LoadsList = () => {
       filtered = filtered.filter(load => load.invoice_date && load.invoice_date <= invoiceEndDate);
     }
 
+    // Filter by search text (load number or truck number)
+    if (searchText.trim()) {
+      const search = searchText.trim().toLowerCase();
+      filtered = filtered.filter(load => 
+        (load.load_number && load.load_number.toLowerCase().includes(search)) ||
+        (load.truck_number && load.truck_number.toLowerCase().includes(search))
+      );
+    }
+
     // Sort by selected field
     filtered.sort((a, b) => {
       if (sortField === 'driver') {
@@ -179,6 +189,8 @@ const LoadsList = () => {
     setEndDate("");
     setInvoiceStartDate("");
     setInvoiceEndDate("");
+    setSearchText("");
+    applyFilters();
   };
 
   const exportToExcel = () => {
@@ -534,6 +546,22 @@ const LoadsList = () => {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-4">
+                  <Label className="text-sm font-medium">بحث نصي / Text Search</Label>
+                  <Input
+                    type="text"
+                    placeholder="ابحث برقم الشحنة أو رقم الشاحنة / Search by load or truck number"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        applyFilters();
+                      }
+                    }}
+                    className="mt-2"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">من تاريخ الشحنة / From Load Date</Label>
