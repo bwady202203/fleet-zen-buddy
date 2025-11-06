@@ -43,6 +43,15 @@ interface SparePartDetail {
   maintenance_date: string;
 }
 
+interface SparePartSummary {
+  item_name: string;
+  item_type: string;
+  total_quantity: number;
+  total_cost: number;
+  usage_count: number;
+  avg_unit_price: number;
+}
+
 const VehicleCostReport = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -54,6 +63,8 @@ const VehicleCostReport = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [maintenanceFilter, setMaintenanceFilter] = useState<'all' | 'with_maintenance' | 'without_maintenance'>('all');
+  const [sparePartsSummary, setSparePartsSummary] = useState<SparePartSummary[]>([]);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   useEffect(() => {
     // تعيين التواريخ الافتراضية (أول وآخر يوم في الشهر الحالي)
@@ -165,10 +176,77 @@ const VehicleCostReport = () => {
       const total = costsArray.reduce((sum, item) => sum + item.total_cost, 0);
       setTotalCost(total);
 
+      // تحميل ملخص القطع
+      await loadSparePartsSummary();
+
     } catch (error) {
       console.error('Error loading vehicle costs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSparePartsSummary = async () => {
+    try {
+      // جلب جميع طلبات الصيانة في الفترة
+      const { data: maintenanceRequests, error: mrError } = await supabase
+        .from('maintenance_requests')
+        .select('id')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate + 'T23:59:59');
+
+      if (mrError) throw mrError;
+
+      if (!maintenanceRequests || maintenanceRequests.length === 0) {
+        setSparePartsSummary([]);
+        return;
+      }
+
+      const maintenanceIds = maintenanceRequests.map(mr => mr.id);
+
+      // جلب جميع القطع المستخدمة
+      const { data: items, error: itemsError } = await supabase
+        .from('maintenance_cost_items')
+        .select('item_name, item_type, quantity, unit_price, total_price')
+        .in('maintenance_request_id', maintenanceIds);
+
+      if (itemsError) throw itemsError;
+
+      // تجميع القطع حسب الاسم
+      const summaryMap = new Map<string, SparePartSummary>();
+
+      items?.forEach(item => {
+        const key = `${item.item_name}_${item.item_type}`;
+        
+        if (summaryMap.has(key)) {
+          const existing = summaryMap.get(key)!;
+          existing.total_quantity += item.quantity;
+          existing.total_cost += item.total_price;
+          existing.usage_count += 1;
+        } else {
+          summaryMap.set(key, {
+            item_name: item.item_name,
+            item_type: item.item_type,
+            total_quantity: item.quantity,
+            total_cost: item.total_price,
+            usage_count: 1,
+            avg_unit_price: item.unit_price,
+          });
+        }
+      });
+
+      // حساب متوسط السعر
+      summaryMap.forEach((summary) => {
+        summary.avg_unit_price = summary.total_cost / summary.total_quantity;
+      });
+
+      const summaryArray = Array.from(summaryMap.values())
+        .sort((a, b) => b.total_cost - a.total_cost);
+
+      setSparePartsSummary(summaryArray);
+    } catch (error) {
+      console.error('Error loading spare parts summary:', error);
+      setSparePartsSummary([]);
     }
   };
 
@@ -273,6 +351,14 @@ const VehicleCostReport = () => {
               </div>
               <h1 className="text-2xl font-bold">تقرير تكاليف المركبات</h1>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowSummaryDialog(true)}
+              disabled={sparePartsSummary.length === 0}
+            >
+              <Filter className="h-4 w-4 ml-2" />
+              ملخص القطع المستخدمة
+            </Button>
           </div>
         </div>
       </header>
@@ -557,6 +643,116 @@ const VehicleCostReport = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 لا توجد تفاصيل قطع لهذه المركبة في الفترة المحددة
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog لملخص القطع الإجمالي */}
+        <Dialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
+          <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>
+                ملخص القطع والخدمات المستخدمة - الفترة من {new Date(startDate).toLocaleDateString('ar-SA')} إلى {new Date(endDate).toLocaleDateString('ar-SA')}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {sparePartsSummary.length > 0 ? (
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">#</TableHead>
+                          <TableHead className="text-right">اسم القطعة/الخدمة</TableHead>
+                          <TableHead className="text-right">النوع</TableHead>
+                          <TableHead className="text-right">الكمية الإجمالية</TableHead>
+                          <TableHead className="text-right">عدد مرات الاستخدام</TableHead>
+                          <TableHead className="text-right">متوسط سعر الوحدة</TableHead>
+                          <TableHead className="text-right">التكلفة الإجمالية</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sparePartsSummary.map((item, index) => (
+                          <TableRow key={`${item.item_name}_${item.item_type}`}>
+                            <TableCell className="font-medium">{index + 1}</TableCell>
+                            <TableCell className="font-medium">{item.item_name}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                item.item_type === 'spare_part' 
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {item.item_type === 'spare_part' ? 'قطعة غيار' : 'خدمة'}
+                              </span>
+                            </TableCell>
+                            <TableCell>{item.total_quantity}</TableCell>
+                            <TableCell>{item.usage_count}</TableCell>
+                            <TableCell>{formatCurrency(item.avg_unit_price)} ر.س</TableCell>
+                            <TableCell className="font-semibold text-primary">
+                              {formatCurrency(item.total_cost)} ر.س
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={6} className="text-left">
+                            الإجمالي الكلي لجميع القطع والخدمات
+                          </TableCell>
+                          <TableCell className="text-primary">
+                            {formatCurrency(sparePartsSummary.reduce((sum, item) => sum + item.total_cost, 0))} ر.س
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* إحصائيات سريعة */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        عدد أنواع القطع
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {sparePartsSummary.length}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        إجمالي القطع المستخدمة
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {sparePartsSummary.reduce((sum, item) => sum + item.total_quantity, 0)}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        إجمالي التكلفة
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">
+                        {formatCurrency(sparePartsSummary.reduce((sum, item) => sum + item.total_cost, 0))} ر.س
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                لا توجد بيانات قطع للفترة المحددة
               </div>
             )}
           </DialogContent>
