@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Calendar, DollarSign, Eye } from "lucide-react";
+import { ArrowRight, Calendar, DollarSign, Eye, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Table,
@@ -53,6 +53,7 @@ const VehicleCostReport = () => {
   const [sparePartDetails, setSparePartDetails] = useState<SparePartDetail[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [maintenanceFilter, setMaintenanceFilter] = useState<'all' | 'with_maintenance' | 'without_maintenance'>('all');
 
   useEffect(() => {
     // تعيين التواريخ الافتراضية (أول وآخر يوم في الشهر الحالي)
@@ -177,6 +178,17 @@ const VehicleCostReport = () => {
       maximumFractionDigits: 2,
     }).format(amount);
   };
+
+  const getFilteredVehicles = () => {
+    if (maintenanceFilter === 'with_maintenance') {
+      return vehicleCosts.filter(v => v.maintenance_count > 0);
+    } else if (maintenanceFilter === 'without_maintenance') {
+      return vehicleCosts.filter(v => v.maintenance_count === 0);
+    }
+    return vehicleCosts;
+  };
+
+  const filteredVehicles = getFilteredVehicles();
 
   const loadSparePartDetails = async (vehicleId: string) => {
     try {
@@ -303,6 +315,39 @@ const VehicleCostReport = () => {
           </CardContent>
         </Card>
 
+        {/* فلتر حالة الصيانة */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <Label className="text-sm font-medium">فرز حسب حالة الصيانة:</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={maintenanceFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMaintenanceFilter('all')}
+                >
+                  الكل ({vehicleCosts.length})
+                </Button>
+                <Button
+                  variant={maintenanceFilter === 'with_maintenance' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMaintenanceFilter('with_maintenance')}
+                >
+                  مع صيانة ({vehicleCosts.filter(v => v.maintenance_count > 0).length})
+                </Button>
+                <Button
+                  variant={maintenanceFilter === 'without_maintenance' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMaintenanceFilter('without_maintenance')}
+                >
+                  بدون صيانة ({vehicleCosts.filter(v => v.maintenance_count === 0).length})
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* ملخص الإحصائيات */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
@@ -358,7 +403,7 @@ const VehicleCostReport = () => {
               <div className="text-center py-8 text-muted-foreground">
                 جاري تحميل البيانات...
               </div>
-            ) : vehicleCosts.length > 0 ? (
+            ) : filteredVehicles.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -375,7 +420,7 @@ const VehicleCostReport = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vehicleCosts.map((vehicle, index) => (
+                    {filteredVehicles.map((vehicle, index) => (
                       <TableRow key={vehicle.vehicle_id}>
                         <TableCell className="font-medium">{index + 1}</TableCell>
                         <TableCell>{vehicle.license_plate}</TableCell>
@@ -406,30 +451,33 @@ const VehicleCostReport = () => {
                     ))}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell colSpan={3} className="text-left">
-                        الإجمالي
+                        الإجمالي ({maintenanceFilter === 'all' ? 'الكل' : maintenanceFilter === 'with_maintenance' ? 'مع صيانة' : 'بدون صيانة'})
                       </TableCell>
                       <TableCell className="text-primary">
-                        {formatCurrency(vehicleCosts.reduce((sum, v) => sum + v.maintenance_cost, 0))} ر.س
+                        {formatCurrency(filteredVehicles.reduce((sum, v) => sum + v.maintenance_cost, 0))} ر.س
                       </TableCell>
                       <TableCell className="text-primary">
-                        {formatCurrency(vehicleCosts.reduce((sum, v) => sum + v.loads_cost, 0))} ر.س
+                        {formatCurrency(filteredVehicles.reduce((sum, v) => sum + v.loads_cost, 0))} ر.س
                       </TableCell>
                       <TableCell>
-                        {vehicleCosts.reduce((sum, v) => sum + v.maintenance_count, 0)}
+                        {filteredVehicles.reduce((sum, v) => sum + v.maintenance_count, 0)}
                       </TableCell>
                       <TableCell>
-                        {vehicleCosts.reduce((sum, v) => sum + v.loads_count, 0)}
+                        {filteredVehicles.reduce((sum, v) => sum + v.loads_count, 0)}
                       </TableCell>
                       <TableCell className="text-primary">
-                        {formatCurrency(totalCost)} ر.س
+                        {formatCurrency(filteredVehicles.reduce((sum, v) => sum + v.total_cost, 0))} ر.س
                       </TableCell>
+                      <TableCell></TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                لا توجد بيانات للفترة المحددة
+                {vehicleCosts.length === 0 
+                  ? 'لا توجد بيانات للفترة المحددة' 
+                  : 'لا توجد مركبات تطابق الفلتر المحدد'}
               </div>
             )}
           </CardContent>
