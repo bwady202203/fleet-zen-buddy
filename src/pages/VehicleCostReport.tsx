@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Calendar, DollarSign } from "lucide-react";
+import { ArrowRight, Calendar, DollarSign, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Table,
@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface VehicleCost {
   vehicle_id: string;
@@ -26,12 +32,27 @@ interface VehicleCost {
   loads_cost: number;
 }
 
+interface SparePartDetail {
+  id: string;
+  item_name: string;
+  item_type: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  notes?: string;
+  maintenance_date: string;
+}
+
 const VehicleCostReport = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [vehicleCosts, setVehicleCosts] = useState<VehicleCost[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalCost, setTotalCost] = useState(0);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleCost | null>(null);
+  const [sparePartDetails, setSparePartDetails] = useState<SparePartDetail[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
   useEffect(() => {
     // تعيين التواريخ الافتراضية (أول وآخر يوم في الشهر الحالي)
@@ -155,6 +176,73 @@ const VehicleCostReport = () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const loadSparePartDetails = async (vehicleId: string) => {
+    try {
+      setLoadingDetails(true);
+      
+      // جلب تفاصيل القطع من maintenance_cost_items
+      const { data: maintenanceRequests, error: mrError } = await supabase
+        .from('maintenance_requests')
+        .select('id, created_at')
+        .eq('vehicle_id', vehicleId)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate + 'T23:59:59');
+
+      if (mrError) throw mrError;
+
+      if (!maintenanceRequests || maintenanceRequests.length === 0) {
+        setSparePartDetails([]);
+        return;
+      }
+
+      const maintenanceIds = maintenanceRequests.map(mr => mr.id);
+
+      const { data: items, error: itemsError } = await supabase
+        .from('maintenance_cost_items')
+        .select(`
+          id,
+          item_name,
+          item_type,
+          quantity,
+          unit_price,
+          total_price,
+          notes,
+          maintenance_request_id
+        `)
+        .in('maintenance_request_id', maintenanceIds)
+        .order('created_at', { ascending: false });
+
+      if (itemsError) throw itemsError;
+
+      // ربط البيانات مع تواريخ الصيانة
+      const detailsWithDates = items?.map(item => {
+        const maintenanceRequest = maintenanceRequests.find(
+          mr => mr.id === item.maintenance_request_id
+        );
+        return {
+          ...item,
+          maintenance_date: maintenanceRequest?.created_at || '',
+        };
+      }) || [];
+
+      setSparePartDetails(detailsWithDates);
+    } catch (error) {
+      console.error('Error loading spare part details:', error);
+      setSparePartDetails([]);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleVehicleClick = async (vehicle: VehicleCost) => {
+    if (vehicle.maintenance_count === 0) {
+      return; // لا توجد صيانات لهذه المركبة
+    }
+    setSelectedVehicle(vehicle);
+    setShowDetailsDialog(true);
+    await loadSparePartDetails(vehicle.vehicle_id);
   };
 
   return (
@@ -283,6 +371,7 @@ const VehicleCostReport = () => {
                       <TableHead className="text-right">عدد الصيانات</TableHead>
                       <TableHead className="text-right">عدد الأحمال</TableHead>
                       <TableHead className="text-right">إجمالي التكلفة</TableHead>
+                      <TableHead className="text-right">التفاصيل</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -301,6 +390,17 @@ const VehicleCostReport = () => {
                         <TableCell>{vehicle.loads_count}</TableCell>
                         <TableCell className="font-semibold text-primary">
                           {formatCurrency(vehicle.total_cost)} ر.س
+                        </TableCell>
+                        <TableCell>
+                          {vehicle.maintenance_count > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleVehicleClick(vehicle)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -334,6 +434,85 @@ const VehicleCostReport = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Dialog لعرض تفاصيل القطع */}
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>
+                تفاصيل القطع المستخدمة - {selectedVehicle?.license_plate} ({selectedVehicle?.vehicle_name})
+              </DialogTitle>
+            </DialogHeader>
+            
+            {loadingDetails ? (
+              <div className="text-center py-8 text-muted-foreground">
+                جاري تحميل التفاصيل...
+              </div>
+            ) : sparePartDetails.length > 0 ? (
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">#</TableHead>
+                          <TableHead className="text-right">اسم القطعة</TableHead>
+                          <TableHead className="text-right">النوع</TableHead>
+                          <TableHead className="text-right">الكمية</TableHead>
+                          <TableHead className="text-right">سعر الوحدة</TableHead>
+                          <TableHead className="text-right">الإجمالي</TableHead>
+                          <TableHead className="text-right">تاريخ الصيانة</TableHead>
+                          <TableHead className="text-right">ملاحظات</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sparePartDetails.map((item, index) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{index + 1}</TableCell>
+                            <TableCell>{item.item_name}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                item.item_type === 'spare_part' 
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {item.item_type === 'spare_part' ? 'قطعة غيار' : 'خدمة'}
+                              </span>
+                            </TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{formatCurrency(item.unit_price)} ر.س</TableCell>
+                            <TableCell className="font-semibold">
+                              {formatCurrency(item.total_price)} ر.س
+                            </TableCell>
+                            <TableCell>
+                              {new Date(item.maintenance_date).toLocaleDateString('ar-SA')}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {item.notes || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={5} className="text-left">
+                            الإجمالي الكلي
+                          </TableCell>
+                          <TableCell className="text-primary">
+                            {formatCurrency(sparePartDetails.reduce((sum, item) => sum + item.total_price, 0))} ر.س
+                          </TableCell>
+                          <TableCell colSpan={2}></TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                لا توجد تفاصيل قطع لهذه المركبة في الفترة المحددة
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
