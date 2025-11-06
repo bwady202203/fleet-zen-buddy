@@ -52,16 +52,11 @@ const LoadsList = () => {
   }, []);
 
   useEffect(() => {
-    // تطبيق الفلتر تلقائياً عند تحميل البيانات لأول مرة
+    // عرض جميع الشحنات عند التحميل الأولي
     if (loads.length > 0 && filteredLoads.length === 0) {
-      applyFilters();
+      setFilteredLoads(loads);
     }
   }, [loads]);
-
-  useEffect(() => {
-    loadData();
-    loadFilterData();
-  }, []);
 
   const loadFilterData = async () => {
     try {
@@ -94,6 +89,7 @@ const LoadsList = () => {
 
       if (error) throw error;
       setLoads(data || []);
+      setFilteredLoads(data || []); // عرض جميع البيانات مباشرة
     } catch (error: any) {
       toast({
         title: "خطأ",
