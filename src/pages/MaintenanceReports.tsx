@@ -33,6 +33,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, Filter, Download, ArrowRight, Eye, Pencil, Trash2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { MaintenanceRequestDialog } from "@/components/MaintenanceRequestDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +60,9 @@ const MaintenanceReports = () => {
   const [dialogMode, setDialogMode] = useState<'view' | 'edit'>('view');
   const [showDialog, setShowDialog] = useState(false);
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [displayLimit, setDisplayLimit] = useState<number>(10);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,7 +107,7 @@ const MaintenanceReports = () => {
       setVehicles(vehiclesList);
 
       // جلب طلبات الصيانة
-      const { data: requestsData, error: requestsError } = await supabase
+      let query = supabase
         .from('maintenance_requests')
         .select(`
           id,
@@ -115,6 +119,21 @@ const MaintenanceReports = () => {
           completed_date
         `)
         .order('created_at', { ascending: false });
+
+      // تطبيق فلتر التاريخ إذا كان محدداً
+      if (startDate) {
+        query = query.gte('created_at', startDate + 'T00:00:00');
+      }
+      if (endDate) {
+        query = query.lte('created_at', endDate + 'T23:59:59');
+      }
+
+      // تحديد عدد السجلات المعروضة (افتراضياً آخر 10 عمليات)
+      if (!startDate && !endDate) {
+        query = query.limit(displayLimit);
+      }
+
+      const { data: requestsData, error: requestsError } = await query;
 
       if (requestsError) throw requestsError;
 
@@ -439,7 +458,25 @@ const MaintenanceReports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+              <div>
+                <Label htmlFor="start-date">من تاريخ</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="end-date">إلى تاريخ</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">بحث</label>
                 <Input
@@ -481,11 +518,24 @@ const MaintenanceReports = () => {
                 </Select>
               </div>
               <div className="flex items-end">
-                <Button variant="outline" className="w-full" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 ml-2" />
-                  طباعة التقرير
+                <Button variant="outline" className="w-full" onClick={loadData}>
+                  <Filter className="h-4 w-4 ml-2" />
+                  تطبيق الفلتر
                 </Button>
               </div>
+            </div>
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                {!startDate && !endDate ? (
+                  <span>عرض آخر {displayLimit} عمليات صيانة</span>
+                ) : (
+                  <span>عرض جميع عمليات الصيانة في الفترة المحددة</span>
+                )}
+              </div>
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="h-4 w-4 ml-2" />
+                طباعة التقرير
+              </Button>
             </div>
           </CardContent>
         </Card>
