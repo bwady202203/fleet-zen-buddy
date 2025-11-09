@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Calendar, DollarSign, Eye, Filter } from "lucide-react";
+import { ArrowRight, Calendar, DollarSign, Eye, Filter, FileDown, FileSpreadsheet } from "lucide-react";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Link } from "react-router-dom";
 import {
   Table,
@@ -335,6 +338,70 @@ const VehicleCostReport = () => {
     await loadSparePartDetails(vehicle.vehicle_id);
   };
 
+  const exportToExcel = () => {
+    const data = filteredVehicles.map((vehicle, index) => ({
+      '#': index + 1,
+      'رقم اللوحة': vehicle.license_plate,
+      'الموديل': vehicle.vehicle_name,
+      'تكاليف الصيانة': vehicle.maintenance_cost,
+      'تكاليف الأحمال': vehicle.loads_cost,
+      'عدد الصيانات': vehicle.maintenance_count,
+      'عدد الأحمال': vehicle.loads_count,
+      'إجمالي التكلفة': vehicle.total_cost,
+    }));
+
+    // إضافة صف الإجمالي
+    data.push({
+      '#': '',
+      'رقم اللوحة': '',
+      'الموديل': 'الإجمالي',
+      'تكاليف الصيانة': filteredVehicles.reduce((sum, v) => sum + v.maintenance_cost, 0),
+      'تكاليف الأحمال': filteredVehicles.reduce((sum, v) => sum + v.loads_cost, 0),
+      'عدد الصيانات': filteredVehicles.reduce((sum, v) => sum + v.maintenance_count, 0),
+      'عدد الأحمال': filteredVehicles.reduce((sum, v) => sum + v.loads_count, 0),
+      'إجمالي التكلفة': filteredVehicles.reduce((sum, v) => sum + v.total_cost, 0),
+    } as any);
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير التكاليف');
+    
+    const fileName = `تقرير_تكاليف_المركبات_${startDate}_${endDate}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
+  const exportToPDF = async () => {
+    const element = document.getElementById('vehicle-cost-table');
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    
+    const imgWidth = 280;
+    const pageHeight = 210;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 10;
+
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight + 10;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save(`تقرير_تكاليف_المركبات_${startDate}_${endDate}.pdf`);
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b">
@@ -351,14 +418,32 @@ const VehicleCostReport = () => {
               </div>
               <h1 className="text-2xl font-bold">تقرير تكاليف المركبات</h1>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowSummaryDialog(true)}
-              disabled={sparePartsSummary.length === 0}
-            >
-              <Filter className="h-4 w-4 ml-2" />
-              ملخص القطع المستخدمة
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowSummaryDialog(true)}
+                disabled={sparePartsSummary.length === 0}
+              >
+                <Filter className="h-4 w-4 ml-2" />
+                ملخص القطع المستخدمة
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportToExcel}
+                disabled={filteredVehicles.length === 0}
+              >
+                <FileSpreadsheet className="h-4 w-4 ml-2" />
+                تصدير Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportToPDF}
+                disabled={filteredVehicles.length === 0}
+              >
+                <FileDown className="h-4 w-4 ml-2" />
+                تصدير PDF
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -490,7 +575,7 @@ const VehicleCostReport = () => {
                 جاري تحميل البيانات...
               </div>
             ) : filteredVehicles.length > 0 ? (
-              <div className="rounded-md border">
+              <div id="vehicle-cost-table" className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
