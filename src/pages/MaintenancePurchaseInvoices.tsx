@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Save, Trash2, Eye, Pencil, Search, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
+import { Separator } from "@/components/ui/separator";
 
 interface SparePart {
   id: string;
@@ -23,6 +25,7 @@ interface Account {
   code: string;
   name_ar: string;
   name_en: string;
+  type: string;
 }
 
 interface InvoiceItem {
@@ -39,6 +42,7 @@ interface Invoice {
   invoice_number: string;
   invoice_date: string;
   supplier_name: string;
+  debit_account_id: string;
   credit_account_id: string;
   subtotal: number;
   tax_rate: number;
@@ -58,6 +62,7 @@ export default function MaintenancePurchaseInvoices() {
     invoice_number: '',
     invoice_date: new Date().toISOString().split('T')[0],
     supplier_name: '',
+    debit_account_id: '',
     credit_account_id: '',
     subtotal: 0,
     tax_rate: 15,
@@ -130,8 +135,7 @@ export default function MaintenancePurchaseInvoices() {
     try {
       const { data, error } = await supabase
         .from('chart_of_accounts')
-        .select('id, code, name_ar, name_en')
-        .eq('type', 'liability')
+        .select('id, code, name_ar, name_en, type')
         .eq('is_active', true)
         .order('code');
 
@@ -239,26 +243,18 @@ export default function MaintenancePurchaseInvoices() {
 
       const journalEntryId = journalData?.[0]?.id;
 
-      // الحصول على حساب المخزون (مدين)
-      const { data: inventoryAccount } = await supabase
-        .from('chart_of_accounts')
-        .select('id')
-        .eq('type', 'asset')
-        .ilike('name_ar', '%مخزون%')
-        .single();
-
       // إضافة سطور القيد
       const lines = [
         {
           journal_entry_id: journalEntryId,
-          account_id: inventoryAccount?.id,
+          account_id: invoice.debit_account_id,
           description: `مخزون قطع غيار - ${invoice.supplier_name}`,
           debit: invoice.subtotal,
           credit: 0,
         },
         {
           journal_entry_id: journalEntryId,
-          account_id: inventoryAccount?.id,
+          account_id: invoice.debit_account_id,
           description: `ضريبة القيمة المضافة`,
           debit: invoice.tax_amount,
           credit: 0,
@@ -293,10 +289,10 @@ export default function MaintenancePurchaseInvoices() {
 
   const handleSave = async () => {
     try {
-      if (!currentInvoice.supplier_name || !currentInvoice.credit_account_id) {
+      if (!currentInvoice.supplier_name || !currentInvoice.debit_account_id || !currentInvoice.credit_account_id) {
         toast({
           title: "خطأ",
-          description: "يرجى إدخال اسم المورد والحساب الدائن",
+          description: "يرجى إدخال جميع البيانات المطلوبة (المورد، الحساب المدين، الحساب الدائن)",
           variant: "destructive",
         });
         return;
@@ -331,6 +327,7 @@ export default function MaintenancePurchaseInvoices() {
             invoice_number: invoiceNumber,
             invoice_date: currentInvoice.invoice_date,
             supplier_name: currentInvoice.supplier_name,
+            debit_account_id: currentInvoice.debit_account_id,
             credit_account_id: currentInvoice.credit_account_id,
             subtotal: currentInvoice.subtotal,
             tax_rate: currentInvoice.tax_rate,
@@ -391,6 +388,7 @@ export default function MaintenancePurchaseInvoices() {
           .update({
             invoice_date: currentInvoice.invoice_date,
             supplier_name: currentInvoice.supplier_name,
+            debit_account_id: currentInvoice.debit_account_id,
             credit_account_id: currentInvoice.credit_account_id,
             subtotal: currentInvoice.subtotal,
             tax_rate: currentInvoice.tax_rate,
@@ -473,6 +471,7 @@ export default function MaintenancePurchaseInvoices() {
       invoice_number: '',
       invoice_date: new Date().toISOString().split('T')[0],
       supplier_name: '',
+      debit_account_id: '',
       credit_account_id: '',
       subtotal: 0,
       tax_rate: 15,
@@ -592,190 +591,246 @@ export default function MaintenancePurchaseInvoices() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-2xl">
               {dialogMode === 'create' ? 'فاتورة مشتريات جديدة' : 
                dialogMode === 'edit' ? 'تعديل الفاتورة' : 'عرض الفاتورة'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4" dir="rtl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label>التاريخ</Label>
-                <Input
-                  type="date"
-                  value={currentInvoice.invoice_date}
-                  onChange={(e) => setCurrentInvoice({ ...currentInvoice, invoice_date: e.target.value })}
-                  disabled={dialogMode === 'view'}
-                />
-              </div>
-              <div>
-                <Label>المورد / المندوب</Label>
-                <Input
-                  value={currentInvoice.supplier_name}
-                  onChange={(e) => setCurrentInvoice({ ...currentInvoice, supplier_name: e.target.value })}
-                  disabled={dialogMode === 'view'}
-                  placeholder="اسم المورد أو المندوب"
-                />
-              </div>
-              <div>
-                <Label>الحساب الدائن</Label>
-                <Select
-                  value={currentInvoice.credit_account_id}
-                  onValueChange={(value) => setCurrentInvoice({ ...currentInvoice, credit_account_id: value })}
-                  disabled={dialogMode === 'view'}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الحساب" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.code} - {account.name_ar}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-4">العناصر</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>قطعة الغيار</TableHead>
-                    <TableHead>اسم الصنف</TableHead>
-                    <TableHead>الكمية</TableHead>
-                    <TableHead>سعر الوحدة</TableHead>
-                    <TableHead>الإجمالي</TableHead>
-                    {dialogMode !== 'view' && <TableHead></TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentInvoice.items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Select
-                          value={item.spare_part_id || ''}
-                          onValueChange={(value) => handleItemChange(index, 'spare_part_id', value)}
-                          disabled={dialogMode === 'view'}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر قطعة غيار" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="new">+ صنف جديد</SelectItem>
-                            {spareParts.map((sp) => (
-                              <SelectItem key={sp.id} value={sp.id}>
-                                {sp.code} - {sp.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.item_name}
-                          onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
-                          disabled={dialogMode === 'view'}
-                          placeholder="اسم الصنف"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.quantity || ''}
-                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                          disabled={dialogMode === 'view'}
-                          placeholder="0"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={item.unit_price || ''}
-                          onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
-                          disabled={dialogMode === 'view'}
-                          placeholder="0.00"
-                        />
-                      </TableCell>
-                      <TableCell>{item.total_price.toFixed(2)}</TableCell>
-                      {dialogMode !== 'view' && (
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              const newItems = [...currentInvoice.items];
-                              newItems[index] = {
-                                spare_part_id: null,
-                                item_name: '',
-                                quantity: 0,
-                                unit_price: 0,
-                                total_price: 0,
-                              };
-                              const totals = calculateTotals(newItems, currentInvoice.tax_rate);
-                              setCurrentInvoice({ ...currentInvoice, items: newItems, ...totals });
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
-              <div></div>
-              <div></div>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>المجموع الفرعي:</span>
-                  <span>{currentInvoice.subtotal.toFixed(2)} ريال</span>
+          <div className="space-y-6" dir="rtl">
+            {/* معلومات الفاتورة الأساسية */}
+            <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+              <h3 className="font-semibold text-lg mb-3">معلومات الفاتورة</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">التاريخ *</Label>
+                  <Input
+                    type="date"
+                    value={currentInvoice.invoice_date}
+                    onChange={(e) => setCurrentInvoice({ ...currentInvoice, invoice_date: e.target.value })}
+                    disabled={dialogMode === 'view'}
+                    className="w-full"
+                  />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>الضريبة:</span>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={currentInvoice.tax_rate}
-                      onChange={(e) => handleTaxRateChange(e.target.value)}
-                      disabled={dialogMode === 'view'}
-                      className="w-20"
-                    />
-                    <span>%</span>
-                    <span>{currentInvoice.tax_amount.toFixed(2)} ريال</span>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">المورد / المندوب *</Label>
+                  <Input
+                    value={currentInvoice.supplier_name}
+                    onChange={(e) => setCurrentInvoice({ ...currentInvoice, supplier_name: e.target.value })}
+                    disabled={dialogMode === 'view'}
+                    placeholder="اسم المورد أو المندوب"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">الحساب المدين (المخزون) *</Label>
+                  <Combobox
+                    options={accounts
+                      .filter(acc => acc.type === 'asset')
+                      .map((account) => ({
+                        value: account.id,
+                        label: `${account.code} - ${account.name_ar}`,
+                        searchLabel: `${account.code} ${account.name_ar} ${account.name_en || ''}`,
+                      }))}
+                    value={currentInvoice.debit_account_id}
+                    onValueChange={(value) => setCurrentInvoice({ ...currentInvoice, debit_account_id: value })}
+                    placeholder="ابحث عن الحساب المدين..."
+                    searchPlaceholder="ابحث بالكود أو الاسم..."
+                    emptyText="لا توجد حسابات أصول"
+                    disabled={dialogMode === 'view'}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">الحساب الدائن (الموردين) *</Label>
+                  <Combobox
+                    options={accounts
+                      .filter(acc => acc.type === 'liability')
+                      .map((account) => ({
+                        value: account.id,
+                        label: `${account.code} - ${account.name_ar}`,
+                        searchLabel: `${account.code} ${account.name_ar} ${account.name_en || ''}`,
+                      }))}
+                    value={currentInvoice.credit_account_id}
+                    onValueChange={(value) => setCurrentInvoice({ ...currentInvoice, credit_account_id: value })}
+                    placeholder="ابحث عن الحساب الدائن..."
+                    searchPlaceholder="ابحث بالكود أو الاسم..."
+                    emptyText="لا توجد حسابات خصوم"
+                    disabled={dialogMode === 'view'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* جدول العناصر */}
+            <div className="border rounded-lg p-4 bg-card">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <span className="text-primary">●</span>
+                عناصر الفاتورة
+              </h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">قطعة الغيار</TableHead>
+                      <TableHead className="font-semibold">اسم الصنف</TableHead>
+                      <TableHead className="font-semibold w-24">الكمية</TableHead>
+                      <TableHead className="font-semibold w-32">سعر الوحدة</TableHead>
+                      <TableHead className="font-semibold w-32">الإجمالي</TableHead>
+                      {dialogMode !== 'view' && <TableHead className="w-12"></TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentInvoice.items.map((item, index) => (
+                      <TableRow key={index} className="hover:bg-muted/30">
+                        <TableCell className="min-w-[250px]">
+                          <Combobox
+                            options={[
+                              { value: 'new', label: '+ إضافة صنف جديد', searchLabel: 'new' },
+                              ...spareParts.map((sp) => ({
+                                value: sp.id,
+                                label: `${sp.code} - ${sp.name}`,
+                                searchLabel: `${sp.code} ${sp.name}`,
+                              }))
+                            ]}
+                            value={item.spare_part_id || ''}
+                            onValueChange={(value) => handleItemChange(index, 'spare_part_id', value)}
+                            placeholder="ابحث عن قطعة غيار..."
+                            searchPlaceholder="اكتب للبحث..."
+                            emptyText="لا توجد قطع غيار"
+                            disabled={dialogMode === 'view'}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={item.item_name}
+                            onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                            disabled={dialogMode === 'view'}
+                            placeholder="اسم الصنف"
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={item.quantity || ''}
+                            onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                            disabled={dialogMode === 'view'}
+                            placeholder="0"
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.unit_price || ''}
+                            onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
+                            disabled={dialogMode === 'view'}
+                            placeholder="0.00"
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {item.total_price.toFixed(2)} ر.س
+                        </TableCell>
+                        {dialogMode !== 'view' && (
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => {
+                                const newItems = [...currentInvoice.items];
+                                newItems[index] = {
+                                  spare_part_id: null,
+                                  item_name: '',
+                                  quantity: 0,
+                                  unit_price: 0,
+                                  total_price: 0,
+                                };
+                                const totals = calculateTotals(newItems, currentInvoice.tax_rate);
+                                setCurrentInvoice({ ...currentInvoice, items: newItems, ...totals });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* ملخص الفاتورة */}
+            <div className="bg-muted/30 p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div></div>
+                <div></div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground">المجموع الفرعي:</span>
+                    <span className="font-medium text-lg">{currentInvoice.subtotal.toFixed(2)} ر.س</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-muted-foreground">الضريبة:</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={currentInvoice.tax_rate}
+                        onChange={(e) => handleTaxRateChange(e.target.value)}
+                        disabled={dialogMode === 'view'}
+                        className="w-16 h-8 text-center"
+                      />
+                      <span className="text-sm">%</span>
+                      <span className="font-medium">{currentInvoice.tax_amount.toFixed(2)} ر.س</span>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center py-2 bg-primary/5 px-3 rounded-md">
+                    <span className="font-bold text-lg">الإجمالي:</span>
+                    <span className="font-bold text-xl text-primary">{currentInvoice.total_amount.toFixed(2)} ر.س</span>
                   </div>
                 </div>
-                <div className="flex justify-between font-bold text-lg border-t pt-2">
-                  <span>الإجمالي:</span>
-                  <span>{currentInvoice.total_amount.toFixed(2)} ريال</span>
-                </div>
               </div>
             </div>
 
-            <div>
-              <Label>ملاحظات</Label>
+            {/* الملاحظات */}
+            <div className="bg-card p-4 rounded-lg border">
+              <Label className="text-sm font-medium mb-2 block">ملاحظات</Label>
               <Textarea
                 value={currentInvoice.notes}
                 onChange={(e) => setCurrentInvoice({ ...currentInvoice, notes: e.target.value })}
                 disabled={dialogMode === 'view'}
                 rows={3}
+                placeholder="أدخل أي ملاحظات إضافية..."
+                className="resize-none"
               />
             </div>
 
             {dialogMode !== 'view' && (
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowDialog(false)}>
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDialog(false)}
+                  className="px-6"
+                >
                   إلغاء
                 </Button>
-                <Button onClick={handleSave}>
+                <Button 
+                  onClick={handleSave}
+                  className="px-6"
+                >
                   <Save className="h-4 w-4 ml-2" />
-                  حفظ
+                  حفظ الفاتورة
                 </Button>
               </div>
             )}

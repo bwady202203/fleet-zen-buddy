@@ -1694,6 +1694,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit_account_id: string | null
+          debit_account_id: string | null
           id: string
           invoice_date: string
           invoice_number: string
@@ -1711,6 +1712,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_account_id?: string | null
+          debit_account_id?: string | null
           id?: string
           invoice_date?: string
           invoice_number: string
@@ -1728,6 +1730,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_account_id?: string | null
+          debit_account_id?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: string
@@ -1745,6 +1748,13 @@ export type Database = {
           {
             foreignKeyName: "maintenance_purchase_invoices_credit_account_id_fkey"
             columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_purchase_invoices_debit_account_id_fkey"
+            columns: ["debit_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
             referencedColumns: ["id"]
