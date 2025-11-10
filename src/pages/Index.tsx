@@ -107,6 +107,12 @@ const Index = () => {
                   المشتريات
                 </Button>
               </Link>
+              <Link to="/maintenance-purchase-invoices">
+                <Button variant="outline">
+                  <Receipt className="h-4 w-4 ml-2" />
+                  فواتير المشتريات
+                </Button>
+              </Link>
               <Link to="/reports">
                 <Button variant="outline">
                   <FileText className="h-4 w-4 ml-2" />

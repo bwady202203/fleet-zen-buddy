@@ -1628,6 +1628,143 @@ export type Database = {
           },
         ]
       }
+      maintenance_purchase_invoice_items: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          item_name: string
+          organization_id: string | null
+          quantity: number
+          spare_part_id: string | null
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          item_name: string
+          organization_id?: string | null
+          quantity: number
+          spare_part_id?: string | null
+          total_price: number
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          item_name?: string
+          organization_id?: string | null
+          quantity?: number
+          spare_part_id?: string | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_purchase_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_purchase_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_purchase_invoice_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_purchase_invoice_items_spare_part_id_fkey"
+            columns: ["spare_part_id"]
+            isOneToOne: false
+            referencedRelation: "spare_parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_purchase_invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          credit_account_id: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          journal_entry_id: string | null
+          notes: string | null
+          organization_id: string | null
+          subtotal: number
+          supplier_name: string
+          tax_amount: number
+          tax_rate: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          credit_account_id?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          subtotal?: number
+          supplier_name: string
+          tax_amount?: number
+          tax_rate?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          credit_account_id?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          subtotal?: number
+          supplier_name?: string
+          tax_amount?: number
+          tax_rate?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_purchase_invoices_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_purchase_invoices_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_purchase_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           completed_date: string | null

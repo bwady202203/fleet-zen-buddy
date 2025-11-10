@@ -78,6 +78,7 @@ import PurchasePriceHistory from "./pages/PurchasePriceHistory";
 import BulkVehicles from "./pages/BulkVehicles";
 import VehicleMaintenanceCosts from "./pages/VehicleMaintenanceCosts";
 import VehicleCostReport from "./pages/VehicleCostReport";
+import MaintenancePurchaseInvoices from "./pages/MaintenancePurchaseInvoices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -158,6 +159,7 @@ const App = () => {
                                   <Route path="/reports" element={<MaintenanceReports />} />
                                   <Route path="/maintenance-costs" element={<VehicleMaintenanceCosts />} />
                                   <Route path="/vehicle-cost-report" element={<VehicleCostReport />} />
+                                  <Route path="/maintenance-purchase-invoices" element={<MaintenancePurchaseInvoices />} />
                                   <Route path="/spare-parts" element={<SpareParts />} />
                                   <Route path="/bulk-spare-parts" element={<BulkSpareParts />} />
                                   <Route path="/purchases" element={<Purchases />} />
