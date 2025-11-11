@@ -243,6 +243,17 @@ export default function MaintenancePurchaseInvoices() {
 
       const journalEntryId = journalData?.[0]?.id;
 
+      // البحث عن حساب الضريبة
+      const { data: taxAccount } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .ilike('name_ar', '%ضريبة%')
+        .eq('type', 'asset')
+        .limit(1)
+        .single();
+
+      const taxAccountId = taxAccount?.id || invoice.debit_account_id;
+
       // إضافة سطور القيد
       const lines = [
         {
@@ -254,7 +265,7 @@ export default function MaintenancePurchaseInvoices() {
         },
         {
           journal_entry_id: journalEntryId,
-          account_id: invoice.debit_account_id,
+          account_id: taxAccountId,
           description: `ضريبة القيمة المضافة`,
           debit: invoice.tax_amount,
           credit: 0,
@@ -361,9 +372,10 @@ export default function MaintenancePurchaseInvoices() {
         // إنشاء قيد يومي
         await createJournalEntry(currentInvoice, invoiceData.id);
 
-        // تحديث كمية قطع الغيار
+        // تحديث أو إنشاء قطع الغيار
         for (const item of validItems) {
           if (item.spare_part_id) {
+            // تحديث الكمية لقطعة موجودة
             const { data: sparePartData } = await supabase
               .from('spare_parts')
               .select('quantity')
@@ -374,6 +386,28 @@ export default function MaintenancePurchaseInvoices() {
               .from('spare_parts')
               .update({ quantity: (sparePartData?.quantity || 0) + item.quantity })
               .eq('id', item.spare_part_id);
+          } else if (item.item_name) {
+            // إنشاء قطعة غيار جديدة
+            const { data: newPart, error: createError } = await supabase
+              .from('spare_parts')
+              .insert({
+                code: `SP-${Date.now()}`,
+                name: item.item_name,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                organization_id: orgData?.organization_id,
+              })
+              .select()
+              .single();
+
+            if (!createError && newPart) {
+              // تحديث العنصر بمعرف قطعة الغيار الجديدة
+              await supabase
+                .from('maintenance_purchase_invoice_items')
+                .update({ spare_part_id: newPart.id })
+                .eq('invoice_id', invoiceData.id)
+                .eq('item_name', item.item_name);
+            }
           }
         }
 
@@ -630,36 +664,32 @@ export default function MaintenancePurchaseInvoices() {
                 <div>
                   <Label className="text-sm font-medium mb-2 block">الحساب المدين (المخزون) *</Label>
                   <Combobox
-                    options={accounts
-                      .filter(acc => acc.type === 'asset')
-                      .map((account) => ({
-                        value: account.id,
-                        label: `${account.code} - ${account.name_ar}`,
-                        searchLabel: `${account.code} ${account.name_ar} ${account.name_en || ''}`,
-                      }))}
+                    options={accounts.map((account) => ({
+                      value: account.id,
+                      label: `${account.code} - ${account.name_ar}`,
+                      searchLabel: `${account.code}${account.name_ar}${account.name_en || ''}`,
+                    }))}
                     value={currentInvoice.debit_account_id}
                     onValueChange={(value) => setCurrentInvoice({ ...currentInvoice, debit_account_id: value })}
                     placeholder="ابحث عن الحساب المدين..."
                     searchPlaceholder="ابحث بالكود أو الاسم..."
-                    emptyText="لا توجد حسابات أصول"
+                    emptyText="لا توجد حسابات"
                     disabled={dialogMode === 'view'}
                   />
                 </div>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">الحساب الدائن (الموردين) *</Label>
                   <Combobox
-                    options={accounts
-                      .filter(acc => acc.type === 'liability')
-                      .map((account) => ({
-                        value: account.id,
-                        label: `${account.code} - ${account.name_ar}`,
-                        searchLabel: `${account.code} ${account.name_ar} ${account.name_en || ''}`,
-                      }))}
+                    options={accounts.map((account) => ({
+                      value: account.id,
+                      label: `${account.code} - ${account.name_ar}`,
+                      searchLabel: `${account.code}${account.name_ar}${account.name_en || ''}`,
+                    }))}
                     value={currentInvoice.credit_account_id}
                     onValueChange={(value) => setCurrentInvoice({ ...currentInvoice, credit_account_id: value })}
                     placeholder="ابحث عن الحساب الدائن..."
                     searchPlaceholder="ابحث بالكود أو الاسم..."
-                    emptyText="لا توجد حسابات خصوم"
+                    emptyText="لا توجد حسابات"
                     disabled={dialogMode === 'view'}
                   />
                 </div>
@@ -689,14 +719,11 @@ export default function MaintenancePurchaseInvoices() {
                       <TableRow key={index} className="hover:bg-muted/30">
                         <TableCell className="min-w-[250px]">
                           <Combobox
-                            options={[
-                              { value: 'new', label: '+ إضافة صنف جديد', searchLabel: 'new' },
-                              ...spareParts.map((sp) => ({
-                                value: sp.id,
-                                label: `${sp.code} - ${sp.name}`,
-                                searchLabel: `${sp.code} ${sp.name}`,
-                              }))
-                            ]}
+                            options={spareParts.map((sp) => ({
+                              value: sp.id,
+                              label: `${sp.code} - ${sp.name}`,
+                              searchLabel: `${sp.code}${sp.name}`,
+                            }))}
                             value={item.spare_part_id || ''}
                             onValueChange={(value) => handleItemChange(index, 'spare_part_id', value)}
                             placeholder="ابحث عن قطعة غيار..."
