@@ -382,10 +382,36 @@ export default function MaintenancePurchaseInvoices() {
               .eq('id', item.spare_part_id)
               .single();
 
-            await supabase
+            const newQuantity = (sparePartData?.quantity || 0) + item.quantity;
+            
+            const { error: updateError } = await supabase
               .from('spare_parts')
-              .update({ quantity: (sparePartData?.quantity || 0) + item.quantity })
+              .update({ 
+                quantity: newQuantity,
+                unit_price: item.unit_price
+              })
               .eq('id', item.spare_part_id);
+
+            if (updateError) {
+              console.error('خطأ في تحديث الكمية:', updateError);
+            } else {
+              console.log(`تم تحديث الكمية: ${sparePartData?.quantity || 0} + ${item.quantity} = ${newQuantity}`);
+              
+              // إضافة سجل في حركة المخزون
+              await supabase
+                .from('stock_transactions')
+                .insert({
+                  spare_part_id: item.spare_part_id,
+                  type: 'in',
+                  quantity: item.quantity,
+                  reference_type: 'purchase_invoice',
+                  reference_id: invoiceData.id,
+                  transaction_date: currentInvoice.invoice_date,
+                  notes: `فاتورة شراء رقم ${invoiceNumber}`,
+                  organization_id: orgData?.organization_id,
+                  created_by: userData?.user?.id,
+                });
+            }
           } else if (item.item_name) {
             // إنشاء قطعة غيار جديدة
             const { data: newPart, error: createError } = await supabase
@@ -401,20 +427,42 @@ export default function MaintenancePurchaseInvoices() {
               .single();
 
             if (!createError && newPart) {
+              console.log(`تم إنشاء قطعة غيار جديدة: ${newPart.name} بكمية ${item.quantity}`);
+              
               // تحديث العنصر بمعرف قطعة الغيار الجديدة
               await supabase
                 .from('maintenance_purchase_invoice_items')
                 .update({ spare_part_id: newPart.id })
                 .eq('invoice_id', invoiceData.id)
                 .eq('item_name', item.item_name);
+
+              // إضافة سجل في حركة المخزون للقطعة الجديدة
+              await supabase
+                .from('stock_transactions')
+                .insert({
+                  spare_part_id: newPart.id,
+                  type: 'in',
+                  quantity: item.quantity,
+                  reference_type: 'purchase_invoice',
+                  reference_id: invoiceData.id,
+                  transaction_date: currentInvoice.invoice_date,
+                  notes: `فاتورة شراء رقم ${invoiceNumber} - قطعة جديدة`,
+                  organization_id: orgData?.organization_id,
+                  created_by: userData?.user?.id,
+                });
+            } else {
+              console.error('خطأ في إنشاء قطعة غيار جديدة:', createError);
             }
           }
         }
 
         toast({
           title: "نجح",
-          description: "تم إضافة الفاتورة بنجاح",
+          description: "تم إضافة الفاتورة بنجاح وتحديث المخزون",
         });
+
+        // إعادة تحميل قطع الغيار لتحديث القائمة
+        await loadSpareParts();
       } else if (dialogMode === 'edit') {
         // تحديث الفاتورة
         const { error: updateError } = await supabase
