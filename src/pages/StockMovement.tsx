@@ -17,17 +17,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Activity, ArrowRight, TrendingUp, TrendingDown, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Combobox } from "@/components/ui/combobox";
 
 interface SparePart {
   id: string;
@@ -184,19 +178,21 @@ const StockMovement = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label>قطعة الغيار</Label>
-                <Select value={selectedPart} onValueChange={setSelectedPart}>
-                  <SelectTrigger className="text-right">
-                    <SelectValue placeholder="اختر قطعة الغيار" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع القطع</SelectItem>
-                    {spareParts.map((part) => (
-                      <SelectItem key={part.id} value={part.id}>
-                        {part.code} - {part.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={[
+                    { value: "all", label: "جميع القطع", searchLabel: "جميع القطع" },
+                    ...spareParts.map((part) => ({
+                      value: part.id,
+                      label: `${part.code} - ${part.name}`,
+                      searchLabel: `${part.code}${part.name}`,
+                    }))
+                  ]}
+                  value={selectedPart}
+                  onValueChange={setSelectedPart}
+                  placeholder="ابحث عن قطعة غيار..."
+                  searchPlaceholder="اكتب للبحث..."
+                  emptyText="لا توجد قطع غيار"
+                />
               </div>
               <div>
                 <Label htmlFor="startDate">من تاريخ</Label>
