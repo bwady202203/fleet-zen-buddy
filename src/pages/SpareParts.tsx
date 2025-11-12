@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History, Search, List, FileSpreadsheet } from "lucide-react";
+import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History, Search, List, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
@@ -28,12 +28,39 @@ import * as XLSX from 'xlsx';
 const SpareParts = () => {
   const { spareParts, addSparePart, updateSparePart, deleteSparePart } = useSpareParts();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<'name' | 'code' | 'price' | 'quantity' | 'minQuantity'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const filteredSpareParts = spareParts.filter(part => 
-    part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    part.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    part.unit.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleSort = (field: 'name' | 'code' | 'price' | 'quantity' | 'minQuantity') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const filteredAndSortedSpareParts = spareParts
+    .filter(part => 
+      part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      part.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      part.unit.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+      }
+      if (typeof bValue === 'string') {
+        bValue = bValue.toLowerCase();
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const exportToExcel = () => {
     const excelData = spareParts.map(part => ({
@@ -142,7 +169,16 @@ const SpareParts = () => {
     }
   };
 
-  const lowStockParts = filteredSpareParts.filter((part) => part.quantity <= part.minQuantity);
+  const lowStockParts = filteredAndSortedSpareParts.filter((part) => part.quantity <= part.minQuantity);
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 mr-1 text-muted-foreground" />;
+    }
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="h-3 w-3 mr-1 text-primary" />
+      : <ArrowDown className="h-3 w-3 mr-1 text-primary" />;
+  };
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -362,19 +398,69 @@ const SpareParts = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">الكود</TableHead>
-                  <TableHead className="text-right">القطعة</TableHead>
-                  <TableHead className="text-right">السعر</TableHead>
-                  <TableHead className="text-right">الكمية المتاحة</TableHead>
-                  <TableHead className="text-right">الحد الأدنى</TableHead>
+                  <TableHead className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 font-semibold"
+                      onClick={() => handleSort('code')}
+                    >
+                      <SortIcon field="code" />
+                      الكود
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 font-semibold"
+                      onClick={() => handleSort('name')}
+                    >
+                      <SortIcon field="name" />
+                      القطعة
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 font-semibold"
+                      onClick={() => handleSort('price')}
+                    >
+                      <SortIcon field="price" />
+                      السعر
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 font-semibold"
+                      onClick={() => handleSort('quantity')}
+                    >
+                      <SortIcon field="quantity" />
+                      الكمية المتاحة
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 font-semibold"
+                      onClick={() => handleSort('minQuantity')}
+                    >
+                      <SortIcon field="minQuantity" />
+                      الحد الأدنى
+                    </Button>
+                  </TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">القيمة الإجمالية</TableHead>
                   <TableHead className="text-right">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSpareParts.length > 0 ? (
-                  filteredSpareParts.map((part) => (
+                {filteredAndSortedSpareParts.length > 0 ? (
+                  filteredAndSortedSpareParts.map((part) => (
                   <TableRow key={part.id}>
                     <TableCell className="font-mono text-sm">{part.code}</TableCell>
                     <TableCell className="font-medium">{part.name}</TableCell>
