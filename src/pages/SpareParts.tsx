@@ -103,16 +103,21 @@ const SpareParts = () => {
     });
 
   const exportToExcel = () => {
-    const excelData = spareParts.map(part => ({
-      'الكود': part.code || '-',
-      'اسم القطعة': part.name,
-      'السعر (ر.س)': part.price,
-      'الكمية المتاحة': part.quantity,
-      'الوحدة': part.unit,
-      'الحد الأدنى': part.minQuantity,
-      'الحالة': part.quantity <= part.minQuantity ? 'مخزون منخفض' : 'متوفر',
-      'القيمة الإجمالية (ر.س)': part.price * part.quantity
-    }));
+    const excelData = filteredAndSortedSpareParts.map(part => {
+      const stats = getSparePartStats(part.id);
+      return {
+        'الكود': part.code || '-',
+        'اسم القطعة': part.name,
+        'السعر (ر.س)': part.price,
+        'الكمية المتاحة': part.quantity,
+        'الوحدة': part.unit,
+        'الحد الأدنى': part.minQuantity,
+        'إجمالي الكمية المشتراة': stats.totalPurchased,
+        'الكمية المصروفة': stats.totalUsed,
+        'الحالة': part.quantity <= part.minQuantity ? 'مخزون منخفض' : 'متوفر',
+        'القيمة الإجمالية (ر.س)': part.price * part.quantity
+      };
+    });
     
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
@@ -123,15 +128,20 @@ const SpareParts = () => {
       { wch: 15 }, // الكود
       { wch: 30 }, // اسم القطعة
       { wch: 12 }, // السعر
-      { wch: 15 }, // الكمية
+      { wch: 15 }, // الكمية المتاحة
       { wch: 10 }, // الوحدة
       { wch: 12 }, // الحد الأدنى
+      { wch: 18 }, // إجمالي المشتراة
+      { wch: 15 }, // المصروفة
       { wch: 15 }, // الحالة
       { wch: 18 }  // القيمة الإجمالية
     ];
     worksheet['!cols'] = cols;
     
-    XLSX.writeFile(workbook, `spare-parts-${new Date().toISOString().split('T')[0]}.xlsx`);
+    const dateRange = dateFrom || dateTo 
+      ? `-${dateFrom || 'start'}-to-${dateTo || 'end'}`
+      : '';
+    XLSX.writeFile(workbook, `spare-parts${dateRange}-${new Date().toISOString().split('T')[0]}.xlsx`);
   };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<string | null>(null);
