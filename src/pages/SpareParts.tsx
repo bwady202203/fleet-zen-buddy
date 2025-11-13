@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,17 +19,57 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History, Search, List, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Package, Plus, ArrowRight, AlertCircle, Pencil, Trash2, Activity, Upload, ShoppingCart, TrendingUp, History, Search, List, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { toast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { supabase } from "@/integrations/supabase/client";
 
 const SpareParts = () => {
   const { spareParts, addSparePart, updateSparePart, deleteSparePart } = useSpareParts();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<'name' | 'code' | 'price' | 'quantity' | 'minQuantity'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [stockTransactions, setStockTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchStockTransactions();
+  }, [dateFrom, dateTo]);
+
+  const fetchStockTransactions = async () => {
+    let query = supabase
+      .from('stock_transactions')
+      .select('*');
+    
+    if (dateFrom) {
+      query = query.gte('transaction_date', dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte('transaction_date', dateTo);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching stock transactions:', error);
+      return;
+    }
+    setStockTransactions(data || []);
+  };
+
+  const getSparePartStats = (sparePartId: string) => {
+    const transactions = stockTransactions.filter(t => t.spare_part_id === sparePartId);
+    const totalPurchased = transactions
+      .filter(t => t.type === 'in')
+      .reduce((sum, t) => sum + (t.quantity || 0), 0);
+    const totalUsed = transactions
+      .filter(t => t.type === 'out')
+      .reduce((sum, t) => sum + Math.abs(t.quantity || 0), 0);
+    
+    return { totalPurchased, totalUsed };
+  };
 
   const handleSort = (field: 'name' | 'code' | 'price' | 'quantity' | 'minQuantity') => {
     if (sortField === field) {
@@ -383,14 +423,38 @@ const SpareParts = () => {
                 </DialogContent>
               </Dialog>
               </div>
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="ابحث عن قطع الغيار بالاسم أو الكود..." 
-                  className="pr-9 text-right"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="ابحث عن قطع الغيار بالاسم أو الكود..." 
+                    className="pr-9 text-right"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="dateFrom" className="whitespace-nowrap">من تاريخ:</Label>
+                    <Input
+                      id="dateFrom"
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-auto"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="dateTo" className="whitespace-nowrap">إلى تاريخ:</Label>
+                    <Input
+                      id="dateTo"
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-auto"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -453,6 +517,8 @@ const SpareParts = () => {
                       الحد الأدنى
                     </Button>
                   </TableHead>
+                  <TableHead className="text-right">إجمالي الكمية المشتراة</TableHead>
+                  <TableHead className="text-right">الكمية المصروفة</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">القيمة الإجمالية</TableHead>
                   <TableHead className="text-right">الإجراءات</TableHead>
@@ -460,7 +526,9 @@ const SpareParts = () => {
               </TableHeader>
               <TableBody>
                 {filteredAndSortedSpareParts.length > 0 ? (
-                  filteredAndSortedSpareParts.map((part) => (
+                  filteredAndSortedSpareParts.map((part) => {
+                    const stats = getSparePartStats(part.id);
+                    return (
                   <TableRow key={part.id}>
                     <TableCell className="font-mono text-sm">{part.code}</TableCell>
                     <TableCell className="font-medium">{part.name}</TableCell>
@@ -470,6 +538,12 @@ const SpareParts = () => {
                     </TableCell>
                     <TableCell>
                       {part.minQuantity} {part.unit}
+                    </TableCell>
+                    <TableCell className="text-green-600 font-medium">
+                      {stats.totalPurchased} {part.unit}
+                    </TableCell>
+                    <TableCell className="text-red-600 font-medium">
+                      {stats.totalUsed} {part.unit}
                     </TableCell>
                     <TableCell>
                       {part.quantity <= part.minQuantity ? (
@@ -504,10 +578,11 @@ const SpareParts = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  ))
+                    );
+                  })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       لا توجد قطع غيار تطابق البحث
                     </TableCell>
                   </TableRow>
