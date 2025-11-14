@@ -402,7 +402,7 @@ export default function MaintenancePurchaseInvoices() {
                 .from('stock_transactions')
                 .insert({
                   spare_part_id: item.spare_part_id,
-                  type: 'in',
+                  type: 'purchase',
                   quantity: item.quantity,
                   reference_type: 'purchase_invoice',
                   reference_id: invoiceData.id,
@@ -441,7 +441,7 @@ export default function MaintenancePurchaseInvoices() {
                 .from('stock_transactions')
                 .insert({
                   spare_part_id: newPart.id,
-                  type: 'in',
+                  type: 'purchase',
                   quantity: item.quantity,
                   reference_type: 'purchase_invoice',
                   reference_id: invoiceData.id,
