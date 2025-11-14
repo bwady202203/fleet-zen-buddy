@@ -37,7 +37,7 @@ const SpareParts = () => {
 
   useEffect(() => {
     fetchStockTransactions();
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, spareParts]);
 
   const fetchStockTransactions = async () => {
     let query = supabase
