@@ -62,10 +62,10 @@ const SpareParts = () => {
   const getSparePartStats = (sparePartId: string) => {
     const transactions = stockTransactions.filter(t => t.spare_part_id === sparePartId);
     const totalPurchased = transactions
-      .filter(t => t.type === 'in')
+      .filter(t => t.type === 'purchase' || t.type === 'in')
       .reduce((sum, t) => sum + (t.quantity || 0), 0);
     const totalUsed = transactions
-      .filter(t => t.type === 'out')
+      .filter(t => t.type === 'maintenance' || t.type === 'out')
       .reduce((sum, t) => sum + Math.abs(t.quantity || 0), 0);
     
     return { totalPurchased, totalUsed };
