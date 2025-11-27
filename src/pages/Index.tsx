@@ -90,54 +90,65 @@ const Index = () => {
               </div>
               <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={exportToExcel} title="تصدير إلى Excel">
-                <FileSpreadsheet className="h-4 w-4 ml-2" />
-                تصدير Excel
-              </Button>
-              <Link to="/spare-parts">
-                <Button variant="outline">
-                  <Package className="h-4 w-4 ml-2" />
-                  قطع الغيار
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* قسم الإدارة */}
+              <div className="flex items-center gap-2 pl-2 border-l">
+                <Link to="/spare-parts">
+                  <Button variant="outline" size="sm">
+                    <Package className="h-4 w-4 ml-2" />
+                    قطع الغيار
+                  </Button>
+                </Link>
+                <Link to="/purchases">
+                  <Button variant="outline" size="sm">
+                    <ShoppingCart className="h-4 w-4 ml-2" />
+                    المشتريات
+                  </Button>
+                </Link>
+                <Link to="/maintenance-purchase-invoices">
+                  <Button variant="outline" size="sm">
+                    <Receipt className="h-4 w-4 ml-2" />
+                    فواتير المشتريات
+                  </Button>
+                </Link>
+              </div>
+
+              {/* قسم التقارير */}
+              <div className="flex items-center gap-2 pl-2 border-l">
+                <Link to="/reports">
+                  <Button variant="outline" size="sm">
+                    <FileText className="h-4 w-4 ml-2" />
+                    تقرير الصيانة
+                  </Button>
+                </Link>
+                <Link to="/vehicle-cost-report">
+                  <Button variant="outline" size="sm">
+                    <Receipt className="h-4 w-4 ml-2" />
+                    تقرير التكاليف
+                  </Button>
+                </Link>
+                <Link to="/vehicle-mileage">
+                  <Button variant="outline" size="sm">
+                    <Gauge className="h-4 w-4 ml-2" />
+                    تقرير الكيلومترات
+                  </Button>
+                </Link>
+              </div>
+
+              {/* قسم العمليات */}
+              <div className="flex items-center gap-2">
+                <Link to="/bulk-vehicles">
+                  <Button variant="outline" size="sm">
+                    <List className="h-4 w-4 ml-2" />
+                    تسجيل عدة مركبات
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={exportToExcel} title="تصدير إلى Excel">
+                  <FileSpreadsheet className="h-4 w-4 ml-2" />
+                  تصدير Excel
                 </Button>
-              </Link>
-              <Link to="/purchases">
-                <Button variant="outline">
-                  <ShoppingCart className="h-4 w-4 ml-2" />
-                  المشتريات
-                </Button>
-              </Link>
-              <Link to="/maintenance-purchase-invoices">
-                <Button variant="outline">
-                  <Receipt className="h-4 w-4 ml-2" />
-                  فواتير المشتريات
-                </Button>
-              </Link>
-              <Link to="/reports">
-                <Button variant="outline">
-                  <FileText className="h-4 w-4 ml-2" />
-                  تقرير الصيانة
-                </Button>
-              </Link>
-              <Link to="/vehicle-cost-report">
-                <Button variant="outline">
-                  <Receipt className="h-4 w-4 ml-2" />
-                  تقرير التكاليف
-                </Button>
-              </Link>
-              <Link to="/vehicle-mileage">
-                <Button variant="outline">
-                  <Gauge className="h-4 w-4 ml-2" />
-                  تقرير الكيلومترات
-                </Button>
-              </Link>
-              <Link to="/bulk-vehicles">
-                <Button variant="outline">
-                  <List className="h-4 w-4 ml-2" />
-                  تسجيل عدة مركبات
-                </Button>
-              </Link>
-              <AddVehicleDialog />
+                <AddVehicleDialog />
+              </div>
             </div>
           </div>
         </div>
