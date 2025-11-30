@@ -14,15 +14,7 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-
-// Import jspdf-autotable and extend jsPDF type
-import 'jspdf-autotable';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import autoTable from 'jspdf-autotable';
 
 const SimpleLoadsList = () => {
   const { toast } = useToast();
@@ -273,8 +265,8 @@ const SimpleLoadsList = () => {
       load.status === 'pending' ? 'معلق' : load.status === 'completed' ? 'مكتمل' : load.status === 'cancelled' ? 'ملغي' : load.status || '-'
     ]);
 
-    // Add table
-    doc.autoTable({
+    // Add table using autoTable
+    autoTable(doc, {
       startY: 35,
       head: [[
         'التاريخ',
