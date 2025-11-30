@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, RefreshCw, FileDown, Calendar, Package } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowRight, RefreshCw, FileDown, Calendar, Package, FileText, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -16,15 +17,19 @@ import * as XLSX from "xlsx";
 const SimpleLoadsList = () => {
   const { toast } = useToast();
   const [loads, setLoads] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingReports, setLoadingReports] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("loads");
 
   useEffect(() => {
     loadData();
     loadCompanies();
+    loadReports();
   }, []);
 
   const loadCompanies = async () => {
@@ -107,6 +112,81 @@ const SimpleLoadsList = () => {
       totalAmount: filteredLoads.reduce((sum, load) => sum + (parseFloat(load.total_amount) || 0), 0),
     };
   }, [filteredLoads]);
+
+  const loadReports = async () => {
+    setLoadingReports(true);
+    try {
+      const { data, error } = await supabase
+        .from('loads_reports')
+        .select(`
+          *,
+          companies (name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setReports(data || []);
+    } catch (error: any) {
+      console.error('خطأ في تحميل التقارير:', error);
+      toast({
+        title: "خطأ في تحميل التقارير",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const generateReport = async () => {
+    if (!selectedCompany || selectedCompany === "all") {
+      toast({
+        title: "خطأ",
+        description: "يجب اختيار شركة محددة",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      toast({
+        title: "خطأ",
+        description: "يجب تحديد تاريخ البداية والنهاية",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoadingReports(true);
+    try {
+      const { data, error } = await supabase
+        .rpc('generate_loads_report', {
+          p_company_id: selectedCompany,
+          p_start_date: startDate,
+          p_end_date: endDate
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "تم إنشاء التقرير",
+        description: "تم إنشاء التقرير بنجاح"
+      });
+
+      loadReports();
+      setActiveTab("reports");
+    } catch (error: any) {
+      console.error('خطأ في إنشاء التقرير:', error);
+      toast({
+        title: "خطأ في إنشاء التقرير",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingReports(false);
+    }
+  };
 
   const resetFilters = () => {
     setSelectedCompany("all");
@@ -240,7 +320,7 @@ const SimpleLoadsList = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">من تاريخ</Label>
                 <Input
@@ -281,15 +361,40 @@ const SimpleLoadsList = () => {
                   إعادة تعيين
                 </Button>
               </div>
+
+              <div className="flex items-end">
+                <Button 
+                  onClick={generateReport} 
+                  variant="default" 
+                  className="w-full"
+                  disabled={loadingReports || !selectedCompany || selectedCompany === "all" || !startDate || !endDate}
+                >
+                  <FileText className="h-4 w-4 ml-2" />
+                  إنشاء تقرير
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Table Card */}
-        <Card className="shadow-lg">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
+        {/* Tabs for Loads and Reports */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="loads">
+              <Package className="h-4 w-4 ml-2" />
+              الشحنات
+            </TabsTrigger>
+            <TabsTrigger value="reports">
+              <FileText className="h-4 w-4 ml-2" />
+              التقارير
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="loads">
+            <Card className="shadow-lg">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="text-right font-bold">التاريخ</TableHead>
@@ -344,10 +449,92 @@ const SimpleLoadsList = () => {
                     ))
                   )}
                 </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  تقارير الشحنات حسب الشركة
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingReports ? (
+                  <div className="text-center py-8">
+                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+                    <p className="text-muted-foreground">جاري التحميل...</p>
+                  </div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">لا توجد تقارير</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      قم بتحديد شركة وفترة زمنية ثم اضغط على "إنشاء تقرير"
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="text-right font-bold">الشركة</TableHead>
+                          <TableHead className="text-right font-bold">من تاريخ</TableHead>
+                          <TableHead className="text-right font-bold">إلى تاريخ</TableHead>
+                          <TableHead className="text-right font-bold">عدد الشحنات</TableHead>
+                          <TableHead className="text-right font-bold">إجمالي الكمية</TableHead>
+                          <TableHead className="text-right font-bold">إجمالي المبلغ</TableHead>
+                          <TableHead className="text-right font-bold">متوسط الشحنة</TableHead>
+                          <TableHead className="text-right font-bold">تاريخ الإنشاء</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reports.map((report) => (
+                          <TableRow key={report.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-medium">
+                              {report.companies?.name || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {report.start_date ? format(new Date(report.start_date), 'yyyy-MM-dd') : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {report.end_date ? format(new Date(report.end_date), 'yyyy-MM-dd') : '-'}
+                            </TableCell>
+                            <TableCell className="font-bold text-blue-600">
+                              {report.total_loads}
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              {parseFloat(report.total_quantity || 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="font-mono font-bold text-primary">
+                              {parseFloat(report.total_amount || 0).toLocaleString('ar-SA', { 
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2 
+                              })}
+                            </TableCell>
+                            <TableCell className="font-mono text-green-600">
+                              {parseFloat(report.average_load_amount || 0).toLocaleString('ar-SA', { 
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2 
+                              })}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {report.created_at ? format(new Date(report.created_at), 'yyyy-MM-dd HH:mm') : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
