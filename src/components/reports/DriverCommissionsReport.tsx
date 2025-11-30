@@ -117,6 +117,7 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 15;
 
+      // First page - Aggregated data
       const aggregatedContainer = document.createElement("div");
       aggregatedContainer.style.cssText = `
         position: absolute;
@@ -172,8 +173,41 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
             `).join("")}
           </tbody>
         </table>
+      `;
 
-        <h2 style="color: #1a1a1a; font-size: 14px; margin: 15px 0 8px; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-weight: bold;">التفاصيل اليومية</h2>
+      document.body.appendChild(aggregatedContainer);
+
+      const aggregatedCanvas = await html2canvas(aggregatedContainer, {
+        scale: 2.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      document.body.removeChild(aggregatedContainer);
+
+      // Add first page
+      const aggregatedImgData = aggregatedCanvas.toDataURL("image/png");
+      const aggregatedImgWidth = pageWidth - 2 * margin;
+      const aggregatedImgHeight = (aggregatedCanvas.height * aggregatedImgWidth) / aggregatedCanvas.width;
+      pdf.addImage(aggregatedImgData, "PNG", margin, margin, aggregatedImgWidth, aggregatedImgHeight);
+
+      // Second page onwards - Daily details
+      const dailyContainer = document.createElement("div");
+      dailyContainer.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 680px;
+        background: white;
+        padding: 15px 20px;
+        direction: rtl;
+        font-family: Arial, sans-serif;
+        box-sizing: border-box;
+      `;
+
+      dailyContainer.innerHTML = `
+        <h2 style="color: #1a1a1a; font-size: 14px; margin: 0 0 10px; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-weight: bold;">التفاصيل اليومية</h2>
         <table style="width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed;">
           <thead>
             <tr style="background: #f8f9fa;">
@@ -198,34 +232,37 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
         </table>
       `;
 
-      document.body.appendChild(aggregatedContainer);
+      document.body.appendChild(dailyContainer);
 
-      const canvas = await html2canvas(aggregatedContainer, {
+      const dailyCanvas = await html2canvas(dailyContainer, {
         scale: 2.5,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
       });
 
-      document.body.removeChild(aggregatedContainer);
+      document.body.removeChild(dailyContainer);
 
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = pageWidth - 2 * margin;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // Add daily details starting from page 2
+      pdf.addPage();
+      const dailyImgData = dailyCanvas.toDataURL("image/png");
+      const dailyImgWidth = pageWidth - 2 * margin;
+      const dailyImgHeight = (dailyCanvas.height * dailyImgWidth) / dailyCanvas.width;
 
-      let heightLeft = imgHeight;
+      let heightLeft = dailyImgHeight;
       let position = margin;
 
-      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      pdf.addImage(dailyImgData, "PNG", margin, position, dailyImgWidth, dailyImgHeight);
       heightLeft -= pageHeight - 2 * margin;
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
+        position = heightLeft - dailyImgHeight + margin;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        pdf.addImage(dailyImgData, "PNG", margin, position, dailyImgWidth, dailyImgHeight);
         heightLeft -= pageHeight - 2 * margin;
       }
 
+      // Add footer to all pages
       const pageCount = pdf.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         pdf.setPage(i);
