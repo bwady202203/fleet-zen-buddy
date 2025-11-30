@@ -52,22 +52,38 @@ const SimpleLoadsList = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('loads')
-        .select(`
-          *,
-          companies (name),
-          load_types (name),
-          drivers (name)
-        `)
-        .order('date', { ascending: false });
+      let allLoads: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('loads')
+          .select(`
+            *,
+            companies (name),
+            load_types (name),
+            drivers (name)
+          `)
+          .order('date', { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allLoads = [...allLoads, ...data];
+          from += batchSize;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
       
-      setLoads(data || []);
+      setLoads(allLoads);
       toast({
         title: "تم التحميل بنجاح",
-        description: `تم تحميل ${data?.length || 0} شحنة`,
+        description: `تم تحميل ${allLoads.length} شحنة`,
       });
     } catch (error: any) {
       console.error('خطأ في التحميل:', error);
