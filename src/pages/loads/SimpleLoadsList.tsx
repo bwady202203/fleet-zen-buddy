@@ -7,12 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, RefreshCw, FileDown, Calendar, Package, FileText, TrendingUp } from "lucide-react";
+import { ArrowRight, RefreshCw, FileDown, Calendar, Package, FileText, TrendingUp, FileType } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+
+// Import jspdf-autotable and extend jsPDF type
+import 'jspdf-autotable';
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 const SimpleLoadsList = () => {
   const { toast } = useToast();
@@ -223,6 +233,101 @@ const SimpleLoadsList = () => {
     });
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text('تقرير الشحنات - Loads Report', 148, 15, { align: 'center' });
+    
+    // Add date range if filtered
+    doc.setFontSize(10);
+    let subtitle = `تاريخ الإنشاء: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
+    if (startDate || endDate) {
+      subtitle += ` | الفترة: ${startDate || '...'} إلى ${endDate || '...'}`;
+    }
+    if (selectedCompany && selectedCompany !== "all") {
+      const company = companies.find(c => c.id === selectedCompany);
+      if (company) {
+        subtitle += ` | الشركة: ${company.name}`;
+      }
+    }
+    doc.text(subtitle, 148, 22, { align: 'center' });
+
+    // Add statistics
+    doc.setFontSize(9);
+    const statsText = `عدد الشحنات: ${statistics.totalLoads} | إجمالي الكمية: ${statistics.totalQuantity.toFixed(2)} | إجمالي المبلغ: ${statistics.totalAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}`;
+    doc.text(statsText, 148, 28, { align: 'center' });
+
+    // Prepare table data
+    const tableData = filteredLoads.map(load => [
+      load.date ? format(new Date(load.date), 'yyyy-MM-dd') : '-',
+      load.load_number || '-',
+      load.companies?.name || '-',
+      load.load_types?.name || '-',
+      load.drivers?.name || '-',
+      load.truck_number || '-',
+      load.quantity?.toFixed(2) || '0.00',
+      parseFloat(load.unit_price || 0).toFixed(2),
+      parseFloat(load.total_amount || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 }),
+      load.status === 'pending' ? 'معلق' : load.status === 'completed' ? 'مكتمل' : load.status === 'cancelled' ? 'ملغي' : load.status || '-'
+    ]);
+
+    // Add table
+    doc.autoTable({
+      startY: 35,
+      head: [[
+        'التاريخ',
+        'رقم الشحنة',
+        'الشركة',
+        'نوع الشحنة',
+        'السائق',
+        'رقم الشاحنة',
+        'الكمية',
+        'سعر الوحدة',
+        'المبلغ الإجمالي',
+        'الحالة'
+      ]],
+      body: tableData,
+      styles: {
+        font: 'helvetica',
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'center'
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250]
+      },
+      margin: { top: 35, right: 10, bottom: 10, left: 10 },
+      didDrawPage: (data: any) => {
+        // Footer
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.text(
+          `صفحة ${data.pageNumber} من ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+    });
+
+    // Save the PDF
+    doc.save(`loads_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+
+    toast({
+      title: "تم التصدير",
+      description: "تم تصدير البيانات إلى PDF بنجاح"
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       'pending': { label: 'معلق', variant: 'secondary' },
@@ -260,7 +365,11 @@ const SimpleLoadsList = () => {
               </Button>
               <Button onClick={exportToExcel} variant="outline" size="sm">
                 <FileDown className="h-4 w-4 ml-2" />
-                تصدير Excel
+                Excel
+              </Button>
+              <Button onClick={exportToPDF} variant="outline" size="sm">
+                <FileType className="h-4 w-4 ml-2" />
+                PDF
               </Button>
             </div>
           </div>
