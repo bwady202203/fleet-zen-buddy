@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 const SimpleLoadsList = () => {
   const { toast } = useToast();
@@ -241,99 +242,165 @@ const SimpleLoadsList = () => {
     });
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
-    
-    // Add title
-    doc.setFontSize(18);
-    doc.text('تقرير الشحنات - Loads Report', 148, 15, { align: 'center' });
-    
-    // Add date range if filtered
-    doc.setFontSize(10);
-    let subtitle = `تاريخ الإنشاء: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
-    if (startDate || endDate) {
-      subtitle += ` | الفترة: ${startDate || '...'} إلى ${endDate || '...'}`;
-    }
-    if (selectedCompany && selectedCompany !== "all") {
-      const company = companies.find(c => c.id === selectedCompany);
-      if (company) {
-        subtitle += ` | الشركة: ${company.name}`;
+  const exportToPDF = async () => {
+    try {
+      toast({
+        title: "جاري التصدير...",
+        description: "يرجى الانتظار",
+      });
+
+      // Create a temporary container for the table
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.right = '-9999px';
+      container.style.top = '0';
+      container.style.width = '1200px';
+      container.style.background = 'white';
+      container.style.padding = '20px';
+      container.style.fontFamily = 'Arial, sans-serif';
+      
+      // Create header
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.marginBottom = '20px';
+      header.style.direction = 'rtl';
+      
+      const title = document.createElement('h1');
+      title.textContent = 'تقرير الشحنات';
+      title.style.fontSize = '24px';
+      title.style.marginBottom = '10px';
+      title.style.color = '#1f2937';
+      header.appendChild(title);
+      
+      const dateInfo = document.createElement('div');
+      dateInfo.style.fontSize = '12px';
+      dateInfo.style.color = '#6b7280';
+      dateInfo.style.marginBottom = '5px';
+      let dateText = `تاريخ الإنشاء: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
+      if (startDate || endDate) {
+        dateText += ` | الفترة: ${startDate || '...'} إلى ${endDate || '...'}`;
       }
-    }
-    doc.text(subtitle, 148, 22, { align: 'center' });
-
-    // Add statistics
-    doc.setFontSize(9);
-    const statsText = `عدد الشحنات: ${statistics.totalLoads} | إجمالي الكمية: ${statistics.totalQuantity.toFixed(2)} | إجمالي المبلغ: ${statistics.totalAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}`;
-    doc.text(statsText, 148, 28, { align: 'center' });
-
-    // Prepare table data
-    const tableData = filteredLoads.map(load => [
-      load.date ? format(new Date(load.date), 'yyyy-MM-dd') : '-',
-      load.load_number || '-',
-      load.companies?.name || '-',
-      load.load_types?.name || '-',
-      load.drivers?.name || '-',
-      load.truck_number || '-',
-      load.quantity?.toFixed(2) || '0.00',
-      parseFloat(load.unit_price || 0).toFixed(2),
-      parseFloat(load.total_amount || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 }),
-      load.status === 'pending' ? 'معلق' : load.status === 'completed' ? 'مكتمل' : load.status === 'cancelled' ? 'ملغي' : load.status || '-'
-    ]);
-
-    // Add table using autoTable
-    autoTable(doc, {
-      startY: 35,
-      head: [[
-        'التاريخ',
-        'رقم الشحنة',
-        'الشركة',
-        'نوع الشحنة',
-        'السائق',
-        'رقم الشاحنة',
-        'الكمية',
-        'سعر الوحدة',
-        'المبلغ الإجمالي',
-        'الحالة'
-      ]],
-      body: tableData,
-      styles: {
-        font: 'helvetica',
-        fontSize: 8,
-        cellPadding: 2,
-        overflow: 'linebreak',
-        halign: 'center'
-      },
-      headStyles: {
-        fillColor: [59, 130, 246],
-        textColor: 255,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 247, 250]
-      },
-      margin: { top: 35, right: 10, bottom: 10, left: 10 },
-      didDrawPage: (data: any) => {
-        // Footer
-        const pageCount = doc.getNumberOfPages();
-        doc.setFontSize(8);
-        doc.text(
-          `صفحة ${data.pageNumber} من ${pageCount}`,
-          doc.internal.pageSize.getWidth() / 2,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: 'center' }
-        );
+      if (selectedCompany && selectedCompany !== "all") {
+        const company = companies.find(c => c.id === selectedCompany);
+        if (company) {
+          dateText += ` | الشركة: ${company.name}`;
+        }
       }
-    });
-
-    // Save the PDF
-    doc.save(`loads_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-
-    toast({
-      title: "تم التصدير",
-      description: "تم تصدير البيانات إلى PDF بنجاح"
-    });
+      dateInfo.textContent = dateText;
+      header.appendChild(dateInfo);
+      
+      const stats = document.createElement('div');
+      stats.style.fontSize = '12px';
+      stats.style.color = '#374151';
+      stats.style.fontWeight = 'bold';
+      stats.textContent = `عدد الشحنات: ${statistics.totalLoads} | إجمالي الكمية: ${statistics.totalQuantity.toFixed(2)} | إجمالي المبلغ: ${statistics.totalAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال`;
+      header.appendChild(stats);
+      
+      container.appendChild(header);
+      
+      // Create table
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.fontSize = '11px';
+      table.style.direction = 'rtl';
+      
+      // Table header
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headerRow.style.backgroundColor = '#3b82f6';
+      headerRow.style.color = 'white';
+      
+      const headers = ['التاريخ', 'رقم الشحنة', 'الشركة', 'نوع الشحنة', 'السائق', 'رقم الشاحنة', 'الكمية', 'سعر الوحدة', 'المبلغ الإجمالي', 'الحالة'];
+      headers.forEach(headerText => {
+        const th = document.createElement('th');
+        th.textContent = headerText;
+        th.style.border = '1px solid #e5e7eb';
+        th.style.padding = '8px';
+        th.style.textAlign = 'center';
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      
+      // Table body
+      const tbody = document.createElement('tbody');
+      filteredLoads.forEach((load, index) => {
+        const row = document.createElement('tr');
+        row.style.backgroundColor = index % 2 === 0 ? '#f9fafb' : 'white';
+        
+        const cells = [
+          load.date ? format(new Date(load.date), 'yyyy-MM-dd') : '-',
+          load.load_number || '-',
+          load.companies?.name || '-',
+          load.load_types?.name || '-',
+          load.drivers?.name || '-',
+          load.truck_number || '-',
+          load.quantity?.toFixed(2) || '0.00',
+          parseFloat(load.unit_price || 0).toFixed(2),
+          parseFloat(load.total_amount || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 }),
+          load.status === 'pending' ? 'معلق' : load.status === 'completed' ? 'مكتمل' : load.status === 'cancelled' ? 'ملغي' : load.status || '-'
+        ];
+        
+        cells.forEach(cellText => {
+          const td = document.createElement('td');
+          td.textContent = cellText;
+          td.style.border = '1px solid #e5e7eb';
+          td.style.padding = '6px';
+          td.style.textAlign = 'center';
+          row.appendChild(td);
+        });
+        
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+      
+      document.body.appendChild(container);
+      
+      // Convert to canvas
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      document.body.removeChild(container);
+      
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const imgWidth = 297; // A4 landscape width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= 210; // A4 landscape height
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= 210;
+      }
+      
+      pdf.save(`loads_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      toast({
+        title: "تم التصدير",
+        description: "تم تصدير البيانات إلى PDF بنجاح"
+      });
+    } catch (error) {
+      console.error('خطأ في التصدير:', error);
+      toast({
+        title: "خطأ في التصدير",
+        description: "حدث خطأ أثناء تصدير PDF",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
