@@ -27,6 +27,15 @@ const Loads = () => {
       color: "from-cyan-500 to-cyan-600"
     },
     {
+      title: "سجل الشحنات المطور",
+      titleEn: "Advanced Loads List",
+      description: "عرض متقدم مع فلاتر محسنة",
+      descriptionEn: "Advanced View with Enhanced Filters",
+      icon: ClipboardList,
+      link: "/loads/advanced-list",
+      color: "from-emerald-500 to-emerald-600"
+    },
+    {
       title: "السائقين",
       titleEn: "Drivers",
       description: "إدارة السائقين",
