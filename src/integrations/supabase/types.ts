@@ -319,6 +319,57 @@ export type Database = {
           },
         ]
       }
+      company_loads_reports: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          organization_id: string | null
+          report_date: string
+          total_amount: number | null
+          total_loads: number | null
+          total_quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          report_date: string
+          total_amount?: number | null
+          total_loads?: number | null
+          total_quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string | null
+          report_date?: string
+          total_amount?: number | null
+          total_loads?: number | null
+          total_quantity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_loads_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_loads_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           address: string | null
@@ -703,6 +754,57 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      driver_commissions_reports: {
+        Row: {
+          created_at: string | null
+          driver_id: string | null
+          id: string
+          organization_id: string | null
+          report_date: string
+          total_amount: number | null
+          total_commissions: number | null
+          total_loads: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id?: string | null
+          id?: string
+          organization_id?: string | null
+          report_date: string
+          total_amount?: number | null
+          total_commissions?: number | null
+          total_loads?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string | null
+          id?: string
+          organization_id?: string | null
+          report_date?: string
+          total_amount?: number | null
+          total_commissions?: number | null
+          total_loads?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_commissions_reports_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_commissions_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_payments: {
         Row: {
@@ -2738,6 +2840,14 @@ export type Database = {
           entry_number: string
           id: string
         }[]
+      }
+      generate_company_loads_report: {
+        Args: { p_organization_id?: string; p_report_date: string }
+        Returns: undefined
+      }
+      generate_driver_commissions_report: {
+        Args: { p_organization_id?: string; p_report_date: string }
+        Returns: undefined
       }
       generate_loads_report: {
         Args: {
