@@ -60,9 +60,18 @@ const AdvancedLoadsList = () => {
         supabase.from('drivers').select('id, name').eq('is_active', true).order('name')
       ]);
 
-      if (companiesRes.data) setCompanies(companiesRes.data);
-      if (loadTypesRes.data) setLoadTypes(loadTypesRes.data);
-      if (driversRes.data) setDrivers(driversRes.data);
+      if (companiesRes.data) {
+        console.log('📋 الشركات المتاحة:', companiesRes.data);
+        setCompanies(companiesRes.data);
+      }
+      if (loadTypesRes.data) {
+        console.log('📋 أنواع الحمولة المتاحة:', loadTypesRes.data);
+        setLoadTypes(loadTypesRes.data);
+      }
+      if (driversRes.data) {
+        console.log('📋 السائقين المتاحين:', driversRes.data.length, 'سائق');
+        setDrivers(driversRes.data);
+      }
     } catch (error: any) {
       console.error('Error loading filter data:', error);
     }
@@ -132,11 +141,36 @@ const AdvancedLoadsList = () => {
       searchText
     });
 
-    // Filter by company
+    // Filter by company - مع عرض تفصيلي
     if (selectedCompany && selectedCompany !== "all") {
       const beforeLength = filtered.length;
-      filtered = filtered.filter(load => load.company_id === selectedCompany);
+      console.log(`🔍 الشركة المختارة: ${selectedCompany}`);
+      
+      // عرض أول 5 شحنات قبل الفلتر
+      console.log('📦 عينة من الشحنات قبل الفلتر:', filtered.slice(0, 5).map(l => ({
+        load_number: l.load_number,
+        company_id: l.company_id,
+        company_name: l.companies?.name
+      })));
+      
+      filtered = filtered.filter(load => {
+        const matches = load.company_id === selectedCompany;
+        if (!matches) {
+          console.log(`❌ استبعاد: ${load.load_number} (company_id: ${load.company_id}, شركة: ${load.companies?.name})`);
+        }
+        return matches;
+      });
+      
       console.log(`📊 فلتر الشركة: ${beforeLength} -> ${filtered.length}`);
+      
+      // عرض أول 3 شحنات بعد الفلتر
+      if (filtered.length > 0) {
+        console.log('✅ عينة من الشحنات بعد الفلتر:', filtered.slice(0, 3).map(l => ({
+          load_number: l.load_number,
+          company_id: l.company_id,
+          company_name: l.companies?.name
+        })));
+      }
     }
 
     // Filter by load type
@@ -459,7 +493,17 @@ const AdvancedLoadsList = () => {
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">الشركة</Label>
-                <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                <Select 
+                  value={selectedCompany} 
+                  onValueChange={(value) => {
+                    console.log('🏢 تغيير الشركة المختارة إلى:', value);
+                    const selectedComp = companies.find(c => c.id === value);
+                    if (selectedComp) {
+                      console.log('🏢 اسم الشركة:', selectedComp.name);
+                    }
+                    setSelectedCompany(value);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="جميع الشركات" />
                   </SelectTrigger>
