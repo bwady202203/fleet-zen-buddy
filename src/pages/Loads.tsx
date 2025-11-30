@@ -99,6 +99,15 @@ const Loads = () => {
       color: "from-green-500 to-green-600"
     },
     {
+      title: "التقارير اليومية",
+      titleEn: "Daily Reports",
+      description: "تقارير الشركات والسائقين حسب التاريخ",
+      descriptionEn: "Companies and Drivers Reports by Date",
+      icon: FileText,
+      link: "/loads/daily-reports",
+      color: "from-lime-500 to-lime-600"
+    },
+    {
       title: "سندات التسليم",
       titleEn: "Delivery Receipts",
       description: "إدارة سندات التسليم والاستلام",
