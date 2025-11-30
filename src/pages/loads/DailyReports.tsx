@@ -11,13 +11,23 @@ import CompanyLoadsReport from "@/components/reports/CompanyLoadsReport";
 import DriverCommissionsReport from "@/components/reports/DriverCommissionsReport";
 
 const DailyReports = () => {
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
   const { toast } = useToast();
 
   const handleGenerateReports = async () => {
     try {
+      if (startDate > endDate) {
+        toast({
+          title: "خطأ في التواريخ",
+          description: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsGenerating(true);
       
       // Get current user's organization
@@ -32,32 +42,43 @@ const DailyReports = () => {
 
       const organizationId = orgData?.organization_id;
 
-      // Generate company loads report
-      const { error: companyError } = await supabase.rpc(
-        "generate_company_loads_report",
-        {
-          p_report_date: selectedDate,
-          p_organization_id: organizationId,
-        }
-      );
+      // Generate reports for each date in the range
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dates = [];
+      
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(format(d, "yyyy-MM-dd"));
+      }
 
-      if (companyError) throw companyError;
+      for (const date of dates) {
+        // Generate company loads report
+        const { error: companyError } = await supabase.rpc(
+          "generate_company_loads_report",
+          {
+            p_report_date: date,
+            p_organization_id: organizationId,
+          }
+        );
 
-      // Generate driver commissions report
-      const { error: driverError } = await supabase.rpc(
-        "generate_driver_commissions_report",
-        {
-          p_report_date: selectedDate,
-          p_organization_id: organizationId,
-        }
-      );
+        if (companyError) throw companyError;
 
-      if (driverError) throw driverError;
+        // Generate driver commissions report
+        const { error: driverError } = await supabase.rpc(
+          "generate_driver_commissions_report",
+          {
+            p_report_date: date,
+            p_organization_id: organizationId,
+          }
+        );
+
+        if (driverError) throw driverError;
+      }
 
       setReportGenerated(true);
       toast({
         title: "تم إنشاء التقارير بنجاح",
-        description: `تم إنشاء تقارير يوم ${format(new Date(selectedDate), "PPP", { locale: ar })}`,
+        description: `تم إنشاء التقارير من ${format(new Date(startDate), "PPP", { locale: ar })} إلى ${format(new Date(endDate), "PPP", { locale: ar })}`,
       });
     } catch (error: any) {
       console.error("Error generating reports:", error);
@@ -88,26 +109,42 @@ const DailyReports = () => {
 
       {/* Date Filter Card */}
       <Card className="p-6">
-        <div className="flex items-end gap-4">
-          <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              اختر التاريخ
-            </label>
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setReportGenerated(false);
-              }}
-              className="max-w-xs"
-            />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                تاريخ البداية
+              </label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setReportGenerated(false);
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                تاريخ النهاية
+              </label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setReportGenerated(false);
+                }}
+              />
+            </div>
           </div>
           <Button
             onClick={handleGenerateReports}
             disabled={isGenerating}
             size="lg"
+            className="w-full"
           >
             {isGenerating ? (
               <>
@@ -118,19 +155,19 @@ const DailyReports = () => {
               "إنشاء التقارير"
             )}
           </Button>
+          {startDate && endDate && (
+            <p className="text-sm text-muted-foreground">
+              الفترة المحددة: من {format(new Date(startDate), "PPP", { locale: ar })} إلى {format(new Date(endDate), "PPP", { locale: ar })}
+            </p>
+          )}
         </div>
-        {selectedDate && (
-          <p className="text-sm text-muted-foreground mt-4">
-            التاريخ المحدد: {format(new Date(selectedDate), "PPPP", { locale: ar })}
-          </p>
-        )}
       </Card>
 
       {/* Reports Display */}
       {reportGenerated && (
         <>
-          <CompanyLoadsReport selectedDate={selectedDate} />
-          <DriverCommissionsReport selectedDate={selectedDate} />
+          <CompanyLoadsReport startDate={startDate} endDate={endDate} />
+          <DriverCommissionsReport startDate={startDate} endDate={endDate} />
         </>
       )}
 

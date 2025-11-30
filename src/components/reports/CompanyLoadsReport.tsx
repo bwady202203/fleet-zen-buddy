@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Package, DollarSign, FileBarChart } from "lucide-react";
+import { Building2, Package, DollarSign, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
-interface CompanyReport {
-  id: string;
+interface CompanyLoadsReportProps {
+  startDate: string;
+  endDate: string;
+}
+
+interface CompanyData {
   company_id: string;
   company_name: string;
   total_loads: number;
@@ -24,219 +22,400 @@ interface CompanyReport {
   total_amount: number;
 }
 
-interface CompanyLoadsReportProps {
-  selectedDate: string;
+interface DailyData {
+  report_date: string;
+  company_name: string;
+  total_loads: number;
+  total_quantity: number;
+  total_amount: number;
 }
 
-const CompanyLoadsReport = ({ selectedDate }: CompanyLoadsReportProps) => {
-  const [reports, setReports] = useState<CompanyReport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
+const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => {
+  const [loading, setLoading] = useState(true);
+  const [aggregatedData, setAggregatedData] = useState<CompanyData[]>([]);
+  const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadReports();
-  }, [selectedDate]);
+    fetchReportData();
+  }, [startDate, endDate]);
 
-  const loadReports = async () => {
+  const fetchReportData = async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data: orgData } = await supabase
-        .from("user_organizations")
-        .select("organization_id")
-        .eq("user_id", user.id)
-        .single();
-
-      const { data: reportsData, error } = await supabase
+      // Fetch all daily reports in the date range
+      const { data: reportData, error } = await supabase
         .from("company_loads_reports")
         .select(`
-          id,
-          company_id,
-          total_loads,
-          total_quantity,
-          total_amount,
-          companies (name)
+          *,
+          companies (
+            name
+          )
         `)
-        .eq("report_date", selectedDate)
-        .eq("organization_id", orgData?.organization_id);
+        .gte("report_date", startDate)
+        .lte("report_date", endDate)
+        .order("report_date", { ascending: true });
 
       if (error) throw error;
 
-      const formattedReports = (reportsData || []).map((report: any) => ({
-        id: report.id,
-        company_id: report.company_id,
-        company_name: report.companies?.name || "غير معروف",
-        total_loads: report.total_loads,
-        total_quantity: report.total_quantity,
-        total_amount: report.total_amount,
-      }));
+      // Process daily data
+      const daily = reportData?.map(item => ({
+        report_date: item.report_date,
+        company_name: item.companies?.name || "غير محدد",
+        total_loads: item.total_loads || 0,
+        total_quantity: item.total_quantity || 0,
+        total_amount: item.total_amount || 0,
+      })) || [];
 
-      setReports(formattedReports);
+      // Aggregate data by company
+      const companyMap = new Map<string, CompanyData>();
+      
+      reportData?.forEach(item => {
+        const companyId = item.company_id || "";
+        const companyName = item.companies?.name || "غير محدد";
+        
+        if (companyMap.has(companyId)) {
+          const existing = companyMap.get(companyId)!;
+          existing.total_loads += item.total_loads || 0;
+          existing.total_quantity += item.total_quantity || 0;
+          existing.total_amount += item.total_amount || 0;
+        } else {
+          companyMap.set(companyId, {
+            company_id: companyId,
+            company_name: companyName,
+            total_loads: item.total_loads || 0,
+            total_quantity: item.total_quantity || 0,
+            total_amount: item.total_amount || 0,
+          });
+        }
+      });
+
+      const aggregated = Array.from(companyMap.values()).sort((a, b) => b.total_amount - a.total_amount);
+      
+      setAggregatedData(aggregated);
+      setDailyData(daily);
     } catch (error: any) {
-      console.error("Error loading reports:", error);
+      console.error("Error fetching report data:", error);
       toast({
-        title: "خطأ في تحميل التقرير",
+        title: "خطأ في جلب البيانات",
         description: error.message,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
+
+  const totalLoads = aggregatedData.reduce((sum, item) => sum + item.total_loads, 0);
+  const totalQuantity = aggregatedData.reduce((sum, item) => sum + item.total_quantity, 0);
+  const totalAmount = aggregatedData.reduce((sum, item) => sum + item.total_amount, 0);
 
   const exportToPDF = async () => {
     try {
-      setIsExporting(true);
-      
-      const element = document.getElementById("company-report-table");
-      if (!element) return;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
 
-      const canvas = await html2canvas(element, {
+      const aggregatedContainer = document.createElement("div");
+      aggregatedContainer.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 800px;
+        background: white;
+        padding: 40px;
+        direction: rtl;
+        font-family: Arial, sans-serif;
+      `;
+
+      aggregatedContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1a1a1a; font-size: 28px; margin-bottom: 10px;">تقرير إجمالي الشركات</h1>
+          <p style="color: #666; font-size: 16px;">من ${format(new Date(startDate), "dd/MM/yyyy")} إلى ${format(new Date(endDate), "dd/MM/yyyy")}</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; text-align: center; color: white;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 8px;">${totalLoads}</div>
+            <div style="font-size: 14px; opacity: 0.9;">إجمالي الرحلات</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; text-align: center; color: white;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 8px;">${totalQuantity.toLocaleString()}</div>
+            <div style="font-size: 14px; opacity: 0.9;">إجمالي الكمية</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; text-align: center; color: white;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 8px;">${totalAmount.toLocaleString()} ر.س</div>
+            <div style="font-size: 14px; opacity: 0.9;">إجمالي المبلغ</div>
+          </div>
+        </div>
+
+        <h2 style="color: #1a1a1a; font-size: 20px; margin: 30px 0 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">الإجماليات التراكمية</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+          <thead>
+            <tr style="background: #f8f9fa;">
+              <th style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">الشركة</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">عدد الرحلات</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">الكمية</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">المبلغ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${aggregatedData.map((item, index) => `
+              <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f8f9fa"};">
+                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">${item.company_name}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${item.total_amount.toLocaleString()} ر.س</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+
+        <h2 style="color: #1a1a1a; font-size: 20px; margin: 30px 0 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">التفاصيل اليومية</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f8f9fa;">
+              <th style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">التاريخ</th>
+              <th style="padding: 12px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">الشركة</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">الرحلات</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">الكمية</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">المبلغ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dailyData.map((item, index) => `
+              <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f8f9fa"};">
+                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">${format(new Date(item.report_date), "dd/MM/yyyy")}</td>
+                <td style="padding: 12px; text-align: right; border: 1px solid #dee2e6;">${item.company_name}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${item.total_amount.toLocaleString()} ر.س</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.body.appendChild(aggregatedContainer);
+
+      const canvas = await html2canvas(aggregatedContainer, {
         scale: 2.5,
         useCORS: true,
+        logging: false,
         backgroundColor: "#ffffff",
       });
 
+      document.body.removeChild(aggregatedContainer);
+
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 20;
+      const imgWidth = pageWidth - 2 * margin;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-      pdf.save(`تقرير_الشركات_${selectedDate}.pdf`);
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 2 * margin;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - 2 * margin;
+      }
+
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(
+          `تم الإنشاء في: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        );
+      }
+
+      const fileName = `تقرير_الشركات_${format(new Date(startDate), "yyyy-MM-dd")}_${format(new Date(endDate), "yyyy-MM-dd")}.pdf`;
+      pdf.save(fileName);
 
       toast({
         title: "تم التصدير بنجاح",
-        description: "تم تصدير التقرير إلى ملف PDF",
+        description: "تم حفظ ملف PDF",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error exporting PDF:", error);
       toast({
         title: "خطأ في التصدير",
-        description: "حدث خطأ أثناء تصدير التقرير",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsExporting(false);
     }
   };
 
-  const totals = reports.reduce(
-    (acc, report) => ({
-      loads: acc.loads + report.total_loads,
-      quantity: acc.quantity + report.total_quantity,
-      amount: acc.amount + report.total_amount,
-    }),
-    { loads: 0, quantity: 0, amount: 0 }
-  );
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <Card className="p-6">
-        <div className="text-center py-8">جاري التحميل...</div>
+      <Card className="p-8">
+        <div className="text-center text-muted-foreground">جاري تحميل البيانات...</div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold">تقرير الشركات</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Building2 className="h-6 w-6" />
+            تقرير الشركات
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            من {format(new Date(startDate), "PPP", { locale: ar })} إلى {format(new Date(endDate), "PPP", { locale: ar })}
+          </p>
         </div>
-        <Button onClick={exportToPDF} disabled={isExporting || reports.length === 0}>
-          <FileBarChart className="h-4 w-4 ml-2" />
-          {isExporting ? "جاري التصدير..." : "تصدير PDF"}
+        <Button onClick={exportToPDF} size="lg" className="gap-2">
+          <FileDown className="h-4 w-4" />
+          تصدير PDF
         </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="p-4 bg-primary/5">
-          <div className="flex items-center gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-lg">
-              <FileBarChart className="h-6 w-6 text-primary" />
+              <Package className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي الشحنات</p>
-              <p className="text-2xl font-bold">{totals.loads.toLocaleString("ar-SA")}</p>
+              <p className="text-sm text-muted-foreground">إجمالي الرحلات</p>
+              <p className="text-2xl font-bold">{totalLoads}</p>
             </div>
           </div>
         </Card>
-
-        <Card className="p-4 bg-blue-500/5">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-500/10 rounded-lg">
-              <Package className="h-6 w-6 text-blue-600" />
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-accent/10 rounded-lg">
+              <DollarSign className="h-6 w-6 text-accent" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي الكميات</p>
-              <p className="text-2xl font-bold">{totals.quantity.toLocaleString("ar-SA")}</p>
+              <p className="text-sm text-muted-foreground">إجمالي الكمية</p>
+              <p className="text-2xl font-bold">{totalQuantity.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-
-        <Card className="p-4 bg-green-500/5">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <DollarSign className="h-6 w-6 text-green-600" />
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-secondary/10 rounded-lg">
+              <DollarSign className="h-6 w-6 text-secondary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي المبالغ</p>
-              <p className="text-2xl font-bold">{totals.amount.toLocaleString("ar-SA")} ر.س</p>
+              <p className="text-sm text-muted-foreground">إجمالي المبلغ</p>
+              <p className="text-2xl font-bold">{totalAmount.toLocaleString()} ر.س</p>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Table */}
-      <div id="company-report-table" dir="rtl" style={{ backgroundColor: "white", padding: "20px" }}>
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold mb-2">تقرير الشركات</h2>
-          <p className="text-muted-foreground">التاريخ: {selectedDate}</p>
+      {/* Aggregated Data Table */}
+      <Card>
+        <div className="p-4 bg-muted/50 border-b">
+          <h3 className="font-semibold text-lg">الإجماليات التراكمية</h3>
         </div>
-        
-        {reports.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right">الشركة</TableHead>
-                <TableHead className="text-right">عدد الشحنات</TableHead>
-                <TableHead className="text-right">إجمالي الكميات</TableHead>
-                <TableHead className="text-right">إجمالي المبالغ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reports.map((report) => (
-                <TableRow key={report.id}>
-                  <TableCell className="font-medium">{report.company_name}</TableCell>
-                  <TableCell>{report.total_loads.toLocaleString("ar-SA")}</TableCell>
-                  <TableCell>{report.total_quantity.toLocaleString("ar-SA")}</TableCell>
-                  <TableCell>{report.total_amount.toLocaleString("ar-SA")} ر.س</TableCell>
-                </TableRow>
-              ))}
-              <TableRow className="font-bold bg-muted/50">
-                <TableCell>الإجمالي</TableCell>
-                <TableCell>{totals.loads.toLocaleString("ar-SA")}</TableCell>
-                <TableCell>{totals.quantity.toLocaleString("ar-SA")}</TableCell>
-                <TableCell>{totals.amount.toLocaleString("ar-SA")} ر.س</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            لا توجد بيانات لهذا التاريخ
-          </div>
-        )}
-      </div>
-    </Card>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-right p-4 font-semibold">الشركة</th>
+                <th className="text-center p-4 font-semibold">عدد الرحلات</th>
+                <th className="text-center p-4 font-semibold">الكمية الإجمالية</th>
+                <th className="text-center p-4 font-semibold">المبلغ الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              {aggregatedData.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center p-8 text-muted-foreground">
+                    لا توجد بيانات لهذه الفترة
+                  </td>
+                </tr>
+              ) : (
+                aggregatedData.map((item, index) => (
+                  <tr
+                    key={item.company_id}
+                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                  >
+                    <td className="p-4 text-right font-medium">
+                      {item.company_name}
+                    </td>
+                    <td className="p-4 text-center">{item.total_loads}</td>
+                    <td className="p-4 text-center">
+                      {item.total_quantity.toLocaleString()}
+                    </td>
+                    <td className="p-4 text-center font-semibold text-primary">
+                      {item.total_amount.toLocaleString()} ر.س
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Daily Details Table */}
+      <Card>
+        <div className="p-4 bg-muted/50 border-b">
+          <h3 className="font-semibold text-lg">التفاصيل اليومية</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-right p-4 font-semibold">التاريخ</th>
+                <th className="text-right p-4 font-semibold">الشركة</th>
+                <th className="text-center p-4 font-semibold">الرحلات</th>
+                <th className="text-center p-4 font-semibold">الكمية</th>
+                <th className="text-center p-4 font-semibold">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dailyData.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
+                    لا توجد بيانات لهذه الفترة
+                  </td>
+                </tr>
+              ) : (
+                dailyData.map((item, index) => (
+                  <tr
+                    key={`${item.report_date}-${item.company_name}`}
+                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                  >
+                    <td className="p-4 text-right">
+                      {format(new Date(item.report_date), "dd/MM/yyyy")}
+                    </td>
+                    <td className="p-4 text-right font-medium">
+                      {item.company_name}
+                    </td>
+                    <td className="p-4 text-center">{item.total_loads}</td>
+                    <td className="p-4 text-center">
+                      {item.total_quantity.toLocaleString()}
+                    </td>
+                    <td className="p-4 text-center font-semibold text-primary">
+                      {item.total_amount.toLocaleString()} ر.س
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
   );
 };
 
