@@ -153,22 +153,31 @@ const AdvancedLoadsList = () => {
       console.log(`🚛 فلتر السائق: ${beforeLength} -> ${filtered.length}`);
     }
 
-    // Filter by date range
-    if (startDate) {
+    // Filter by date - improved logic
+    if (startDate && endDate) {
+      // إذا تم اختيار تاريخين، فلتر بالنطاق
       const beforeLength = filtered.length;
       filtered = filtered.filter(load => {
         const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
-        return loadDate >= startDate;
+        return loadDate >= startDate && loadDate <= endDate;
       });
-      console.log(`📅 فلتر من تاريخ (${startDate}): ${beforeLength} -> ${filtered.length}`);
-    }
-    if (endDate) {
+      console.log(`📅 فلتر النطاق (${startDate} إلى ${endDate}): ${beforeLength} -> ${filtered.length}`);
+    } else if (startDate && !endDate) {
+      // إذا تم اختيار تاريخ واحد فقط، فلتر بهذا التاريخ بالضبط
+      const beforeLength = filtered.length;
+      filtered = filtered.filter(load => {
+        const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
+        return loadDate === startDate;
+      });
+      console.log(`📅 فلتر تاريخ محدد (${startDate}): ${beforeLength} -> ${filtered.length}`);
+    } else if (!startDate && endDate) {
+      // إذا تم اختيار تاريخ النهاية فقط، فلتر حتى هذا التاريخ
       const beforeLength = filtered.length;
       filtered = filtered.filter(load => {
         const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
         return loadDate <= endDate;
       });
-      console.log(`📅 فلتر إلى تاريخ (${endDate}): ${beforeLength} -> ${filtered.length}`);
+      console.log(`📅 فلتر حتى تاريخ (${endDate}): ${beforeLength} -> ${filtered.length}`);
     }
 
     // Filter by search text
@@ -202,7 +211,7 @@ const AdvancedLoadsList = () => {
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
-    console.log(`✅ نتيجة الفلترة: ${filtered.length} شحنة`);
+    console.log(`✅ نتيجة الفلترة النهائية: ${filtered.length} شحنة`);
     return filtered;
   }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, searchText, sortField, sortOrder]);
 
