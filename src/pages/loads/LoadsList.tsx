@@ -87,13 +87,24 @@ const LoadsList = () => {
         `)
         .order('date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading loads:', error);
+        throw error;
+      }
+      
+      console.log(`✅ تم تحميل ${data?.length || 0} شحنة من قاعدة البيانات`);
       setLoads(data || []);
-      setFilteredLoads(data || []); // عرض جميع البيانات مباشرة
+      setFilteredLoads(data || []);
+      
+      toast({
+        title: "تم التحميل بنجاح",
+        description: `تم تحميل ${data?.length || 0} شحنة`,
+      });
     } catch (error: any) {
+      console.error('Load data error:', error);
       toast({
         title: "خطأ",
-        description: "فشل تحميل البيانات",
+        description: error.message || "فشل تحميل البيانات",
         variant: "destructive"
       });
     } finally {
@@ -103,33 +114,42 @@ const LoadsList = () => {
 
   const applyFilters = () => {
     let filtered = [...loads];
+    
+    console.log(`🔍 بدء الفلترة من ${loads.length} شحنة`);
 
     if (selectedCompany !== "all") {
       filtered = filtered.filter(load => load.company_id === selectedCompany);
+      console.log(`📦 بعد فلتر الشركة: ${filtered.length} شحنة`);
     }
 
     if (selectedLoadType !== "all") {
       filtered = filtered.filter(load => load.load_type_id === selectedLoadType);
+      console.log(`📋 بعد فلتر نوع الشحنة: ${filtered.length} شحنة`);
     }
 
     if (selectedDriver !== "all") {
       filtered = filtered.filter(load => load.driver_id === selectedDriver);
+      console.log(`👤 بعد فلتر السائق: ${filtered.length} شحنة`);
     }
 
     if (startDate) {
       filtered = filtered.filter(load => load.date >= startDate);
+      console.log(`📅 بعد فلتر تاريخ البدء: ${filtered.length} شحنة`);
     }
 
     if (endDate) {
       filtered = filtered.filter(load => load.date <= endDate);
+      console.log(`📅 بعد فلتر تاريخ النهاية: ${filtered.length} شحنة`);
     }
 
     if (invoiceStartDate) {
       filtered = filtered.filter(load => load.invoice_date && load.invoice_date >= invoiceStartDate);
+      console.log(`📄 بعد فلتر تاريخ فاتورة البدء: ${filtered.length} شحنة`);
     }
 
     if (invoiceEndDate) {
       filtered = filtered.filter(load => load.invoice_date && load.invoice_date <= invoiceEndDate);
+      console.log(`📄 بعد فلتر تاريخ فاتورة النهاية: ${filtered.length} شحنة`);
     }
 
     // Filter by search text (load number or truck number)
@@ -139,6 +159,7 @@ const LoadsList = () => {
         (load.load_number && load.load_number.toLowerCase().includes(search)) ||
         (load.truck_number && load.truck_number.toLowerCase().includes(search))
       );
+      console.log(`🔎 بعد البحث النصي "${search}": ${filtered.length} شحنة`);
     }
 
     // Sort by selected field
@@ -161,7 +182,13 @@ const LoadsList = () => {
       return 0;
     });
 
+    console.log(`✅ النتيجة النهائية: ${filtered.length} شحنة`);
     setFilteredLoads(filtered);
+    
+    toast({
+      title: "تم تطبيق الفلتر",
+      description: `عدد النتائج: ${filtered.length} من أصل ${loads.length}`,
+    });
   };
 
   const toggleSortOrder = () => {
@@ -186,7 +213,29 @@ const LoadsList = () => {
     setInvoiceStartDate("");
     setInvoiceEndDate("");
     setSearchText("");
-    applyFilters();
+    setFilteredLoads(loads);
+    
+    toast({
+      title: "تمت إعادة التعيين",
+      description: `عرض جميع الشحنات (${loads.length})`,
+    });
+  };
+  
+  const quickSearchLoads = (loadNumbers: string[]) => {
+    const filtered = loads.filter(load => 
+      loadNumbers.includes(load.load_number)
+    );
+    
+    setFilteredLoads(filtered);
+    setSearchText(loadNumbers.join(', '));
+    
+    console.log(`🎯 بحث سريع عن الشحنات: ${loadNumbers.join(', ')}`);
+    console.log(`✅ تم العثور على ${filtered.length} من ${loadNumbers.length} شحنة`);
+    
+    toast({
+      title: "البحث السريع",
+      description: `تم العثور على ${filtered.length} من ${loadNumbers.length} شحنة`,
+    });
   };
 
   const exportToExcel = () => {
@@ -647,7 +696,14 @@ const LoadsList = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-2 justify-end">
+                <div className="mt-4 flex gap-2 justify-end flex-wrap">
+                  <Button 
+                    onClick={() => quickSearchLoads(['15050', '15089', '15106', '15035', '15071', '15036'])}
+                    variant="secondary"
+                    className="flex items-center gap-2"
+                  >
+                    🎯 الشحنات المطلوبة
+                  </Button>
                   <Button 
                     onClick={applyFilters}
                     className="flex items-center gap-2"
@@ -694,7 +750,17 @@ const LoadsList = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>جدول الشحنات / Loads Table</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>جدول الشحنات / Loads Table</CardTitle>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-primary">
+                      {filteredLoads.length}
+                    </span>
+                    <span className="text-muted-foreground">من</span>
+                    <span className="font-medium">{loads.length}</span>
+                    <span className="text-muted-foreground">شحنة</span>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
