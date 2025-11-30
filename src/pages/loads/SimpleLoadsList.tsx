@@ -246,39 +246,44 @@ const SimpleLoadsList = () => {
     try {
       toast({
         title: "جاري التصدير...",
-        description: "يرجى الانتظار",
+        description: "يرجى الانتظار قليلاً",
       });
 
       // Create a temporary container for the table
       const container = document.createElement('div');
       container.style.position = 'absolute';
-      container.style.right = '-9999px';
+      container.style.right = '-99999px';
       container.style.top = '0';
-      container.style.width = '1200px';
+      container.style.width = '1400px';
       container.style.background = 'white';
-      container.style.padding = '20px';
-      container.style.fontFamily = 'Arial, sans-serif';
+      container.style.padding = '30px';
+      container.style.fontFamily = 'Tahoma, Arial, sans-serif';
+      container.style.direction = 'rtl';
       
       // Create header
       const header = document.createElement('div');
       header.style.textAlign = 'center';
-      header.style.marginBottom = '20px';
+      header.style.marginBottom = '25px';
       header.style.direction = 'rtl';
+      header.style.borderBottom = '3px solid #3b82f6';
+      header.style.paddingBottom = '15px';
       
       const title = document.createElement('h1');
-      title.textContent = 'تقرير الشحنات';
-      title.style.fontSize = '24px';
-      title.style.marginBottom = '10px';
-      title.style.color = '#1f2937';
+      title.textContent = 'تقرير الشحنات المفصل';
+      title.style.fontSize = '32px';
+      title.style.marginBottom = '12px';
+      title.style.color = '#1e40af';
+      title.style.fontWeight = 'bold';
       header.appendChild(title);
       
       const dateInfo = document.createElement('div');
-      dateInfo.style.fontSize = '12px';
-      dateInfo.style.color = '#6b7280';
-      dateInfo.style.marginBottom = '5px';
-      let dateText = `تاريخ الإنشاء: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
+      dateInfo.style.fontSize = '14px';
+      dateInfo.style.color = '#4b5563';
+      dateInfo.style.marginBottom = '8px';
+      dateInfo.style.direction = 'rtl';
+      let dateText = `تاريخ الإنشاء: ${format(new Date(), 'dd/MM/yyyy - HH:mm')}`;
       if (startDate || endDate) {
-        dateText += ` | الفترة: ${startDate || '...'} إلى ${endDate || '...'}`;
+        dateText += ` | الفترة من: ${startDate ? format(new Date(startDate), 'dd/MM/yyyy') : '...'} إلى: ${endDate ? format(new Date(endDate), 'dd/MM/yyyy') : '...'}`;
       }
       if (selectedCompany && selectedCompany !== "all") {
         const company = companies.find(c => c.id === selectedCompany);
@@ -289,35 +294,73 @@ const SimpleLoadsList = () => {
       dateInfo.textContent = dateText;
       header.appendChild(dateInfo);
       
-      const stats = document.createElement('div');
-      stats.style.fontSize = '12px';
-      stats.style.color = '#374151';
-      stats.style.fontWeight = 'bold';
-      stats.textContent = `عدد الشحنات: ${statistics.totalLoads} | إجمالي الكمية: ${statistics.totalQuantity.toFixed(2)} | إجمالي المبلغ: ${statistics.totalAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال`;
-      header.appendChild(stats);
+      const statsContainer = document.createElement('div');
+      statsContainer.style.display = 'flex';
+      statsContainer.style.justifyContent = 'space-around';
+      statsContainer.style.marginTop = '15px';
+      statsContainer.style.direction = 'rtl';
       
+      const createStatBox = (label: string, value: string, color: string) => {
+        const box = document.createElement('div');
+        box.style.padding = '12px 24px';
+        box.style.backgroundColor = `${color}15`;
+        box.style.borderRadius = '8px';
+        box.style.border = `2px solid ${color}`;
+        box.style.textAlign = 'center';
+        
+        const labelEl = document.createElement('div');
+        labelEl.textContent = label;
+        labelEl.style.fontSize = '12px';
+        labelEl.style.color = '#6b7280';
+        labelEl.style.marginBottom = '4px';
+        box.appendChild(labelEl);
+        
+        const valueEl = document.createElement('div');
+        valueEl.textContent = value;
+        valueEl.style.fontSize = '18px';
+        valueEl.style.fontWeight = 'bold';
+        valueEl.style.color = color;
+        box.appendChild(valueEl);
+        
+        return box;
+      };
+      
+      statsContainer.appendChild(createStatBox('عدد الشحنات', `${statistics.totalLoads}`, '#3b82f6'));
+      statsContainer.appendChild(createStatBox('إجمالي الكمية', `${statistics.totalQuantity.toFixed(2)} طن`, '#10b981'));
+      statsContainer.appendChild(createStatBox('إجمالي المبلغ', `${statistics.totalAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال`, '#f59e0b'));
+      
+      header.appendChild(statsContainer);
       container.appendChild(header);
+      
+      // Create table wrapper
+      const tableWrapper = document.createElement('div');
+      tableWrapper.style.direction = 'rtl';
+      tableWrapper.style.overflowX = 'auto';
       
       // Create table
       const table = document.createElement('table');
       table.style.width = '100%';
       table.style.borderCollapse = 'collapse';
-      table.style.fontSize = '11px';
+      table.style.fontSize = '12px';
       table.style.direction = 'rtl';
+      table.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
       
       // Table header
       const thead = document.createElement('thead');
       const headerRow = document.createElement('tr');
-      headerRow.style.backgroundColor = '#3b82f6';
+      headerRow.style.backgroundColor = '#2563eb';
       headerRow.style.color = 'white';
       
       const headers = ['التاريخ', 'رقم الشحنة', 'الشركة', 'نوع الشحنة', 'السائق', 'رقم الشاحنة', 'الكمية', 'سعر الوحدة', 'المبلغ الإجمالي', 'الحالة'];
       headers.forEach(headerText => {
         const th = document.createElement('th');
         th.textContent = headerText;
-        th.style.border = '1px solid #e5e7eb';
-        th.style.padding = '8px';
+        th.style.border = '1px solid #ddd';
+        th.style.padding = '12px 8px';
         th.style.textAlign = 'center';
+        th.style.fontWeight = 'bold';
+        th.style.fontSize = '13px';
+        th.style.whiteSpace = 'nowrap';
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow);
@@ -327,77 +370,117 @@ const SimpleLoadsList = () => {
       const tbody = document.createElement('tbody');
       filteredLoads.forEach((load, index) => {
         const row = document.createElement('tr');
-        row.style.backgroundColor = index % 2 === 0 ? '#f9fafb' : 'white';
+        row.style.backgroundColor = index % 2 === 0 ? '#f8fafc' : 'white';
+        row.style.transition = 'background-color 0.2s';
         
         const cells = [
-          load.date ? format(new Date(load.date), 'yyyy-MM-dd') : '-',
+          load.date ? format(new Date(load.date), 'dd/MM/yyyy') : '-',
           load.load_number || '-',
           load.companies?.name || '-',
           load.load_types?.name || '-',
           load.drivers?.name || '-',
           load.truck_number || '-',
           load.quantity?.toFixed(2) || '0.00',
-          parseFloat(load.unit_price || 0).toFixed(2),
+          parseFloat(load.unit_price || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 }),
           parseFloat(load.total_amount || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 }),
           load.status === 'pending' ? 'معلق' : load.status === 'completed' ? 'مكتمل' : load.status === 'cancelled' ? 'ملغي' : load.status || '-'
         ];
         
-        cells.forEach(cellText => {
+        cells.forEach((cellText, cellIndex) => {
           const td = document.createElement('td');
           td.textContent = cellText;
           td.style.border = '1px solid #e5e7eb';
-          td.style.padding = '6px';
+          td.style.padding = '10px 8px';
           td.style.textAlign = 'center';
+          td.style.fontSize = '12px';
+          
+          // Add colors for status column
+          if (cellIndex === 9) {
+            if (cellText === 'معلق') {
+              td.style.color = '#f59e0b';
+              td.style.fontWeight = 'bold';
+            } else if (cellText === 'مكتمل') {
+              td.style.color = '#10b981';
+              td.style.fontWeight = 'bold';
+            } else if (cellText === 'ملغي') {
+              td.style.color = '#ef4444';
+              td.style.fontWeight = 'bold';
+            }
+          }
+          
           row.appendChild(td);
         });
         
         tbody.appendChild(row);
       });
       table.appendChild(tbody);
-      container.appendChild(table);
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
+      
+      // Add footer
+      const footer = document.createElement('div');
+      footer.style.marginTop = '20px';
+      footer.style.textAlign = 'center';
+      footer.style.fontSize = '11px';
+      footer.style.color = '#6b7280';
+      footer.style.direction = 'rtl';
+      footer.textContent = `تم إنشاء هذا التقرير بواسطة نظام إدارة الشحنات - ${format(new Date(), 'dd/MM/yyyy')}`;
+      container.appendChild(footer);
       
       document.body.appendChild(container);
       
-      // Convert to canvas
+      // Wait a bit for rendering
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Convert to canvas with higher quality
       const canvas = await html2canvas(container, {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 1400,
+        windowHeight: container.scrollHeight
       });
       
       document.body.removeChild(container);
       
       // Create PDF
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF('l', 'mm', 'a4');
-      const imgWidth = 297; // A4 landscape width in mm
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       let heightLeft = imgHeight;
       let position = 0;
       
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= 210; // A4 landscape height
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pdfHeight;
       
+      // Add remaining pages if needed
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= 210;
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
       }
       
-      pdf.save(`loads_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      // Save with timestamp
+      const fileName = `تقرير_الشحنات_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`;
+      pdf.save(fileName);
       
       toast({
-        title: "تم التصدير",
-        description: "تم تصدير البيانات إلى PDF بنجاح"
+        title: "تم التصدير بنجاح",
+        description: `تم حفظ ${fileName}`,
       });
     } catch (error) {
       console.error('خطأ في التصدير:', error);
       toast({
         title: "خطأ في التصدير",
-        description: "حدث خطأ أثناء تصدير PDF",
+        description: "حدث خطأ أثناء تصدير PDF. يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     }
