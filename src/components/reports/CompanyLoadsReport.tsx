@@ -123,76 +123,76 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
         position: absolute;
         left: -9999px;
         top: 0;
-        width: 750px;
+        width: 680px;
         background: white;
-        padding: 20px 30px;
+        padding: 15px 20px;
         direction: rtl;
         font-family: Arial, sans-serif;
         box-sizing: border-box;
       `;
 
       aggregatedContainer.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-          <h1 style="color: #1a1a1a; font-size: 24px; margin: 0 0 8px 0; font-weight: bold;">تقرير إجمالي الشركات</h1>
-          <p style="color: #666; font-size: 13px; margin: 0;">من ${format(new Date(startDate), "dd/MM/yyyy")} إلى ${format(new Date(endDate), "dd/MM/yyyy")}</p>
+        <div style="text-align: center; margin-bottom: 15px;">
+          <h1 style="color: #1a1a1a; font-size: 20px; margin: 0 0 6px 0; font-weight: bold;">تقرير إجمالي الشركات</h1>
+          <p style="color: #666; font-size: 11px; margin: 0;">من ${format(new Date(startDate), "dd/MM/yyyy")} إلى ${format(new Date(endDate), "dd/MM/yyyy")}</p>
         </div>
         
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 8px; text-align: center; color: white;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${totalLoads}</div>
-            <div style="font-size: 11px; opacity: 0.95;">إجمالي الرحلات</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalLoads}</div>
+            <div style="font-size: 9px; opacity: 0.95;">إجمالي الرحلات</div>
           </div>
-          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 15px; border-radius: 8px; text-align: center; color: white;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${totalQuantity.toLocaleString()}</div>
-            <div style="font-size: 11px; opacity: 0.95;">إجمالي الكمية</div>
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalQuantity.toLocaleString()}</div>
+            <div style="font-size: 9px; opacity: 0.95;">إجمالي الكمية</div>
           </div>
-          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 15px; border-radius: 8px; text-align: center; color: white;">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">${totalAmount.toLocaleString()} ر.س</div>
-            <div style="font-size: 11px; opacity: 0.95;">إجمالي المبلغ</div>
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalAmount.toLocaleString()} ر.س</div>
+            <div style="font-size: 9px; opacity: 0.95;">إجمالي المبلغ</div>
           </div>
         </div>
 
-        <h2 style="color: #1a1a1a; font-size: 16px; margin: 20px 0 10px; border-bottom: 2px solid #667eea; padding-bottom: 8px; font-weight: bold;">الإجماليات التراكمية</h2>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 11px;">
+        <h2 style="color: #1a1a1a; font-size: 14px; margin: 15px 0 8px; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-weight: bold;">الإجماليات التراكمية</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9px; table-layout: fixed;">
           <thead>
             <tr style="background: #f8f9fa;">
-              <th style="padding: 8px 10px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">الشركة</th>
-              <th style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 15%;">عدد الرحلات</th>
-              <th style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 18%;">الكمية</th>
-              <th style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 20%;">المبلغ</th>
+              <th style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">الشركة</th>
+              <th style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 80px;">عدد الرحلات</th>
+              <th style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 100px;">الكمية</th>
+              <th style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 110px;">المبلغ</th>
             </tr>
           </thead>
           <tbody>
             ${aggregatedData.map((item, index) => `
               <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f8f9fa"};">
-                <td style="padding: 8px 10px; text-align: right; border: 1px solid #dee2e6;">${item.company_name}</td>
-                <td style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
-                <td style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
-                <td style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
+                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; word-wrap: break-word;">${item.company_name}</td>
+                <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
+                <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
+                <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
           </tbody>
         </table>
 
-        <h2 style="color: #1a1a1a; font-size: 16px; margin: 20px 0 10px; border-bottom: 2px solid #667eea; padding-bottom: 8px; font-weight: bold;">التفاصيل اليومية</h2>
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        <h2 style="color: #1a1a1a; font-size: 14px; margin: 15px 0 8px; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-weight: bold;">التفاصيل اليومية</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed;">
           <thead>
             <tr style="background: #f8f9fa;">
-              <th style="padding: 8px 10px; text-align: right; border: 1px solid #dee2e6; font-weight: bold; width: 15%;">التاريخ</th>
-              <th style="padding: 8px 10px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">الشركة</th>
-              <th style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 12%;">الرحلات</th>
-              <th style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 15%;">الكمية</th>
-              <th style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 18%;">المبلغ</th>
+              <th style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; font-weight: bold; width: 90px;">التاريخ</th>
+              <th style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; font-weight: bold;">الشركة</th>
+              <th style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 70px;">الرحلات</th>
+              <th style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 95px;">الكمية</th>
+              <th style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold; width: 105px;">المبلغ</th>
             </tr>
           </thead>
           <tbody>
             ${dailyData.map((item, index) => `
               <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f8f9fa"};">
-                <td style="padding: 8px 10px; text-align: right; border: 1px solid #dee2e6;">${format(new Date(item.report_date), "dd/MM/yyyy")}</td>
-                <td style="padding: 8px 10px; text-align: right; border: 1px solid #dee2e6;">${item.company_name}</td>
-                <td style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
-                <td style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
-                <td style="padding: 8px 10px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
+                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;">${format(new Date(item.report_date), "dd/MM/yyyy")}</td>
+                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; word-wrap: break-word;">${item.company_name}</td>
+                <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
+                <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
+                <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
           </tbody>
