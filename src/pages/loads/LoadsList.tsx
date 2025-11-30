@@ -77,28 +77,42 @@ const LoadsList = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('loads')
-        .select(`
-          *,
-          companies (name),
-          load_types (name),
-          drivers (name)
-        `)
-        .order('date', { ascending: false });
+      // Load all data without pagination limit
+      let allLoads: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        console.error('Error loading loads:', error);
-        throw error;
+      while (hasMore) {
+        const { data, error, count } = await supabase
+          .from('loads')
+          .select(`
+            *,
+            companies (name),
+            load_types (name),
+            drivers (name)
+          `, { count: 'exact' })
+          .order('date', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allLoads = [...allLoads, ...data];
+          from += pageSize;
+          hasMore = data.length === pageSize;
+        } else {
+          hasMore = false;
+        }
       }
       
-      console.log(`✅ تم تحميل ${data?.length || 0} شحنة من قاعدة البيانات`);
-      setLoads(data || []);
-      setFilteredLoads(data || []);
+      console.log(`✅ تم تحميل ${allLoads.length} شحنة من قاعدة البيانات`);
+      setLoads(allLoads);
+      setFilteredLoads(allLoads);
       
       toast({
         title: "تم التحميل بنجاح",
-        description: `تم تحميل ${data?.length || 0} شحنة`,
+        description: `تم تحميل ${allLoads.length} شحنة من قاعدة البيانات`,
       });
     } catch (error: any) {
       console.error('Load data error:', error);
