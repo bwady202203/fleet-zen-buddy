@@ -7,6 +7,7 @@ export type VehicleStatus = "active" | "maintenance" | "warning" | "out-of-servi
 export interface Vehicle {
   id: string;
   name: string;
+  licensePlate: string;
   type: string;
   status: VehicleStatus;
   lastService: string;
@@ -69,7 +70,8 @@ export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (data) {
         const mappedVehicles: Vehicle[] = data.map(v => ({
           id: v.id,
-          name: `${v.model} - ${v.license_plate}`,
+          name: v.model || '',
+          licensePlate: v.license_plate || '',
           type: v.model,
           status: v.status as VehicleStatus || 'active',
           lastService: v.last_oil_change_date || '',
@@ -89,7 +91,7 @@ export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const { data, error } = await supabase
         .from('vehicles')
         .insert({
-          license_plate: vehicle.name.split(' - ')[1] || vehicle.name,
+          license_plate: vehicle.licensePlate,
           model: vehicle.type,
           year: new Date().getFullYear(),
           status: vehicle.status,
@@ -103,7 +105,8 @@ export const VehiclesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (data) {
         const newVehicle: Vehicle = {
           id: data.id,
-          name: `${data.model} - ${data.license_plate}`,
+          name: data.model || '',
+          licensePlate: data.license_plate || '',
           type: data.model,
           status: data.status as VehicleStatus || 'active',
           lastService: data.last_oil_change_date || '',
