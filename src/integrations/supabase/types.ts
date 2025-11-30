@@ -1575,6 +1575,69 @@ export type Database = {
           },
         ]
       }
+      loads_reports: {
+        Row: {
+          average_load_amount: number
+          company_id: string
+          created_at: string | null
+          end_date: string
+          id: string
+          notes: string | null
+          organization_id: string | null
+          report_date: string
+          start_date: string
+          total_amount: number
+          total_loads: number
+          total_quantity: number
+          updated_at: string | null
+        }
+        Insert: {
+          average_load_amount?: number
+          company_id: string
+          created_at?: string | null
+          end_date: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          report_date?: string
+          start_date: string
+          total_amount?: number
+          total_loads?: number
+          total_quantity?: number
+          updated_at?: string | null
+        }
+        Update: {
+          average_load_amount?: number
+          company_id?: string
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          report_date?: string
+          start_date?: string
+          total_amount?: number
+          total_loads?: number
+          total_quantity?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loads_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loads_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_cost_items: {
         Row: {
           created_at: string
@@ -2675,6 +2738,15 @@ export type Database = {
           entry_number: string
           id: string
         }[]
+      }
+      generate_loads_report: {
+        Args: {
+          p_company_id: string
+          p_end_date: string
+          p_organization_id?: string
+          p_start_date: string
+        }
+        Returns: string
       }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_role: { Args: { _user_id: string }; Returns: string }
