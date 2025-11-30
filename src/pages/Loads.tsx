@@ -36,6 +36,15 @@ const Loads = () => {
       color: "from-emerald-500 to-emerald-600"
     },
     {
+      title: "عرض الشحنات البسيط",
+      titleEn: "Simple Loads View",
+      description: "عرض بسيط بفلتر التاريخ والشركة",
+      descriptionEn: "Simple View with Date and Company Filter",
+      icon: List,
+      link: "/loads/simple-list",
+      color: "from-sky-500 to-sky-600"
+    },
+    {
       title: "السائقين",
       titleEn: "Drivers",
       description: "إدارة السائقين",
