@@ -122,38 +122,67 @@ const AdvancedLoadsList = () => {
   const filteredLoads = useMemo(() => {
     let filtered = [...loads];
 
+    console.log('🔍 بدء الفلترة:', {
+      totalLoads: loads.length,
+      selectedCompany,
+      selectedLoadType,
+      selectedDriver,
+      startDate,
+      endDate,
+      searchText
+    });
+
     // Filter by company
-    if (selectedCompany !== "all") {
+    if (selectedCompany && selectedCompany !== "all") {
+      const beforeLength = filtered.length;
       filtered = filtered.filter(load => load.company_id === selectedCompany);
+      console.log(`📊 فلتر الشركة: ${beforeLength} -> ${filtered.length}`);
     }
 
     // Filter by load type
-    if (selectedLoadType !== "all") {
+    if (selectedLoadType && selectedLoadType !== "all") {
+      const beforeLength = filtered.length;
       filtered = filtered.filter(load => load.load_type_id === selectedLoadType);
+      console.log(`📦 فلتر نوع الحمولة: ${beforeLength} -> ${filtered.length}`);
     }
 
     // Filter by driver
-    if (selectedDriver !== "all") {
+    if (selectedDriver && selectedDriver !== "all") {
+      const beforeLength = filtered.length;
       filtered = filtered.filter(load => load.driver_id === selectedDriver);
+      console.log(`🚛 فلتر السائق: ${beforeLength} -> ${filtered.length}`);
     }
 
     // Filter by date range
     if (startDate) {
-      filtered = filtered.filter(load => load.date >= startDate);
+      const beforeLength = filtered.length;
+      filtered = filtered.filter(load => {
+        const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
+        return loadDate >= startDate;
+      });
+      console.log(`📅 فلتر من تاريخ (${startDate}): ${beforeLength} -> ${filtered.length}`);
     }
     if (endDate) {
-      filtered = filtered.filter(load => load.date <= endDate);
+      const beforeLength = filtered.length;
+      filtered = filtered.filter(load => {
+        const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
+        return loadDate <= endDate;
+      });
+      console.log(`📅 فلتر إلى تاريخ (${endDate}): ${beforeLength} -> ${filtered.length}`);
     }
 
     // Filter by search text
-    if (searchText.trim()) {
+    if (searchText && searchText.trim()) {
+      const beforeLength = filtered.length;
       const search = searchText.trim().toLowerCase();
-      filtered = filtered.filter(load => 
-        (load.load_number && load.load_number.toLowerCase().includes(search)) ||
-        (load.truck_number && load.truck_number.toLowerCase().includes(search)) ||
-        (load.companies?.name && load.companies.name.toLowerCase().includes(search)) ||
-        (load.drivers?.name && load.drivers.name.toLowerCase().includes(search))
-      );
+      filtered = filtered.filter(load => {
+        const matchLoadNumber = load.load_number && load.load_number.toLowerCase().includes(search);
+        const matchTruckNumber = load.truck_number && load.truck_number.toLowerCase().includes(search);
+        const matchCompany = load.companies?.name && load.companies.name.toLowerCase().includes(search);
+        const matchDriver = load.drivers?.name && load.drivers.name.toLowerCase().includes(search);
+        return matchLoadNumber || matchTruckNumber || matchCompany || matchDriver;
+      });
+      console.log(`🔎 فلتر البحث (${search}): ${beforeLength} -> ${filtered.length}`);
     }
 
     // Sort
@@ -161,16 +190,19 @@ const AdvancedLoadsList = () => {
       let comparison = 0;
       
       if (sortField === 'date') {
-        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        comparison = dateA - dateB;
       } else if (sortField === 'load_number') {
         comparison = (a.load_number || '').localeCompare(b.load_number || '');
       } else if (sortField === 'quantity') {
-        comparison = (a.quantity || 0) - (b.quantity || 0);
+        comparison = (parseFloat(a.quantity) || 0) - (parseFloat(b.quantity) || 0);
       }
       
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
+    console.log(`✅ نتيجة الفلترة: ${filtered.length} شحنة`);
     return filtered;
   }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, searchText, sortField, sortOrder]);
 
@@ -185,12 +217,15 @@ const AdvancedLoadsList = () => {
   }, [filteredLoads]);
 
   const resetFilters = () => {
+    console.log('🔄 إعادة تعيين الفلاتر');
     setSelectedCompany("all");
     setSelectedLoadType("all");
     setSelectedDriver("all");
     setStartDate("");
     setEndDate("");
     setSearchText("");
+    setSortField('date');
+    setSortOrder('desc');
     
     toast({
       title: "تمت إعادة التعيين",
