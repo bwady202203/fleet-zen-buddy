@@ -60,18 +60,9 @@ const AdvancedLoadsList = () => {
         supabase.from('drivers').select('id, name').eq('is_active', true).order('name')
       ]);
 
-      if (companiesRes.data) {
-        console.log('📋 الشركات المتاحة:', companiesRes.data);
-        setCompanies(companiesRes.data);
-      }
-      if (loadTypesRes.data) {
-        console.log('📋 أنواع الحمولة المتاحة:', loadTypesRes.data);
-        setLoadTypes(loadTypesRes.data);
-      }
-      if (driversRes.data) {
-        console.log('📋 السائقين المتاحين:', driversRes.data.length, 'سائق');
-        setDrivers(driversRes.data);
-      }
+      if (companiesRes.data) setCompanies(companiesRes.data);
+      if (loadTypesRes.data) setLoadTypes(loadTypesRes.data);
+      if (driversRes.data) setDrivers(driversRes.data);
     } catch (error: any) {
       console.error('Error loading filter data:', error);
     }
@@ -131,92 +122,45 @@ const AdvancedLoadsList = () => {
   const filteredLoads = useMemo(() => {
     let filtered = [...loads];
 
-    console.log('🔍 بدء الفلترة:', {
-      totalLoads: loads.length,
-      selectedCompany,
-      selectedLoadType,
-      selectedDriver,
-      startDate,
-      endDate,
-      searchText
-    });
+    console.log('🔍 بدء الفلترة من', loads.length, 'شحنة');
 
-    // Filter by company - مع عرض تفصيلي
+    // Filter by company
     if (selectedCompany && selectedCompany !== "all") {
-      const beforeLength = filtered.length;
-      console.log(`🔍 الشركة المختارة: ${selectedCompany}`);
-      
-      // عرض أول 5 شحنات قبل الفلتر
-      console.log('📦 عينة من الشحنات قبل الفلتر:', filtered.slice(0, 5).map(l => ({
-        load_number: l.load_number,
-        company_id: l.company_id,
-        company_name: l.companies?.name
-      })));
-      
-      filtered = filtered.filter(load => {
-        const matches = load.company_id === selectedCompany;
-        if (!matches) {
-          console.log(`❌ استبعاد: ${load.load_number} (company_id: ${load.company_id}, شركة: ${load.companies?.name})`);
-        }
-        return matches;
-      });
-      
-      console.log(`📊 فلتر الشركة: ${beforeLength} -> ${filtered.length}`);
-      
-      // عرض أول 3 شحنات بعد الفلتر
-      if (filtered.length > 0) {
-        console.log('✅ عينة من الشحنات بعد الفلتر:', filtered.slice(0, 3).map(l => ({
-          load_number: l.load_number,
-          company_id: l.company_id,
-          company_name: l.companies?.name
-        })));
-      }
+      filtered = filtered.filter(load => load.company_id === selectedCompany);
+      console.log(`📦 بعد فلتر الشركة: ${filtered.length} شحنة`);
     }
 
     // Filter by load type
     if (selectedLoadType && selectedLoadType !== "all") {
-      const beforeLength = filtered.length;
       filtered = filtered.filter(load => load.load_type_id === selectedLoadType);
-      console.log(`📦 فلتر نوع الحمولة: ${beforeLength} -> ${filtered.length}`);
+      console.log(`📦 بعد فلتر نوع الحمولة: ${filtered.length} شحنة`);
     }
 
     // Filter by driver
     if (selectedDriver && selectedDriver !== "all") {
-      const beforeLength = filtered.length;
       filtered = filtered.filter(load => load.driver_id === selectedDriver);
-      console.log(`🚛 فلتر السائق: ${beforeLength} -> ${filtered.length}`);
+      console.log(`🚛 بعد فلتر السائق: ${filtered.length} شحنة`);
     }
 
-    // Filter by date - improved logic
-    if (startDate && endDate) {
-      // إذا تم اختيار تاريخين، فلتر بالنطاق
-      const beforeLength = filtered.length;
+    // Filter by date
+    if (startDate) {
       filtered = filtered.filter(load => {
         const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
-        return loadDate >= startDate && loadDate <= endDate;
+        return loadDate >= startDate;
       });
-      console.log(`📅 فلتر النطاق (${startDate} إلى ${endDate}): ${beforeLength} -> ${filtered.length}`);
-    } else if (startDate && !endDate) {
-      // إذا تم اختيار تاريخ واحد فقط، فلتر بهذا التاريخ بالضبط
-      const beforeLength = filtered.length;
-      filtered = filtered.filter(load => {
-        const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
-        return loadDate === startDate;
-      });
-      console.log(`📅 فلتر تاريخ محدد (${startDate}): ${beforeLength} -> ${filtered.length}`);
-    } else if (!startDate && endDate) {
-      // إذا تم اختيار تاريخ النهاية فقط، فلتر حتى هذا التاريخ
-      const beforeLength = filtered.length;
+      console.log(`📅 بعد فلتر تاريخ البدء: ${filtered.length} شحنة`);
+    }
+    
+    if (endDate) {
       filtered = filtered.filter(load => {
         const loadDate = load.date ? new Date(load.date).toISOString().split('T')[0] : '';
         return loadDate <= endDate;
       });
-      console.log(`📅 فلتر حتى تاريخ (${endDate}): ${beforeLength} -> ${filtered.length}`);
+      console.log(`📅 بعد فلتر تاريخ النهاية: ${filtered.length} شحنة`);
     }
 
     // Filter by search text
     if (searchText && searchText.trim()) {
-      const beforeLength = filtered.length;
       const search = searchText.trim().toLowerCase();
       filtered = filtered.filter(load => {
         const matchLoadNumber = load.load_number && load.load_number.toLowerCase().includes(search);
@@ -225,7 +169,7 @@ const AdvancedLoadsList = () => {
         const matchDriver = load.drivers?.name && load.drivers.name.toLowerCase().includes(search);
         return matchLoadNumber || matchTruckNumber || matchCompany || matchDriver;
       });
-      console.log(`🔎 فلتر البحث (${search}): ${beforeLength} -> ${filtered.length}`);
+      console.log(`🔎 بعد فلتر البحث: ${filtered.length} شحنة`);
     }
 
     // Sort
@@ -245,7 +189,7 @@ const AdvancedLoadsList = () => {
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
-    console.log(`✅ نتيجة الفلترة النهائية: ${filtered.length} شحنة`);
+    console.log(`✅ النتيجة النهائية: ${filtered.length} شحنة`);
     return filtered;
   }, [loads, selectedCompany, selectedLoadType, selectedDriver, startDate, endDate, searchText, sortField, sortOrder]);
 
@@ -260,7 +204,6 @@ const AdvancedLoadsList = () => {
   }, [filteredLoads]);
 
   const resetFilters = () => {
-    console.log('🔄 إعادة تعيين الفلاتر');
     setSelectedCompany("all");
     setSelectedLoadType("all");
     setSelectedDriver("all");
@@ -493,17 +436,7 @@ const AdvancedLoadsList = () => {
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">الشركة</Label>
-                <Select 
-                  value={selectedCompany} 
-                  onValueChange={(value) => {
-                    console.log('🏢 تغيير الشركة المختارة إلى:', value);
-                    const selectedComp = companies.find(c => c.id === value);
-                    if (selectedComp) {
-                      console.log('🏢 اسم الشركة:', selectedComp.name);
-                    }
-                    setSelectedCompany(value);
-                  }}
-                >
+                <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                   <SelectTrigger>
                     <SelectValue placeholder="جميع الشركات" />
                   </SelectTrigger>
