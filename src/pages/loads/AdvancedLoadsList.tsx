@@ -161,7 +161,7 @@ const AdvancedLoadsList = () => {
     return {
       totalLoads: filteredLoads.length,
       totalQuantity: filteredLoads.reduce((sum, load) => sum + (load.quantity || 0), 0),
-      totalAmount: filteredLoads.reduce((sum, load) => sum + (parseFloat(load.unit_price) || 0), 0),
+      totalAmount: filteredLoads.reduce((sum, load) => sum + (parseFloat(load.total_amount) || 0), 0),
       uniqueDrivers: new Set(filteredLoads.map(load => load.driver_id)).size,
       uniqueCompanies: new Set(filteredLoads.map(load => load.company_id)).size,
     };
@@ -184,14 +184,19 @@ const AdvancedLoadsList = () => {
   const exportToExcel = () => {
     const exportData = filteredLoads.map(load => ({
       'التاريخ': format(new Date(load.date), 'yyyy-MM-dd'),
+      'تاريخ الفاتورة': load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : '-',
       'رقم الشحنة': load.load_number,
+      'رقم الفاتورة': load.invoice_number || '-',
       'الشركة': load.companies?.name || '-',
       'نوع الشحنة': load.load_types?.name || '-',
       'السائق': load.drivers?.name || '-',
       'رقم الشاحنة': load.truck_number || '-',
-      'الكمية': load.quantity,
-      'السعر': parseFloat(load.unit_price).toFixed(2),
+      'الكمية': load.quantity?.toFixed(2) || '0.00',
+      'سعر الوحدة': parseFloat(load.unit_price || 0).toFixed(2),
       'المبلغ الإجمالي': parseFloat(load.total_amount || 0).toFixed(2),
+      'العمولة': parseFloat(load.commission_amount || 0).toFixed(2),
+      'الحالة': load.status || '-',
+      'ملاحظات': load.notes || '-',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -488,6 +493,7 @@ const AdvancedLoadsList = () => {
                           )}
                         </button>
                       </TableHead>
+                      <TableHead className="text-right">تاريخ الفاتورة</TableHead>
                       <TableHead className="text-right">
                         <button 
                           onClick={() => handleSort('load_number')} 
@@ -499,6 +505,7 @@ const AdvancedLoadsList = () => {
                           )}
                         </button>
                       </TableHead>
+                      <TableHead className="text-right">رقم الفاتورة</TableHead>
                       <TableHead className="text-right">الشركة</TableHead>
                       <TableHead className="text-right">نوع الشحنة</TableHead>
                       <TableHead className="text-right">السائق</TableHead>
@@ -514,7 +521,10 @@ const AdvancedLoadsList = () => {
                           )}
                         </button>
                       </TableHead>
-                      <TableHead className="text-right">السعر</TableHead>
+                      <TableHead className="text-right">سعر الوحدة</TableHead>
+                      <TableHead className="text-right">المبلغ الإجمالي</TableHead>
+                      <TableHead className="text-right">العمولة</TableHead>
+                      <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right">إجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -527,20 +537,37 @@ const AdvancedLoadsList = () => {
                         <TableCell className="text-right font-medium">
                           {format(new Date(load.date), 'yyyy-MM-dd')}
                         </TableCell>
+                        <TableCell className="text-right text-muted-foreground text-sm">
+                          {load.invoice_date ? format(new Date(load.invoice_date), 'yyyy-MM-dd') : '-'}
+                        </TableCell>
                         <TableCell className="text-right">
                           <Badge variant="outline" className="font-mono">
                             {load.load_number}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-muted-foreground">
+                          {load.invoice_number || '-'}
                         </TableCell>
                         <TableCell className="text-right">{load.companies?.name || '-'}</TableCell>
                         <TableCell className="text-right">{load.load_types?.name || '-'}</TableCell>
                         <TableCell className="text-right">{load.drivers?.name || '-'}</TableCell>
                         <TableCell className="text-right">{load.truck_number || '-'}</TableCell>
                         <TableCell className="text-right font-medium text-green-600">
-                          {load.quantity.toFixed(2)}
+                          {(load.quantity || 0).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {parseFloat(load.unit_price).toFixed(2)}
+                          {parseFloat(load.unit_price || 0).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-blue-600">
+                          {parseFloat(load.total_amount || 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-right text-amber-600">
+                          {parseFloat(load.commission_amount || 0).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={load.status === 'completed' ? 'default' : 'secondary'}>
+                            {load.status === 'completed' ? 'مكتمل' : load.status === 'pending' ? 'معلق' : load.status}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
