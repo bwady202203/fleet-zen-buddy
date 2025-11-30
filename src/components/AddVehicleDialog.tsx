@@ -13,6 +13,7 @@ export const AddVehicleDialog = () => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    licensePlate: "",
     type: "",
     status: "active" as VehicleStatus,
     lastService: "",
@@ -22,7 +23,7 @@ export const AddVehicleDialog = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.type) {
+    if (!formData.name || !formData.licensePlate || !formData.type) {
       toast.error("الرجاء ملء جميع الحقول المطلوبة");
       return;
     }
@@ -36,6 +37,7 @@ export const AddVehicleDialog = () => {
     setOpen(false);
     setFormData({
       name: "",
+      licensePlate: "",
       type: "",
       status: "active",
       lastService: "",
@@ -63,6 +65,17 @@ export const AddVehicleDialog = () => {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="شاحنة A-101"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="licensePlate">رقم المركبة *</Label>
+            <Input
+              id="licensePlate"
+              value={formData.licensePlate}
+              onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value })}
+              placeholder="أ ب ج 1234"
               required
             />
           </div>

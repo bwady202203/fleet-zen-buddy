@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 interface VehicleCardProps {
   id: string;
   name: string;
+  licensePlate: string;
   type: string;
   status: VehicleStatus;
   lastService: string;
@@ -22,7 +23,8 @@ interface VehicleCardProps {
 
 export const VehicleCard = ({ 
   id,
-  name, 
+  name,
+  licensePlate,
   type, 
   status, 
   lastService, 
@@ -114,7 +116,7 @@ export const VehicleCard = ({
               </div>
               <div>
                 <CardTitle className="text-lg">{name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{type}</p>
+                <p className="text-sm text-muted-foreground">{licensePlate}</p>
               </div>
             </div>
             <div className="flex gap-2 items-center">

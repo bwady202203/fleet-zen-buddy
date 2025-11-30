@@ -71,16 +71,17 @@ const BulkVehicles = () => {
   };
 
   const handleSaveAll = () => {
-    const validVehicles = vehicles.filter(v => v.name && v.type);
+    const validVehicles = vehicles.filter(v => v.name && v.licensePlate && v.type);
     
     if (validVehicles.length === 0) {
-      toast.error("الرجاء إدخال اسم ونوع على الأقل لكل مركبة");
+      toast.error("الرجاء إدخال اسم ورقم مركبة ونوع على الأقل لكل مركبة");
       return;
     }
 
     validVehicles.forEach(vehicle => {
       addVehicle({
         name: vehicle.name,
+        licensePlate: vehicle.licensePlate,
         type: vehicle.type,
         status: vehicle.status,
         lastService: vehicle.lastService,
