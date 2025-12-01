@@ -658,6 +658,51 @@ export default function CollectionReceipts() {
     }
   };
 
+  const handleDownloadFromPreview = async (receipt: CollectionReceipt) => {
+    const tempDiv = document.createElement("div");
+    tempDiv.style.position = "absolute";
+    tempDiv.style.left = "-9999px";
+    tempDiv.style.width = `${pdfWidth}px`;
+    tempDiv.style.background = "white";
+    tempDiv.innerHTML = generateReceiptHTML(receipt);
+
+    document.body.appendChild(tempDiv);
+
+    try {
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pWidth = pdf.internal.pageSize.getWidth();
+      const pHeight = (canvas.height * pWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pWidth, pHeight);
+      pdf.save(`سند_قبض_${receipt.receipt_number}.pdf`);
+
+      toast.success("تم تحميل السند بنجاح");
+    } catch (error) {
+      toast.error("حدث خطأ أثناء إنشاء ملف PDF");
+    } finally {
+      document.body.removeChild(tempDiv);
+    }
+  };
+
+  const handlePrint = (receipt: CollectionReceipt) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(generateReceiptHTML(receipt));
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950" dir="rtl">
       <header className="border-b bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg">
@@ -996,6 +1041,25 @@ export default function CollectionReceipts() {
                   <span className="text-sm font-medium min-w-[80px]">{pdfWidth}px</span>
                 </div>
               </div>
+              {viewingReceipt && (
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    onClick={() => handleDownloadFromPreview(viewingReceipt)}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  >
+                    <Download className="h-4 w-4 ml-2" />
+                    تحميل PDF
+                  </Button>
+                  <Button
+                    onClick={() => handlePrint(viewingReceipt)}
+                    variant="outline"
+                    className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
+                  >
+                    <Printer className="h-4 w-4 ml-2" />
+                    طباعة
+                  </Button>
+                </div>
+              )}
             </div>
             {viewingReceipt && (
               <div 
