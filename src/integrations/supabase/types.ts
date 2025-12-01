@@ -163,6 +163,73 @@ export type Database = {
           },
         ]
       }
+      collection_receipts: {
+        Row: {
+          amount: number
+          amount_in_words: string | null
+          created_at: string | null
+          created_by: string | null
+          credit_account_id: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          organization_id: string | null
+          receipt_date: string
+          receipt_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          amount_in_words?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          credit_account_id: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          receipt_date: string
+          receipt_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_in_words?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          credit_account_id?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          receipt_date?: string
+          receipt_number?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_receipts_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_receipts_debit_account_id_fkey"
+            columns: ["debit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_receipts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null

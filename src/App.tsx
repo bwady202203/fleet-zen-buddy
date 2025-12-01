@@ -43,6 +43,7 @@ import CostCenters from "./pages/accounting/CostCenters";
 import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
+import CollectionReceipts from "./pages/accounting/CollectionReceipts";
 import PurchaseOrder from "./pages/accounting/PurchaseOrder";
 import Level4Balances from "./pages/accounting/Level4Balances";
 import HR from "./pages/HR";
@@ -120,6 +121,7 @@ const App = () => {
                                   <Route path="/accounting/journal-entries" element={<JournalEntries />} />
                                   <Route path="/accounting/journal-entries/new" element={<JournalEntries />} />
                                   <Route path="/accounting/payment-vouchers" element={<PaymentVouchers />} />
+                                  <Route path="/accounting/collection-receipts" element={<CollectionReceipts />} />
                                   <Route path="/accounting/purchase-order" element={<PurchaseOrder />} />
                                   <Route path="/accounting/journal-entries-reports" element={<JournalEntriesReports />} />
                                   <Route path="/accounting/ledger" element={<Ledger />} />
