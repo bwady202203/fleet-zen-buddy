@@ -31,6 +31,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -816,18 +823,18 @@ export default function CollectionReceipts() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6 p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold">التاريخ *</Label>
-                  <Input
-                    type="date"
-                    value={formData.receipt_date}
-                    onChange={(e) => setFormData({ ...formData, receipt_date: e.target.value })}
-                    required
-                    className="text-base"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">التاريخ *</Label>
+                <Input
+                  type="date"
+                  value={formData.receipt_date}
+                  onChange={(e) => setFormData({ ...formData, receipt_date: e.target.value })}
+                  required
+                  className="text-base"
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-base font-semibold">المبلغ *</Label>
                   <Input
@@ -839,6 +846,27 @@ export default function CollectionReceipts() {
                     placeholder="0.00"
                     className="text-base"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">الحساب الدائن *</Label>
+                  <Select
+                    value={formData.credit_account_id}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, credit_account_id: value })
+                    }
+                  >
+                    <SelectTrigger className="text-base">
+                      <SelectValue placeholder="اختر الحساب الدائن" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.code} - {account.name_ar}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
