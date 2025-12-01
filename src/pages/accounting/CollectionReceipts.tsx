@@ -347,11 +347,11 @@ export default function CollectionReceipts() {
     const tempDiv = document.createElement("div");
     tempDiv.style.position = "absolute";
     tempDiv.style.left = "-9999px";
-    tempDiv.style.width = "800px";
+    tempDiv.style.width = "650px";
     tempDiv.style.background = "white";
     tempDiv.innerHTML = `
       <div style="font-family: 'Arial', sans-serif; padding: 40px; direction: rtl; text-align: right; background: white;">
-        <div style="max-width: 800px; margin: 0 auto; border: 3px solid #1e40af; padding: 40px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <div style="max-width: 650px; margin: 0 auto; border: 3px solid #1e40af; padding: 35px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
           
           <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; box-shadow: 0 4px 15px rgba(30,64,175,0.3);">
             <div style="font-size: 32px; font-weight: bold; color: white; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">شركة الرمال الناعمة</div>
@@ -428,22 +428,22 @@ export default function CollectionReceipts() {
             </div>
           ` : ''}
 
-          <div style="display: flex; justify-content: space-between; margin-top: 60px; padding-top: 30px; border-top: 2px solid #cbd5e1;">
+          <div style="display: flex; justify-content: space-between; margin-top: 70px; padding-top: 20px; border-top: 2px solid #cbd5e1;">
             <div style="text-align: center; width: 30%;">
-              <div style="height: 80px;"></div>
-              <div style="border-top: 3px solid #1e40af; padding-top: 12px; font-weight: bold; color: #1e40af; font-size: 16px;">المحاسب</div>
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Accountant</div>
+              <div style="height: 100px; border-bottom: 2px solid #1e40af;"></div>
+              <div style="padding-top: 10px; font-weight: bold; color: #1e40af; font-size: 15px;">المحاسب</div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 3px;">Accountant</div>
             </div>
             <div style="text-align: center; width: 30%;">
-              <div style="height: 80px;"></div>
-              <div style="border-top: 3px solid #059669; padding-top: 12px; font-weight: bold; color: #059669; font-size: 16px;">المدير المالي</div>
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Finance Manager</div>
+              <div style="height: 100px; border-bottom: 2px solid #059669;"></div>
+              <div style="padding-top: 10px; font-weight: bold; color: #059669; font-size: 15px;">المدير المالي</div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 3px;">Finance Manager</div>
             </div>
             <div style="text-align: center; width: 30%;">
-              <div style="height: 80px;"></div>
-              <div style="border-top: 3px solid #dc2626; padding-top: 12px; font-weight: bold; color: #dc2626; font-size: 16px;">المستلم</div>
-              ${(receipt as any).recipient_name ? `<div style="font-size: 15px; color: #1e293b; margin-top: 8px; font-weight: 600;">${(receipt as any).recipient_name}</div>` : ''}
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Recipient</div>
+              <div style="height: 100px; border-bottom: 2px solid #dc2626;"></div>
+              <div style="padding-top: 10px; font-weight: bold; color: #dc2626; font-size: 15px;">المستلم</div>
+              ${(receipt as any).recipient_name ? `<div style="font-size: 14px; color: #1e293b; margin-top: 6px; font-weight: 600;">${(receipt as any).recipient_name}</div>` : ''}
+              <div style="font-size: 12px; color: #64748b; margin-top: 3px;">Recipient</div>
             </div>
           </div>
 
@@ -803,7 +803,7 @@ export default function CollectionReceipts() {
               </DialogTitle>
             </DialogHeader>
             {viewingReceipt && (
-              <div className="p-6 bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+              <div className="max-w-2xl mx-auto p-6 bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
                 <div className="text-center mb-6 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg">
                   <h2 className="text-3xl font-bold text-white mb-2">سند قبض</h2>
                   <p className="text-blue-100">Collection Receipt</p>
@@ -857,14 +857,34 @@ export default function CollectionReceipts() {
                   </div>
                 )}
 
-                {(viewingReceipt as any).recipient_name && (
-                  <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border-2 border-red-200 dark:border-red-800 mb-6">
-                    <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-2">المستلم:</p>
-                    <p className="text-xl font-bold text-red-900 dark:text-red-100">{(viewingReceipt as any).recipient_name}</p>
+                <div className="grid grid-cols-3 gap-4 pt-8 mt-8 border-t-2 border-slate-300 dark:border-slate-700">
+                  <div className="text-center">
+                    <div className="h-24 mb-2 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                    <div className="pt-2">
+                      <p className="font-bold text-blue-700 dark:text-blue-300 text-sm">المحاسب</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Accountant</p>
+                    </div>
                   </div>
-                )}
+                  <div className="text-center">
+                    <div className="h-24 mb-2 border-b-2 border-green-600 dark:border-green-400"></div>
+                    <div className="pt-2">
+                      <p className="font-bold text-green-700 dark:text-green-300 text-sm">المدير المالي</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Finance Manager</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-24 mb-2 border-b-2 border-red-600 dark:border-red-400"></div>
+                    <div className="pt-2">
+                      <p className="font-bold text-red-700 dark:text-red-300 text-sm">المستلم</p>
+                      {(viewingReceipt as any).recipient_name && (
+                        <p className="text-sm text-slate-700 dark:text-slate-300 mt-1 font-semibold">{(viewingReceipt as any).recipient_name}</p>
+                      )}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Recipient</p>
+                    </div>
+                  </div>
+                </div>
 
-                <div className="flex gap-3 mt-6">
+                <div className="flex gap-3 mt-8">
                   <Button 
                     onClick={() => handleDownloadPDF(viewingReceipt)}
                     className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
