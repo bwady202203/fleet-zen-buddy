@@ -79,6 +79,7 @@ export default function CollectionReceipts() {
     credit_account_id: "",
     amount: "",
     description: "",
+    recipient_name: "",
   });
 
   const [debitOpen, setDebitOpen] = useState(false);
@@ -191,6 +192,7 @@ export default function CollectionReceipts() {
         amount: amount,
         description: formData.description,
         amount_in_words: amountInWords,
+        recipient_name: formData.recipient_name,
         created_by: user?.id,
       };
 
@@ -293,6 +295,7 @@ export default function CollectionReceipts() {
       credit_account_id: receipt.credit_account_id,
       amount: receipt.amount.toString(),
       description: receipt.description || "",
+      recipient_name: (receipt as any).recipient_name || "",
     });
     setShowForm(true);
   };
@@ -331,6 +334,7 @@ export default function CollectionReceipts() {
       credit_account_id: "",
       amount: "",
       description: "",
+      recipient_name: "",
     });
     setEditingReceipt(null);
     setShowForm(false);
@@ -438,6 +442,7 @@ export default function CollectionReceipts() {
             <div style="text-align: center; width: 30%;">
               <div style="height: 80px;"></div>
               <div style="border-top: 3px solid #dc2626; padding-top: 12px; font-weight: bold; color: #dc2626; font-size: 16px;">المستلم</div>
+              ${(receipt as any).recipient_name ? `<div style="font-size: 15px; color: #1e293b; margin-top: 8px; font-weight: 600;">${(receipt as any).recipient_name}</div>` : ''}
               <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Recipient</div>
             </div>
           </div>
@@ -756,6 +761,17 @@ export default function CollectionReceipts() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">اسم المستلم</Label>
+                <Input
+                  type="text"
+                  value={formData.recipient_name}
+                  onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
+                  placeholder="أدخل اسم المستلم..."
+                  className="text-base"
+                />
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <Button 
                   type="submit" 
@@ -838,6 +854,13 @@ export default function CollectionReceipts() {
                   <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border-2 border-slate-200 dark:border-slate-800 mb-6">
                     <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">البيان:</p>
                     <p className="text-base text-slate-900 dark:text-slate-100">{viewingReceipt.description}</p>
+                  </div>
+                )}
+
+                {(viewingReceipt as any).recipient_name && (
+                  <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border-2 border-red-200 dark:border-red-800 mb-6">
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-2">المستلم:</p>
+                    <p className="text-xl font-bold text-red-900 dark:text-red-100">{(viewingReceipt as any).recipient_name}</p>
                   </div>
                 )}
 
