@@ -80,6 +80,7 @@ export default function CollectionReceipts() {
     amount: "",
     description: "",
     recipient_name: "",
+    received_from: "",
   });
 
   const [debitOpen, setDebitOpen] = useState(false);
@@ -109,9 +110,6 @@ export default function CollectionReceipts() {
   };
 
   const generateReceiptHTML = (receipt: any) => {
-    const debitAccount = accounts.find(acc => acc.id === receipt.debit_account_id);
-    const creditAccount = accounts.find(acc => acc.id === receipt.credit_account_id);
-    
     return `
       <!DOCTYPE html>
       <html dir="rtl">
@@ -181,36 +179,28 @@ export default function CollectionReceipts() {
             font-weight: bold;
             color: #000;
           }
-          .accounts-section {
+          .received-from-section {
             padding: 30px 40px;
             background: white;
           }
-          .account-row {
+          .received-from-box {
             display: flex;
             align-items: center;
             padding: 20px;
-            margin-bottom: 15px;
             background: white;
             border: 2px solid #ddd;
             border-radius: 8px;
           }
-          .account-label {
+          .received-from-label {
             min-width: 140px;
             font-weight: bold;
             color: #000;
-            font-size: 16px;
+            font-size: 18px;
           }
-          .account-info {
+          .received-from-value {
             flex: 1;
             text-align: right;
-          }
-          .account-code {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-          }
-          .account-name {
-            font-size: 16px;
+            font-size: 18px;
             color: #000;
             font-weight: 600;
           }
@@ -323,23 +313,14 @@ export default function CollectionReceipts() {
             </div>
           </div>
           
-          <div class="accounts-section">
-            <div class="account-row">
-              <div class="account-label">💰 الحساب المدين</div>
-              <div class="account-info">
-                <div class="account-code">${debitAccount?.code || ''}</div>
-                <div class="account-name">${debitAccount?.name_ar || ''}</div>
-              </div>
-            </div>
-            
-            <div class="account-row">
-              <div class="account-label">💰 الحساب الدائن</div>
-              <div class="account-info">
-                <div class="account-code">${creditAccount?.code || ''}</div>
-                <div class="account-name">${creditAccount?.name_ar || ''}</div>
-              </div>
+          ${receipt.received_from ? `
+          <div class="received-from-section">
+            <div class="received-from-box">
+              <div class="received-from-label">📥 استلمنا من:</div>
+              <div class="received-from-value">${receipt.received_from}</div>
             </div>
           </div>
+          ` : ''}
           
           <div class="amount-section">
             <div class="amount-box">
@@ -477,6 +458,7 @@ export default function CollectionReceipts() {
         description: formData.description,
         amount_in_words: amountInWords,
         recipient_name: formData.recipient_name,
+        received_from: formData.received_from,
         created_by: user?.id,
       };
 
@@ -580,6 +562,7 @@ export default function CollectionReceipts() {
       amount: receipt.amount.toString(),
       description: receipt.description || "",
       recipient_name: (receipt as any).recipient_name || "",
+      received_from: (receipt as any).received_from || "",
     });
     setShowForm(true);
   };
@@ -619,6 +602,7 @@ export default function CollectionReceipts() {
       amount: "",
       description: "",
       recipient_name: "",
+      received_from: "",
     });
     setEditingReceipt(null);
     setShowForm(false);
@@ -748,8 +732,7 @@ export default function CollectionReceipts() {
                   <TableRow className="bg-slate-50 dark:bg-slate-900">
                     <TableHead className="font-bold">رقم السند</TableHead>
                     <TableHead className="font-bold">التاريخ</TableHead>
-                    <TableHead className="font-bold">الحساب المدين</TableHead>
-                    <TableHead className="font-bold">الحساب الدائن</TableHead>
+                    <TableHead className="font-bold">استلمنا من</TableHead>
                     <TableHead className="font-bold">المبلغ</TableHead>
                     <TableHead className="font-bold text-center">الإجراءات</TableHead>
                   </TableRow>
@@ -760,15 +743,8 @@ export default function CollectionReceipts() {
                       <TableCell className="font-bold text-blue-600">{receipt.receipt_number}</TableCell>
                       <TableCell>{format(new Date(receipt.receipt_date), "dd/MM/yyyy", { locale: ar })}</TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div className="font-semibold">{receipt.debit_account?.code}</div>
-                          <div className="text-muted-foreground">{receipt.debit_account?.name_ar}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-semibold">{receipt.credit_account?.code}</div>
-                          <div className="text-muted-foreground">{receipt.credit_account?.name_ar}</div>
+                        <div className="text-sm font-semibold">
+                          {(receipt as any).received_from || '-'}
                         </div>
                       </TableCell>
                       <TableCell className="font-bold text-green-600 text-lg">
@@ -817,7 +793,7 @@ export default function CollectionReceipts() {
                   ))}
                   {receipts.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         لا توجد سندات قبض مسجلة
                       </TableCell>
                     </TableRow>
@@ -876,101 +852,15 @@ export default function CollectionReceipts() {
               )}
 
               <div className="space-y-2">
-                <Label className="text-base font-semibold">الحساب المدين (الحساب المستلم) *</Label>
-                <Popover open={debitOpen} onOpenChange={setDebitOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={debitOpen}
-                      className="w-full justify-between text-base h-12"
-                    >
-                      {formData.debit_account_id
-                        ? accounts.find((acc) => acc.id === formData.debit_account_id)?.code + " - " +
-                          accounts.find((acc) => acc.id === formData.debit_account_id)?.name_ar
-                        : "اختر الحساب المدين"}
-                      <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="بحث..." className="h-10" />
-                      <CommandList>
-                        <CommandEmpty>لا توجد حسابات</CommandEmpty>
-                        <CommandGroup>
-                          {accounts.map((account) => (
-                            <CommandItem
-                              key={account.id}
-                              value={account.code + " " + account.name_ar}
-                              onSelect={() => {
-                                setFormData({ ...formData, debit_account_id: account.id });
-                                setDebitOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "ml-2 h-4 w-4",
-                                  formData.debit_account_id === account.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="font-semibold text-blue-600">{account.code}</span>
-                              <span className="mr-2">{account.name_ar}</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">الحساب الدائن (الحساب المصدر) *</Label>
-                <Popover open={creditOpen} onOpenChange={setCreditOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={creditOpen}
-                      className="w-full justify-between text-base h-12"
-                    >
-                      {formData.credit_account_id
-                        ? accounts.find((acc) => acc.id === formData.credit_account_id)?.code + " - " +
-                          accounts.find((acc) => acc.id === formData.credit_account_id)?.name_ar
-                        : "اختر الحساب الدائن"}
-                      <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="بحث..." className="h-10" />
-                      <CommandList>
-                        <CommandEmpty>لا توجد حسابات</CommandEmpty>
-                        <CommandGroup>
-                          {accounts.map((account) => (
-                            <CommandItem
-                              key={account.id}
-                              value={account.code + " " + account.name_ar}
-                              onSelect={() => {
-                                setFormData({ ...formData, credit_account_id: account.id });
-                                setCreditOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "ml-2 h-4 w-4",
-                                  formData.credit_account_id === account.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="font-semibold text-green-600">{account.code}</span>
-                              <span className="mr-2">{account.name_ar}</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Label className="text-base font-semibold">استلمنا من *</Label>
+                <Input
+                  type="text"
+                  value={formData.received_from}
+                  onChange={(e) => setFormData({ ...formData, received_from: e.target.value })}
+                  required
+                  placeholder="أدخل اسم الشخص أو الجهة..."
+                  className="text-base"
+                />
               </div>
 
               <div className="space-y-2">

@@ -176,6 +176,7 @@ export type Database = {
           organization_id: string | null
           receipt_date: string
           receipt_number: string
+          received_from: string | null
           recipient_name: string | null
           updated_at: string | null
         }
@@ -191,6 +192,7 @@ export type Database = {
           organization_id?: string | null
           receipt_date: string
           receipt_number: string
+          received_from?: string | null
           recipient_name?: string | null
           updated_at?: string | null
         }
@@ -206,6 +208,7 @@ export type Database = {
           organization_id?: string | null
           receipt_date?: string
           receipt_number?: string
+          received_from?: string | null
           recipient_name?: string | null
           updated_at?: string | null
         }
