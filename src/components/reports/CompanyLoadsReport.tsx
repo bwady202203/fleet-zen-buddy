@@ -171,6 +171,12 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
+            <tr style="background: #667eea; color: white; font-weight: bold;">
+              <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;">الإجمالي</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalLoads}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalQuantity.toLocaleString()}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalAmount.toLocaleString()} ر.س</td>
+            </tr>
           </tbody>
         </table>
 
@@ -195,6 +201,12 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
+            <tr style="background: #667eea; color: white; font-weight: bold;">
+              <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;" colspan="2">الإجمالي</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${dailyData.reduce((sum, item) => sum + item.total_loads, 0)}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${dailyData.reduce((sum, item) => sum + item.total_quantity, 0).toLocaleString()}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${dailyData.reduce((sum, item) => sum + item.total_amount, 0).toLocaleString()} ر.س</td>
+            </tr>
           </tbody>
         </table>
       `;
@@ -344,23 +356,35 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
                   </td>
                 </tr>
               ) : (
-                aggregatedData.map((item, index) => (
-                  <tr
-                    key={item.company_id}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
-                  >
-                    <td className="p-4 text-right font-medium">
-                      {item.company_name}
-                    </td>
-                    <td className="p-4 text-center">{item.total_loads}</td>
+                <>
+                  {aggregatedData.map((item, index) => (
+                    <tr
+                      key={item.company_id}
+                      className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    >
+                      <td className="p-4 text-right font-medium">
+                        {item.company_name}
+                      </td>
+                      <td className="p-4 text-center">{item.total_loads}</td>
+                      <td className="p-4 text-center">
+                        {item.total_quantity.toLocaleString()}
+                      </td>
+                      <td className="p-4 text-center font-semibold text-primary">
+                        {item.total_amount.toLocaleString()} ر.س
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-primary/10 font-bold border-t-2 border-primary">
+                    <td className="p-4 text-right">الإجمالي</td>
+                    <td className="p-4 text-center">{totalLoads}</td>
                     <td className="p-4 text-center">
-                      {item.total_quantity.toLocaleString()}
+                      {totalQuantity.toLocaleString()}
                     </td>
-                    <td className="p-4 text-center font-semibold text-primary">
-                      {item.total_amount.toLocaleString()} ر.س
+                    <td className="p-4 text-center text-primary">
+                      {totalAmount.toLocaleString()} ر.س
                     </td>
                   </tr>
-                ))
+                </>
               )}
             </tbody>
           </table>
@@ -391,26 +415,40 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
                   </td>
                 </tr>
               ) : (
-                dailyData.map((item, index) => (
-                  <tr
-                    key={`${item.report_date}-${item.company_name}`}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
-                  >
-                    <td className="p-4 text-right">
-                      {format(new Date(item.report_date), "dd/MM/yyyy")}
-                    </td>
-                    <td className="p-4 text-right font-medium">
-                      {item.company_name}
-                    </td>
-                    <td className="p-4 text-center">{item.total_loads}</td>
+                <>
+                  {dailyData.map((item, index) => (
+                    <tr
+                      key={`${item.report_date}-${item.company_name}`}
+                      className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    >
+                      <td className="p-4 text-right">
+                        {format(new Date(item.report_date), "dd/MM/yyyy")}
+                      </td>
+                      <td className="p-4 text-right font-medium">
+                        {item.company_name}
+                      </td>
+                      <td className="p-4 text-center">{item.total_loads}</td>
+                      <td className="p-4 text-center">
+                        {item.total_quantity.toLocaleString()}
+                      </td>
+                      <td className="p-4 text-center font-semibold text-primary">
+                        {item.total_amount.toLocaleString()} ر.س
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-primary/10 font-bold border-t-2 border-primary">
+                    <td className="p-4 text-right" colSpan={2}>الإجمالي</td>
                     <td className="p-4 text-center">
-                      {item.total_quantity.toLocaleString()}
+                      {dailyData.reduce((sum, item) => sum + item.total_loads, 0)}
                     </td>
-                    <td className="p-4 text-center font-semibold text-primary">
-                      {item.total_amount.toLocaleString()} ر.س
+                    <td className="p-4 text-center">
+                      {dailyData.reduce((sum, item) => sum + item.total_quantity, 0).toLocaleString()}
+                    </td>
+                    <td className="p-4 text-center text-primary">
+                      {dailyData.reduce((sum, item) => sum + item.total_amount, 0).toLocaleString()} ر.س
                     </td>
                   </tr>
-                ))
+                </>
               )}
             </tbody>
           </table>
