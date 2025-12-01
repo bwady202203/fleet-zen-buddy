@@ -252,6 +252,13 @@ const Accounting = () => {
       color: "from-red-500 to-red-600"
     },
     {
+      title: "سندات القبض",
+      description: "إدارة سندات القبض المحاسبية",
+      icon: Wallet,
+      link: "/accounting/collection-receipts",
+      color: "from-green-500 to-green-600"
+    },
+    {
       title: "طلبات الشراء",
       description: "إدارة طلبات الشراء من الموردين",
       icon: ClipboardList,
