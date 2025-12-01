@@ -85,6 +85,8 @@ export default function CollectionReceipts() {
   const [debitOpen, setDebitOpen] = useState(false);
   const [creditOpen, setCreditOpen] = useState(false);
   const [pdfWidth, setPdfWidth] = useState(600);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [downloadWidth, setDownloadWidth] = useState(600);
   const [companySettings, setCompanySettings] = useState<any>(null);
 
   useEffect(() => {
@@ -626,7 +628,7 @@ export default function CollectionReceipts() {
     const tempDiv = document.createElement("div");
     tempDiv.style.position = "absolute";
     tempDiv.style.left = "-9999px";
-    tempDiv.style.width = `${pdfWidth}px`;
+    tempDiv.style.width = `${downloadWidth}px`;
     tempDiv.style.background = "white";
     tempDiv.innerHTML = generateReceiptHTML(receipt);
 
@@ -740,7 +742,10 @@ export default function CollectionReceipts() {
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            onClick={() => handleDownloadPDF(receipt)}
+                            onClick={() => {
+                              setViewingReceipt(receipt);
+                              setShowDownloadDialog(true);
+                            }}
                             className="hover:bg-green-50 hover:text-green-700 hover:border-green-300"
                           >
                             <Download className="h-4 w-4" />
@@ -998,6 +1003,61 @@ export default function CollectionReceipts() {
                 className="border rounded-lg overflow-hidden bg-white"
               />
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Download Settings Dialog */}
+        <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <Download className="h-5 w-5 text-green-600" />
+                إعدادات تحميل PDF
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">عرض السند (بكسل)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="400"
+                    max="800"
+                    step="50"
+                    value={downloadWidth}
+                    onChange={(e) => setDownloadWidth(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-bold w-20 text-center bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">
+                    {downloadWidth}px
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  اختر العرض المناسب لسند القبض في ملف PDF
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDownloadDialog(false)}
+                className="flex-1"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={() => {
+                  if (viewingReceipt) {
+                    handleDownloadPDF(viewingReceipt);
+                    setShowDownloadDialog(false);
+                  }
+                }}
+                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              >
+                <Download className="h-4 w-4 ml-2" />
+                تحميل PDF
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </main>
