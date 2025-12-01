@@ -93,6 +93,7 @@ export default function CollectionReceipts() {
   const [debitOpen, setDebitOpen] = useState(false);
   const [creditOpen, setCreditOpen] = useState(false);
   const [pdfWidth, setPdfWidth] = useState(600);
+  const [pdfHeight, setPdfHeight] = useState(800);
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
   const [downloadWidth, setDownloadWidth] = useState(600);
   const [companySettings, setCompanySettings] = useState<any>(null);
@@ -128,171 +129,186 @@ export default function CollectionReceipts() {
           body {
             font-family: 'Arial', sans-serif;
             background: white;
-            padding: 40px;
+            padding: 20px;
             direction: rtl;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
           }
           .receipt-container {
-            max-width: ${pdfWidth}px;
+            width: ${pdfWidth}px;
+            max-height: ${pdfHeight}px;
             margin: 0 auto;
             background: white;
             border: 3px solid #000;
             border-radius: 8px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
           }
           .header {
             background: #000;
             color: white;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
             border-bottom: none;
+            flex-shrink: 0;
           }
           .header h1 {
-            font-size: 32px;
-            margin-bottom: 8px;
+            font-size: 24px;
+            margin-bottom: 5px;
             font-weight: bold;
           }
           .header p {
-            font-size: 16px;
+            font-size: 13px;
             opacity: 0.9;
           }
           .receipt-title {
             background: #f5f5f5;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             border-bottom: 2px solid #000;
+            flex-shrink: 0;
           }
           .receipt-title h2 {
-            font-size: 28px;
+            font-size: 22px;
             color: #000;
             font-weight: bold;
           }
           .receipt-info {
             display: flex;
             justify-content: space-between;
-            padding: 20px 40px;
+            padding: 12px 30px;
             background: #f5f5f5;
             border-bottom: 2px solid #ddd;
+            flex-shrink: 0;
           }
           .info-item {
             text-align: center;
           }
           .info-label {
-            font-size: 13px;
+            font-size: 11px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
           }
           .info-value {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             color: #000;
           }
           .received-from-section {
-            padding: 30px 40px;
+            padding: 15px 30px;
             background: white;
+            flex-shrink: 0;
           }
           .received-from-box {
             display: flex;
             align-items: center;
-            padding: 20px;
+            padding: 12px;
             background: white;
             border: 2px solid #ddd;
-            border-radius: 8px;
+            border-radius: 6px;
           }
           .received-from-label {
-            min-width: 140px;
+            min-width: 100px;
             font-weight: bold;
             color: #000;
-            font-size: 18px;
+            font-size: 14px;
           }
           .received-from-value {
             flex: 1;
             text-align: right;
-            font-size: 18px;
+            font-size: 14px;
             color: #000;
             font-weight: 600;
           }
           .amount-section {
-            padding: 30px 40px;
+            padding: 15px 30px;
             text-align: center;
             background: white;
+            flex-shrink: 0;
           }
           .amount-box {
             background: white;
-            border: 3px solid #000;
-            padding: 35px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            border: 2px solid #000;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 12px;
           }
           .amount-label {
-            font-size: 16px;
-            margin-bottom: 15px;
+            font-size: 13px;
+            margin-bottom: 8px;
             color: #000;
             font-weight: bold;
           }
           .amount-value {
-            font-size: 36px;
+            font-size: 24px;
             font-weight: bold;
             color: #000;
           }
           .amount-words-box {
             background: #f5f5f5;
-            padding: 25px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 6px;
             border: 2px solid #ddd;
           }
           .amount-words-label {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             font-weight: bold;
           }
           .amount-words-value {
-            font-size: 18px;
+            font-size: 13px;
             color: #000;
             font-weight: 600;
-            line-height: 1.8;
+            line-height: 1.6;
           }
           .description-section {
-            padding: 0 40px 25px;
+            padding: 0 30px 15px;
             background: white;
+            flex-shrink: 0;
           }
           .description-box {
             background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 6px;
             border: 2px solid #ddd;
           }
           .description-label {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             font-weight: bold;
           }
           .description-value {
-            font-size: 16px;
+            font-size: 13px;
             color: #000;
-            line-height: 1.8;
+            line-height: 1.6;
           }
           .signature-section {
-            padding: 40px;
-            border-top: 3px solid #000;
+            padding: 20px 30px;
+            border-top: 2px solid #000;
             text-align: center;
             background: white;
+            margin-top: auto;
+            flex-shrink: 0;
           }
           .signature-label {
-            font-size: 18px;
+            font-size: 14px;
             color: #000;
-            margin-bottom: 60px;
+            margin-bottom: 30px;
             font-weight: bold;
           }
           .signature-line {
-            border-top: 3px solid #000;
-            width: 250px;
+            border-top: 2px solid #000;
+            width: 180px;
             margin: 0 auto;
-            padding-top: 15px;
+            padding-top: 10px;
           }
           .signature-name {
-            font-size: 16px;
+            font-size: 13px;
             color: #000;
             font-weight: bold;
           }
@@ -944,19 +960,40 @@ export default function CollectionReceipts() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mb-4">
-              <div className="flex items-center gap-4">
-                <Label className="text-right min-w-[100px]">عرض السند</Label>
-                <div className="flex items-center gap-4 flex-1">
-                  <input
-                    type="range"
-                    min="400"
-                    max="800"
-                    step="50"
-                    value={pdfWidth}
-                    onChange={(e) => setPdfWidth(Number(e.target.value))}
-                    className="flex-1"
-                  />
-                  <span className="text-sm font-medium min-w-[80px]">{pdfWidth}px</span>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex items-center gap-3">
+                  <Label className="text-right min-w-[80px] font-semibold">عرض السند</Label>
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="range"
+                      min="400"
+                      max="800"
+                      step="50"
+                      value={pdfWidth}
+                      onChange={(e) => setPdfWidth(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-bold min-w-[70px] text-center bg-blue-50 dark:bg-blue-950 px-2 py-1 rounded">
+                      {pdfWidth}px
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label className="text-right min-w-[80px] font-semibold">طول السند</Label>
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="range"
+                      min="600"
+                      max="1200"
+                      step="50"
+                      value={pdfHeight}
+                      onChange={(e) => setPdfHeight(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-bold min-w-[70px] text-center bg-green-50 dark:bg-green-950 px-2 py-1 rounded">
+                      {pdfHeight}px
+                    </span>
+                  </div>
                 </div>
               </div>
               {viewingReceipt && (
