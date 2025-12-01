@@ -84,11 +84,293 @@ export default function CollectionReceipts() {
 
   const [debitOpen, setDebitOpen] = useState(false);
   const [creditOpen, setCreditOpen] = useState(false);
+  const [pdfWidth, setPdfWidth] = useState(600);
+  const [companySettings, setCompanySettings] = useState<any>(null);
 
   useEffect(() => {
     fetchReceipts();
     fetchAccounts();
+    fetchCompanySettings();
   }, []);
+
+  const fetchCompanySettings = async () => {
+    try {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("*")
+        .limit(1)
+        .single();
+      setCompanySettings(data);
+    } catch (error) {
+      console.error("Error fetching company settings:", error);
+    }
+  };
+
+  const generateReceiptHTML = (receipt: any) => {
+    const debitAccount = accounts.find(acc => acc.id === receipt.debit_account_id);
+    const creditAccount = accounts.find(acc => acc.id === receipt.credit_account_id);
+    
+    return `
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          @page { size: A4; margin: 0; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Arial', sans-serif;
+            background: white;
+            padding: 40px;
+            direction: rtl;
+          }
+          .receipt-container {
+            max-width: ${pdfWidth}px;
+            margin: 0 auto;
+            background: white;
+            border: 3px solid #000;
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          .header {
+            background: #000;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: none;
+          }
+          .header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            font-weight: bold;
+          }
+          .header p {
+            font-size: 16px;
+            opacity: 0.9;
+          }
+          .receipt-title {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #000;
+          }
+          .receipt-title h2 {
+            font-size: 28px;
+            color: #000;
+            font-weight: bold;
+          }
+          .receipt-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 40px;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+          }
+          .info-item {
+            text-align: center;
+          }
+          .info-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+          }
+          .info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+          }
+          .accounts-section {
+            padding: 30px 40px;
+            background: white;
+          }
+          .account-row {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+          }
+          .account-label {
+            min-width: 140px;
+            font-weight: bold;
+            color: #000;
+            font-size: 16px;
+          }
+          .account-info {
+            flex: 1;
+            text-align: right;
+          }
+          .account-code {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+          }
+          .account-name {
+            font-size: 16px;
+            color: #000;
+            font-weight: 600;
+          }
+          .amount-section {
+            padding: 30px 40px;
+            text-align: center;
+            background: white;
+          }
+          .amount-box {
+            background: white;
+            border: 3px solid #000;
+            padding: 35px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+          }
+          .amount-label {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #000;
+            font-weight: bold;
+          }
+          .amount-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #000;
+          }
+          .amount-words-box {
+            background: #f5f5f5;
+            padding: 25px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+          }
+          .amount-words-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: bold;
+          }
+          .amount-words-value {
+            font-size: 18px;
+            color: #000;
+            font-weight: 600;
+            line-height: 1.8;
+          }
+          .description-section {
+            padding: 0 40px 25px;
+            background: white;
+          }
+          .description-box {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+          }
+          .description-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: bold;
+          }
+          .description-value {
+            font-size: 16px;
+            color: #000;
+            line-height: 1.8;
+          }
+          .signature-section {
+            padding: 40px;
+            border-top: 3px solid #000;
+            text-align: center;
+            background: white;
+          }
+          .signature-label {
+            font-size: 18px;
+            color: #000;
+            margin-bottom: 60px;
+            font-weight: bold;
+          }
+          .signature-line {
+            border-top: 3px solid #000;
+            width: 250px;
+            margin: 0 auto;
+            padding-top: 15px;
+          }
+          .signature-name {
+            font-size: 16px;
+            color: #000;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt-container">
+          <div class="header">
+            <h1>${companySettings?.company_name || 'اسم الشركة'}</h1>
+            <p>${companySettings?.address || 'عنوان الشركة'}</p>
+          </div>
+          
+          <div class="receipt-title">
+            <h2>📋 سند قبض</h2>
+          </div>
+          
+          <div class="receipt-info">
+            <div class="info-item">
+              <div class="info-label">التاريخ</div>
+              <div class="info-value">${new Date(receipt.receipt_date).toLocaleDateString('ar-SA')}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">رقم السند</div>
+              <div class="info-value">${receipt.receipt_number}</div>
+            </div>
+          </div>
+          
+          <div class="accounts-section">
+            <div class="account-row">
+              <div class="account-label">💰 الحساب المدين</div>
+              <div class="account-info">
+                <div class="account-code">${debitAccount?.code || ''}</div>
+                <div class="account-name">${debitAccount?.name_ar || ''}</div>
+              </div>
+            </div>
+            
+            <div class="account-row">
+              <div class="account-label">💰 الحساب الدائن</div>
+              <div class="account-info">
+                <div class="account-code">${creditAccount?.code || ''}</div>
+                <div class="account-name">${creditAccount?.name_ar || ''}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="amount-section">
+            <div class="amount-box">
+              <div class="amount-label">💵 المبلغ المستحق</div>
+              <div class="amount-value">${receipt.amount.toLocaleString('ar-SA')} ريال</div>
+            </div>
+            
+            <div class="amount-words-box">
+              <div class="amount-words-label">📝 المبلغ بالحروف:</div>
+              <div class="amount-words-value">${receipt.amount_in_words || ''}</div>
+            </div>
+          </div>
+          
+          ${receipt.description ? `
+          <div class="description-section">
+            <div class="description-box">
+              <div class="description-label">الوصف:</div>
+              <div class="description-value">${receipt.description}</div>
+            </div>
+          </div>
+          ` : ''}
+          
+          <div class="signature-section">
+            <div class="signature-label">توقيع المستلم</div>
+            <div class="signature-line">
+              ${receipt.recipient_name ? `<div class="signature-name">${receipt.recipient_name}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
 
   const fetchAccounts = async () => {
     try {
@@ -341,121 +623,12 @@ export default function CollectionReceipts() {
   };
 
   const handleDownloadPDF = async (receipt: CollectionReceipt) => {
-    const debitAccount = receipt.debit_account;
-    const creditAccount = receipt.credit_account;
-
     const tempDiv = document.createElement("div");
     tempDiv.style.position = "absolute";
     tempDiv.style.left = "-9999px";
-    tempDiv.style.width = "800px";
+    tempDiv.style.width = `${pdfWidth}px`;
     tempDiv.style.background = "white";
-    tempDiv.innerHTML = `
-      <div style="font-family: 'Arial', sans-serif; padding: 40px; direction: rtl; text-align: right; background: white;">
-        <div style="max-width: 800px; margin: 0 auto; border: 3px solid #1e40af; padding: 40px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-          
-          <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 8px; box-shadow: 0 4px 15px rgba(30,64,175,0.3);">
-            <div style="font-size: 32px; font-weight: bold; color: white; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">شركة الرمال الناعمة</div>
-            <div style="font-size: 18px; color: #e0e7ff; letter-spacing: 1px;">Soft Sands Company</div>
-          </div>
-          
-          <div style="text-align: center; margin-bottom: 35px; padding: 25px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
-            <div style="font-size: 36px; font-weight: bold; color: white; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
-              <span style="font-size: 28px; opacity: 0.9;">📄</span> سند قبض
-            </div>
-            <div style="font-size: 16px; color: #d1fae5; letter-spacing: 1px;">Collection Receipt</div>
-          </div>
-          
-          <div style="display: flex; justify-content: space-between; margin-bottom: 35px; padding: 20px; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); border-radius: 8px; border: 2px solid #cbd5e1;">
-            <div style="flex: 1; padding: 10px;">
-              <div style="font-size: 14px; color: #64748b; margin-bottom: 5px;">رقم السند</div>
-              <div style="font-size: 22px; font-weight: bold; color: #1e293b;">${receipt.receipt_number}</div>
-            </div>
-            <div style="flex: 1; padding: 10px; text-align: left;">
-              <div style="font-size: 14px; color: #64748b; margin-bottom: 5px;">التاريخ</div>
-              <div style="font-size: 22px; font-weight: bold; color: #1e293b;">${format(new Date(receipt.receipt_date), "dd/MM/yyyy", { locale: ar })}</div>
-            </div>
-          </div>
-
-          <div style="margin: 30px 0; padding: 25px; background: white; border-radius: 8px; border: 2px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 15px; border-bottom: 2px solid #e2e8f0; font-size: 16px; font-weight: bold; color: #1e40af; width: 35%;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 20px;">📥</span> الحساب المدين
-                  </div>
-                </td>
-                <td style="padding: 15px; border-bottom: 2px solid #e2e8f0; font-size: 17px; color: #334155; font-weight: 600;">
-                  ${debitAccount?.code} - ${debitAccount?.name_ar}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 15px; font-size: 16px; font-weight: bold; color: #059669; width: 35%;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 20px;">📤</span> الحساب الدائن
-                  </div>
-                </td>
-                <td style="padding: 15px; font-size: 17px; color: #334155; font-weight: 600;">
-                  ${creditAccount?.code} - ${creditAccount?.name_ar}
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="text-align: center; margin: 35px 0; padding: 30px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 3px solid #f59e0b; border-radius: 12px; box-shadow: 0 6px 20px rgba(245,158,11,0.3);">
-            <div style="font-size: 18px; font-weight: bold; color: #92400e; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <span style="font-size: 24px;">💰</span> المبلغ المستلم
-            </div>
-            <div style="font-size: 42px; font-weight: bold; color: #b45309; text-shadow: 2px 2px 4px rgba(180,83,9,0.2);">
-              ${receipt.amount.toLocaleString('ar-SA')} <span style="font-size: 28px;">ريال</span>
-            </div>
-          </div>
-
-          <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 8px; border: 2px solid #3b82f6;">
-            <div style="font-size: 15px; font-weight: bold; color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 20px;">✍️</span> المبلغ بالحروف:
-            </div>
-            <div style="font-size: 18px; color: #1e3a8a; font-weight: 600; line-height: 1.6; padding: 10px;">
-              ${receipt.amount_in_words}
-            </div>
-          </div>
-
-          ${receipt.description ? `
-            <div style="margin: 30px 0; padding: 20px; border: 2px solid #e2e8f0; border-radius: 8px; background: white;">
-              <div style="font-size: 15px; font-weight: bold; margin-bottom: 10px; color: #475569; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 20px;">📝</span> البيان:
-              </div>
-              <div style="font-size: 16px; color: #334155; line-height: 1.8;">${receipt.description}</div>
-            </div>
-          ` : ''}
-
-          <div style="display: flex; justify-content: space-between; margin-top: 60px; padding-top: 30px; border-top: 2px solid #cbd5e1;">
-            <div style="text-align: center; width: 30%;">
-              <div style="height: 80px;"></div>
-              <div style="border-top: 3px solid #1e40af; padding-top: 12px; font-weight: bold; color: #1e40af; font-size: 16px;">المحاسب</div>
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Accountant</div>
-            </div>
-            <div style="text-align: center; width: 30%;">
-              <div style="height: 80px;"></div>
-              <div style="border-top: 3px solid #059669; padding-top: 12px; font-weight: bold; color: #059669; font-size: 16px;">المدير المالي</div>
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Finance Manager</div>
-            </div>
-            <div style="text-align: center; width: 30%;">
-              <div style="height: 80px;"></div>
-              <div style="border-top: 3px solid #dc2626; padding-top: 12px; font-weight: bold; color: #dc2626; font-size: 16px;">المستلم</div>
-              ${(receipt as any).recipient_name ? `<div style="font-size: 15px; color: #1e293b; margin-top: 8px; font-weight: 600;">${(receipt as any).recipient_name}</div>` : ''}
-              <div style="font-size: 13px; color: #64748b; margin-top: 4px;">Recipient</div>
-            </div>
-          </div>
-
-          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px dashed #cbd5e1;">
-            <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
-              هذا السند تم إنشاؤه إلكترونياً ولا يحتاج لختم أو توقيع • تاريخ الإصدار: ${format(new Date(), "dd/MM/yyyy - HH:mm", { locale: ar })}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    `;
+    tempDiv.innerHTML = generateReceiptHTML(receipt);
 
     document.body.appendChild(tempDiv);
 
@@ -469,10 +642,10 @@ export default function CollectionReceipts() {
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pWidth = pdf.internal.pageSize.getWidth();
+      const pHeight = (canvas.height * pWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'PNG', 0, 0, pWidth, pHeight);
       pdf.save(`سند_قبض_${receipt.receipt_number}.pdf`);
 
       toast.success("تم تحميل السند بنجاح");
@@ -802,86 +975,28 @@ export default function CollectionReceipts() {
                 معاينة سند القبض
               </DialogTitle>
             </DialogHeader>
-            {viewingReceipt && (
-              <div className="p-6 bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                <div className="text-center mb-6 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg">
-                  <h2 className="text-3xl font-bold text-white mb-2">سند قبض</h2>
-                  <p className="text-blue-100">Collection Receipt</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">رقم السند</p>
-                    <p className="text-xl font-bold text-blue-600">{viewingReceipt.receipt_number}</p>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm text-muted-foreground mb-1">التاريخ</p>
-                    <p className="text-xl font-bold">{format(new Date(viewingReceipt.receipt_date), "dd/MM/yyyy", { locale: ar })}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">الحساب المدين (المستلم)</p>
-                    <p className="text-lg font-bold">
-                      {viewingReceipt.debit_account?.code} - {viewingReceipt.debit_account?.name_ar}
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border-2 border-green-200 dark:border-green-800">
-                    <p className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">الحساب الدائن (المصدر)</p>
-                    <p className="text-lg font-bold">
-                      {viewingReceipt.credit_account?.code} - {viewingReceipt.credit_account?.name_ar}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 rounded-lg border-3 border-amber-300 dark:border-amber-700 mb-6">
-                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2">المبلغ المستلم</p>
-                  <p className="text-4xl font-bold text-amber-900 dark:text-amber-100">
-                    {viewingReceipt.amount.toLocaleString('ar-SA')} ريال
-                  </p>
-                </div>
-
-                <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border-2 border-indigo-200 dark:border-indigo-800 mb-6">
-                  <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-2">المبلغ بالحروف:</p>
-                  <p className="text-lg font-bold text-indigo-900 dark:text-indigo-100 leading-relaxed">
-                    {viewingReceipt.amount_in_words}
-                  </p>
-                </div>
-
-                {viewingReceipt.description && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border-2 border-slate-200 dark:border-slate-800 mb-6">
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">البيان:</p>
-                    <p className="text-base text-slate-900 dark:text-slate-100">{viewingReceipt.description}</p>
-                  </div>
-                )}
-
-                {(viewingReceipt as any).recipient_name && (
-                  <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border-2 border-red-200 dark:border-red-800 mb-6">
-                    <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-2">المستلم:</p>
-                    <p className="text-xl font-bold text-red-900 dark:text-red-100">{(viewingReceipt as any).recipient_name}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3 mt-6">
-                  <Button 
-                    onClick={() => handleDownloadPDF(viewingReceipt)}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                    size="lg"
-                  >
-                    <Download className="h-5 w-5 ml-2" />
-                    تحميل PDF
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => setShowView(false)}
-                    size="lg"
-                  >
-                    إغلاق
-                  </Button>
+            <div className="space-y-4 mb-4">
+              <div className="flex items-center gap-4">
+                <Label className="text-right min-w-[100px]">عرض السند</Label>
+                <div className="flex items-center gap-4 flex-1">
+                  <input
+                    type="range"
+                    min="400"
+                    max="800"
+                    step="50"
+                    value={pdfWidth}
+                    onChange={(e) => setPdfWidth(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium min-w-[80px]">{pdfWidth}px</span>
                 </div>
               </div>
+            </div>
+            {viewingReceipt && (
+              <div 
+                dangerouslySetInnerHTML={{ __html: generateReceiptHTML(viewingReceipt) }}
+                className="border rounded-lg overflow-hidden bg-white"
+              />
             )}
           </DialogContent>
         </Dialog>
