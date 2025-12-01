@@ -148,7 +148,7 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
           </div>
           <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalAmount.toLocaleString()} ر.س</div>
-            <div style="font-size: 9px; opacity: 0.95;">إجمالي المبلغ</div>
+            <div style="font-size: 9px; opacity: 0.95;">اجمالي قيمة العمولات</div>
           </div>
         </div>
 
@@ -171,6 +171,12 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
+            <tr style="background: #667eea; color: white; font-weight: bold;">
+              <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;">الإجمالي</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalLoads}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalCommissions.toLocaleString()} ر.س</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalAmount.toLocaleString()} ر.س</td>
+            </tr>
           </tbody>
         </table>
       `;
@@ -228,6 +234,12 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
+            <tr style="background: #667eea; color: white; font-weight: bold;">
+              <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;" colspan="2">الإجمالي</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${dailyData.reduce((sum, item) => sum + item.total_loads, 0)}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${dailyData.reduce((sum, item) => sum + item.total_commissions, 0).toLocaleString()} ر.س</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${dailyData.reduce((sum, item) => sum + item.total_amount, 0).toLocaleString()} ر.س</td>
+            </tr>
           </tbody>
         </table>
       `;
@@ -350,7 +362,7 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
               <DollarSign className="h-6 w-6 text-secondary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">إجمالي المبلغ</p>
+              <p className="text-sm text-muted-foreground">اجمالي قيمة العمولات</p>
               <p className="text-2xl font-bold">{totalAmount.toLocaleString()} ر.س</p>
             </div>
           </div>
@@ -380,23 +392,35 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
                   </td>
                 </tr>
               ) : (
-                aggregatedData.map((item, index) => (
-                  <tr
-                    key={item.driver_id}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
-                  >
-                    <td className="p-4 text-right font-medium">
-                      {item.driver_name}
-                    </td>
-                    <td className="p-4 text-center">{item.total_loads}</td>
-                    <td className="p-4 text-center font-semibold text-primary">
-                      {item.total_commissions.toLocaleString()} ر.س
+                <>
+                  {aggregatedData.map((item, index) => (
+                    <tr
+                      key={item.driver_id}
+                      className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    >
+                      <td className="p-4 text-right font-medium">
+                        {item.driver_name}
+                      </td>
+                      <td className="p-4 text-center">{item.total_loads}</td>
+                      <td className="p-4 text-center font-semibold text-primary">
+                        {item.total_commissions.toLocaleString()} ر.س
+                      </td>
+                      <td className="p-4 text-center">
+                        {item.total_amount.toLocaleString()} ر.س
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-primary/10 font-bold border-t-2 border-primary">
+                    <td className="p-4 text-right">الإجمالي</td>
+                    <td className="p-4 text-center">{totalLoads}</td>
+                    <td className="p-4 text-center text-primary">
+                      {totalCommissions.toLocaleString()} ر.س
                     </td>
                     <td className="p-4 text-center">
-                      {item.total_amount.toLocaleString()} ر.س
+                      {totalAmount.toLocaleString()} ر.س
                     </td>
                   </tr>
-                ))
+                </>
               )}
             </tbody>
           </table>
@@ -427,26 +451,40 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
                   </td>
                 </tr>
               ) : (
-                dailyData.map((item, index) => (
-                  <tr
-                    key={`${item.report_date}-${item.driver_name}`}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
-                  >
-                    <td className="p-4 text-right">
-                      {format(new Date(item.report_date), "dd/MM/yyyy")}
+                <>
+                  {dailyData.map((item, index) => (
+                    <tr
+                      key={`${item.report_date}-${item.driver_name}`}
+                      className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                    >
+                      <td className="p-4 text-right">
+                        {format(new Date(item.report_date), "dd/MM/yyyy")}
+                      </td>
+                      <td className="p-4 text-right font-medium">
+                        {item.driver_name}
+                      </td>
+                      <td className="p-4 text-center">{item.total_loads}</td>
+                      <td className="p-4 text-center font-semibold text-primary">
+                        {item.total_commissions.toLocaleString()} ر.س
+                      </td>
+                      <td className="p-4 text-center">
+                        {item.total_amount.toLocaleString()} ر.س
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-primary/10 font-bold border-t-2 border-primary">
+                    <td className="p-4 text-right" colSpan={2}>الإجمالي</td>
+                    <td className="p-4 text-center">
+                      {dailyData.reduce((sum, item) => sum + item.total_loads, 0)}
                     </td>
-                    <td className="p-4 text-right font-medium">
-                      {item.driver_name}
-                    </td>
-                    <td className="p-4 text-center">{item.total_loads}</td>
-                    <td className="p-4 text-center font-semibold text-primary">
-                      {item.total_commissions.toLocaleString()} ر.س
+                    <td className="p-4 text-center text-primary">
+                      {dailyData.reduce((sum, item) => sum + item.total_commissions, 0).toLocaleString()} ر.س
                     </td>
                     <td className="p-4 text-center">
-                      {item.total_amount.toLocaleString()} ر.س
+                      {dailyData.reduce((sum, item) => sum + item.total_amount, 0).toLocaleString()} ر.س
                     </td>
                   </tr>
-                ))
+                </>
               )}
             </tbody>
           </table>
