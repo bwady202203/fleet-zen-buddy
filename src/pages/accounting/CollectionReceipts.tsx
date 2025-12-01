@@ -305,7 +305,7 @@ export default function CollectionReceipts() {
           <div class="receipt-info">
             <div class="info-item">
               <div class="info-label">التاريخ</div>
-              <div class="info-value">${new Date(receipt.receipt_date).toLocaleDateString('ar-SA')}</div>
+              <div class="info-value">${new Date(receipt.receipt_date).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })}</div>
             </div>
             <div class="info-item">
               <div class="info-label">رقم السند</div>
