@@ -58,13 +58,13 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
 
       if (error) throw error;
 
-      // Process daily data
+      // Process daily data - ensure numbers are properly parsed
       const daily = reportData?.map(item => ({
         report_date: item.report_date,
         driver_name: item.drivers?.name || "غير محدد",
-        total_loads: item.total_loads || 0,
-        total_commissions: item.total_commissions || 0,
-        total_amount: item.total_amount || 0,
+        total_loads: Number(item.total_loads) || 0,
+        total_commissions: Number(item.total_commissions) || 0,
+        total_amount: Number(item.total_amount) || 0,
       })) || [];
 
       // Aggregate data by driver
@@ -73,19 +73,22 @@ const DriverCommissionsReport = ({ startDate, endDate }: DriverCommissionsReport
       reportData?.forEach(item => {
         const driverId = item.driver_id || "";
         const driverName = item.drivers?.name || "غير محدد";
+        const loads = Number(item.total_loads) || 0;
+        const commissions = Number(item.total_commissions) || 0;
+        const amount = Number(item.total_amount) || 0;
         
         if (driverMap.has(driverId)) {
           const existing = driverMap.get(driverId)!;
-          existing.total_loads += item.total_loads || 0;
-          existing.total_commissions += item.total_commissions || 0;
-          existing.total_amount += item.total_amount || 0;
+          existing.total_loads += loads;
+          existing.total_commissions += commissions;
+          existing.total_amount += amount;
         } else {
           driverMap.set(driverId, {
             driver_id: driverId,
             driver_name: driverName,
-            total_loads: item.total_loads || 0,
-            total_commissions: item.total_commissions || 0,
-            total_amount: item.total_amount || 0,
+            total_loads: loads,
+            total_commissions: commissions,
+            total_amount: amount,
           });
         }
       });

@@ -60,13 +60,13 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
 
       if (error) throw error;
 
-      // Process daily data
+      // Process daily data - ensure numbers are properly parsed
       const daily = reportData?.map(item => ({
         report_date: item.report_date,
         company_name: item.companies?.name || "غير محدد",
-        total_loads: item.total_loads || 0,
-        total_quantity: item.total_quantity || 0,
-        total_amount: item.total_amount || 0,
+        total_loads: Number(item.total_loads) || 0,
+        total_quantity: Number(item.total_quantity) || 0,
+        total_amount: Number(item.total_amount) || 0,
       })) || [];
 
       // Aggregate data by company
@@ -75,19 +75,22 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
       reportData?.forEach(item => {
         const companyId = item.company_id || "";
         const companyName = item.companies?.name || "غير محدد";
+        const loads = Number(item.total_loads) || 0;
+        const quantity = Number(item.total_quantity) || 0;
+        const amount = Number(item.total_amount) || 0;
         
         if (companyMap.has(companyId)) {
           const existing = companyMap.get(companyId)!;
-          existing.total_loads += item.total_loads || 0;
-          existing.total_quantity += item.total_quantity || 0;
-          existing.total_amount += item.total_amount || 0;
+          existing.total_loads += loads;
+          existing.total_quantity += quantity;
+          existing.total_amount += amount;
         } else {
           companyMap.set(companyId, {
             company_id: companyId,
             company_name: companyName,
-            total_loads: item.total_loads || 0,
-            total_quantity: item.total_quantity || 0,
-            total_amount: item.total_amount || 0,
+            total_loads: loads,
+            total_quantity: quantity,
+            total_amount: amount,
           });
         }
       });
