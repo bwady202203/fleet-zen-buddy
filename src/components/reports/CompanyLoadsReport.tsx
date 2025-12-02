@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Package, DollarSign, FileDown } from "lucide-react";
+import { Building2, Package, DollarSign, FileDown, Calendar, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format } from "date-fns";
@@ -107,10 +108,15 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
     }
   };
 
-  // Calculate totals from daily data (the actual displayed data)
-  const totalLoads = dailyData.reduce((sum, item) => sum + item.total_loads, 0);
-  const totalQuantity = dailyData.reduce((sum, item) => sum + item.total_quantity, 0);
-  const totalAmount = dailyData.reduce((sum, item) => sum + item.total_amount, 0);
+  // Calculate totals for aggregated data (company summaries)
+  const aggregatedTotalLoads = aggregatedData.reduce((sum, item) => sum + item.total_loads, 0);
+  const aggregatedTotalQuantity = aggregatedData.reduce((sum, item) => sum + item.total_quantity, 0);
+  const aggregatedTotalAmount = aggregatedData.reduce((sum, item) => sum + item.total_amount, 0);
+
+  // Calculate totals for daily data
+  const dailyTotalLoads = dailyData.reduce((sum, item) => sum + item.total_loads, 0);
+  const dailyTotalQuantity = dailyData.reduce((sum, item) => sum + item.total_quantity, 0);
+  const dailyTotalAmount = dailyData.reduce((sum, item) => sum + item.total_amount, 0);
 
   const exportToPDF = async () => {
     try {
@@ -140,15 +146,15 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
         
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
-            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalLoads}</div>
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${aggregatedTotalLoads}</div>
             <div style="font-size: 9px; opacity: 0.95;">إجمالي الرحلات</div>
           </div>
           <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
-            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalQuantity.toLocaleString()}</div>
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${aggregatedTotalQuantity.toLocaleString()}</div>
             <div style="font-size: 9px; opacity: 0.95;">إجمالي الكمية</div>
           </div>
           <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 12px; border-radius: 6px; text-align: center; color: white;">
-            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${totalAmount.toLocaleString()} ر.س</div>
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${aggregatedTotalAmount.toLocaleString()} ر.س</div>
             <div style="font-size: 9px; opacity: 0.95;">إجمالي المبلغ</div>
           </div>
         </div>
@@ -174,9 +180,9 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
             `).join("")}
             <tr style="background: #667eea; color: white; font-weight: bold;">
               <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;">الإجمالي</td>
-              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalLoads}</td>
-              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalQuantity.toLocaleString()}</td>
-              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${totalAmount.toLocaleString()} ر.س</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${aggregatedTotalLoads}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${aggregatedTotalQuantity.toLocaleString()}</td>
+              <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${aggregatedTotalAmount.toLocaleString()} ر.س</td>
             </tr>
           </tbody>
         </table>
@@ -297,164 +303,219 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Package className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">إجمالي الرحلات</p>
-              <p className="text-2xl font-bold">{totalLoads}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-accent/10 rounded-lg">
-              <DollarSign className="h-6 w-6 text-accent" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">إجمالي الكمية</p>
-              <p className="text-2xl font-bold">{totalQuantity.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-secondary/10 rounded-lg">
-              <DollarSign className="h-6 w-6 text-secondary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">إجمالي المبلغ</p>
-              <p className="text-2xl font-bold">{totalAmount.toLocaleString()} ر.س</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* Tabs for separating reports */}
+      <Tabs defaultValue="aggregated" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="aggregated" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            التقارير الإجمالية
+          </TabsTrigger>
+          <TabsTrigger value="daily" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            التقارير اليومية
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Aggregated Data Table */}
-      <Card>
-        <div className="p-4 bg-muted/50 border-b">
-          <h3 className="font-semibold text-lg">الإجماليات التراكمية</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-right p-4 font-semibold">الشركة</th>
-                <th className="text-center p-4 font-semibold">عدد الرحلات</th>
-                <th className="text-center p-4 font-semibold">الكمية الإجمالية</th>
-                <th className="text-center p-4 font-semibold">المبلغ الإجمالي</th>
-              </tr>
-            </thead>
-            <tbody>
-              {aggregatedData.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center p-8 text-muted-foreground">
-                    لا توجد بيانات لهذه الفترة
-                  </td>
-                </tr>
-              ) : (
-                <>
-                  {aggregatedData.map((item, index) => (
-                    <tr
-                      key={item.company_id}
-                      className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
-                    >
-                      <td className="p-4 text-right font-medium">
-                        {item.company_name}
-                      </td>
-                      <td className="p-4 text-center">{item.total_loads}</td>
-                      <td className="p-4 text-center">
-                        {item.total_quantity.toLocaleString()}
-                      </td>
-                      <td className="p-4 text-center font-semibold text-primary">
-                        {item.total_amount.toLocaleString()} ر.س
+        {/* Aggregated Reports Tab */}
+        <TabsContent value="aggregated" className="space-y-6 mt-6">
+          {/* Aggregated Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Package className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">إجمالي الرحلات</p>
+                  <p className="text-2xl font-bold">{aggregatedTotalLoads}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">إجمالي الكمية</p>
+                  <p className="text-2xl font-bold">{aggregatedTotalQuantity.toLocaleString()}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-secondary/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-secondary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">إجمالي المبلغ</p>
+                  <p className="text-2xl font-bold">{aggregatedTotalAmount.toLocaleString()} ر.س</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Aggregated Data Table */}
+          <Card>
+            <div className="p-4 bg-muted/50 border-b">
+              <h3 className="font-semibold text-lg">الإجماليات التراكمية حسب الشركة</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-right p-4 font-semibold">الشركة</th>
+                    <th className="text-center p-4 font-semibold">عدد الرحلات</th>
+                    <th className="text-center p-4 font-semibold">الكمية الإجمالية</th>
+                    <th className="text-center p-4 font-semibold">المبلغ الإجمالي</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aggregatedData.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center p-8 text-muted-foreground">
+                        لا توجد بيانات لهذه الفترة
                       </td>
                     </tr>
-                  ))}
-                  <tr className="bg-primary/10 font-bold border-t-2 border-primary">
-                    <td className="p-4 text-right">الإجمالي</td>
-                    <td className="p-4 text-center">{totalLoads}</td>
-                    <td className="p-4 text-center">
-                      {totalQuantity.toLocaleString()}
-                    </td>
-                    <td className="p-4 text-center text-primary">
-                      {totalAmount.toLocaleString()} ر.س
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                  ) : (
+                    <>
+                      {aggregatedData.map((item, index) => (
+                        <tr
+                          key={item.company_id}
+                          className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                        >
+                          <td className="p-4 text-right font-medium">
+                            {item.company_name}
+                          </td>
+                          <td className="p-4 text-center">{item.total_loads}</td>
+                          <td className="p-4 text-center">
+                            {item.total_quantity.toLocaleString()}
+                          </td>
+                          <td className="p-4 text-center font-semibold text-primary">
+                            {item.total_amount.toLocaleString()} ر.س
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-primary/10 font-bold border-t-2 border-primary">
+                        <td className="p-4 text-right">الإجمالي</td>
+                        <td className="p-4 text-center">{aggregatedTotalLoads}</td>
+                        <td className="p-4 text-center">
+                          {aggregatedTotalQuantity.toLocaleString()}
+                        </td>
+                        <td className="p-4 text-center text-primary">
+                          {aggregatedTotalAmount.toLocaleString()} ر.س
+                        </td>
+                      </tr>
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
 
-      {/* Daily Details Table */}
-      <Card>
-        <div className="p-4 bg-muted/50 border-b">
-          <h3 className="font-semibold text-lg">التفاصيل اليومية</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-right p-4 font-semibold">التاريخ</th>
-                <th className="text-right p-4 font-semibold">الشركة</th>
-                <th className="text-center p-4 font-semibold">الرحلات</th>
-                <th className="text-center p-4 font-semibold">الكمية</th>
-                <th className="text-center p-4 font-semibold">المبلغ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dailyData.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                    لا توجد بيانات لهذه الفترة
-                  </td>
-                </tr>
-              ) : (
-                <>
-                  {dailyData.map((item, index) => (
-                    <tr
-                      key={`${item.report_date}-${item.company_name}`}
-                      className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
-                    >
-                      <td className="p-4 text-right">
-                        {format(new Date(item.report_date), "dd/MM/yyyy")}
-                      </td>
-                      <td className="p-4 text-right font-medium">
-                        {item.company_name}
-                      </td>
-                      <td className="p-4 text-center">{item.total_loads}</td>
-                      <td className="p-4 text-center">
-                        {item.total_quantity.toLocaleString()}
-                      </td>
-                      <td className="p-4 text-center font-semibold text-primary">
-                        {item.total_amount.toLocaleString()} ر.س
+        {/* Daily Reports Tab */}
+        <TabsContent value="daily" className="space-y-6 mt-6">
+          {/* Daily Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Package className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">إجمالي الرحلات</p>
+                  <p className="text-2xl font-bold">{dailyTotalLoads}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">إجمالي الكمية</p>
+                  <p className="text-2xl font-bold">{dailyTotalQuantity.toLocaleString()}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-secondary/10 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-secondary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">إجمالي المبلغ</p>
+                  <p className="text-2xl font-bold">{dailyTotalAmount.toLocaleString()} ر.س</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Daily Details Table */}
+          <Card>
+            <div className="p-4 bg-muted/50 border-b">
+              <h3 className="font-semibold text-lg">التفاصيل اليومية</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-right p-4 font-semibold">التاريخ</th>
+                    <th className="text-right p-4 font-semibold">الشركة</th>
+                    <th className="text-center p-4 font-semibold">الرحلات</th>
+                    <th className="text-center p-4 font-semibold">الكمية</th>
+                    <th className="text-center p-4 font-semibold">المبلغ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailyData.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center p-8 text-muted-foreground">
+                        لا توجد بيانات لهذه الفترة
                       </td>
                     </tr>
-                  ))}
-                  <tr className="bg-primary/10 font-bold border-t-2 border-primary">
-                    <td className="p-4 text-right" colSpan={2}>الإجمالي</td>
-                    <td className="p-4 text-center">
-                      {dailyData.reduce((sum, item) => sum + item.total_loads, 0)}
-                    </td>
-                    <td className="p-4 text-center">
-                      {dailyData.reduce((sum, item) => sum + item.total_quantity, 0).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-center text-primary">
-                      {dailyData.reduce((sum, item) => sum + item.total_amount, 0).toLocaleString()} ر.س
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                  ) : (
+                    <>
+                      {dailyData.map((item, index) => (
+                        <tr
+                          key={`${item.report_date}-${item.company_name}`}
+                          className={index % 2 === 0 ? "bg-background" : "bg-muted/30"}
+                        >
+                          <td className="p-4 text-right">
+                            {format(new Date(item.report_date), "dd/MM/yyyy")}
+                          </td>
+                          <td className="p-4 text-right font-medium">
+                            {item.company_name}
+                          </td>
+                          <td className="p-4 text-center">{item.total_loads}</td>
+                          <td className="p-4 text-center">
+                            {item.total_quantity.toLocaleString()}
+                          </td>
+                          <td className="p-4 text-center font-semibold text-primary">
+                            {item.total_amount.toLocaleString()} ر.س
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-primary/10 font-bold border-t-2 border-primary">
+                        <td className="p-4 text-right" colSpan={2}>الإجمالي</td>
+                        <td className="p-4 text-center">{dailyTotalLoads}</td>
+                        <td className="p-4 text-center">
+                          {dailyTotalQuantity.toLocaleString()}
+                        </td>
+                        <td className="p-4 text-center text-primary">
+                          {dailyTotalAmount.toLocaleString()} ر.س
+                        </td>
+                      </tr>
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
