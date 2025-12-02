@@ -378,9 +378,7 @@ const LoadsRegister = () => {
                   />
                   {isCommissionBased && formData.unitPrice !== '0' && (
                     <p className="text-sm text-green-600 font-medium">
-                      السعر تم تحديده تلقائياً بناءً على الكمية ({parseFloat(formData.quantity)} طن)
-                      <br />
-                      <span dir="ltr">Price auto-set based on quantity ({parseFloat(formData.quantity)} tons)</span>
+                      ✓ عمولة ثابتة بناءً على الكمية ({parseFloat(formData.quantity)} طن)
                     </p>
                   )}
                   {!isCommissionBased && formData.unitPrice !== '0' && formData.companyId && formData.loadTypeId && (
@@ -388,6 +386,33 @@ const LoadsRegister = () => {
                       السعر من قائمة أسعار الشركة / Price from company price list
                     </p>
                   )}
+                </div>
+
+                {/* عرض المبلغ الإجمالي المحسوب */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>المبلغ الإجمالي المحسوب / Calculated Total</Label>
+                  <div className={cn(
+                    "p-4 rounded-lg border-2",
+                    isCommissionBased ? "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700" : "bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-700"
+                  )}>
+                    <div className="text-2xl font-bold text-center">
+                      {isCommissionBased 
+                        ? parseFloat(formData.unitPrice || '0').toLocaleString('ar-SA')
+                        : (parseFloat(formData.quantity || '0') * parseFloat(formData.unitPrice || '0')).toLocaleString('ar-SA')
+                      } ر.س
+                    </div>
+                    <div className="text-sm text-center mt-2 text-muted-foreground">
+                      {isCommissionBased ? (
+                        <span className="text-green-700 dark:text-green-400">
+                          عمولة ثابتة = {parseFloat(formData.unitPrice || '0').toLocaleString('ar-SA')} ر.س
+                        </span>
+                      ) : (
+                        <span className="text-blue-700 dark:text-blue-400">
+                          الكمية ({parseFloat(formData.quantity || '0')}) × السعر ({parseFloat(formData.unitPrice || '0')}) = {(parseFloat(formData.quantity || '0') * parseFloat(formData.unitPrice || '0')).toLocaleString('ar-SA')} ر.س
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
