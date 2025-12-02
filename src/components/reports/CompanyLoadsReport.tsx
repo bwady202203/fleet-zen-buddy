@@ -107,9 +107,10 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
     }
   };
 
-  const totalLoads = aggregatedData.reduce((sum, item) => sum + item.total_loads, 0);
-  const totalQuantity = aggregatedData.reduce((sum, item) => sum + item.total_quantity, 0);
-  const totalAmount = aggregatedData.reduce((sum, item) => sum + item.total_amount, 0);
+  // Calculate totals from daily data (the actual displayed data)
+  const totalLoads = dailyData.reduce((sum, item) => sum + item.total_loads, 0);
+  const totalQuantity = dailyData.reduce((sum, item) => sum + item.total_quantity, 0);
+  const totalAmount = dailyData.reduce((sum, item) => sum + item.total_amount, 0);
 
   const exportToPDF = async () => {
     try {
