@@ -119,74 +119,24 @@ const AdvancedLoadsList = () => {
     }
   };
 
-  // Helper functions for precise filtering
-  const normalizeString = (str: string | null | undefined): string => {
-    return (str || '').toString().trim().toLowerCase();
-  };
-
-  const normalizeDate = (date: string | null | undefined): string => {
-    if (!date) return '';
-    try {
-      // استخدام التاريخ المحلي بدلاً من UTC لتجنب مشاكل المنطقة الزمنية
-      if (date.includes('T')) {
-        // إذا كان التاريخ يحتوي على وقت، استخرج التاريخ فقط
-        return date.split('T')[0];
-      }
-      // إذا كان تاريخ فقط، أعده كما هو
-      return date;
-    } catch {
-      return '';
-    }
-  };
-
-  const matchesCompany = (load: any): boolean => {
-    if (!selectedCompany || selectedCompany === "all") return true;
-    return load.company_id === selectedCompany;
-  };
-
-  const matchesLoadType = (load: any): boolean => {
-    if (!selectedLoadType || selectedLoadType === "all") return true;
-    return load.load_type_id === selectedLoadType;
-  };
-
-  const matchesDriver = (load: any): boolean => {
-    if (!selectedDriver || selectedDriver === "all") return true;
-    return load.driver_id === selectedDriver;
-  };
-
-  const matchesDateRange = (load: any): boolean => {
-    const loadDate = normalizeDate(load.date);
-    if (!loadDate) return false;
-    
-    if (startDate && endDate) {
-      return loadDate >= startDate && loadDate <= endDate;
-    } else if (startDate) {
-      return loadDate >= startDate;
-    } else if (endDate) {
-      return loadDate <= endDate;
-    }
-    
-    return true;
-  };
-
-  const matchesSearchText = (load: any): boolean => {
-    if (!searchText || !searchText.trim()) return true;
-    
-    const search = normalizeString(searchText);
-    const loadNumber = normalizeString(load.load_number);
-    const truckNumber = normalizeString(load.truck_number);
-    const companyName = normalizeString(load.companies?.name);
-    const driverName = normalizeString(load.drivers?.name);
-    const invoiceNumber = normalizeString(load.invoice_number);
-    
-    return loadNumber.includes(search) || 
-           truckNumber.includes(search) || 
-           companyName.includes(search) || 
-           driverName.includes(search) ||
-           invoiceNumber.includes(search);
-  };
-
   const filteredLoads = useMemo(() => {
+    // Helper functions defined inside useMemo to ensure fresh values
+    const normalizeString = (str: string | null | undefined): string => {
+      return (str || '').toString().trim().toLowerCase();
+    };
+
+    const normalizeDate = (date: string | null | undefined): string => {
+      if (!date) return '';
+      try {
+        if (date.includes('T')) {
+          return date.split('T')[0];
+        }
+        return date;
+      } catch {
+        return '';
+      }
+    };
+
     console.log('🔍 بدء الفلترة الدقيقة من', loads.length, 'شحنة');
     console.log('📋 معايير الفلتر:', {
       شركة: selectedCompany,
@@ -197,22 +147,60 @@ const AdvancedLoadsList = () => {
       بحث: searchText
     });
 
-    // Apply all filters using a single pass
+    // Apply all filters in a single pass with inline checks
     const filtered = loads.filter(load => {
-      const passCompany = matchesCompany(load);
-      const passLoadType = matchesLoadType(load);
-      const passDriver = matchesDriver(load);
-      const passDate = matchesDateRange(load);
-      const passSearch = matchesSearchText(load);
+      // Company filter
+      if (selectedCompany && selectedCompany !== "all") {
+        if (load.company_id !== selectedCompany) return false;
+      }
+
+      // Load type filter
+      if (selectedLoadType && selectedLoadType !== "all") {
+        if (load.load_type_id !== selectedLoadType) return false;
+      }
+
+      // Driver filter
+      if (selectedDriver && selectedDriver !== "all") {
+        if (load.driver_id !== selectedDriver) return false;
+      }
+
+      // Date range filter
+      const loadDate = normalizeDate(load.date);
+      if (!loadDate) return false;
       
-      // ALL conditions must be true
-      return passCompany && passLoadType && passDriver && passDate && passSearch;
+      if (startDate && endDate) {
+        if (loadDate < startDate || loadDate > endDate) return false;
+      } else if (startDate) {
+        if (loadDate < startDate) return false;
+      } else if (endDate) {
+        if (loadDate > endDate) return false;
+      }
+
+      // Search text filter
+      if (searchText && searchText.trim()) {
+        const search = normalizeString(searchText);
+        const loadNumber = normalizeString(load.load_number);
+        const truckNumber = normalizeString(load.truck_number);
+        const companyName = normalizeString(load.companies?.name);
+        const driverName = normalizeString(load.drivers?.name);
+        const invoiceNumber = normalizeString(load.invoice_number);
+        
+        const matchesSearch = loadNumber.includes(search) || 
+               truckNumber.includes(search) || 
+               companyName.includes(search) || 
+               driverName.includes(search) ||
+               invoiceNumber.includes(search);
+        
+        if (!matchesSearch) return false;
+      }
+
+      return true;
     });
 
     console.log('✅ نتيجة الفلترة:', {
       العدد_الأصلي: loads.length,
       بعد_الفلترة: filtered.length,
-      نسبة_الظهور: `${((filtered.length / loads.length) * 100).toFixed(1)}%`
+      نسبة_الظهور: `${((filtered.length / Math.max(loads.length, 1)) * 100).toFixed(1)}%`
     });
 
     // Sort the filtered results
@@ -224,7 +212,6 @@ const AdvancedLoadsList = () => {
         const dateB = b.date ? new Date(b.date).getTime() : 0;
         comparison = dateA - dateB;
       } else if (sortField === 'load_number') {
-        // استخدام مقارنة رقمية لرقم الشحنة
         const numA = parseInt((a.load_number || '0').replace(/\D/g, ''), 10) || 0;
         const numB = parseInt((b.load_number || '0').replace(/\D/g, ''), 10) || 0;
         comparison = numA - numB;
