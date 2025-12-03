@@ -246,7 +246,7 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
           </p>
         </div>
         
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
           <div style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); padding: 15px; border-radius: 8px; text-align: center; color: white; border: 2px solid #0d47a1;">
             <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">${totalLoads}</div>
             <div style="font-size: 12px; opacity: 0.95;">عدد الرحلات</div>
@@ -254,10 +254,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
           <div style="background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%); padding: 15px; border-radius: 8px; text-align: center; color: white; border: 2px solid #1b5e20;">
             <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">${totalQuantity.toLocaleString()}</div>
             <div style="font-size: 12px; opacity: 0.95;">إجمالي الكمية</div>
-          </div>
-          <div style="background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%); padding: 15px; border-radius: 8px; text-align: center; color: white; border: 2px solid #e65100;">
-            <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">${totalAmount.toLocaleString()}</div>
-            <div style="font-size: 12px; opacity: 0.95;">إجمالي المبلغ</div>
           </div>
           <div style="background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%); padding: 15px; border-radius: 8px; text-align: center; color: white; border: 2px solid #b71c1c;">
             <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">${totalNetDue.toLocaleString()} ر.س</div>
@@ -273,8 +269,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
               <th style="padding: 10px 8px; text-align: right; border: 2px solid #0d47a1; font-weight: 700;">السائق</th>
               <th style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">الرحلات</th>
               <th style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">الكمية</th>
-              <th style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">المبلغ</th>
-              <th style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">العمولة</th>
               <th style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1; font-weight: 700; background: #c62828;">المستحق</th>
             </tr>
           </thead>
@@ -285,8 +279,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                 <td style="padding: 8px; text-align: right; border: 2px solid #ddd; font-weight: 600;">${item.driver_name}</td>
                 <td style="padding: 8px; text-align: center; border: 2px solid #ddd;">${item.total_loads}</td>
                 <td style="padding: 8px; text-align: center; border: 2px solid #ddd;">${item.total_quantity.toLocaleString()}</td>
-                <td style="padding: 8px; text-align: center; border: 2px solid #ddd;">${item.total_amount.toLocaleString()}</td>
-                <td style="padding: 8px; text-align: center; border: 2px solid #ddd;">${item.total_commission.toLocaleString()}</td>
                 <td style="padding: 8px; text-align: center; border: 2px solid #ddd; font-weight: 700; color: #c62828; font-size: 13px;">${item.net_due.toLocaleString()} ر.س</td>
               </tr>
             `).join("")}
@@ -294,8 +286,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
               <td style="padding: 10px 8px; text-align: right; border: 2px solid #0d47a1;" colspan="2">الإجمالي</td>
               <td style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1;">${totalLoads}</td>
               <td style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1;">${totalQuantity.toLocaleString()}</td>
-              <td style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1;">${totalAmount.toLocaleString()}</td>
-              <td style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1;">${totalCommission.toLocaleString()}</td>
               <td style="padding: 10px 8px; text-align: center; border: 2px solid #0d47a1; background: #c62828; font-size: 14px;">${totalNetDue.toLocaleString()} ر.س</td>
             </tr>
           </tbody>
@@ -309,8 +299,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
               <th style="padding: 8px 6px; text-align: right; border: 2px solid #0d47a1; font-weight: 700;">السائق</th>
               <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">الرحلات</th>
               <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">الكمية</th>
-              <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">المبلغ</th>
-              <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">العمولة</th>
               <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700; background: #c62828;">المستحق</th>
             </tr>
           </thead>
@@ -321,8 +309,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                 <td style="padding: 6px; text-align: right; border: 2px solid #ddd;">${item.driver_name}</td>
                 <td style="padding: 6px; text-align: center; border: 2px solid #ddd;">${item.loads_count}</td>
                 <td style="padding: 6px; text-align: center; border: 2px solid #ddd;">${item.quantity.toLocaleString()}</td>
-                <td style="padding: 6px; text-align: center; border: 2px solid #ddd;">${item.amount.toLocaleString()}</td>
-                <td style="padding: 6px; text-align: center; border: 2px solid #ddd;">${item.commission.toLocaleString()}</td>
                 <td style="padding: 6px; text-align: center; border: 2px solid #ddd; font-weight: 600; color: #c62828;">${item.net_due.toLocaleString()}</td>
               </tr>
             `).join("")}
@@ -387,8 +373,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
         "السائق": item.driver_name,
         "عدد الرحلات": item.total_loads,
         "الكمية": item.total_quantity,
-        "المبلغ": item.total_amount,
-        "العمولة": item.total_commission,
         "المستحق": item.net_due,
       }));
 
@@ -398,8 +382,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
         "السائق": "",
         "عدد الرحلات": totalLoads,
         "الكمية": totalQuantity,
-        "المبلغ": totalAmount,
-        "العمولة": totalCommission,
         "المستحق": totalNetDue,
       });
 
@@ -409,8 +391,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
         "السائق": item.driver_name,
         "عدد الرحلات": item.loads_count,
         "الكمية": item.quantity,
-        "المبلغ": item.amount,
-        "العمولة": item.commission,
         "المستحق": item.net_due,
       }));
 
@@ -475,7 +455,7 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-white/20 rounded-lg">
@@ -495,17 +475,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
             <div>
               <p className="text-sm opacity-90">إجمالي الكمية</p>
               <p className="text-2xl font-bold">{totalQuantity.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-5 bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-lg">
-              <DollarSign className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm opacity-90">إجمالي المبلغ</p>
-              <p className="text-2xl font-bold">{totalAmount.toLocaleString()} ر.س</p>
             </div>
           </div>
         </Card>
@@ -538,15 +507,13 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                 <th className="text-right p-4 font-semibold">السائق</th>
                 <th className="text-center p-4 font-semibold">عدد الرحلات</th>
                 <th className="text-center p-4 font-semibold">الكمية</th>
-                <th className="text-center p-4 font-semibold">المبلغ</th>
-                <th className="text-center p-4 font-semibold">العمولة</th>
                 <th className="text-center p-4 font-semibold text-red-600">المستحق</th>
               </tr>
             </thead>
             <tbody>
               {driversData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
                     لا توجد بيانات لهذه الفترة
                   </td>
                 </tr>
@@ -558,8 +525,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                       <td className="p-4 font-medium">{item.driver_name}</td>
                       <td className="p-4 text-center">{item.total_loads}</td>
                       <td className="p-4 text-center">{item.total_quantity.toLocaleString()}</td>
-                      <td className="p-4 text-center">{item.total_amount.toLocaleString()} ر.س</td>
-                      <td className="p-4 text-center">{item.total_commission.toLocaleString()} ر.س</td>
                       <td className="p-4 text-center font-bold text-red-600 text-lg">
                         {item.net_due.toLocaleString()} ر.س
                       </td>
@@ -569,8 +534,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                     <td className="p-4" colSpan={2}>الإجمالي</td>
                     <td className="p-4 text-center">{totalLoads}</td>
                     <td className="p-4 text-center">{totalQuantity.toLocaleString()}</td>
-                    <td className="p-4 text-center">{totalAmount.toLocaleString()} ر.س</td>
-                    <td className="p-4 text-center">{totalCommission.toLocaleString()} ر.س</td>
                     <td className="p-4 text-center text-lg">{totalNetDue.toLocaleString()} ر.س</td>
                   </tr>
                 </>
@@ -596,15 +559,13 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                 <th className="text-right p-3 font-semibold">السائق</th>
                 <th className="text-center p-3 font-semibold">الرحلات</th>
                 <th className="text-center p-3 font-semibold">الكمية</th>
-                <th className="text-center p-3 font-semibold">المبلغ</th>
-                <th className="text-center p-3 font-semibold">العمولة</th>
                 <th className="text-center p-3 font-semibold text-red-600">المستحق</th>
               </tr>
             </thead>
             <tbody>
               {dailyData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
                     لا توجد تفاصيل يومية
                   </td>
                 </tr>
@@ -615,8 +576,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
                     <td className="p-3">{item.driver_name}</td>
                     <td className="p-3 text-center">{item.loads_count}</td>
                     <td className="p-3 text-center">{item.quantity.toLocaleString()}</td>
-                    <td className="p-3 text-center">{item.amount.toLocaleString()} ر.س</td>
-                    <td className="p-3 text-center">{item.commission.toLocaleString()} ر.س</td>
                     <td className="p-3 text-center font-semibold text-red-600">
                       {item.net_due.toLocaleString()} ر.س
                     </td>
