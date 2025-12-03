@@ -46,21 +46,53 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
     fetchReportData();
   }, [startDate, endDate]);
 
+  // حساب العمولة بناءً على الوزن
+  const calculateCommission = (
+    quantity: number,
+    companyCommissions: any[]
+  ): number => {
+    if (!companyCommissions || companyCommissions.length === 0) {
+      return 0;
+    }
+
+    // تحديد نطاق الوزن
+    let commissionType = "weight_less_40";
+    if (quantity >= 49) {
+      commissionType = "weight_more_49";
+    } else if (quantity >= 44) {
+      commissionType = "weight_44_49";
+    } else if (quantity >= 40) {
+      commissionType = "weight_40_44";
+    }
+
+    // البحث عن العمولة المناسبة
+    const commission = companyCommissions.find(
+      (c) => c.commission_type === commissionType
+    );
+
+    return commission ? Number(commission.amount) : 0;
+  };
+
   const fetchReportData = async () => {
     try {
       setLoading(true);
 
-      // جلب بيانات الشحنات مع معلومات السائقين
+      // جلب بيانات الشحنات مع معلومات السائقين والشركات
       const { data: loadsData, error } = await supabase
         .from("loads")
         .select(`
           id,
           date,
           driver_id,
+          company_id,
           quantity,
           total_amount,
           commission_amount,
           drivers (
+            id,
+            name
+          ),
+          companies (
             id,
             name
           )
@@ -72,6 +104,23 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
 
       if (error) throw error;
 
+      // جلب عمولات السائقين لكل شركة
+      const { data: commissionsData, error: commissionsError } = await supabase
+        .from("company_driver_commissions")
+        .select("*");
+
+      if (commissionsError) throw commissionsError;
+
+      // تجميع العمولات حسب الشركة
+      const companyCommissionsMap = new Map<string, any[]>();
+      commissionsData?.forEach((commission) => {
+        const companyId = commission.company_id;
+        if (!companyCommissionsMap.has(companyId)) {
+          companyCommissionsMap.set(companyId, []);
+        }
+        companyCommissionsMap.get(companyId)!.push(commission);
+      });
+
       // تجميع البيانات اليومية
       const dailyMap = new Map<string, DailyDriverData>();
       const driverMap = new Map<string, DriverDuesData>();
@@ -79,10 +128,20 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
       loadsData?.forEach((load) => {
         const driverId = load.driver_id || "";
         const driverName = load.drivers?.name || "غير محدد";
+        const companyId = load.company_id || "";
         const loadDate = load.date;
         const quantity = Number(load.quantity) || 0;
         const amount = Number(load.total_amount) || 0;
-        const commission = Number(load.commission_amount) || 0;
+        
+        // حساب العمولة بناءً على الوزن والشركة
+        const companyCommissions = companyCommissionsMap.get(companyId) || [];
+        let commission = Number(load.commission_amount) || 0;
+        
+        // إذا كانت العمولة صفر، احسبها من جدول العمولات
+        if (commission === 0) {
+          commission = calculateCommission(quantity, companyCommissions);
+        }
+        
         const netDue = commission; // المستحق هو العمولة
 
         // مفتاح يومي فريد
