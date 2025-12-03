@@ -21,7 +21,8 @@ import {
   DollarSign,
   RefreshCw,
   Download,
-  FileText
+  FileText,
+  Users
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,12 +32,14 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
+import DriverDailyDuesReport from "@/components/reports/DriverDailyDuesReport";
 
 const AdvancedLoadsList = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loads, setLoads] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showDriverDuesReport, setShowDriverDuesReport] = useState(false);
   
   // Filter states
   const [companies, setCompanies] = useState<any[]>([]);
@@ -475,7 +478,16 @@ const AdvancedLoadsList = () => {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                onClick={() => setShowDriverDuesReport(!showDriverDuesReport)} 
+                variant={showDriverDuesReport ? "default" : "outline"} 
+                size="sm"
+                className={showDriverDuesReport ? "bg-purple-600 hover:bg-purple-700" : ""}
+              >
+                <Users className="h-4 w-4 ml-2" />
+                {showDriverDuesReport ? "إخفاء تقرير المستحقات" : "تقرير مستحقات السائقين"}
+              </Button>
               <Button onClick={() => loadData()} variant="outline" size="sm">
                 <RefreshCw className="h-4 w-4 ml-2" />
                 تحديث
@@ -494,6 +506,19 @@ const AdvancedLoadsList = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Driver Dues Report - Shows when toggled */}
+        {showDriverDuesReport && startDate && endDate ? (
+          <DriverDailyDuesReport startDate={startDate} endDate={endDate} />
+        ) : showDriverDuesReport && (!startDate || !endDate) ? (
+          <Card className="p-8">
+            <div className="text-center text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 text-primary/50" />
+              <h3 className="text-lg font-semibold mb-2">تقرير مستحقات السائقين</h3>
+              <p>يرجى تحديد تاريخ البداية والنهاية في الفلاتر أدناه لعرض التقرير</p>
+            </div>
+          </Card>
+        ) : null}
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
