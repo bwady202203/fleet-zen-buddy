@@ -224,15 +224,16 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
 
-      // إنشاء محتوى HTML للتقرير
+      // إنشاء محتوى HTML للتقرير - A4 (210mm × 297mm) with 10mm margins
+      // Usable width: 190mm ≈ 718px at 96dpi
       const container = document.createElement("div");
       container.style.cssText = `
         position: absolute;
         left: -9999px;
         top: 0;
-        width: 750px;
+        width: 718px;
         background: white;
-        padding: 20px;
+        padding: 10px;
         direction: rtl;
         font-family: 'Cairo', Arial, sans-serif;
         box-sizing: border-box;
