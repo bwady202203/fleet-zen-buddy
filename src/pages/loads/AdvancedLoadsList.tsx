@@ -20,13 +20,16 @@ import {
   Truck,
   DollarSign,
   RefreshCw,
-  Download
+  Download,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const AdvancedLoadsList = () => {
   const { toast } = useToast();
@@ -253,6 +256,204 @@ const AdvancedLoadsList = () => {
     });
   };
 
+  const exportToPDF = () => {
+    // إنشاء مستند PDF بمقاس A4 عمودي
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // إعدادات الصفحة
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 10;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // ألوان رئيسية
+    const primaryBlue = [25, 118, 210]; // #1976d2
+    const darkBlue = [13, 71, 161]; // #0d47a1
+    const lightBlue = [227, 242, 253]; // #e3f2fd
+
+    // رسم الرأس مع تدرج لوني
+    doc.setFillColor(lightBlue[0], lightBlue[1], lightBlue[2]);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    
+    // خط علوي
+    doc.setDrawColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+    doc.setLineWidth(3);
+    doc.line(0, 35, pageWidth, 35);
+
+    // العنوان الرئيسي
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(darkBlue[0], darkBlue[1], darkBlue[2]);
+    doc.text('تقرير سجل الشحنات المطور', pageWidth / 2, 15, { align: 'center' });
+
+    // التاريخ
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`تاريخ التقرير: ${format(new Date(), 'yyyy-MM-dd')}`, pageWidth / 2, 25, { align: 'center' });
+
+    // معلومات الفلتر
+    let filterText = '';
+    if (startDate || endDate) {
+      filterText = `الفترة: ${startDate || 'البداية'} - ${endDate || 'النهاية'}`;
+    }
+    if (filterText) {
+      doc.setFontSize(10);
+      doc.text(filterText, pageWidth / 2, 32, { align: 'center' });
+    }
+
+    // بطاقات الإحصائيات
+    const statsY = 42;
+    const statCardWidth = (contentWidth - 8) / 5;
+    const statCardHeight = 18;
+
+    const statsData = [
+      { label: 'عدد الشحنات', value: statistics.totalLoads.toString(), color: primaryBlue },
+      { label: 'إجمالي الكمية', value: statistics.totalQuantity.toFixed(2), color: [56, 142, 60] },
+      { label: 'إجمالي المبلغ', value: statistics.totalAmount.toLocaleString('ar-SA', { maximumFractionDigits: 0 }), color: [245, 124, 0] },
+      { label: 'السائقين', value: statistics.uniqueDrivers.toString(), color: [156, 39, 176] },
+      { label: 'الشركات', value: statistics.uniqueCompanies.toString(), color: [233, 30, 99] },
+    ];
+
+    statsData.forEach((stat, index) => {
+      const x = margin + (index * (statCardWidth + 2));
+      
+      // خلفية البطاقة
+      doc.setFillColor(250, 250, 250);
+      doc.setDrawColor(stat.color[0], stat.color[1], stat.color[2]);
+      doc.setLineWidth(2);
+      doc.roundedRect(x, statsY, statCardWidth, statCardHeight, 2, 2, 'FD');
+      
+      // القيمة
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(stat.color[0], stat.color[1], stat.color[2]);
+      doc.text(stat.value, x + statCardWidth / 2, statsY + 8, { align: 'center' });
+      
+      // التسمية
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(stat.label, x + statCardWidth / 2, statsY + 14, { align: 'center' });
+    });
+
+    // إعداد بيانات الجدول
+    const tableData = filteredLoads.map((load, index) => [
+      (index + 1).toString(),
+      format(new Date(load.date), 'yyyy-MM-dd'),
+      load.load_number || '-',
+      load.companies?.name || '-',
+      load.drivers?.name || '-',
+      load.load_types?.name || '-',
+      load.truck_number || '-',
+      (load.quantity || 0).toFixed(2),
+      parseFloat(load.unit_price || 0).toFixed(2),
+      parseFloat(load.total_amount || 0).toLocaleString('ar-SA', { maximumFractionDigits: 2 }),
+    ]);
+
+    // رؤوس الجدول
+    const tableHeaders = [
+      '#',
+      'التاريخ',
+      'رقم الشحنة',
+      'الشركة',
+      'السائق',
+      'نوع الحمولة',
+      'رقم الشاحنة',
+      'الكمية',
+      'سعر الوحدة',
+      'المبلغ'
+    ];
+
+    // رسم الجدول
+    autoTable(doc, {
+      head: [tableHeaders],
+      body: tableData,
+      startY: statsY + statCardHeight + 8,
+      margin: { left: margin, right: margin },
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 2,
+        halign: 'center',
+        valign: 'middle',
+        lineColor: [0, 0, 0],
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: [primaryBlue[0], primaryBlue[1], primaryBlue[2]],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10,
+        lineWidth: 0.5,
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+      columnStyles: {
+        0: { cellWidth: 8 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 22 },
+        6: { cellWidth: 18 },
+        7: { cellWidth: 15, fontStyle: 'bold', fontSize: 11 },
+        8: { cellWidth: 18 },
+        9: { cellWidth: 22, fontStyle: 'bold', textColor: [25, 118, 210] },
+      },
+      didDrawPage: (data) => {
+        // تذييل الصفحة
+        const pageNumber = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `صفحة ${pageNumber}`,
+          pageWidth / 2,
+          pageHeight - 5,
+          { align: 'center' }
+        );
+        
+        // خط سفلي
+        doc.setDrawColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+        doc.setLineWidth(1);
+        doc.line(margin, pageHeight - 8, pageWidth - margin, pageHeight - 8);
+      },
+    });
+
+    // إضافة ملخص في نهاية التقرير
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    
+    if (finalY < pageHeight - 40) {
+      // مربع الملخص
+      doc.setFillColor(lightBlue[0], lightBlue[1], lightBlue[2]);
+      doc.setDrawColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+      doc.setLineWidth(2);
+      doc.roundedRect(margin, finalY, contentWidth, 25, 3, 3, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(darkBlue[0], darkBlue[1], darkBlue[2]);
+      doc.text('ملخص التقرير', pageWidth / 2, finalY + 7, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const summaryText = `إجمالي الشحنات: ${statistics.totalLoads} | إجمالي الكمية: ${statistics.totalQuantity.toFixed(2)} طن | إجمالي المبلغ: ${statistics.totalAmount.toLocaleString('ar-SA', { maximumFractionDigits: 2 })} ريال`;
+      doc.text(summaryText, pageWidth / 2, finalY + 17, { align: 'center' });
+    }
+
+    // حفظ الملف
+    doc.save(`تقرير_الشحنات_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+
+    toast({
+      title: "تم التصدير",
+      description: "تم تصدير التقرير إلى PDF بنجاح"
+    });
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('هل أنت متأكد من حذف هذه الشحنة؟')) return;
 
@@ -315,6 +516,10 @@ const AdvancedLoadsList = () => {
               <Button onClick={exportToExcel} variant="outline" size="sm">
                 <FileDown className="h-4 w-4 ml-2" />
                 تصدير Excel
+              </Button>
+              <Button onClick={exportToPDF} variant="default" size="sm" className="bg-red-600 hover:bg-red-700">
+                <FileText className="h-4 w-4 ml-2" />
+                تصدير PDF
               </Button>
             </div>
           </div>
