@@ -542,50 +542,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
           </table>
         </div>
       </Card>
-
-      {/* Daily Details Table */}
-      <Card>
-        <div className="p-4 bg-secondary/10 border-b">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            التفاصيل اليومية
-          </h3>
-        </div>
-        <div className="overflow-x-auto max-h-[500px]">
-          <table className="w-full">
-            <thead className="sticky top-0 bg-background">
-              <tr className="border-b bg-muted/50">
-                <th className="text-right p-3 font-semibold">التاريخ</th>
-                <th className="text-right p-3 font-semibold">السائق</th>
-                <th className="text-center p-3 font-semibold">الرحلات</th>
-                <th className="text-center p-3 font-semibold">الكمية</th>
-                <th className="text-center p-3 font-semibold text-red-600">المستحق</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dailyData.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                    لا توجد تفاصيل يومية
-                  </td>
-                </tr>
-              ) : (
-                dailyData.map((item, index) => (
-                  <tr key={`${item.date}_${item.driver_id}`} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="p-3">{format(new Date(item.date), "dd/MM/yyyy")}</td>
-                    <td className="p-3">{item.driver_name}</td>
-                    <td className="p-3 text-center">{item.loads_count}</td>
-                    <td className="p-3 text-center">{item.quantity.toLocaleString()}</td>
-                    <td className="p-3 text-center font-semibold text-red-600">
-                      {item.net_due.toLocaleString()} ر.س
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   );
 };
