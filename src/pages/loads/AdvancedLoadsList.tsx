@@ -127,7 +127,13 @@ const AdvancedLoadsList = () => {
   const normalizeDate = (date: string | null | undefined): string => {
     if (!date) return '';
     try {
-      return new Date(date).toISOString().split('T')[0];
+      // استخدام التاريخ المحلي بدلاً من UTC لتجنب مشاكل المنطقة الزمنية
+      if (date.includes('T')) {
+        // إذا كان التاريخ يحتوي على وقت، استخرج التاريخ فقط
+        return date.split('T')[0];
+      }
+      // إذا كان تاريخ فقط، أعده كما هو
+      return date;
     } catch {
       return '';
     }
@@ -218,7 +224,10 @@ const AdvancedLoadsList = () => {
         const dateB = b.date ? new Date(b.date).getTime() : 0;
         comparison = dateA - dateB;
       } else if (sortField === 'load_number') {
-        comparison = (a.load_number || '').localeCompare(b.load_number || '');
+        // استخدام مقارنة رقمية لرقم الشحنة
+        const numA = parseInt((a.load_number || '0').replace(/\D/g, ''), 10) || 0;
+        const numB = parseInt((b.load_number || '0').replace(/\D/g, ''), 10) || 0;
+        comparison = numA - numB;
       } else if (sortField === 'quantity') {
         comparison = (parseFloat(a.quantity) || 0) - (parseFloat(b.quantity) || 0);
       }
