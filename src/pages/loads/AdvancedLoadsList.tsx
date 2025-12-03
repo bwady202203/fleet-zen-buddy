@@ -120,7 +120,17 @@ const AdvancedLoadsList = () => {
   };
 
   const filteredLoads = useMemo(() => {
+    // التحقق من صحة التاريخ (منع التواريخ الخاطئة مثل 12002)
+    const isValidDate = (dateStr: string | null): boolean => {
+      if (!dateStr) return false;
+      const year = parseInt(dateStr.substring(0, 4), 10);
+      return year >= 2000 && year <= 2100;
+    };
+
     return loads.filter((load) => {
+      // تجاهل السجلات ذات التواريخ غير الصالحة
+      if (!isValidDate(load.date)) return false;
+
       // فلتر الشركة
       if (selectedCompany !== "all" && load.company_id !== selectedCompany)
         return false;
