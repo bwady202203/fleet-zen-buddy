@@ -291,30 +291,6 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
           </tbody>
         </table>
 
-        <h2 style="color: #1976d2; font-size: 16px; margin: 20px 0 10px; border-bottom: 2px solid #1976d2; padding-bottom: 8px; font-weight: 700;">التفاصيل اليومية</h2>
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-          <thead>
-            <tr style="background: #1976d2; color: white;">
-              <th style="padding: 8px 6px; text-align: right; border: 2px solid #0d47a1; font-weight: 700;">التاريخ</th>
-              <th style="padding: 8px 6px; text-align: right; border: 2px solid #0d47a1; font-weight: 700;">السائق</th>
-              <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">الرحلات</th>
-              <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700;">الكمية</th>
-              <th style="padding: 8px 6px; text-align: center; border: 2px solid #0d47a1; font-weight: 700; background: #c62828;">المستحق</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${dailyData.map((item, index) => `
-              <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f5f5f5"};">
-                <td style="padding: 6px; text-align: right; border: 2px solid #ddd;">${format(new Date(item.date), "dd/MM/yyyy")}</td>
-                <td style="padding: 6px; text-align: right; border: 2px solid #ddd;">${item.driver_name}</td>
-                <td style="padding: 6px; text-align: center; border: 2px solid #ddd;">${item.loads_count}</td>
-                <td style="padding: 6px; text-align: center; border: 2px solid #ddd;">${item.quantity.toLocaleString()}</td>
-                <td style="padding: 6px; text-align: center; border: 2px solid #ddd; font-weight: 600; color: #c62828;">${item.net_due.toLocaleString()}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-
         <div style="margin-top: 20px; text-align: center; color: #999; font-size: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
           تم الإنشاء في: ${format(new Date(), "dd/MM/yyyy HH:mm")}
         </div>
