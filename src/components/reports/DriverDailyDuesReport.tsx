@@ -314,15 +314,19 @@ const DriverDailyDuesReport = ({ startDate, endDate }: DriverDailyDuesReportProp
 
       let heightLeft = imgHeight;
       let position = margin;
+      let yOffset = 0;
 
       pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
       heightLeft -= pageHeight - 2 * margin;
+      yOffset += pageHeight - 2 * margin;
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        // Position image with 10mm margin at top of new page
+        const newPosition = margin - yOffset;
+        pdf.addImage(imgData, "PNG", margin, newPosition, imgWidth, imgHeight);
         heightLeft -= pageHeight - 2 * margin;
+        yOffset += pageHeight - 2 * margin;
       }
 
       const fileName = `مستحقات_السائقين_${format(new Date(startDate), "yyyy-MM-dd")}_${format(new Date(endDate), "yyyy-MM-dd")}.pdf`;
