@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      advanced_loads_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          filter_company_id: string | null
+          filter_driver_id: string | null
+          filter_end_date: string | null
+          filter_load_type_id: string | null
+          filter_search_text: string | null
+          filter_start_date: string | null
+          id: string
+          loads_data: Json | null
+          notes: string | null
+          organization_id: string | null
+          report_date: string
+          report_name: string
+          total_amount: number
+          total_commission: number
+          total_loads: number
+          total_quantity: number
+          unique_companies: number
+          unique_drivers: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          filter_company_id?: string | null
+          filter_driver_id?: string | null
+          filter_end_date?: string | null
+          filter_load_type_id?: string | null
+          filter_search_text?: string | null
+          filter_start_date?: string | null
+          id?: string
+          loads_data?: Json | null
+          notes?: string | null
+          organization_id?: string | null
+          report_date?: string
+          report_name: string
+          total_amount?: number
+          total_commission?: number
+          total_loads?: number
+          total_quantity?: number
+          unique_companies?: number
+          unique_drivers?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          filter_company_id?: string | null
+          filter_driver_id?: string | null
+          filter_end_date?: string | null
+          filter_load_type_id?: string | null
+          filter_search_text?: string | null
+          filter_start_date?: string | null
+          id?: string
+          loads_data?: Json | null
+          notes?: string | null
+          organization_id?: string | null
+          report_date?: string
+          report_name?: string
+          total_amount?: number
+          total_commission?: number
+          total_loads?: number
+          total_quantity?: number
+          unique_companies?: number
+          unique_drivers?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advanced_loads_reports_filter_company_id_fkey"
+            columns: ["filter_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advanced_loads_reports_filter_driver_id_fkey"
+            columns: ["filter_driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advanced_loads_reports_filter_load_type_id_fkey"
+            columns: ["filter_load_type_id"]
+            isOneToOne: false
+            referencedRelation: "load_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advanced_loads_reports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           attendance_date: string
