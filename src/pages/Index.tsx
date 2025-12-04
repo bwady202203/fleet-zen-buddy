@@ -3,7 +3,7 @@ import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt, Edit } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
@@ -24,8 +24,9 @@ const Index = () => {
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
-      const matchesSearch = vehicle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           vehicle.type.toLowerCase().includes(searchQuery.toLowerCase());
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = vehicle.name.toLowerCase().includes(searchLower) ||
+                           vehicle.licensePlate.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === "all" || vehicle.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -143,6 +144,12 @@ const Index = () => {
                     تسجيل عدة مركبات
                   </Button>
                 </Link>
+                <Link to="/edit-vehicles">
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 ml-2" />
+                    تعديل الأسماء
+                  </Button>
+                </Link>
                 <Button variant="outline" size="sm" onClick={exportToExcel} title="تصدير إلى Excel">
                   <FileSpreadsheet className="h-4 w-4 ml-2" />
                   تصدير Excel
@@ -197,7 +204,7 @@ const Index = () => {
               <div className="relative flex-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="ابحث عن المركبات..." 
+                  placeholder="ابحث بالاسم أو رقم اللوحة..." 
                   className="pr-9 text-right"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
