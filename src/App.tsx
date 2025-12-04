@@ -80,6 +80,7 @@ import StockMovement from "./pages/StockMovement";
 import VehicleMileageReport from "./pages/VehicleMileageReport";
 import PurchasePriceHistory from "./pages/PurchasePriceHistory";
 import BulkVehicles from "./pages/BulkVehicles";
+import EditVehicles from "./pages/EditVehicles";
 import VehicleMaintenanceCosts from "./pages/VehicleMaintenanceCosts";
 import VehicleCostReport from "./pages/VehicleCostReport";
 import MaintenancePurchaseInvoices from "./pages/MaintenancePurchaseInvoices";
@@ -176,6 +177,7 @@ const App = () => {
                                   <Route path="/vehicle-mileage" element={<VehicleMileageReport />} />
                                   <Route path="/price-history" element={<PurchasePriceHistory />} />
                                   <Route path="/bulk-vehicles" element={<BulkVehicles />} />
+                                  <Route path="/edit-vehicles" element={<EditVehicles />} />
                                   <Route path="/custody" element={<CustodyHome />} />
                                   <Route path="/custody/representatives" element={<CustodyRepresentatives />} />
                                   <Route path="/custody/transfers" element={<CustodyTransfers />} />
