@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,15 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { ArrowRight, Printer } from "lucide-react";
+import { ArrowRight, Printer, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toHijri } from "hijri-converter";
@@ -56,6 +48,23 @@ const getGregorianDate = (): string => {
   });
 };
 
+// Custom hook for debounce
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 interface Account {
   id: string;
   code: string;
@@ -68,13 +77,6 @@ interface Branch {
   code: string;
   name_ar: string;
   name_en: string;
-}
-
-interface JournalEntry {
-  id: string;
-  entry_number: string;
-  date: string;
-  description: string | null;
 }
 
 interface LedgerEntry {
@@ -99,6 +101,10 @@ export default function LedgerNew() {
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [accountSearchQuery, setAccountSearchQuery] = useState<string>("");
+  
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(accountSearchQuery, 300);
 
   useEffect(() => {
     fetchAccounts();
@@ -140,6 +146,20 @@ export default function LedgerNew() {
       toast.error("خطأ في جلب الفروع: " + error.message);
     }
   };
+
+  // Filter accounts based on search query (partial match)
+  const filteredAccounts = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) {
+      return accounts;
+    }
+    
+    const query = debouncedSearchQuery.toLowerCase().trim();
+    return accounts.filter(account => 
+      account.name_ar.toLowerCase().includes(query) ||
+      account.name_en.toLowerCase().includes(query) ||
+      account.code.toLowerCase().includes(query)
+    );
+  }, [accounts, debouncedSearchQuery]);
 
   const fetchLedgerEntries = async () => {
     if (!selectedAccount) return;
@@ -243,7 +263,7 @@ export default function LedgerNew() {
 
       setLedgerEntries(entries);
     } catch (error: any) {
-      toast.error("خطأ في جلب قيود دفتر الأستاذ: " + error.message);
+      toast.error("خطأ في جلب قيود كشف الحساب: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -251,6 +271,11 @@ export default function LedgerNew() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleAccountSelect = (accountId: string) => {
+    setSelectedAccount(accountId);
+    setAccountSearchQuery("");
   };
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount);
@@ -262,15 +287,14 @@ export default function LedgerNew() {
     : openingBalance;
 
   return (
-    <div className="container mx-auto p-6 print:p-0" dir="rtl">
-      {/* Header */}
+    <div className="container mx-auto p-6 print:p-0 ledger-report-container" dir="rtl">
+      {/* Navigation Header - Hidden during print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate("/accounting")}>
             <ArrowRight className="ml-2" />
             العودة
           </Button>
-          <h1 className="text-3xl font-bold">دفتر الأستاذ</h1>
         </div>
         <Button onClick={handlePrint} disabled={!selectedAccount || ledgerEntries.length === 0}>
           <Printer className="ml-2" />
@@ -278,11 +302,70 @@ export default function LedgerNew() {
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Report Header - Visible in both view and print */}
+      <div className="mb-6 report-header">
+        <h1 className="text-3xl font-bold text-center mb-4">كشف الحساب</h1>
+        <div className="text-right space-y-1">
+          <p className="text-sm text-muted-foreground">التاريخ: {getGregorianDate()}</p>
+          {(startDate || endDate) && (
+            <p className="text-sm text-muted-foreground">
+              الفترة: {startDate ? `من ${startDate}` : ""} {endDate ? `إلى ${endDate}` : ""}
+            </p>
+          )}
+          {selectedAccountData && (
+            <p className="text-base font-medium">
+              الحساب: {selectedAccountData.code} - {selectedAccountData.name_ar}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Filters - Hidden during print */}
       <Card className="p-6 mb-6 print:hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Account Search */}
+          <div className="lg:col-span-2">
+            <Label>بحث عن اسم الحساب</Label>
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="اكتب للبحث عن الحساب..."
+                value={accountSearchQuery}
+                onChange={(e) => setAccountSearchQuery(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            
+            {/* Search Results */}
+            {accountSearchQuery.trim() && (
+              <div className="mt-2 max-h-48 overflow-y-auto border border-border rounded-md bg-background shadow-sm">
+                {filteredAccounts.length === 0 ? (
+                  <div className="p-3 text-center text-muted-foreground text-sm">
+                    لا توجد نتائج
+                  </div>
+                ) : (
+                  filteredAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className={`p-3 cursor-pointer hover:bg-muted transition-colors border-b border-border last:border-b-0 ${
+                        selectedAccount === account.id ? "bg-muted" : ""
+                      }`}
+                      onClick={() => handleAccountSelect(account.id)}
+                    >
+                      <span className="font-medium">{account.code}</span>
+                      <span className="mx-2">-</span>
+                      <span>{account.name_ar}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Account Select (Alternative) */}
           <div>
-            <Label>الحساب *</Label>
+            <Label>اختر الحساب</Label>
             <Select value={selectedAccount} onValueChange={setSelectedAccount}>
               <SelectTrigger>
                 <SelectValue placeholder="اختر الحساب" />
@@ -291,23 +374,6 @@ export default function LedgerNew() {
                 {accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.code} - {account.name_ar}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>الفرع</Label>
-            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختر الفرع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الفروع</SelectItem>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.code} - {branch.name_ar}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -332,37 +398,29 @@ export default function LedgerNew() {
             />
           </div>
         </div>
+
+        {/* Branch Filter */}
+        <div className="mt-4 max-w-xs">
+          <Label>الفرع</Label>
+          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+            <SelectTrigger>
+              <SelectValue placeholder="اختر الفرع" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">جميع الفروع</SelectItem>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.code} - {branch.name_ar}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Card>
 
       {/* Report Content */}
       {selectedAccount && (
         <Card className="p-6 print:p-0 print:shadow-none print:border-none">
-          {/* Print Header */}
-          <div className="hidden print:block mb-6 ledger-print-header">
-            <div className="flex justify-between items-start text-sm mb-4">
-              <div className="text-right">
-                <p>{getHijriDate()}</p>
-              </div>
-              <div className="text-center">
-                <p>{getCurrentTime()}</p>
-              </div>
-              <div className="text-left">
-                <p>{getGregorianDate()}</p>
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold text-center mb-4">دفتر الأستاذ</h1>
-            {selectedAccountData && (
-              <p className="text-lg text-center mb-2">
-                الحساب: {selectedAccountData.code} - {selectedAccountData.name_ar}
-              </p>
-            )}
-            {(startDate || endDate) && (
-              <p className="text-sm text-center text-muted-foreground">
-                {startDate && `من ${startDate}`} {endDate && `إلى ${endDate}`}
-              </p>
-            )}
-          </div>
-
           {/* Ledger Table */}
           <div className="overflow-x-auto">
             <table className="ledger-table w-full border-collapse">
@@ -446,11 +504,11 @@ export default function LedgerNew() {
             visibility: hidden;
           }
           
-          .container, .container * {
+          .ledger-report-container, .ledger-report-container * {
             visibility: visible;
           }
           
-          .container {
+          .ledger-report-container {
             position: absolute;
             right: 0;
             top: 0;
@@ -468,23 +526,22 @@ export default function LedgerNew() {
             display: none !important;
           }
           
-          .print\\:block {
-            display: block !important;
-          }
-          
-          /* Print header styling */
-          .ledger-print-header {
+          /* Report header styling for print */
+          .report-header {
             page-break-after: avoid;
+            margin-bottom: 20px !important;
           }
           
-          .ledger-print-header h1 {
-            font-size: 18pt !important;
+          .report-header h1 {
+            font-size: 20pt !important;
             font-weight: bold !important;
-            margin-bottom: 10px !important;
+            text-align: center !important;
+            margin-bottom: 15px !important;
           }
           
-          .ledger-print-header p {
-            font-size: 10pt !important;
+          .report-header p {
+            font-size: 11pt !important;
+            text-align: right !important;
           }
           
           /* Table styling */
