@@ -22,6 +22,39 @@ import {
 import { ArrowRight, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { toHijri } from "hijri-converter";
+
+// Helper function to format numbers with thousand separators
+const formatNumber = (num: number): string => {
+  return num.toLocaleString('ar-SA', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  });
+};
+
+// Helper function to get current Hijri date
+const getHijriDate = (): string => {
+  const today = new Date();
+  const hijri = toHijri(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  return `${hijri.hd}/${hijri.hm}/${hijri.hy} هـ`;
+};
+
+// Helper function to get current time
+const getCurrentTime = (): string => {
+  return new Date().toLocaleTimeString('ar-SA', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+};
+
+// Helper function to get current Gregorian date
+const getGregorianDate = (): string => {
+  return new Date().toLocaleDateString('ar-SA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
 
 interface Account {
   id: string;
@@ -303,91 +336,98 @@ export default function LedgerNew() {
 
       {/* Report Content */}
       {selectedAccount && (
-        <Card className="p-6">
+        <Card className="p-6 print:p-0 print:shadow-none print:border-none">
           {/* Print Header */}
-          <div className="hidden print:block text-center mb-6">
-            <h1 className="text-2xl font-bold mb-2">دفتر الأستاذ</h1>
+          <div className="hidden print:block mb-6 ledger-print-header">
+            <div className="flex justify-between items-start text-sm mb-4">
+              <div className="text-right">
+                <p>{getHijriDate()}</p>
+              </div>
+              <div className="text-center">
+                <p>{getCurrentTime()}</p>
+              </div>
+              <div className="text-left">
+                <p>{getGregorianDate()}</p>
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-center mb-4">دفتر الأستاذ</h1>
             {selectedAccountData && (
-              <p className="text-lg">
+              <p className="text-lg text-center mb-2">
                 الحساب: {selectedAccountData.code} - {selectedAccountData.name_ar}
               </p>
             )}
-            {startDate && endDate && (
-              <p className="text-sm text-muted-foreground">
-                من {startDate} إلى {endDate}
+            {(startDate || endDate) && (
+              <p className="text-sm text-center text-muted-foreground">
+                {startDate && `من ${startDate}`} {endDate && `إلى ${endDate}`}
               </p>
             )}
           </div>
 
           {/* Ledger Table */}
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">التاريخ</TableHead>
-                  <TableHead className="text-right">البيان</TableHead>
-                  <TableHead className="text-right">المرجع</TableHead>
-                  <TableHead className="text-right">الفرع</TableHead>
-                  <TableHead className="text-right">مدين</TableHead>
-                  <TableHead className="text-right">دائن</TableHead>
-                  <TableHead className="text-right">الرصيد</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <table className="ledger-table w-full border-collapse">
+              <thead>
+                <tr className="ledger-table-header">
+                  <th className="text-right p-3 border border-border bg-muted/50 font-bold">التاريخ</th>
+                  <th className="text-right p-3 border border-border bg-muted/50 font-bold">البيان</th>
+                  <th className="text-right p-3 border border-border bg-muted/50 font-bold">القيد</th>
+                  <th className="text-center p-3 border border-border bg-muted/50 font-bold">المدين</th>
+                  <th className="text-center p-3 border border-border bg-muted/50 font-bold">الدائن</th>
+                  <th className="text-center p-3 border border-border bg-muted/50 font-bold">الرصيد</th>
+                </tr>
+              </thead>
+              <tbody>
                 {/* Opening Balance */}
                 {startDate && openingBalance !== 0 && (
-                  <TableRow className="font-semibold bg-muted/50">
-                    <TableCell colSpan={4}>رصيد أول المدة</TableCell>
-                    <TableCell></TableCell>
-                    <TableCell></TableCell>
-                    <TableCell>{openingBalance.toFixed(2)}</TableCell>
-                  </TableRow>
+                  <tr className="font-semibold bg-muted/30">
+                    <td colSpan={3} className="text-right p-3 border border-border">رصيد أول المدة</td>
+                    <td className="text-center p-3 border border-border">-</td>
+                    <td className="text-center p-3 border border-border">-</td>
+                    <td className="text-center p-3 border border-border">{formatNumber(openingBalance)}</td>
+                  </tr>
                 )}
 
                 {/* Entries */}
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 border border-border">
                       جاري التحميل...
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ) : ledgerEntries.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 border border-border">
                       لا توجد قيود لهذا الحساب
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ) : (
                   ledgerEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>{entry.entry_date}</TableCell>
-                      <TableCell>{entry.description || "-"}</TableCell>
-                      <TableCell>{entry.reference || "-"}</TableCell>
-                      <TableCell>
-                        {entry.branch_name || "-"}
-                      </TableCell>
-                      <TableCell>
-                        {entry.debit > 0 ? entry.debit.toFixed(2) : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {entry.credit > 0 ? entry.credit.toFixed(2) : "-"}
-                      </TableCell>
-                      <TableCell>{entry.balance.toFixed(2)}</TableCell>
-                    </TableRow>
+                    <tr key={entry.id} className="ledger-entry-row">
+                      <td className="text-right p-3 border border-border">{entry.entry_date}</td>
+                      <td className="text-right p-3 border border-border">{entry.description || "-"}</td>
+                      <td className="text-right p-3 border border-border">{entry.reference || "-"}</td>
+                      <td className="text-center p-3 border border-border">
+                        {entry.debit > 0 ? formatNumber(entry.debit) : "-"}
+                      </td>
+                      <td className="text-center p-3 border border-border">
+                        {entry.credit > 0 ? formatNumber(entry.credit) : "-"}
+                      </td>
+                      <td className="text-center p-3 border border-border font-medium">{formatNumber(entry.balance)}</td>
+                    </tr>
                   ))
                 )}
 
                 {/* Totals */}
                 {ledgerEntries.length > 0 && (
-                  <TableRow className="font-bold bg-muted">
-                    <TableCell colSpan={4}>الإجمالي</TableCell>
-                    <TableCell>{totalDebit.toFixed(2)}</TableCell>
-                    <TableCell>{totalCredit.toFixed(2)}</TableCell>
-                    <TableCell>{closingBalance.toFixed(2)}</TableCell>
-                  </TableRow>
+                  <tr className="font-bold bg-muted ledger-totals-row">
+                    <td colSpan={3} className="text-right p-3 border border-border">الإجمالي</td>
+                    <td className="text-center p-3 border border-border">{formatNumber(totalDebit)}</td>
+                    <td className="text-center p-3 border border-border">{formatNumber(totalCredit)}</td>
+                    <td className="text-center p-3 border border-border">{formatNumber(closingBalance)}</td>
+                  </tr>
                 )}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </Card>
       )}
@@ -395,23 +435,122 @@ export default function LedgerNew() {
       {/* Print Styles */}
       <style>{`
         @media print {
+          /* Page setup */
+          @page {
+            size: A4 portrait;
+            margin: 2cm;
+          }
+          
+          /* Hide everything except report */
           body * {
             visibility: hidden;
           }
+          
           .container, .container * {
             visibility: visible;
           }
+          
           .container {
             position: absolute;
-            left: 0;
+            right: 0;
             top: 0;
             width: 100%;
+            direction: rtl;
+            font-family: 'Cairo', 'Arial', sans-serif;
+            font-size: 11pt;
+            color: #000 !important;
+            background: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
+          
           .print\\:hidden {
             display: none !important;
           }
+          
           .print\\:block {
             display: block !important;
+          }
+          
+          /* Print header styling */
+          .ledger-print-header {
+            page-break-after: avoid;
+          }
+          
+          .ledger-print-header h1 {
+            font-size: 18pt !important;
+            font-weight: bold !important;
+            margin-bottom: 10px !important;
+          }
+          
+          .ledger-print-header p {
+            font-size: 10pt !important;
+          }
+          
+          /* Table styling */
+          .ledger-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 10pt !important;
+            margin-top: 15px !important;
+          }
+          
+          .ledger-table th,
+          .ledger-table td {
+            border: 1px solid #333 !important;
+            padding: 8px 10px !important;
+            text-align: right !important;
+            background-color: transparent !important;
+          }
+          
+          .ledger-table th {
+            background-color: #f0f0f0 !important;
+            font-weight: bold !important;
+            font-size: 11pt !important;
+          }
+          
+          /* Number columns centered */
+          .ledger-table td:nth-child(4),
+          .ledger-table td:nth-child(5),
+          .ledger-table td:nth-child(6),
+          .ledger-table th:nth-child(4),
+          .ledger-table th:nth-child(5),
+          .ledger-table th:nth-child(6) {
+            text-align: center !important;
+          }
+          
+          /* Repeat table header on each page */
+          .ledger-table thead {
+            display: table-header-group !important;
+          }
+          
+          /* Prevent row breaking across pages */
+          .ledger-entry-row {
+            page-break-inside: avoid !important;
+          }
+          
+          /* Totals row styling */
+          .ledger-totals-row {
+            background-color: #e8e8e8 !important;
+            font-weight: bold !important;
+            page-break-before: avoid !important;
+          }
+          
+          /* Card styling for print */
+          .print\\:shadow-none {
+            box-shadow: none !important;
+          }
+          
+          .print\\:border-none {
+            border: none !important;
+          }
+          
+          /* Page numbering */
+          @page {
+            @bottom-right {
+              content: counter(page) " / " counter(pages);
+              font-size: 10pt;
+            }
           }
         }
       `}</style>
