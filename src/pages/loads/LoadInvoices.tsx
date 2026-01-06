@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import QRCode from "qrcode";
+import ZATCAQRCode from "@/components/ZATCAQRCode";
 import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
 import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
 import jsPDF from "jspdf";
@@ -30,7 +30,7 @@ const LoadInvoices = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  // ZATCA QR data - removed qrCodeUrl, using component instead
   const [loading, setLoading] = useState(false);
   const [companySettings, setCompanySettings] = useState<any>(null);
   const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
@@ -333,24 +333,6 @@ const LoadInvoices = () => {
         .maybeSingle();
       if (data) setCompanySettings(data);
     }
-    
-    // Generate QR Code with company tax number
-    const qrData = `الشركة: ${companySettings?.company_name || 'شركة الرمال الصناعية'}
-الرقم الضريبي: ${companySettings?.tax_number || ''}
-رقم الفاتورة: ${invoice.invoice_number}
-التاريخ: ${invoice.date}
-المبلغ الإجمالي: ${invoice.total_amount} ر.س
-ضريبة القيمة المضافة: ${invoice.tax_amount} ر.س`;
-    
-    const qrUrl = await QRCode.toDataURL(qrData, {
-      width: 200,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
-    setQrCodeUrl(qrUrl);
     
     setViewDialogOpen(true);
   };
@@ -1069,13 +1051,20 @@ const LoadInvoices = () => {
                       </div>
                     </div>
 
-                    {/* QR Code in the center */}
-                    {qrCodeUrl && (
-                      <div className="text-center flex-shrink-0">
-                        <h2 className="text-base font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية</h2>
-                        <img src={qrCodeUrl} alt="QR Code" className="w-28 h-28 border-2 p-1" style={{ borderColor: '#2563eb' }} />
-                      </div>
-                    )}
+                    {/* QR Code in the center - ZATCA Compliant */}
+                    <div className="text-center flex-shrink-0">
+                      <h2 className="text-base font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية</h2>
+                      <h3 className="text-xs font-medium mb-2" style={{ color: '#2563eb' }}>Tax Invoice</h3>
+                      <ZATCAQRCode
+                        sellerName={selectedSupplier?.name || companySettings?.supplier_name || 'اسم المورد'}
+                        vatNumber={selectedSupplier?.tax_number || companySettings?.tax_number || ''}
+                        totalAmount={selectedInvoice.total_amount || 0}
+                        vatAmount={selectedInvoice.tax_amount || 0}
+                        invoiceDate={selectedInvoice.date}
+                        size={112}
+                      />
+                      <p className="text-[8px] mt-1 text-gray-500">متوافق مع هيئة الزكاة والضريبة والجمارك</p>
+                    </div>
 
                     {/* English Section - Supplier Info */}
                     <div className="flex-1 text-left" dir="ltr">
