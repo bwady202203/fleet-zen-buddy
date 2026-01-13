@@ -37,14 +37,14 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin
+    // Check if user is admin (user may have multiple roles across organizations)
     const { data: roleData, error: roleError } = await supabaseClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .single();
+      .eq('role', 'admin');
 
-    if (roleError || roleData?.role !== 'admin') {
+    if (roleError || !roleData || roleData.length === 0) {
       throw new Error('Only admins can change user passwords');
     }
 
