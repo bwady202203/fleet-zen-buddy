@@ -399,11 +399,6 @@ const UsersManagement = () => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (masterPassword !== '6544743') {
-      toast.error('كلمة المرور السرية غير صحيحة');
-      return;
-    }
-
     if (newPassword.length < 6) {
       toast.error('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
       return;
@@ -837,21 +832,6 @@ const UsersManagement = () => {
               <DialogTitle>تغيير كلمة المرور</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="masterPassword">كلمة المرور السرية</Label>
-                <Input
-                  id="masterPassword"
-                  type="password"
-                  value={masterPassword}
-                  onChange={(e) => setMasterPassword(e.target.value)}
-                  placeholder="أدخل كلمة المرور السرية"
-                  required
-                  dir="ltr"
-                />
-                <p className="text-xs text-muted-foreground">
-                  يجب إدخال كلمة المرور السرية للمتابعة
-                </p>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
                 <Input
