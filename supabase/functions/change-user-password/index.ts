@@ -48,12 +48,7 @@ serve(async (req) => {
       throw new Error('Only admins can change user passwords');
     }
 
-    const { userId, masterPassword, newPassword } = await req.json();
-
-    // Validate master password
-    if (masterPassword !== '6544743') {
-      throw new Error('Invalid master password');
-    }
+    const { userId, newPassword } = await req.json();
 
     if (!userId || !newPassword) {
       throw new Error('Missing required fields');
