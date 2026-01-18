@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
@@ -18,6 +17,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import CustodyNavbar from '@/components/CustodyNavbar';
 import ExpenseTypeSelectorDialog from '@/components/ExpenseTypeSelectorDialog';
 import RepresentativeSelectorDialog from '@/components/RepresentativeSelectorDialog';
+import TaxOptionDialog from '@/components/TaxOptionDialog';
+import CalculatorAmountDialog from '@/components/CalculatorAmountDialog';
 
 interface Representative {
   id: string;
@@ -61,6 +62,9 @@ const CustodyExpenses = () => {
   const [description, setDescription] = useState('');
   const [expenseTypeDialogOpen, setExpenseTypeDialogOpen] = useState(false);
   const [representativeDialogOpen, setRepresentativeDialogOpen] = useState(false);
+  const [taxOptionDialogOpen, setTaxOptionDialogOpen] = useState(false);
+  const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
+  const [withTax, setWithTax] = useState(true);
 
   useEffect(() => {
     fetchRepresentatives();
@@ -180,18 +184,32 @@ const CustodyExpenses = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle expense type selection - opens tax option dialog
+  const handleExpenseTypeSelected = (type: ExpenseType) => {
+    setExpenseType(type.id);
+    setSelectedExpenseTypeName(type.name_ar);
+    // Open tax option dialog after selecting expense type
+    setTaxOptionDialogOpen(true);
+  };
 
-    if (!selectedRepId || !expenseType || !amount) {
-      toast.error('الرجاء ملء جميع الحقول المطلوبة');
+  // Handle tax option selection - opens calculator dialog
+  const handleTaxOptionSelected = (hasTax: boolean) => {
+    setWithTax(hasTax);
+    // Open calculator dialog after selecting tax option
+    setCalculatorDialogOpen(true);
+  };
+
+  // Handle calculator confirm - saves the expense
+  const handleCalculatorConfirm = async (enteredAmount: number) => {
+    if (!selectedRepId || !expenseType) {
+      toast.error('الرجاء اختيار المندوب ونوع المصروف');
       return;
     }
 
     try {
-      const baseAmount = parseFloat(amount);
-      const tax = parseFloat(taxAmount) || 0;
-      const total = parseFloat(totalAmount) || baseAmount;
+      const baseAmount = enteredAmount;
+      const tax = withTax ? baseAmount * 0.15 : 0;
+      const total = baseAmount + tax;
 
       // Insert the expense
       const { data: expenseData, error: expenseError } = await supabase
@@ -393,121 +411,63 @@ const CustodyExpenses = () => {
           </CardContent>
         </Card>
 
-        {/* Add Expense Form */}
+        {/* Quick Add Expense Section */}
         {selectedRepId && (
           <Card>
             <CardHeader>
               <CardTitle>إضافة مصروف جديد</CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>التاريخ *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-right font-normal",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="ml-2 h-4 w-4" />
-                          {date ? format(date, 'PPP', { locale: ar }) : <span>اختر التاريخ</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={(date) => date && setDate(date)}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>نوع المصروف *</Label>
+            <CardContent className="space-y-4">
+              {/* Date Selection */}
+              <div className="flex items-center gap-4">
+                <Label className="min-w-20">التاريخ:</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <Button
-                      type="button"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-right font-normal h-10",
-                        !expenseType && "text-muted-foreground"
+                        "flex-1 justify-start text-right font-normal",
+                        !date && "text-muted-foreground"
                       )}
-                      onClick={() => setExpenseTypeDialogOpen(true)}
                     >
-                      <Grid3X3 className="ml-2 h-4 w-4" />
-                      {selectedExpenseTypeName || "اختر نوع المصروف"}
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {date ? format(date, 'PPP', { locale: ar }) : <span>اختر التاريخ</span>}
                     </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">المبلغ (قبل الضريبة) *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      value={amount}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setAmount(val);
-                        const base = parseFloat(val) || 0;
-                        const tax = base * 0.15; // 15% tax
-                        setTaxAmount(tax.toFixed(2));
-                        setTotalAmount((base + tax).toFixed(2));
-                      }}
-                      placeholder="0.00"
-                      required
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(date) => date && setDate(date)}
+                      initialFocus
+                      className="pointer-events-auto"
                     />
-                  </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="taxAmount">الضريبة (15%)</Label>
-                    <Input
-                      id="taxAmount"
-                      type="number"
-                      step="0.01"
-                      value={taxAmount}
-                      placeholder="0.00"
-                      readOnly
-                      className="bg-muted"
-                    />
-                  </div>
+              {/* Big Button to Start Expense Flow */}
+              <Button
+                type="button"
+                size="lg"
+                className="w-full h-16 text-xl"
+                onClick={() => setExpenseTypeDialogOpen(true)}
+              >
+                <Plus className="ml-3 h-6 w-6" />
+                إضافة مصروف جديد
+              </Button>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="totalAmount">الإجمالي</Label>
-                    <Input
-                      id="totalAmount"
-                      type="number"
-                      step="0.01"
-                      value={totalAmount}
-                      placeholder="0.00"
-                      readOnly
-                      className="bg-muted"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">الوصف</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="أدخل وصف المصروف"
-                    rows={3}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full">
-                  <Plus className="ml-2 h-4 w-4" />
-                  إضافة مصروف
-                </Button>
-              </form>
+              {/* Optional Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">ملاحظات (اختياري)</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="أدخل ملاحظات إضافية..."
+                  rows={2}
+                />
+              </div>
             </CardContent>
           </Card>
         )}
@@ -575,10 +535,23 @@ const CustodyExpenses = () => {
           onOpenChange={setExpenseTypeDialogOpen}
           expenseTypes={expenseTypes}
           selectedId={expenseType}
-          onSelect={(type) => {
-            setExpenseType(type.id);
-            setSelectedExpenseTypeName(type.name_ar);
-          }}
+          onSelect={handleExpenseTypeSelected}
+        />
+
+        {/* Tax Option Dialog */}
+        <TaxOptionDialog
+          open={taxOptionDialogOpen}
+          onOpenChange={setTaxOptionDialogOpen}
+          onSelect={handleTaxOptionSelected}
+        />
+
+        {/* Calculator Amount Dialog */}
+        <CalculatorAmountDialog
+          open={calculatorDialogOpen}
+          onOpenChange={setCalculatorDialogOpen}
+          onConfirm={handleCalculatorConfirm}
+          withTax={withTax}
+          expenseTypeName={selectedExpenseTypeName}
         />
       </main>
     </div>
