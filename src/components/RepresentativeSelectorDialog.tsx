@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { User, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
@@ -35,6 +36,64 @@ const RepresentativeSelectorDialog = ({
   onSelect,
   selectedId
 }: RepresentativeSelectorDialogProps) => {
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const columns = 3; // Number of columns in the grid
+
+  // Reset focused index when dialog opens
+  useEffect(() => {
+    if (open) {
+      const currentIndex = representatives.findIndex(r => r.id === selectedId);
+      setFocusedIndex(currentIndex >= 0 ? currentIndex : 0);
+    }
+  }, [open, selectedId, representatives]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!open || representatives.length === 0) return;
+
+    const totalItems = representatives.length;
+
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        setFocusedIndex(prev => (prev - 1 + totalItems) % totalItems);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        setFocusedIndex(prev => (prev + 1) % totalItems);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex(prev => {
+          const newIndex = prev - columns;
+          return newIndex >= 0 ? newIndex : prev;
+        });
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex(prev => {
+          const newIndex = prev + columns;
+          return newIndex < totalItems ? newIndex : prev;
+        });
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (representatives[focusedIndex]) {
+          onSelect(representatives[focusedIndex]);
+          onOpenChange(false);
+        }
+        break;
+    }
+  }, [open, representatives, focusedIndex, columns, onSelect, onOpenChange]);
+
+  useEffect(() => {
+    if (open) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" dir="rtl">
@@ -46,6 +105,7 @@ const RepresentativeSelectorDialog = ({
           {representatives.map((rep, index) => {
             const colorClass = cardColors[index % cardColors.length];
             const isSelected = selectedId === rep.id;
+            const isFocused = focusedIndex === index;
             const balance = rep.balance || 0;
             
             return (
@@ -58,7 +118,8 @@ const RepresentativeSelectorDialog = ({
                 className={cn(
                   "flex flex-col p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer text-right",
                   colorClass,
-                  isSelected && "ring-2 ring-primary ring-offset-2 scale-[1.02] border-primary"
+                  isSelected && "ring-2 ring-primary ring-offset-2 scale-[1.02] border-primary",
+                  isFocused && "ring-2 ring-blue-500 ring-offset-2 scale-[1.02] shadow-lg"
                 )}
               >
                 {/* Header with icon and name */}
