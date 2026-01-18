@@ -10,13 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, Trash2, Grid3X3 } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Grid3X3, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import CustodyNavbar from '@/components/CustodyNavbar';
 import ExpenseTypeSelectorDialog from '@/components/ExpenseTypeSelectorDialog';
+import RepresentativeSelectorDialog from '@/components/RepresentativeSelectorDialog';
 
 interface Representative {
   id: string;
@@ -59,6 +60,7 @@ const CustodyExpenses = () => {
   const [totalAmount, setTotalAmount] = useState('');
   const [description, setDescription] = useState('');
   const [expenseTypeDialogOpen, setExpenseTypeDialogOpen] = useState(false);
+  const [representativeDialogOpen, setRepresentativeDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchRepresentatives();
@@ -352,18 +354,18 @@ const CustodyExpenses = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>المندوب</Label>
-              <Select value={selectedRepId} onValueChange={setSelectedRepId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر المندوب" />
-                </SelectTrigger>
-                <SelectContent>
-                  {representatives.map((rep) => (
-                    <SelectItem key={rep.id} value={rep.id}>
-                      {rep.name_ar} ({rep.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-right font-normal h-12",
+                  !selectedRepId && "text-muted-foreground"
+                )}
+                onClick={() => setRepresentativeDialogOpen(true)}
+              >
+                <User className="ml-2 h-5 w-5" />
+                {selectedRep ? `${selectedRep.name_ar} (${selectedRep.code})` : "اختر المندوب"}
+              </Button>
             </div>
 
             {selectedRep && (
@@ -554,6 +556,18 @@ const CustodyExpenses = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Representative Selector Dialog */}
+        <RepresentativeSelectorDialog
+          open={representativeDialogOpen}
+          onOpenChange={setRepresentativeDialogOpen}
+          representatives={representatives}
+          selectedId={selectedRepId}
+          onSelect={(rep) => {
+            setSelectedRepId(rep.id);
+            setSelectedRep(rep);
+          }}
+        />
 
         {/* Expense Type Selector Dialog */}
         <ExpenseTypeSelectorDialog
