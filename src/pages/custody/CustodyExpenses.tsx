@@ -10,12 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Grid3X3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import CustodyNavbar from '@/components/CustodyNavbar';
+import ExpenseTypeSelectorDialog from '@/components/ExpenseTypeSelectorDialog';
 
 interface Representative {
   id: string;
@@ -52,10 +53,12 @@ const CustodyExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [date, setDate] = useState<Date>(new Date());
   const [expenseType, setExpenseType] = useState('');
+  const [selectedExpenseTypeName, setSelectedExpenseTypeName] = useState('');
   const [amount, setAmount] = useState('');
   const [taxAmount, setTaxAmount] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [expenseTypeDialogOpen, setExpenseTypeDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchRepresentatives();
@@ -291,6 +294,7 @@ const CustodyExpenses = () => {
       
       // Reset form
       setExpenseType('');
+      setSelectedExpenseTypeName('');
       setAmount('');
       setTaxAmount('');
       setTotalAmount('');
@@ -425,24 +429,18 @@ const CustodyExpenses = () => {
 
                   <div className="space-y-2">
                     <Label>نوع المصروف *</Label>
-                    <Select value={expenseType} onValueChange={setExpenseType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر نوع المصروف" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {expenseTypes.length === 0 ? (
-                          <SelectItem value="no-data" disabled>
-                            لا يوجد أنواع مصروفات (تحقق من حساب 5104)
-                          </SelectItem>
-                        ) : (
-                          expenseTypes.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {type.name_ar} ({type.code})
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal h-10",
+                        !expenseType && "text-muted-foreground"
+                      )}
+                      onClick={() => setExpenseTypeDialogOpen(true)}
+                    >
+                      <Grid3X3 className="ml-2 h-4 w-4" />
+                      {selectedExpenseTypeName || "اختر نوع المصروف"}
+                    </Button>
                   </div>
 
                   <div className="space-y-2">
@@ -556,6 +554,18 @@ const CustodyExpenses = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Expense Type Selector Dialog */}
+        <ExpenseTypeSelectorDialog
+          open={expenseTypeDialogOpen}
+          onOpenChange={setExpenseTypeDialogOpen}
+          expenseTypes={expenseTypes}
+          selectedId={expenseType}
+          onSelect={(type) => {
+            setExpenseType(type.id);
+            setSelectedExpenseTypeName(type.name_ar);
+          }}
+        />
       </main>
     </div>
   );
