@@ -79,6 +79,31 @@ const CustodyExpenses = () => {
     }
   }, [selectedRepId, representatives]);
 
+  // Handle "+" key to open add expense dialog
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if any dialog is already open
+      if (expenseTypeDialogOpen || taxOptionDialogOpen || calculatorDialogOpen || representativeDialogOpen) {
+        return;
+      }
+      
+      // Check if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // Open expense type dialog on "+" key press (only if representative is selected)
+      if ((e.key === '+' || e.key === '=') && selectedRepId) {
+        e.preventDefault();
+        setExpenseTypeDialogOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedRepId, expenseTypeDialogOpen, taxOptionDialogOpen, calculatorDialogOpen, representativeDialogOpen]);
+
   const fetchRepresentatives = async () => {
     try {
       // Find the custody parent account (العهد) by code 1111
