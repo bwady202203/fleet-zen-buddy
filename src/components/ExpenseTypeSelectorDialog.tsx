@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Receipt, Fuel, Wrench, Car, Truck, Phone, Zap, Droplets, Coffee, FileText, Package, DollarSign } from 'lucide-react';
@@ -74,11 +75,68 @@ const ExpenseTypeSelectorDialog = ({
   onSelect,
   selectedId
 }: ExpenseTypeSelectorDialogProps) => {
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const columnsCount = 4; // md:grid-cols-4
+
+  // Reset focused index when dialog opens
+  useEffect(() => {
+    if (open) {
+      setFocusedIndex(0);
+      // Focus first button after a short delay
+      setTimeout(() => {
+        buttonsRef.current[0]?.focus();
+      }, 100);
+    }
+  }, [open]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const totalItems = expenseTypes.length;
+    if (totalItems === 0) return;
+
+    let newIndex = focusedIndex;
+
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        // RTL: right arrow goes to previous item
+        newIndex = focusedIndex > 0 ? focusedIndex - 1 : totalItems - 1;
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        // RTL: left arrow goes to next item
+        newIndex = focusedIndex < totalItems - 1 ? focusedIndex + 1 : 0;
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        newIndex = focusedIndex - columnsCount >= 0 ? focusedIndex - columnsCount : focusedIndex;
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        newIndex = focusedIndex + columnsCount < totalItems ? focusedIndex + columnsCount : focusedIndex;
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (expenseTypes[focusedIndex]) {
+          onSelect(expenseTypes[focusedIndex]);
+          onOpenChange(false);
+        }
+        break;
+    }
+
+    if (newIndex !== focusedIndex) {
+      setFocusedIndex(newIndex);
+      buttonsRef.current[newIndex]?.focus();
+    }
+  }, [focusedIndex, expenseTypes, onSelect, onOpenChange]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" dir="rtl" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">اختر نوع المصروف</DialogTitle>
+          <p className="text-sm text-center text-muted-foreground">استخدم الأسهم للتنقل و Enter للاختيار</p>
         </DialogHeader>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4">
@@ -86,18 +144,22 @@ const ExpenseTypeSelectorDialog = ({
             const Icon = getExpenseIcon(type.name_ar, type.code);
             const colorClass = cardColors[index % cardColors.length];
             const isSelected = selectedId === type.id;
+            const isFocused = focusedIndex === index;
             
             return (
               <button
                 key={type.id}
+                ref={(el) => { buttonsRef.current[index] = el; }}
                 onClick={() => {
                   onSelect(type);
                   onOpenChange(false);
                 }}
+                onFocus={() => setFocusedIndex(index)}
                 className={cn(
-                  "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer min-h-[120px]",
+                  "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer min-h-[120px] outline-none",
                   colorClass,
-                  isSelected && "ring-2 ring-primary ring-offset-2 scale-105"
+                  isSelected && "ring-2 ring-primary ring-offset-2 scale-105",
+                  isFocused && "ring-2 ring-primary ring-offset-2 scale-105 shadow-lg"
                 )}
               >
                 <Icon className="h-8 w-8 mb-2" />
