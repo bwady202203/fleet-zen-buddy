@@ -319,14 +319,28 @@ const CustodyExpenses = () => {
       setTaxAmount('');
       setTotalAmount('');
       setDescription('');
-      setDate(new Date());
       
       // Refresh data
       fetchRepresentatives();
       if (selectedRepId) fetchExpenses(selectedRepId);
+      
+      return true; // Return success
     } catch (error) {
       console.error('Error saving expense:', error);
       toast.error('حدث خطأ أثناء حفظ البيانات');
+      return false;
+    }
+  };
+
+  // Handle save and add new - saves current and opens expense type dialog again
+  const handleConfirmAndNew = async (enteredAmount: number) => {
+    const success = await handleCalculatorConfirm(enteredAmount);
+    if (success) {
+      // Close calculator and reopen expense type dialog for new entry
+      setCalculatorDialogOpen(false);
+      setTimeout(() => {
+        setExpenseTypeDialogOpen(true);
+      }, 300);
     }
   };
 
@@ -550,6 +564,7 @@ const CustodyExpenses = () => {
           open={calculatorDialogOpen}
           onOpenChange={setCalculatorDialogOpen}
           onConfirm={handleCalculatorConfirm}
+          onConfirmAndNew={handleConfirmAndNew}
           withTax={withTax}
           expenseTypeName={selectedExpenseTypeName}
         />
