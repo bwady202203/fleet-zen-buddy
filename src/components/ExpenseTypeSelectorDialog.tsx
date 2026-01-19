@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Receipt, Fuel, Wrench, Car, Truck, Phone, Zap, Droplets, Coffee, FileText, Package, DollarSign } from 'lucide-react';
+import { Receipt, Fuel, Wrench, Car, Truck, Phone, Zap, Droplets, Coffee, FileText, Package, DollarSign, Banknote, CreditCard, Wallet, HandCoins } from 'lucide-react';
 
 interface ExpenseType {
   id: string;
@@ -50,8 +50,17 @@ const getExpenseIcon = (name: string, code: string) => {
   if (lowerName.includes('مواد') || lowerName.includes('مستلزمات')) {
     return Package;
   }
-  // Default icon
-  return Receipt;
+  if (lowerName.includes('نثريات') || lowerName.includes('متفرقات')) {
+    return Wallet;
+  }
+  if (lowerName.includes('عمولة') || lowerName.includes('سعي')) {
+    return HandCoins;
+  }
+  if (lowerName.includes('دفع') || lowerName.includes('سداد')) {
+    return CreditCard;
+  }
+  // Default icon - Banknote for expenses
+  return Banknote;
 };
 
 // Color palette for expense cards
