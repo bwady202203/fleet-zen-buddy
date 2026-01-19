@@ -79,7 +79,7 @@ const CustodyExpenses = () => {
     }
   }, [selectedRepId, representatives]);
 
-  // Handle "+" key to open add expense dialog
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if any dialog is already open
@@ -90,6 +90,13 @@ const CustodyExpenses = () => {
       // Check if user is typing in an input field
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // Open representative dialog on Enter key press (when no representative selected)
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setRepresentativeDialogOpen(true);
         return;
       }
 
