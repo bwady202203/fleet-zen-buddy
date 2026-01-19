@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, List, Filter, BookOpen, ArrowRight } from "lucide-react";
+import { Users, FileText, List, Filter, BookOpen, ArrowRight, Banknote } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CustodyHome = () => {
@@ -18,6 +18,13 @@ const CustodyHome = () => {
       icon: FileText,
       color: "from-green-500 to-green-600",
       link: "/custody/transfers"
+    },
+    {
+      title: "المصروفات",
+      description: "تسجيل وإدارة مصروفات المندوبين",
+      icon: Banknote,
+      color: "from-red-500 to-red-600",
+      link: "/custody/expenses"
     },
     {
       title: "العهد المستلمة",
