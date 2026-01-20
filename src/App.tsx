@@ -12,7 +12,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { SystemIconsBar } from "@/components/SystemIconsBar";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -108,10 +107,9 @@ const App = () => {
                           <Routes>
                             <Route path="/auth" element={<Auth />} />
                             
-                            {/* Protected Routes with Icons Bar */}
+                            {/* Protected Routes */}
                             <Route path="/*" element={
                               <ProtectedRoute>
-                                <SystemIconsBar />
                                 <Routes>
                                   <Route path="/" element={<Dashboard />} />
                                   <Route path="/users" element={<UsersManagement />} />
