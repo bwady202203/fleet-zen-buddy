@@ -3,12 +3,12 @@ import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt, Edit, Home, ArrowRight } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt, Edit, Home, ArrowRight, LogOut } from "lucide-react";
 import * as XLSX from 'xlsx';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -16,12 +16,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 const Index = () => {
   const { vehicles } = useVehicles();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentTime, setCurrentTime] = useState(new Date());
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const formatArabicDate = (date: Date) => {
+    return format(date, "EEEE، d MMMM yyyy", { locale: ar });
+  };
+
+  const formatEnglishDate = (date: Date) => {
+    return format(date, "EEEE, MMMM d, yyyy");
+  };
+
+  const formatTime = (date: Date) => {
+    return format(date, "hh:mm:ss a");
+  };
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
       const searchLower = searchQuery.toLowerCase();
@@ -82,6 +111,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      {/* شريط معلومات المستخدم */}
+      <div className="bg-muted/50 border-b py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <span className="font-medium">👤 {user?.email || 'زائر'}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="font-medium">{formatTime(currentTime)}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="font-medium">{formatArabicDate(currentTime)}</div>
+                <div className="text-muted-foreground text-xs">{formatEnglishDate(currentTime)}</div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="h-4 w-4 ml-2" />
+                خروج
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
