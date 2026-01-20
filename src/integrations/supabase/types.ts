@@ -3033,6 +3033,7 @@ export type Database = {
         Returns: string
       }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
+      get_user_organizations: { Args: { _user_id: string }; Returns: string[] }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -3045,6 +3046,7 @@ export type Database = {
         Args: { p_organization_id: string }
         Returns: undefined
       }
+      is_org_admin: { Args: { _user_id: string }; Returns: boolean }
       verify_delivery_system_user: {
         Args: { p_password: string; p_username: string }
         Returns: boolean
