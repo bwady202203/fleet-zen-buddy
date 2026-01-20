@@ -3,7 +3,7 @@ import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt, Edit, Home, ArrowRight } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt, Edit } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
@@ -85,16 +85,11 @@ const Index = () => {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/" className="hover:text-primary transition-colors">
-                <ArrowRight className="h-6 w-6" />
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary">
-                  <Truck className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary">
+                <Truck className="h-6 w-6 text-primary-foreground" />
               </div>
+              <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* قسم الإدارة */}
