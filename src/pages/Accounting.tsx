@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const Accounting = () => {
-  const { userRole } = useAuth();
+  const { userRole, user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
@@ -383,6 +383,24 @@ const Accounting = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
+          {/* عرض المستخدم الحالي */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-lg">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div>
+                <p className="font-medium text-sm">{user?.email || 'مستخدم'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {userRole === 'admin' ? 'مدير النظام' : 
+                   userRole === 'manager' ? 'مدير' :
+                   userRole === 'accountant' ? 'محاسب' :
+                   userRole === 'employee' ? 'موظف' : 'مستخدم'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link to="/" className="hover:text-primary transition-colors">
