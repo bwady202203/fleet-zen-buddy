@@ -35,6 +35,7 @@ const MODULES = [
   { id: 'fleet', name: 'إدارة الأسطول' },
   { id: 'loads', name: 'إدارة الحمولات' },
   { id: 'spare_parts', name: 'قطع الغيار' },
+  { id: 'custody', name: 'العهد' },
 ];
 
 const UsersManagement = () => {
@@ -56,7 +57,7 @@ const UsersManagement = () => {
     email: '',
     password: '',
     fullName: '',
-    role: 'user',
+    role: 'employee',
     organizationId: '',
     modules: MODULES.map(m => ({
       module_name: m.id,
@@ -236,7 +237,7 @@ const UsersManagement = () => {
           email: '', 
           password: '', 
           fullName: '', 
-          role: 'user',
+          role: 'employee',
           organizationId: '',
           modules: MODULES.map(m => ({
             module_name: m.id,
