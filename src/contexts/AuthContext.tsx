@@ -67,12 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else if (data && data.length > 0) {
-        // If user has multiple roles, prioritize: admin > manager > accountant > user
+        // If user has multiple roles, prioritize: admin > manager > accountant > employee
         const rolePriority: Record<string, number> = {
           'admin': 4,
           'manager': 3,
           'accountant': 2,
-          'user': 1
+          'employee': 1
         };
         
         const highestRole = data.reduce((highest, current) => {
