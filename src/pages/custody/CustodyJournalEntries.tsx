@@ -44,6 +44,7 @@ const CustodyJournalEntries = () => {
           entry_number,
           date,
           description,
+          reference,
           journal_entry_lines(
             id,
             debit,
@@ -57,8 +58,54 @@ const CustodyJournalEntries = () => {
 
       if (journalError) throw journalError;
 
-      console.log('Journal entries fetched:', journalData?.length);
-      setEntries((journalData || []) as any);
+      // For entries without lines (created from custody_expenses), get amounts from custody_expenses
+      const entriesWithAmounts = await Promise.all((journalData || []).map(async (entry: any) => {
+        if (entry.journal_entry_lines && entry.journal_entry_lines.length > 0) {
+          return entry;
+        }
+        
+        // Check if this is a custody expense entry
+        if (entry.reference && entry.reference.startsWith('custody_expense_')) {
+          const expenseId = entry.reference.replace('custody_expense_', '');
+          const { data: expenseData } = await supabase
+            .from('custody_expenses')
+            .select(`
+              amount,
+              description,
+              representative_id,
+              expense_type,
+              chart_of_accounts!custody_expenses_representative_id_fkey(name_ar, code),
+              expense_account:chart_of_accounts!custody_expenses_expense_type_fkey(name_ar, code)
+            `)
+            .eq('id', expenseId)
+            .maybeSingle();
+
+          if (expenseData) {
+            // Create virtual journal entry lines from the expense data
+            const virtualLines = [
+              {
+                id: `virtual-debit-${entry.id}`,
+                debit: expenseData.amount,
+                credit: 0,
+                description: expenseData.description || entry.description,
+                chart_of_accounts: expenseData.expense_account
+              },
+              {
+                id: `virtual-credit-${entry.id}`,
+                debit: 0,
+                credit: expenseData.amount,
+                description: expenseData.description || entry.description,
+                chart_of_accounts: expenseData.chart_of_accounts
+              }
+            ];
+            return { ...entry, journal_entry_lines: virtualLines };
+          }
+        }
+        return entry;
+      }));
+
+      console.log('Journal entries fetched:', entriesWithAmounts?.length);
+      setEntries(entriesWithAmounts as any);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
     } finally {
