@@ -1,4 +1,4 @@
-import { LogOut, Download } from "lucide-react";
+import { LogOut, Download, Clock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -11,13 +11,25 @@ import { toast } from "sonner";
 export const SystemIconsBar = () => {
   const { signOut, user, userRole } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [sessionStartTime] = useState(new Date());
+  const [sessionDuration, setSessionDuration] = useState("00:00:00");
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
+      
+      // حساب مدة الجلسة
+      const now = new Date();
+      const diff = now.getTime() - sessionStartTime.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setSessionDuration(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [sessionStartTime]);
 
   const handleExportData = async () => {
     try {
@@ -87,6 +99,16 @@ export const SystemIconsBar = () => {
     }
   };
 
+  const getRoleLabel = (role: string | null) => {
+    switch (role) {
+      case 'admin': return 'مدير النظام';
+      case 'manager': return 'مدير';
+      case 'accountant': return 'محاسب';
+      case 'employee': return 'موظف';
+      default: return 'مستخدم';
+    }
+  };
+
   const hijriDate = HijriDate.toHijri(
     currentTime.getFullYear(),
     currentTime.getMonth() + 1,
@@ -127,14 +149,39 @@ export const SystemIconsBar = () => {
             )}
           </div>
           
-          <Button
-            variant="ghost"
-            onClick={signOut}
-            className="flex items-center gap-2 hover:bg-destructive/10 text-destructive"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="text-sm font-medium">خروج</span>
-          </Button>
+          {/* معلومات المستخدم وعداد الجلسة */}
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="flex items-center gap-3 bg-primary/5 rounded-lg px-3 py-1.5">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-sm">
+                  {user.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-foreground truncate max-w-[150px]">
+                    {user.email}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {getRoleLabel(userRole)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-background/50 rounded px-2 py-0.5 mr-2">
+                  <Clock className="h-3 w-3 text-primary" />
+                  <span className="font-mono text-xs text-primary font-medium">
+                    {sessionDuration}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            <Button
+              variant="ghost"
+              onClick={signOut}
+              className="flex items-center gap-2 hover:bg-destructive/10 text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm font-medium">خروج</span>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
