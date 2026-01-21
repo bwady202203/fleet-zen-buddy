@@ -36,32 +36,7 @@ const CustodyJournalEntries = () => {
 
   const fetchJournalEntries = async () => {
     try {
-      // First, get the custody account (1111)
-      const { data: custodyAccount, error: custodyError } = await supabase
-        .from('chart_of_accounts')
-        .select('id')
-        .eq('code', '1111')
-        .maybeSingle();
-
-      if (custodyError) throw custodyError;
-      
-      if (!custodyAccount) {
-        console.error('Custody account 1111 not found');
-        setLoading(false);
-        return;
-      }
-
-      // Get all sub-accounts under custody
-      const { data: custodySubAccounts, error: subAccountsError } = await supabase
-        .from('chart_of_accounts')
-        .select('id')
-        .eq('parent_id', custodyAccount.id);
-
-      if (subAccountsError) throw subAccountsError;
-
-      const custodyAccountIds = custodySubAccounts?.map(acc => acc.id) || [];
-
-      // Fetch journal entries that have lines with custody accounts
+      // Fetch all journal entries with their lines
       const { data: journalData, error: journalError } = await supabase
         .from('journal_entries')
         .select(`
@@ -74,6 +49,7 @@ const CustodyJournalEntries = () => {
             debit,
             credit,
             description,
+            account_id,
             chart_of_accounts(name_ar, code)
           )
         `)
@@ -81,14 +57,8 @@ const CustodyJournalEntries = () => {
 
       if (journalError) throw journalError;
 
-      // Filter entries that contain custody accounts in their lines
-      const custodyEntries = (journalData || []).filter(entry => 
-        entry.journal_entry_lines?.some((line: any) => 
-          custodyAccountIds.includes(line.account_id)
-        )
-      );
-
-      setEntries(custodyEntries as any);
+      console.log('Journal entries fetched:', journalData?.length);
+      setEntries((journalData || []) as any);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
     } finally {
