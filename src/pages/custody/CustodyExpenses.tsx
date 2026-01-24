@@ -340,6 +340,27 @@ const CustodyExpenses = () => {
           .insert(journalLines);
 
         if (linesError) throw linesError;
+
+        // Insert into custody_journal_entries intermediate table
+        const { error: custodyJournalError } = await supabase
+          .from('custody_journal_entries')
+          .insert([{
+            custody_expense_id: expenseData.id,
+            journal_entry_id: journalEntry.id,
+            debit_account_id: expenseAccount.id,
+            debit_account_name: expenseAccount.name_ar,
+            credit_account_id: repAccount.id,
+            credit_account_name: repAccount.name_ar,
+            amount: baseAmount,
+            tax_amount: tax,
+            total_amount: total,
+            description: description || expenseAccount.name_ar,
+            entry_date: format(date, 'yyyy-MM-dd')
+          }]);
+
+        if (custodyJournalError) {
+          console.error('Error inserting custody journal entry:', custodyJournalError);
+        }
       }
 
       toast.success('تم إضافة المصروف والقيد اليومي بنجاح');

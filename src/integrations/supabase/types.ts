@@ -696,43 +696,72 @@ export type Database = {
       custody_journal_entries: {
         Row: {
           amount: number
-          created_at: string | null
+          created_at: string
+          credit_account_id: string
+          credit_account_name: string | null
+          custody_expense_id: string | null
+          debit_account_id: string
+          debit_account_name: string | null
           description: string | null
           entry_date: string
-          from_account: string
           id: string
-          to_account: string
-          transfer_id: string | null
-          updated_at: string | null
+          journal_entry_id: string | null
+          organization_id: string | null
+          tax_amount: number | null
+          total_amount: number
         }
         Insert: {
           amount: number
-          created_at?: string | null
+          created_at?: string
+          credit_account_id: string
+          credit_account_name?: string | null
+          custody_expense_id?: string | null
+          debit_account_id: string
+          debit_account_name?: string | null
           description?: string | null
           entry_date: string
-          from_account: string
           id?: string
-          to_account: string
-          transfer_id?: string | null
-          updated_at?: string | null
+          journal_entry_id?: string | null
+          organization_id?: string | null
+          tax_amount?: number | null
+          total_amount: number
         }
         Update: {
           amount?: number
-          created_at?: string | null
+          created_at?: string
+          credit_account_id?: string
+          credit_account_name?: string | null
+          custody_expense_id?: string | null
+          debit_account_id?: string
+          debit_account_name?: string | null
           description?: string | null
           entry_date?: string
-          from_account?: string
           id?: string
-          to_account?: string
-          transfer_id?: string | null
-          updated_at?: string | null
+          journal_entry_id?: string | null
+          organization_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number
         }
         Relationships: [
           {
-            foreignKeyName: "custody_journal_entries_transfer_id_fkey"
-            columns: ["transfer_id"]
+            foreignKeyName: "custody_journal_entries_custody_expense_id_fkey"
+            columns: ["custody_expense_id"]
+            isOneToOne: true
+            referencedRelation: "custody_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_journal_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
             isOneToOne: false
-            referencedRelation: "custody_transfers"
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
