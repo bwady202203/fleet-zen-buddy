@@ -316,13 +316,15 @@ const CustodyExpenses = () => {
         if (existingCreditLine) {
           // Update existing credit line
           const newCredit = Number(existingCreditLine.credit) + total;
-          await supabase
+          const { error: updateError } = await supabase
             .from('journal_entry_lines')
             .update({ credit: newCredit })
             .eq('id', existingCreditLine.id);
+          
+          if (updateError) throw updateError;
         } else {
           // Insert new credit line
-          await supabase
+          const { error: insertCreditError } = await supabase
             .from('journal_entry_lines')
             .insert([{
               journal_entry_id: journalEntryId,
@@ -331,10 +333,12 @@ const CustodyExpenses = () => {
               credit: total,
               description: `مصروفات ${repAccount.name_ar}`
             }]);
+          
+          if (insertCreditError) throw insertCreditError;
         }
 
         // Add debit line for expense type
-        await supabase
+        const { error: debitLineError } = await supabase
           .from('journal_entry_lines')
           .insert([{
             journal_entry_id: journalEntryId,
@@ -344,9 +348,11 @@ const CustodyExpenses = () => {
             description: description || expenseAccount.name_ar
           }]);
 
+        if (debitLineError) throw debitLineError;
+
         // Add tax line if applicable
         if (taxAccountId && tax > 0) {
-          await supabase
+          const { error: taxLineError } = await supabase
             .from('journal_entry_lines')
             .insert([{
               journal_entry_id: journalEntryId,
@@ -355,6 +361,8 @@ const CustodyExpenses = () => {
               credit: 0,
               description: 'ضريبة القيمة المضافة 15%'
             }]);
+
+          if (taxLineError) throw taxLineError;
         }
 
       } else {
