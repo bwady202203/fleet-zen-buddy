@@ -242,13 +242,14 @@ const CustodyExpenses = () => {
       const baseAmount = enteredAmount;
       const tax = withTax ? baseAmount * 0.15 : 0;
       const total = baseAmount + tax;
+      const expenseDateStr = format(date, 'yyyy-MM-dd');
 
       // Insert the expense
       const { data: expenseData, error: expenseError } = await supabase
         .from('custody_expenses')
         .insert([{
           representative_id: selectedRepId,
-          expense_date: format(date, 'yyyy-MM-dd'),
+          expense_date: expenseDateStr,
           expense_type: expenseType,
           amount: total,
           description: description,
@@ -284,21 +285,91 @@ const CustodyExpenses = () => {
 
       let taxAccountId = taxAccounts && taxAccounts.length > 0 ? taxAccounts[0].id : null;
 
-      // Create journal entry
-      if (repAccount && expenseAccount) {
-        // Generate unique entry number with timestamp
+      // Check if there's an existing journal entry for same representative and date
+      const { data: existingEntry, error: existingError } = await supabase
+        .from('journal_entries')
+        .select('id, entry_number')
+        .eq('date', expenseDateStr)
+        .like('reference', `custody_daily_${selectedRepId}_%`)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      let journalEntryId: string;
+      let journalEntryNumber: string;
+
+      if (existingEntry) {
+        // Use existing journal entry
+        journalEntryId = existingEntry.id;
+        journalEntryNumber = existingEntry.entry_number;
+
+        // Update the existing credit line for the representative (add to the total)
+        const { data: existingCreditLine, error: creditLineError } = await supabase
+          .from('journal_entry_lines')
+          .select('id, credit')
+          .eq('journal_entry_id', journalEntryId)
+          .eq('account_id', repAccount.id)
+          .maybeSingle();
+
+        if (creditLineError) throw creditLineError;
+
+        if (existingCreditLine) {
+          // Update existing credit line
+          const newCredit = Number(existingCreditLine.credit) + total;
+          await supabase
+            .from('journal_entry_lines')
+            .update({ credit: newCredit })
+            .eq('id', existingCreditLine.id);
+        } else {
+          // Insert new credit line
+          await supabase
+            .from('journal_entry_lines')
+            .insert([{
+              journal_entry_id: journalEntryId,
+              account_id: repAccount.id,
+              debit: 0,
+              credit: total,
+              description: `مصروفات ${repAccount.name_ar}`
+            }]);
+        }
+
+        // Add debit line for expense type
+        await supabase
+          .from('journal_entry_lines')
+          .insert([{
+            journal_entry_id: journalEntryId,
+            account_id: expenseAccount.id,
+            debit: baseAmount,
+            credit: 0,
+            description: description || expenseAccount.name_ar
+          }]);
+
+        // Add tax line if applicable
+        if (taxAccountId && tax > 0) {
+          await supabase
+            .from('journal_entry_lines')
+            .insert([{
+              journal_entry_id: journalEntryId,
+              account_id: taxAccountId,
+              debit: tax,
+              credit: 0,
+              description: 'ضريبة القيمة المضافة 15%'
+            }]);
+        }
+
+      } else {
+        // Create new journal entry for this representative and date
         const timestamp = Date.now();
         const randomPart = Math.floor(Math.random() * 1000);
         const entryNumber = `JE-${timestamp}-${randomPart}`;
 
-        // Insert journal entry
         const { data: journalEntry, error: journalError } = await supabase
           .from('journal_entries')
           .insert([{
             entry_number: entryNumber,
-            date: format(date, 'yyyy-MM-dd'),
-            description: `مصروف ${expenseAccount.name_ar} - ${repAccount?.name_ar}`,
-            reference: `custody_expense_${expenseData.id}`,
+            date: expenseDateStr,
+            description: `مصروفات ${repAccount.name_ar} - ${expenseDateStr}`,
+            reference: `custody_daily_${selectedRepId}_${expenseDateStr}`,
             created_by: user?.id
           }])
           .select()
@@ -306,28 +377,31 @@ const CustodyExpenses = () => {
 
         if (journalError) throw journalError;
 
-        // Insert journal entry lines (debit: expense + tax, credit: representative)
+        journalEntryId = journalEntry.id;
+        journalEntryNumber = entryNumber;
+
+        // Insert journal entry lines
         const journalLines = [
           {
-            journal_entry_id: journalEntry.id,
+            journal_entry_id: journalEntryId,
             account_id: expenseAccount.id,
             debit: baseAmount,
             credit: 0,
             description: description || expenseAccount.name_ar
           },
           {
-            journal_entry_id: journalEntry.id,
+            journal_entry_id: journalEntryId,
             account_id: repAccount.id,
             debit: 0,
             credit: total,
-            description: description || expenseAccount.name_ar
+            description: `مصروفات ${repAccount.name_ar}`
           }
         ];
 
         // Add tax line if tax account exists
         if (taxAccountId && tax > 0) {
           journalLines.splice(1, 0, {
-            journal_entry_id: journalEntry.id,
+            journal_entry_id: journalEntryId,
             account_id: taxAccountId,
             debit: tax,
             credit: 0,
@@ -340,27 +414,27 @@ const CustodyExpenses = () => {
           .insert(journalLines);
 
         if (linesError) throw linesError;
+      }
 
-        // Insert into custody_journal_entries intermediate table
-        const { error: custodyJournalError } = await supabase
-          .from('custody_journal_entries')
-          .insert([{
-            custody_expense_id: expenseData.id,
-            journal_entry_id: journalEntry.id,
-            debit_account_id: expenseAccount.id,
-            debit_account_name: expenseAccount.name_ar,
-            credit_account_id: repAccount.id,
-            credit_account_name: repAccount.name_ar,
-            amount: baseAmount,
-            tax_amount: tax,
-            total_amount: total,
-            description: description || expenseAccount.name_ar,
-            entry_date: format(date, 'yyyy-MM-dd')
-          }]);
+      // Insert into custody_journal_entries intermediate table
+      const { error: custodyJournalError } = await supabase
+        .from('custody_journal_entries')
+        .insert([{
+          custody_expense_id: expenseData.id,
+          journal_entry_id: journalEntryId,
+          debit_account_id: expenseAccount.id,
+          debit_account_name: expenseAccount.name_ar,
+          credit_account_id: repAccount.id,
+          credit_account_name: repAccount.name_ar,
+          amount: baseAmount,
+          tax_amount: tax,
+          total_amount: total,
+          description: description || expenseAccount.name_ar,
+          entry_date: expenseDateStr
+        }]);
 
-        if (custodyJournalError) {
-          console.error('Error inserting custody journal entry:', custodyJournalError);
-        }
+      if (custodyJournalError) {
+        console.error('Error inserting custody journal entry:', custodyJournalError);
       }
 
       toast.success('تم إضافة المصروف والقيد اليومي بنجاح');
