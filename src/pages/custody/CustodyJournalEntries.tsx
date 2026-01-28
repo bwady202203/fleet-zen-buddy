@@ -56,7 +56,7 @@ const CustodyJournalEntries = () => {
 
   const fetchAllEntries = async () => {
     try {
-      // First fetch from custody_journal_entries (new intermediate table)
+      // Fetch from custody_journal_entries (intermediate table)
       const { data: custodyData, error: custodyError } = await supabase
         .from('custody_journal_entries')
         .select(`
@@ -71,7 +71,7 @@ const CustodyJournalEntries = () => {
         setCustodyEntries((custodyData || []) as CustodyJournalEntry[]);
       }
 
-      // Also fetch regular journal entries with lines for complete view
+      // Fetch journal entries with their lines
       const { data: journalData, error: journalError } = await supabase
         .from('journal_entries')
         .select(`
@@ -89,68 +89,12 @@ const CustodyJournalEntries = () => {
             chart_of_accounts(name_ar, code)
           )
         `)
+        .like('reference', 'custody_%')
         .order('date', { ascending: false });
 
       if (journalError) throw journalError;
 
-      // Filter entries that have custody reference but no lines, and get amounts from custody_expenses
-      const entriesWithAmounts = await Promise.all((journalData || []).map(async (entry: any) => {
-        if (entry.journal_entry_lines && entry.journal_entry_lines.length > 0) {
-          return entry;
-        }
-        
-        // Check if this is a custody expense entry
-        if (entry.reference && entry.reference.startsWith('custody_expense_')) {
-          const expenseId = entry.reference.replace('custody_expense_', '');
-          const { data: expenseData } = await supabase
-            .from('custody_expenses')
-            .select(`
-              amount,
-              description,
-              representative_id,
-              expense_type
-            `)
-            .eq('id', expenseId)
-            .maybeSingle();
-
-          if (expenseData) {
-            // Get account names
-            const { data: repAccount } = await supabase
-              .from('chart_of_accounts')
-              .select('name_ar, code')
-              .eq('id', expenseData.representative_id)
-              .maybeSingle();
-
-            const { data: expenseAccount } = await supabase
-              .from('chart_of_accounts')
-              .select('name_ar, code')
-              .eq('id', expenseData.expense_type)
-              .maybeSingle();
-
-            // Create virtual journal entry lines from the expense data
-            const virtualLines = [
-              {
-                id: `virtual-debit-${entry.id}`,
-                debit: expenseData.amount,
-                credit: 0,
-                description: expenseData.description || entry.description,
-                chart_of_accounts: expenseAccount || { name_ar: 'غير محدد', code: '' }
-              },
-              {
-                id: `virtual-credit-${entry.id}`,
-                debit: 0,
-                credit: expenseData.amount,
-                description: expenseData.description || entry.description,
-                chart_of_accounts: repAccount || { name_ar: 'غير محدد', code: '' }
-              }
-            ];
-            return { ...entry, journal_entry_lines: virtualLines };
-          }
-        }
-        return entry;
-      }));
-
-      setJournalEntries(entriesWithAmounts as JournalEntry[]);
+      setJournalEntries((journalData || []) as JournalEntry[]);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
     } finally {
