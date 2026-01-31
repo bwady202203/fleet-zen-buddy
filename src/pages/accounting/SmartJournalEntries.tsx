@@ -139,6 +139,22 @@ export default function SmartJournalEntries() {
         e.preventDefault();
         // Logic handled in input onKeyDown
       }
+
+      // '+' key - Move to accounts panel to add new line
+      if ((e.key === '+' || e.key === '=') && !isInputField) {
+        e.preventDefault();
+        setIsAccountsPanelFocused(true);
+        setFocusedAccountIndex(0);
+        accountsPanelRef.current?.focus();
+      }
+
+      // '*' key - Move focus to accounts panel for selection
+      if (e.key === '*' && !isInputField) {
+        e.preventDefault();
+        setIsAccountsPanelFocused(true);
+        setFocusedAccountIndex(focusedAccountIndex >= 0 ? focusedAccountIndex : 0);
+        accountsPanelRef.current?.focus();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
