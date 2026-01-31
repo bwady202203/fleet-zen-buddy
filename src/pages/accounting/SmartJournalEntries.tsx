@@ -51,7 +51,13 @@ interface EntryLine {
   debit: number;
   credit: number;
   description: string;
+  hasTax?: boolean;
+  taxLineId?: string; // Reference to auto-generated tax line
 }
+
+// VAT Purchases Account (ضريبة القيمة المضافة للمشتريات)
+const VAT_ACCOUNT_CODE = "110801";
+const VAT_RATE = 0.15; // 15% VAT
 
 // Draggable Account Card Component for normal mode
 function DraggableAccountCard({
@@ -652,9 +658,64 @@ export default function SmartJournalEntries() {
   };
 
   const removeLine = (lineId: string) => {
-    setEntryLines(lines => lines.filter(line => line.id !== lineId));
+    // Also remove associated tax line if exists
+    const lineToRemove = entryLines.find(l => l.id === lineId);
+    if (lineToRemove?.taxLineId) {
+      setEntryLines(lines => lines.filter(line => line.id !== lineId && line.id !== lineToRemove.taxLineId));
+    } else {
+      // Also check if this is a tax line and remove reference from parent
+      setEntryLines(lines => lines.filter(line => line.id !== lineId).map(line => 
+        line.taxLineId === lineId ? { ...line, taxLineId: undefined, hasTax: false } : line
+      ));
+    }
     if (activeRowIndex !== null && activeRowIndex >= entryLines.length - 1) {
       setActiveRowIndex(Math.max(0, entryLines.length - 2));
+    }
+  };
+
+  // Toggle tax for a line
+  const toggleLineTax = async (lineId: string) => {
+    const line = entryLines.find(l => l.id === lineId);
+    if (!line) return;
+
+    if (line.hasTax && line.taxLineId) {
+      // Remove tax - delete tax line
+      setEntryLines(lines => 
+        lines.filter(l => l.id !== line.taxLineId).map(l => 
+          l.id === lineId ? { ...l, hasTax: false, taxLineId: undefined } : l
+        )
+      );
+    } else {
+      // Add tax - find VAT account and create tax line
+      const vatAccount = accounts.find(a => a.code === VAT_ACCOUNT_CODE);
+      if (!vatAccount) {
+        toast.error("لم يتم العثور على حساب ضريبة المشتريات");
+        return;
+      }
+
+      const baseAmount = line.debit || line.credit;
+      const taxAmount = baseAmount * VAT_RATE;
+      const taxLineId = `tax-${lineId}-${Date.now()}`;
+
+      const taxLine: EntryLine = {
+        id: taxLineId,
+        account_id: vatAccount.id,
+        account_name: vatAccount.name_ar,
+        account_code: vatAccount.code,
+        debit: line.debit > 0 ? taxAmount : 0,
+        credit: line.credit > 0 ? taxAmount : 0,
+        description: `ضريبة - ${line.account_name}`,
+        hasTax: false,
+      };
+
+      // Insert tax line right after the parent line
+      setEntryLines(lines => {
+        const lineIndex = lines.findIndex(l => l.id === lineId);
+        const newLines = [...lines];
+        newLines[lineIndex] = { ...line, hasTax: true, taxLineId };
+        newLines.splice(lineIndex + 1, 0, taxLine);
+        return newLines;
+      });
     }
   };
 
@@ -938,86 +999,142 @@ export default function SmartJournalEntries() {
                         <th className="text-right p-3 font-medium text-gray-600">الحساب</th>
                         <th className="text-right p-3 font-medium text-gray-600 w-32">مدين</th>
                         <th className="text-right p-3 font-medium text-gray-600 w-32">دائن</th>
+                        <th className="text-right p-3 font-medium text-gray-600 w-20">ضريبة</th>
                         <th className="text-right p-3 font-medium text-gray-600">الوصف</th>
                         <th className="w-12"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {entryLines.map((line, index) => (
-                        <tr
-                          key={line.id}
-                          className={cn(
-                            "border-b transition-colors",
-                            activeRowIndex === index ? "bg-blue-50" : "hover:bg-gray-50"
+                      {entryLines.map((line, index) => {
+                        const isTaxLine = line.id.startsWith('tax-');
+                        return (
+                          <tr
+                            key={line.id}
+                            className={cn(
+                              "border-b transition-colors",
+                              activeRowIndex === index ? "bg-blue-50" : "hover:bg-gray-50",
+                              isTaxLine && "bg-amber-50/50"
+                            )}
+                            onClick={() => setActiveRowIndex(index)}
+                          >
+                            <td className="p-3 text-gray-500">{index + 1}</td>
+                            <td className="p-3">
+                              <div className={cn("font-medium", isTaxLine && "text-amber-700")}>
+                                {isTaxLine && "↳ "}{line.account_name}
+                              </div>
+                              <div className="text-sm text-gray-500">{line.account_code}</div>
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                ref={(el) => inputRefs.current[`debit-${line.id}`] = el}
+                                type="number"
+                                value={line.debit || ""}
+                                onChange={(e) => handleLineChange(line.id, 'debit', e.target.value)}
+                                onKeyDown={(e) => handleKeyDownInField(e, line.id, 'debit')}
+                                onFocus={() => {
+                                  setActiveRowIndex(index);
+                                  setActiveField('debit');
+                                }}
+                                className={cn(
+                                  "text-left",
+                                  line.debit > 0 && "bg-green-50 border-green-300"
+                                )}
+                                placeholder="0"
+                                disabled={isTaxLine}
+                              />
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                ref={(el) => inputRefs.current[`credit-${line.id}`] = el}
+                                type="number"
+                                value={line.credit || ""}
+                                onChange={(e) => handleLineChange(line.id, 'credit', e.target.value)}
+                                onKeyDown={(e) => handleKeyDownInField(e, line.id, 'credit')}
+                                onFocus={() => {
+                                  setActiveRowIndex(index);
+                                  setActiveField('credit');
+                                }}
+                                className={cn(
+                                  "text-left",
+                                  line.credit > 0 && "bg-red-50 border-red-300"
+                                )}
+                                placeholder="0"
+                                disabled={isTaxLine}
+                              />
+                            </td>
+                            <td className="p-3 text-center">
+                              {!isTaxLine && (line.debit > 0 || line.credit > 0) && (
+                                <Button
+                                  variant={line.hasTax ? "default" : "outline"}
+                                  size="sm"
+                                  className={cn(
+                                    "h-7 text-xs px-2",
+                                    line.hasTax 
+                                      ? "bg-amber-500 hover:bg-amber-600 text-white" 
+                                      : "text-gray-500 hover:text-amber-600"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleLineTax(line.id);
+                                  }}
+                                >
+                                  {line.hasTax ? "✓ ضريبة" : "بدون"}
+                                </Button>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                ref={(el) => inputRefs.current[`description-${line.id}`] = el}
+                                value={line.description}
+                                onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
+                                onKeyDown={(e) => handleKeyDownInField(e, line.id, 'description')}
+                                onFocus={() => {
+                                  setActiveRowIndex(index);
+                                  setActiveField('description');
+                                }}
+                                placeholder="وصف..."
+                                disabled={isTaxLine}
+                              />
+                            </td>
+                            <td className="p-3">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => removeLine(line.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {/* Balance Summary Row */}
+                      <tr className="bg-gray-100/50">
+                        <td colSpan={2} className="p-3 text-left">
+                          <span className={cn(
+                            "text-sm font-medium",
+                            isBalanced ? "text-green-600" : "text-red-500"
+                          )}>
+                            {isBalanced ? "✓ متوازن" : "✗ غير متوازن"}
+                          </span>
+                        </td>
+                        <td className="p-3 text-left">
+                          <span className="text-sm text-gray-400">{totalDebit.toLocaleString()}</span>
+                        </td>
+                        <td className="p-3 text-left">
+                          <span className="text-sm text-gray-400">{totalCredit.toLocaleString()}</span>
+                        </td>
+                        <td className="p-3"></td>
+                        <td className="p-3 text-left">
+                          {!isBalanced && (
+                            <span className="text-sm text-gray-400">
+                              الفرق: {Math.abs(totalDebit - totalCredit).toLocaleString()}
+                            </span>
                           )}
-                          onClick={() => setActiveRowIndex(index)}
-                        >
-                          <td className="p-3 text-gray-500">{index + 1}</td>
-                          <td className="p-3">
-                            <div className="font-medium">{line.account_name}</div>
-                            <div className="text-sm text-gray-500">{line.account_code}</div>
-                          </td>
-                          <td className="p-3">
-                            <Input
-                              ref={(el) => inputRefs.current[`debit-${line.id}`] = el}
-                              type="number"
-                              value={line.debit || ""}
-                              onChange={(e) => handleLineChange(line.id, 'debit', e.target.value)}
-                              onKeyDown={(e) => handleKeyDownInField(e, line.id, 'debit')}
-                              onFocus={() => {
-                                setActiveRowIndex(index);
-                                setActiveField('debit');
-                              }}
-                              className={cn(
-                                "text-left",
-                                line.debit > 0 && "bg-green-50 border-green-300"
-                              )}
-                              placeholder="0"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Input
-                              ref={(el) => inputRefs.current[`credit-${line.id}`] = el}
-                              type="number"
-                              value={line.credit || ""}
-                              onChange={(e) => handleLineChange(line.id, 'credit', e.target.value)}
-                              onKeyDown={(e) => handleKeyDownInField(e, line.id, 'credit')}
-                              onFocus={() => {
-                                setActiveRowIndex(index);
-                                setActiveField('credit');
-                              }}
-                              className={cn(
-                                "text-left",
-                                line.credit > 0 && "bg-red-50 border-red-300"
-                              )}
-                              placeholder="0"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Input
-                              ref={(el) => inputRefs.current[`description-${line.id}`] = el}
-                              value={line.description}
-                              onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
-                              onKeyDown={(e) => handleKeyDownInField(e, line.id, 'description')}
-                              onFocus={() => {
-                                setActiveRowIndex(index);
-                                setActiveField('description');
-                              }}
-                              placeholder="وصف..."
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => removeLine(line.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                        </td>
+                        <td></td>
+                      </tr>
                     </tbody>
                   </table>
                 )}
