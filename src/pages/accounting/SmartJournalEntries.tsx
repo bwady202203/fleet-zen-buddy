@@ -73,30 +73,34 @@ export default function SmartJournalEntries() {
       const target = e.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
 
-      // Handle accounts panel navigation
+      // Handle accounts panel navigation (4 columns grid, RTL layout)
       if (isAccountsPanelFocused && filteredAccounts.length > 0) {
+        // Arrow Down - move to next row (+4)
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           setFocusedAccountIndex(prev => 
-            prev < filteredAccounts.length - 1 ? prev + 1 : 0
+            prev + 4 < filteredAccounts.length ? prev + 4 : prev
           );
         }
+        // Arrow Up - move to previous row (-4)
         if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setFocusedAccountIndex(prev => 
-            prev > 0 ? prev - 1 : filteredAccounts.length - 1
-          );
-        }
-        if (e.key === 'ArrowRight') {
           e.preventDefault();
           setFocusedAccountIndex(prev => 
             prev >= 4 ? prev - 4 : prev
           );
         }
+        // Arrow Right - move right (in RTL, decrease index)
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          setFocusedAccountIndex(prev => 
+            prev > 0 ? prev - 1 : prev
+          );
+        }
+        // Arrow Left - move left (in RTL, increase index)
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
           setFocusedAccountIndex(prev => 
-            prev + 4 < filteredAccounts.length ? prev + 4 : prev
+            prev < filteredAccounts.length - 1 ? prev + 1 : prev
           );
         }
         if (e.key === 'Enter') {
