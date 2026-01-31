@@ -255,6 +255,7 @@ export default function SmartJournalEntries() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountsOrder, setAccountsOrder] = useState<string[]>([]);
   const [hiddenAccounts, setHiddenAccounts] = useState<Set<string>>(new Set());
+  const [showHiddenAccounts, setShowHiddenAccounts] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [entryLines, setEntryLines] = useState<EntryLine[]>([]);
@@ -298,9 +299,13 @@ export default function SmartJournalEntries() {
         account.name_ar.includes(searchQuery) || 
         account.code.includes(searchQuery) ||
         account.name_en.toLowerCase().includes(searchQuery.toLowerCase());
-      const isVisible = !hiddenAccounts.has(account.id);
+      // Show hidden accounts if toggle is on
+      const isVisible = showHiddenAccounts || !hiddenAccounts.has(account.id);
       return matchesSearch && isVisible;
     });
+  
+  // Count hidden accounts for badge
+  const hiddenAccountsCount = hiddenAccounts.size;
 
   // Active dragging account
   const activeAccount = activeId ? accounts.find(a => a.id === activeId) : null;
@@ -1026,6 +1031,35 @@ export default function SmartJournalEntries() {
                     </>
                   )}
                 </Button>
+                
+                {/* Toggle Hidden Accounts Button */}
+                <Button
+                  variant={showHiddenAccounts ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowHiddenAccounts(!showHiddenAccounts)}
+                  className={cn(
+                    "gap-1 shrink-0 relative",
+                    showHiddenAccounts && "bg-purple-500 hover:bg-purple-600"
+                  )}
+                  title={showHiddenAccounts ? "إخفاء الحسابات المخفية" : "إظهار الحسابات المخفية"}
+                >
+                  {showHiddenAccounts ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                  {hiddenAccountsCount > 0 && (
+                    <span className={cn(
+                      "absolute -top-1 -left-1 text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full",
+                      showHiddenAccounts 
+                        ? "bg-white text-purple-600" 
+                        : "bg-purple-500 text-white"
+                    )}>
+                      {hiddenAccountsCount}
+                    </span>
+                  )}
+                </Button>
+                
                 <div className="relative flex-1">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
