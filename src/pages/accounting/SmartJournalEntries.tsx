@@ -260,6 +260,7 @@ export default function SmartJournalEntries() {
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
@@ -324,11 +325,45 @@ export default function SmartJournalEntries() {
     setTimeout(handleScroll, 100);
   }, [filteredAccounts.length, handleScroll]);
 
+  // Track space key state
+  useEffect(() => {
+    const handleSpaceDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !(e.target as HTMLElement).matches('input, textarea')) {
+        setIsSpacePressed(true);
+      }
+    };
+    const handleSpaceUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpacePressed(false);
+      }
+    };
+    window.addEventListener('keydown', handleSpaceDown);
+    window.addEventListener('keyup', handleSpaceUp);
+    return () => {
+      window.removeEventListener('keydown', handleSpaceDown);
+      window.removeEventListener('keyup', handleSpaceUp);
+    };
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      // Space + Arrow keys for smooth scrolling (like mouse wheel)
+      if (isSpacePressed && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !isInputField) {
+        e.preventDefault();
+        const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          const scrollAmount = 150; // pixels to scroll
+          scrollElement.scrollBy({
+            top: e.key === 'ArrowDown' ? scrollAmount : -scrollAmount,
+            behavior: 'smooth'
+          });
+        }
+        return;
+      }
 
       // Arrow keys for accounts navigation - activate immediately from anywhere (except inputs)
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') && !isInputField) {
