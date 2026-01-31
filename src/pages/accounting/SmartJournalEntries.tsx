@@ -648,6 +648,15 @@ export default function SmartJournalEntries() {
     const line = entryLines.find(l => l.id === lineId);
     const isTaxLine = lineId.startsWith('tax-');
 
+    // '+' key in debit or credit field - go back to accounts panel
+    if ((e.key === '+' || e.key === '=') && (field === 'debit' || field === 'credit')) {
+      e.preventDefault();
+      setIsAccountsPanelFocused(true);
+      setFocusedAccountIndex(0);
+      accountsPanelRef.current?.focus();
+      return;
+    }
+
     // Handle 1 and 2 keys in credit field for tax selection
     if (field === 'credit' && !isTaxLine && line && (line.debit > 0 || line.credit > 0)) {
       if (e.key === '1') {
