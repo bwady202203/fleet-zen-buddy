@@ -36,7 +36,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download, Search } from "lucide-react";
+import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download, Search, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -62,6 +63,7 @@ interface PaymentVoucher {
 }
 
 export default function PaymentVouchers() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [vouchers, setVouchers] = useState<PaymentVoucher[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -757,6 +759,13 @@ export default function PaymentVouchers() {
 
   return (
     <div className="container mx-auto p-6" dir="rtl">
+      {/* Back Button */}
+      <div className="mb-4">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+          <ArrowRight className="h-4 w-4" />
+          رجوع
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
