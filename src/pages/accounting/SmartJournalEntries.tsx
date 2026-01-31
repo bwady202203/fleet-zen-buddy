@@ -625,6 +625,35 @@ export default function SmartJournalEntries() {
   };
 
   const handleKeyDownInField = (e: React.KeyboardEvent, lineId: string, field: 'debit' | 'credit' | 'description') => {
+    const line = entryLines.find(l => l.id === lineId);
+    const isTaxLine = lineId.startsWith('tax-');
+
+    // Handle 1 and 2 keys in credit field for tax selection
+    if (field === 'credit' && !isTaxLine && line && (line.debit > 0 || line.credit > 0)) {
+      if (e.key === '1') {
+        e.preventDefault();
+        // 1 = No tax, remove if exists and move to description
+        if (line.hasTax && line.taxLineId) {
+          toggleLineTax(lineId);
+        }
+        setTimeout(() => {
+          inputRefs.current[`description-${lineId}`]?.focus();
+        }, 50);
+        return;
+      }
+      if (e.key === '2') {
+        e.preventDefault();
+        // 2 = Add tax and move to description
+        if (!line.hasTax) {
+          toggleLineTax(lineId);
+        }
+        setTimeout(() => {
+          inputRefs.current[`description-${lineId}`]?.focus();
+        }, 50);
+        return;
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       // Move to next field
