@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface Account {
   id: string;
@@ -73,6 +74,7 @@ const JournalEntries = () => {
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [openingEntryDialogOpen, setOpeningEntryDialogOpen] = useState(false);
+  const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
   const [openingEntryData, setOpeningEntryData] = useState<{
     entryNumber: string;
     date: string;
@@ -847,6 +849,83 @@ const JournalEntries = () => {
     }
   };
 
+  // تحديث أرصدة الحسابات من قيود اليومية
+  const handleRefreshBalances = async () => {
+    setIsRefreshingBalances(true);
+    try {
+      // 1. Get all accounts
+      const { data: allAccounts, error: accountsError } = await supabase
+        .from('chart_of_accounts')
+        .select('id, code, name_ar, balance');
+      
+      if (accountsError) throw accountsError;
+
+      // 2. Calculate totals from journal entry lines
+      const { data: journalLines, error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .select('account_id, debit, credit');
+      
+      if (linesError) throw linesError;
+
+      // 3. Group by account and calculate net balance
+      const accountTotals: Record<string, { debit: number; credit: number }> = {};
+      
+      journalLines?.forEach(line => {
+        if (!accountTotals[line.account_id]) {
+          accountTotals[line.account_id] = { debit: 0, credit: 0 };
+        }
+        accountTotals[line.account_id].debit += Number(line.debit || 0);
+        accountTotals[line.account_id].credit += Number(line.credit || 0);
+      });
+
+      // 4. Update each account's balance
+      let updatedCount = 0;
+      for (const accountId of Object.keys(accountTotals)) {
+        const totals = accountTotals[accountId];
+        const newBalance = totals.debit - totals.credit;
+        
+        const { error: updateError } = await supabase
+          .from('chart_of_accounts')
+          .update({ balance: newBalance })
+          .eq('id', accountId);
+        
+        if (updateError) {
+          console.error(`Error updating account ${accountId}:`, updateError);
+        } else {
+          updatedCount++;
+        }
+      }
+
+      // 5. Reset balance to 0 for accounts with no journal entries
+      const accountsWithEntries = new Set(Object.keys(accountTotals));
+      const accountsToReset = allAccounts?.filter(acc => !accountsWithEntries.has(acc.id) && acc.balance !== 0) || [];
+      
+      for (const account of accountsToReset) {
+        await supabase
+          .from('chart_of_accounts')
+          .update({ balance: 0 })
+          .eq('id', account.id);
+      }
+
+      toast({
+        title: "تم تحديث الأرصدة بنجاح",
+        description: `تم تحديث ${updatedCount} حساب من قيود اليومية`,
+      });
+
+      // Refresh accounts list
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error refreshing balances:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث الأرصدة",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshingBalances(false);
+    }
+  };
+
   const handleExportToExcel = () => {
     const exportData = filteredEntries.flatMap((entry) => {
       return entry.lines.map((line: any) => ({
@@ -1442,6 +1521,14 @@ const JournalEntries = () => {
                 </div>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRefreshBalances}
+                  disabled={isRefreshingBalances}
+                >
+                  <RefreshCw className={cn("h-4 w-4 ml-2", isRefreshingBalances && "animate-spin")} />
+                  تحديث الأرصدة
+                </Button>
                 <Button onClick={() => navigate('/accounting/journal-entries/new')}>
                   <Plus className="h-4 w-4 ml-2" />
                   قيد جديد
