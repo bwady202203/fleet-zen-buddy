@@ -855,24 +855,22 @@ const JournalEntries = () => {
   const handleRebuildMissingEntryLines = async () => {
     setIsRebuildingEntries(true);
     try {
-      // 1. البحث عن القيود التي ليس لها سطور
-      const { data: entriesWithoutLines, error: entriesError } = await supabase
+      // جلب جميع القيود وجميع السطور للمقارنة المحلية
+      const { data: allEntries, error: entriesError } = await supabase
         .from('journal_entries')
         .select('id, entry_number, date, description, reference')
-        .not('id', 'in', supabase.from('journal_entry_lines').select('journal_entry_id'));
+        .like('reference', 'custody_daily_%')
+        .order('created_at', { ascending: false });
       
       if (entriesError) throw entriesError;
 
-      // الطريقة البديلة للبحث عن القيود بدون سطور
-      const { data: allEntries } = await supabase
-        .from('journal_entries')
-        .select('id, entry_number, date, description, reference')
-        .order('created_at', { ascending: false });
-      
-      const { data: allLines } = await supabase
+      const { data: allLines, error: linesError } = await supabase
         .from('journal_entry_lines')
         .select('journal_entry_id');
       
+      if (linesError) throw linesError;
+
+      // البحث عن القيود التي ليس لها سطور
       const lineEntryIds = new Set(allLines?.map(l => l.journal_entry_id) || []);
       const missingEntries = allEntries?.filter(e => !lineEntryIds.has(e.id)) || [];
 
