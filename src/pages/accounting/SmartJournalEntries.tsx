@@ -516,13 +516,15 @@ export default function SmartJournalEntries() {
               const cardIndex = parseInt(newBuffer) - 1;
               if (cardIndex >= 0 && cardIndex < filteredAccounts.length) {
                 const account = filteredAccounts[cardIndex];
-                handleAccountSelect(account);
+                // Add account but stay in accounts panel (skip focus on debit field)
+                handleAccountSelect(account, true);
+                toast.success(`تم إضافة حساب "${account.name_ar}" - اضغط # للخروج من وضع الأرقام`);
               }
               return "";
             }
             return prev;
           });
-        }, 500);
+        }, 400);
       }
     };
 
@@ -674,7 +676,7 @@ export default function SmartJournalEntries() {
     }
   };
 
-  const handleAccountSelect = (account: Account) => {
+  const handleAccountSelect = (account: Account, skipFocus: boolean = false) => {
     setSelectedAccountId(account.id);
     
     // Always add new line when account is selected (even if same account exists)
@@ -691,12 +693,14 @@ export default function SmartJournalEntries() {
     setActiveRowIndex(entryLines.length);
     setActiveField('debit');
     
-    // Focus on debit field after render
-    setTimeout(() => {
-      const ref = inputRefs.current[`debit-${newLine.id}`];
-      ref?.focus();
-      ref?.select();
-    }, 50);
+    // Focus on debit field after render (unless skipFocus is true)
+    if (!skipFocus) {
+      setTimeout(() => {
+        const ref = inputRefs.current[`debit-${newLine.id}`];
+        ref?.focus();
+        ref?.select();
+      }, 50);
+    }
   };
 
   // DnD Handlers
