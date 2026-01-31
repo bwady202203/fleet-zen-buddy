@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -99,6 +99,8 @@ function DraggableAccountCard({
   isInEntry,
   isFocused,
   isHidden,
+  showNumbers,
+  cardNumber,
   onSelect,
   onToggleVisibility,
 }: {
@@ -108,6 +110,8 @@ function DraggableAccountCard({
   isInEntry: boolean;
   isFocused: boolean;
   isHidden: boolean;
+  showNumbers: boolean;
+  cardNumber: number;
   onSelect: () => void;
   onToggleVisibility: (e: React.MouseEvent) => void;
 }) {
@@ -142,6 +146,12 @@ function DraggableAccountCard({
       )}
       onClick={onSelect}
     >
+      {/* Card Number Badge */}
+      {showNumbers && (
+        <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md z-10">
+          {cardNumber}
+        </div>
+      )}
       <div className="flex flex-col items-center gap-1">
         <div className={cn(
           "font-medium text-xs leading-tight line-clamp-2",
@@ -283,6 +293,8 @@ export default function SmartJournalEntries() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isOverDropZone, setIsOverDropZone] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [showCardNumbers, setShowCardNumbers] = useState(false);
+  const [numberInputBuffer, setNumberInputBuffer] = useState("");
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
@@ -490,11 +502,33 @@ export default function SmartJournalEntries() {
         setFocusedAccountIndex(focusedAccountIndex >= 0 ? focusedAccountIndex : 0);
         accountsPanelRef.current?.focus();
       }
+
+      // Number keys for quick account selection when numbers mode is active
+      if (showCardNumbers && !isInputField && /^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        const newBuffer = numberInputBuffer + e.key;
+        setNumberInputBuffer(newBuffer);
+        
+        // Wait for potential second digit
+        setTimeout(() => {
+          setNumberInputBuffer(prev => {
+            if (prev === newBuffer) {
+              const cardIndex = parseInt(newBuffer) - 1;
+              if (cardIndex >= 0 && cardIndex < filteredAccounts.length) {
+                const account = filteredAccounts[cardIndex];
+                handleAccountSelect(account);
+              }
+              return "";
+            }
+            return prev;
+          });
+        }, 500);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeRowIndex, entryLines, isAccountsPanelFocused, focusedAccountIndex, filteredAccounts]);
+  }, [activeRowIndex, entryLines, isAccountsPanelFocused, focusedAccountIndex, filteredAccounts, showCardNumbers, numberInputBuffer]);
 
   const fetchAccounts = async () => {
     try {
@@ -1074,6 +1108,20 @@ export default function SmartJournalEntries() {
                   )}
                 </Button>
                 
+                {/* Toggle Card Numbers Button */}
+                <Button
+                  variant={showCardNumbers ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowCardNumbers(!showCardNumbers)}
+                  className={cn(
+                    "gap-1 shrink-0",
+                    showCardNumbers && "bg-blue-500 hover:bg-blue-600"
+                  )}
+                  title={showCardNumbers ? "إخفاء الأرقام" : "إظهار الأرقام"}
+                >
+                  <Hash className="h-4 w-4" />
+                </Button>
+                
                 <div className="relative flex-1">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -1152,6 +1200,8 @@ export default function SmartJournalEntries() {
                                 isInEntry={entryLines.some(l => l.account_id === account.id)}
                                 isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
                                 isHidden={hiddenAccounts.has(account.id)}
+                                showNumbers={showCardNumbers}
+                                cardNumber={index + 1}
                                 onSelect={() => handleAccountSelect(account)}
                                 onToggleVisibility={(e) => {
                                   e.stopPropagation();
