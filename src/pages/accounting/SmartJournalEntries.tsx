@@ -12,6 +12,16 @@ import { format } from "date-fns";
 import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DndContext,
   closestCenter,
   KeyboardSensor,
@@ -261,6 +271,7 @@ export default function SmartJournalEntries() {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [showSaveConfirmDialog, setShowSaveConfirmDialog] = useState(false);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
@@ -764,6 +775,14 @@ export default function SmartJournalEntries() {
       setFocusedAccountIndex(0);
       accountsPanelRef.current?.focus();
     }
+
+    // Shift key in description field - show save confirmation dialog
+    if (e.key === 'Shift' && field === 'description') {
+      e.preventDefault();
+      if (entryLines.length > 0) {
+        setShowSaveConfirmDialog(true);
+      }
+    }
   };
 
   const removeLine = (lineId: string) => {
@@ -907,14 +926,48 @@ export default function SmartJournalEntries() {
 
   const { totalDebit, totalCredit, isBalanced } = calculateTotals();
 
+  // Handle save confirmation
+  const handleSaveConfirm = () => {
+    setShowSaveConfirmDialog(false);
+    handleSaveEntry();
+  };
+
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
+    <>
+      {/* Save Confirmation Dialog */}
+      <AlertDialog open={showSaveConfirmDialog} onOpenChange={setShowSaveConfirmDialog}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حفظ القيد</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل تريد حفظ هذا القيد؟
+              {!isBalanced && (
+                <span className="block mt-2 text-red-500 font-medium">
+                  تحذير: القيد غير متوازن! الفرق: {Math.abs(totalDebit - totalCredit).toLocaleString()}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogAction 
+              onClick={handleSaveConfirm}
+              disabled={!isBalanced}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              نعم، احفظ
+            </AlertDialogAction>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
       <div className="min-h-screen bg-gray-50" dir="rtl">
         {/* Header */}
         <div className="bg-white border-b px-6 py-4">
@@ -1320,5 +1373,6 @@ export default function SmartJournalEntries() {
         {activeAccount ? <DragOverlayCard account={activeAccount} /> : null}
       </DragOverlay>
     </DndContext>
+    </>
   );
 }
