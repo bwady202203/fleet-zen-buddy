@@ -44,8 +44,23 @@ export default function SmartJournalEntries() {
   const [entryDescription, setEntryDescription] = useState("");
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
   const [activeField, setActiveField] = useState<'debit' | 'credit' | 'description'>('debit');
+  const [focusedAccountIndex, setFocusedAccountIndex] = useState<number>(-1);
+  const [isAccountsPanelFocused, setIsAccountsPanelFocused] = useState(false);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const accountsPanelRef = useRef<HTMLDivElement | null>(null);
+
+  // Filter accounts - defined early for keyboard navigation
+  const filteredAccounts = accounts.filter(account => {
+    const matchesSearch = searchQuery === "" || 
+      account.name_ar.includes(searchQuery) || 
+      account.code.includes(searchQuery) ||
+      account.name_en.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const isVisible = !hiddenAccounts.has(account.id);
+    
+    return matchesSearch && isVisible;
+  });
 
   useEffect(() => {
     fetchAccounts();
@@ -58,6 +73,48 @@ export default function SmartJournalEntries() {
       const target = e.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
 
+      // Handle accounts panel navigation
+      if (isAccountsPanelFocused && filteredAccounts.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setFocusedAccountIndex(prev => 
+            prev < filteredAccounts.length - 1 ? prev + 1 : 0
+          );
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setFocusedAccountIndex(prev => 
+            prev > 0 ? prev - 1 : filteredAccounts.length - 1
+          );
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          setFocusedAccountIndex(prev => 
+            prev >= 4 ? prev - 4 : prev
+          );
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          setFocusedAccountIndex(prev => 
+            prev + 4 < filteredAccounts.length ? prev + 4 : prev
+          );
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (focusedAccountIndex >= 0 && focusedAccountIndex < filteredAccounts.length) {
+            const account = filteredAccounts[focusedAccountIndex];
+            handleAccountSelect(account);
+            setIsAccountsPanelFocused(false);
+          }
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setIsAccountsPanelFocused(false);
+          setFocusedAccountIndex(-1);
+        }
+        return;
+      }
+
       if (e.key === 'Escape' && activeRowIndex !== null) {
         // Cancel current line
         const newLines = [...entryLines];
@@ -67,12 +124,12 @@ export default function SmartJournalEntries() {
         e.preventDefault();
       }
 
-      if (e.key === 'ArrowUp' && activeRowIndex !== null && activeRowIndex > 0) {
+      if (e.key === 'ArrowUp' && activeRowIndex !== null && activeRowIndex > 0 && !isAccountsPanelFocused) {
         setActiveRowIndex(activeRowIndex - 1);
         e.preventDefault();
       }
 
-      if (e.key === 'ArrowDown' && activeRowIndex !== null && activeRowIndex < entryLines.length - 1) {
+      if (e.key === 'ArrowDown' && activeRowIndex !== null && activeRowIndex < entryLines.length - 1 && !isAccountsPanelFocused) {
         setActiveRowIndex(activeRowIndex + 1);
         e.preventDefault();
       }
@@ -86,7 +143,7 @@ export default function SmartJournalEntries() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeRowIndex, entryLines]);
+  }, [activeRowIndex, entryLines, isAccountsPanelFocused, focusedAccountIndex, filteredAccounts]);
 
   const fetchAccounts = async () => {
     try {
@@ -230,13 +287,20 @@ export default function SmartJournalEntries() {
         inputRefs.current[`credit-${lineId}`]?.focus();
       } else if (field === 'credit') {
         inputRefs.current[`description-${lineId}`]?.focus();
+      } else if (field === 'description') {
+        // Move focus to accounts panel
+        setIsAccountsPanelFocused(true);
+        setFocusedAccountIndex(0);
+        accountsPanelRef.current?.focus();
       }
     }
     
     if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
-      // Save and prepare for new line (user will select another account)
-      toast.info("اختر حساب آخر لإضافة سطر جديد");
+      // Move focus to accounts panel for new line
+      setIsAccountsPanelFocused(true);
+      setFocusedAccountIndex(0);
+      accountsPanelRef.current?.focus();
     }
   };
 
@@ -324,17 +388,6 @@ export default function SmartJournalEntries() {
     }
   };
 
-  const filteredAccounts = accounts.filter(account => {
-    const matchesSearch = searchQuery === "" || 
-      account.name_ar.includes(searchQuery) || 
-      account.code.includes(searchQuery) ||
-      account.name_en.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const isVisible = !hiddenAccounts.has(account.id);
-    
-    return matchesSearch && isVisible;
-  });
-
   const { totalDebit, totalCredit, isBalanced } = calculateTotals();
 
   return (
@@ -386,14 +439,28 @@ export default function SmartJournalEntries() {
 
             {/* Accounts List */}
             <ScrollArea className="flex-1">
-              <div>
+              <div
+                ref={accountsPanelRef}
+                tabIndex={0}
+                className={cn(
+                  "outline-none rounded-lg p-1",
+                  isAccountsPanelFocused && "ring-2 ring-blue-500"
+                )}
+                onFocus={() => {
+                  setIsAccountsPanelFocused(true);
+                  if (focusedAccountIndex < 0) setFocusedAccountIndex(0);
+                }}
+                onBlur={() => {
+                  setIsAccountsPanelFocused(false);
+                }}
+              >
                 {loading ? (
                   <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
                 ) : filteredAccounts.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">لا توجد حسابات</div>
                 ) : (
                   <div className="grid grid-cols-4 gap-2">
-                    {filteredAccounts.map((account) => (
+                    {filteredAccounts.map((account, index) => (
                       <Card
                         key={account.id}
                         className={cn(
@@ -401,7 +468,8 @@ export default function SmartJournalEntries() {
                           selectedAccountId === account.id 
                             ? "ring-2 ring-blue-500 bg-blue-50" 
                             : "bg-white hover:bg-gray-50",
-                          entryLines.some(l => l.account_id === account.id) && "border-b-2 border-b-green-500"
+                          entryLines.some(l => l.account_id === account.id) && "border-b-2 border-b-green-500",
+                          isAccountsPanelFocused && focusedAccountIndex === index && "ring-2 ring-orange-500 bg-orange-50"
                         )}
                         onClick={() => handleAccountSelect(account)}
                       >
