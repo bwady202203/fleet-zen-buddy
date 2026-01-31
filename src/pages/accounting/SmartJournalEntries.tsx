@@ -292,18 +292,18 @@ export default function SmartJournalEntries() {
             prev >= 4 ? prev - 4 : prev
           );
         }
-        // Arrow Right - move right (in RTL, decrease index)
+        // Arrow Right - move right (increase index)
         if (e.key === 'ArrowRight') {
           e.preventDefault();
           setFocusedAccountIndex(prev => 
-            prev > 0 ? prev - 1 : prev
+            prev < filteredAccounts.length - 1 ? prev + 1 : prev
           );
         }
-        // Arrow Left - move left (in RTL, increase index)
+        // Arrow Left - move left (decrease index)
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
           setFocusedAccountIndex(prev => 
-            prev < filteredAccounts.length - 1 ? prev + 1 : prev
+            prev > 0 ? prev - 1 : prev
           );
         }
         if (e.key === 'Enter') {
