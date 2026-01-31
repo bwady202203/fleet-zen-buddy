@@ -98,6 +98,7 @@ function DraggableAccountCard({
   isSelected,
   isInEntry,
   isFocused,
+  isHidden,
   onSelect,
   onToggleVisibility,
 }: {
@@ -106,6 +107,7 @@ function DraggableAccountCard({
   isSelected: boolean;
   isInEntry: boolean;
   isFocused: boolean;
+  isHidden: boolean;
   onSelect: () => void;
   onToggleVisibility: (e: React.MouseEvent) => void;
 }) {
@@ -121,7 +123,7 @@ function DraggableAccountCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : isHidden ? 0.6 : 1,
     zIndex: isDragging ? 1000 : 1,
   };
 
@@ -135,20 +137,32 @@ function DraggableAccountCard({
         "p-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-md text-center relative border",
         getAccountTypeColor(account.type, isSelected, isFocused),
         isInEntry && "border-b-2 border-b-green-500",
-        isDragging && "shadow-lg"
+        isDragging && "shadow-lg",
+        isHidden && "border-dashed border-2 border-gray-400 bg-gray-100"
       )}
       onClick={onSelect}
     >
       <div className="flex flex-col items-center gap-1">
-        <div className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">{account.name_ar}</div>
+        <div className={cn(
+          "font-medium text-xs leading-tight line-clamp-2",
+          isHidden ? "text-gray-500" : "text-gray-900"
+        )}>{account.name_ar}</div>
         <div className="text-xs text-gray-500">{account.code}</div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6"
+          className={cn(
+            "h-6 w-6",
+            isHidden && "bg-green-100 hover:bg-green-200"
+          )}
           onClick={onToggleVisibility}
+          title={isHidden ? "إظهار الحساب" : "إخفاء الحساب"}
         >
-          <Eye className="h-3 w-3 text-gray-400" />
+          {isHidden ? (
+            <Eye className="h-3 w-3 text-green-600" />
+          ) : (
+            <EyeOff className="h-3 w-3 text-gray-400" />
+          )}
         </Button>
       </div>
     </Card>
@@ -1137,6 +1151,7 @@ export default function SmartJournalEntries() {
                                 isSelected={selectedAccountId === account.id}
                                 isInEntry={entryLines.some(l => l.account_id === account.id)}
                                 isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
+                                isHidden={hiddenAccounts.has(account.id)}
                                 onSelect={() => handleAccountSelect(account)}
                                 onToggleVisibility={(e) => {
                                   e.stopPropagation();
