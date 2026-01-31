@@ -2580,6 +2580,114 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_journal_account_visibility: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          organization_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_journal_account_visibility_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_journal_account_visibility_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_journal_drafts: {
+        Row: {
+          account_code: string
+          account_id: string
+          account_name: string
+          created_at: string
+          credit: number | null
+          debit: number | null
+          description: string | null
+          id: string
+          organization_id: string | null
+          session_id: string
+          sort_order: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          account_code: string
+          account_id: string
+          account_name: string
+          created_at?: string
+          credit?: number | null
+          debit?: number | null
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          session_id: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_code?: string
+          account_id?: string
+          account_name?: string
+          created_at?: string
+          credit?: number | null
+          debit?: number | null
+          description?: string | null
+          id?: string
+          organization_id?: string | null
+          session_id?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_journal_drafts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_journal_drafts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spare_parts: {
         Row: {
           category: string | null

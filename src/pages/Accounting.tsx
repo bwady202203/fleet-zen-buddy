@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -230,6 +230,13 @@ const Accounting = () => {
   };
 
   const sections = [
+    {
+      title: "قيود ذكية",
+      description: "إنشاء قيود سريعة باختيار الحسابات مباشرة",
+      icon: Sparkles,
+      link: "/accounting/smart-journal",
+      color: "from-gradient-start to-gradient-end"
+    },
     {
       title: "شجرة الحسابات",
       description: "إدارة الدليل المحاسبي - 4 مستويات",
