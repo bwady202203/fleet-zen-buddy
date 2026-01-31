@@ -384,43 +384,43 @@ export default function SmartJournalEntries() {
 
           {/* Accounts List */}
           <ScrollArea className="flex-1">
-            <div className="space-y-2">
+            <div>
               {loading ? (
                 <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
               ) : filteredAccounts.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">لا توجد حسابات</div>
               ) : (
-                filteredAccounts.map((account) => (
-                  <Card
-                    key={account.id}
-                    className={cn(
-                      "p-3 cursor-pointer transition-all hover:shadow-md",
-                      selectedAccountId === account.id 
-                        ? "ring-2 ring-blue-500 bg-blue-50" 
-                        : "bg-white hover:bg-gray-50",
-                      entryLines.some(l => l.account_id === account.id) && "border-l-4 border-l-green-500"
-                    )}
-                    onClick={() => handleAccountSelect(account)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">{account.name_ar}</div>
-                        <div className="text-sm text-gray-500">{account.code}</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {filteredAccounts.map((account) => (
+                    <Card
+                      key={account.id}
+                      className={cn(
+                        "p-2 cursor-pointer transition-all hover:shadow-md text-center",
+                        selectedAccountId === account.id 
+                          ? "ring-2 ring-blue-500 bg-blue-50" 
+                          : "bg-white hover:bg-gray-50",
+                        entryLines.some(l => l.account_id === account.id) && "border-b-2 border-b-green-500"
+                      )}
+                      onClick={() => handleAccountSelect(account)}
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">{account.name_ar}</div>
+                        <div className="text-xs text-gray-500">{account.code}</div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleAccountVisibility(account.id);
+                          }}
+                        >
+                          <Eye className="h-3 w-3 text-gray-400" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleAccountVisibility(account.id);
-                        }}
-                      >
-                        <Eye className="h-4 w-4 text-gray-400" />
-                      </Button>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
             
