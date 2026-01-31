@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -258,9 +258,12 @@ export default function SmartJournalEntries() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isOverDropZone, setIsOverDropZone] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   // DnD Sensors
   const sensors = useSensors(
@@ -295,6 +298,31 @@ export default function SmartJournalEntries() {
     fetchVisibilitySettings();
     fetchAccountsOrder();
   }, []);
+
+  // Handle scroll indicators
+  const handleScroll = useCallback(() => {
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollElement) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      setCanScrollUp(scrollTop > 10);
+      setCanScrollDown(scrollTop + clientHeight < scrollHeight - 10);
+    }
+  }, []);
+
+  useEffect(() => {
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScroll);
+      // Initial check
+      handleScroll();
+      return () => scrollElement.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll, filteredAccounts.length]);
+
+  // Check scroll on accounts load
+  useEffect(() => {
+    setTimeout(handleScroll, 100);
+  }, [filteredAccounts.length, handleScroll]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -932,78 +960,98 @@ export default function SmartJournalEntries() {
                 }
               </div>
 
-              {/* Accounts List */}
-              <ScrollArea className="flex-1">
-                <div
-                  ref={accountsPanelRef}
-                  tabIndex={0}
-                  className={cn(
-                    "outline-none rounded-lg p-1",
-                    isAccountsPanelFocused && "ring-2 ring-blue-500",
-                    isReorderMode && "bg-orange-50"
-                  )}
-                  onFocus={() => {
-                    setIsAccountsPanelFocused(true);
-                    if (focusedAccountIndex < 0) setFocusedAccountIndex(0);
-                  }}
-                  onBlur={() => {
-                    setIsAccountsPanelFocused(false);
-                  }}
-                >
-                  {loading ? (
-                    <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
-                  ) : filteredAccounts.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">لا توجد حسابات</div>
-                  ) : (
-                    <SortableContext items={filteredAccounts.map(a => a.id)} strategy={rectSortingStrategy}>
-                      <div className="grid grid-cols-4 gap-2">
-                        {filteredAccounts.map((account, index) => (
-                          isReorderMode ? (
-                            <SortableAccountCard
-                              key={account.id}
-                              account={account}
-                              index={index}
-                              isSelected={selectedAccountId === account.id}
-                              isInEntry={entryLines.some(l => l.account_id === account.id)}
-                              isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
-                              onSelect={() => {}}
-                              onToggleVisibility={(e) => e.stopPropagation()}
-                            />
-                          ) : (
-                            <DraggableAccountCard
-                              key={account.id}
-                              account={account}
-                              index={index}
-                              isSelected={selectedAccountId === account.id}
-                              isInEntry={entryLines.some(l => l.account_id === account.id)}
-                              isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
-                              onSelect={() => handleAccountSelect(account)}
-                              onToggleVisibility={(e) => {
-                                e.stopPropagation();
-                                toggleAccountVisibility(account.id);
-                              }}
-                            />
-                          )
-                        ))}
-                      </div>
-                    </SortableContext>
-                  )}
-                </div>
-                
-                {/* Show hidden accounts count */}
-                {hiddenAccounts.size > 0 && (
-                  <div className="mt-4 text-center">
-                    <Button
-                      variant="link"
-                      className="text-gray-500 text-sm"
-                      onClick={() => setHiddenAccounts(new Set())}
-                    >
-                      <EyeOff className="h-3 w-3 ml-1" />
-                      {hiddenAccounts.size} حسابات مخفية - إظهار الكل
-                    </Button>
+              {/* Accounts List with Scroll Indicators */}
+              <div className="relative flex-1">
+                {/* Scroll Up Indicator */}
+                {canScrollUp && (
+                  <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+                    <div className="bg-gradient-to-b from-white via-white/90 to-transparent w-full py-2 flex justify-center animate-fade-in">
+                      <ChevronUp className="h-5 w-5 text-blue-500 animate-bounce" />
+                    </div>
                   </div>
                 )}
-              </ScrollArea>
+                
+                <ScrollArea className="h-full" ref={scrollAreaRef}>
+                  <div
+                    ref={accountsPanelRef}
+                    tabIndex={0}
+                    className={cn(
+                      "outline-none rounded-lg p-1",
+                      isAccountsPanelFocused && "ring-2 ring-blue-500",
+                      isReorderMode && "bg-orange-50"
+                    )}
+                    onFocus={() => {
+                      setIsAccountsPanelFocused(true);
+                      if (focusedAccountIndex < 0) setFocusedAccountIndex(0);
+                    }}
+                    onBlur={() => {
+                      setIsAccountsPanelFocused(false);
+                    }}
+                  >
+                    {loading ? (
+                      <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+                    ) : filteredAccounts.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">لا توجد حسابات</div>
+                    ) : (
+                      <SortableContext items={filteredAccounts.map(a => a.id)} strategy={rectSortingStrategy}>
+                        <div className="grid grid-cols-4 gap-2">
+                          {filteredAccounts.map((account, index) => (
+                            isReorderMode ? (
+                              <SortableAccountCard
+                                key={account.id}
+                                account={account}
+                                index={index}
+                                isSelected={selectedAccountId === account.id}
+                                isInEntry={entryLines.some(l => l.account_id === account.id)}
+                                isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
+                                onSelect={() => {}}
+                                onToggleVisibility={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <DraggableAccountCard
+                                key={account.id}
+                                account={account}
+                                index={index}
+                                isSelected={selectedAccountId === account.id}
+                                isInEntry={entryLines.some(l => l.account_id === account.id)}
+                                isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
+                                onSelect={() => handleAccountSelect(account)}
+                                onToggleVisibility={(e) => {
+                                  e.stopPropagation();
+                                  toggleAccountVisibility(account.id);
+                                }}
+                              />
+                            )
+                          ))}
+                        </div>
+                      </SortableContext>
+                    )}
+                  </div>
+                  
+                  {/* Show hidden accounts count */}
+                  {hiddenAccounts.size > 0 && (
+                    <div className="mt-4 text-center">
+                      <Button
+                        variant="link"
+                        className="text-gray-500 text-sm"
+                        onClick={() => setHiddenAccounts(new Set())}
+                      >
+                        <EyeOff className="h-3 w-3 ml-1" />
+                        {hiddenAccounts.size} حسابات مخفية - إظهار الكل
+                      </Button>
+                    </div>
+                  )}
+                </ScrollArea>
+                
+                {/* Scroll Down Indicator */}
+                {canScrollDown && (
+                  <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center pointer-events-none">
+                    <div className="bg-gradient-to-t from-white via-white/90 to-transparent w-full py-2 flex justify-center animate-fade-in">
+                      <ChevronDown className="h-5 w-5 text-blue-500 animate-bounce" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </ResizablePanel>
 
