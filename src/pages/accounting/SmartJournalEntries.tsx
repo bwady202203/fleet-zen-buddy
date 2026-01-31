@@ -318,6 +318,14 @@ export default function SmartJournalEntries() {
       setFocusedAccountIndex(0);
       accountsPanelRef.current?.focus();
     }
+
+    // '+' key in description field - open new line
+    if ((e.key === '+' || e.key === '=') && field === 'description') {
+      e.preventDefault();
+      setIsAccountsPanelFocused(true);
+      setFocusedAccountIndex(0);
+      accountsPanelRef.current?.focus();
+    }
   };
 
   const removeLine = (lineId: string) => {
