@@ -276,36 +276,45 @@ export default function SmartJournalEntries() {
       const target = e.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
 
-      // Handle accounts panel navigation (4 columns grid, RTL layout)
+      // Arrow keys for accounts navigation - activate immediately from anywhere (except inputs)
+      if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') && !isInputField) {
+        e.preventDefault();
+        
+        // Auto-activate accounts panel focus if not already active
+        if (!isAccountsPanelFocused) {
+          setIsAccountsPanelFocused(true);
+          if (focusedAccountIndex < 0) {
+            setFocusedAccountIndex(0);
+          }
+        }
+        
+        if (filteredAccounts.length > 0) {
+          if (e.key === 'ArrowDown') {
+            setFocusedAccountIndex(prev => 
+              prev + 4 < filteredAccounts.length ? prev + 4 : prev
+            );
+          }
+          if (e.key === 'ArrowUp') {
+            setFocusedAccountIndex(prev => 
+              prev >= 4 ? prev - 4 : prev
+            );
+          }
+          if (e.key === 'ArrowRight') {
+            setFocusedAccountIndex(prev => 
+              prev < filteredAccounts.length - 1 ? prev + 1 : prev
+            );
+          }
+          if (e.key === 'ArrowLeft') {
+            setFocusedAccountIndex(prev => 
+              prev > 0 ? prev - 1 : prev
+            );
+          }
+        }
+        return;
+      }
+
+      // Handle Enter and Escape when accounts panel is focused
       if (isAccountsPanelFocused && filteredAccounts.length > 0) {
-        // Arrow Down - move to next row (+4)
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          setFocusedAccountIndex(prev => 
-            prev + 4 < filteredAccounts.length ? prev + 4 : prev
-          );
-        }
-        // Arrow Up - move to previous row (-4)
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setFocusedAccountIndex(prev => 
-            prev >= 4 ? prev - 4 : prev
-          );
-        }
-        // Arrow Right - move right (increase index)
-        if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          setFocusedAccountIndex(prev => 
-            prev < filteredAccounts.length - 1 ? prev + 1 : prev
-          );
-        }
-        // Arrow Left - move left (decrease index)
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          setFocusedAccountIndex(prev => 
-            prev > 0 ? prev - 1 : prev
-          );
-        }
         if (e.key === 'Enter') {
           e.preventDefault();
           if (focusedAccountIndex >= 0 && focusedAccountIndex < filteredAccounts.length) {
