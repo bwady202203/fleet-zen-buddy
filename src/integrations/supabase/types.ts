@@ -2580,6 +2580,30 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_journal_account_order: {
+        Row: {
+          account_order: string[]
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_order?: string[]
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_order?: string[]
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       smart_journal_account_visibility: {
         Row: {
           account_id: string
