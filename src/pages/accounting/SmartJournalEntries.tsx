@@ -131,21 +131,35 @@ function DraggableAccountCard({
     zIndex: isDragging ? 1000 : 1,
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Only trigger select if it's a quick click (not a drag)
+    if (!isDragging) {
+      onSelect();
+    }
+  };
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className={cn(
-        "p-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-md text-center relative border",
+        "p-2 cursor-pointer transition-all hover:shadow-md text-center relative border",
         getAccountTypeColor(account.type, isSelected, isFocused),
         isInEntry && "border-b-2 border-b-green-500",
-        isDragging && "shadow-lg",
+        isDragging && "shadow-lg cursor-grabbing",
         isHidden && "border-dashed border-2 border-gray-400 bg-gray-100"
       )}
-      onClick={onSelect}
+      onClick={handleClick}
     >
+      {/* Drag Handle */}
+      <div 
+        {...listeners} 
+        className="absolute top-1 left-1 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-200/50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-3 w-3 text-gray-400" />
+      </div>
       {/* Card Number Badge */}
       {showNumbers && (
         <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md z-10">
