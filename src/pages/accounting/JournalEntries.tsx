@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw, Wrench } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -849,6 +849,178 @@ const JournalEntries = () => {
     }
   };
 
+  const [isRebuildingEntries, setIsRebuildingEntries] = useState(false);
+
+  // إعادة بناء سطور القيود الناقصة من مصروفات العهد
+  const handleRebuildMissingEntryLines = async () => {
+    setIsRebuildingEntries(true);
+    try {
+      // 1. البحث عن القيود التي ليس لها سطور
+      const { data: entriesWithoutLines, error: entriesError } = await supabase
+        .from('journal_entries')
+        .select('id, entry_number, date, description, reference')
+        .not('id', 'in', supabase.from('journal_entry_lines').select('journal_entry_id'));
+      
+      if (entriesError) throw entriesError;
+
+      // الطريقة البديلة للبحث عن القيود بدون سطور
+      const { data: allEntries } = await supabase
+        .from('journal_entries')
+        .select('id, entry_number, date, description, reference')
+        .order('created_at', { ascending: false });
+      
+      const { data: allLines } = await supabase
+        .from('journal_entry_lines')
+        .select('journal_entry_id');
+      
+      const lineEntryIds = new Set(allLines?.map(l => l.journal_entry_id) || []);
+      const missingEntries = allEntries?.filter(e => !lineEntryIds.has(e.id)) || [];
+
+      if (missingEntries.length === 0) {
+        toast({
+          title: "لا توجد قيود ناقصة",
+          description: "جميع القيود لديها سطور مسجلة",
+        });
+        setIsRebuildingEntries(false);
+        return;
+      }
+
+      console.log(`Found ${missingEntries.length} entries without lines`);
+
+      let rebuiltCount = 0;
+
+      for (const entry of missingEntries) {
+        // البحث عن مصروفات العهد المرتبطة بهذا القيد من خلال التاريخ والمرجع
+        const referenceMatch = entry.reference?.match(/custody_daily_([^_]+)_(\d{4}-\d{2}-\d{2})/);
+        
+        if (referenceMatch) {
+          const representativeId = referenceMatch[1];
+          const expenseDate = referenceMatch[2];
+          
+          // جلب مصروفات العهد لهذا المندوب وهذا التاريخ
+          const { data: custodyExpenses, error: expensesError } = await supabase
+            .from('custody_expenses')
+            .select(`
+              id,
+              amount,
+              expense_type,
+              description,
+              chart_of_accounts!custody_expenses_expense_type_fkey(id, name_ar)
+            `)
+            .eq('representative_id', representativeId)
+            .eq('expense_date', expenseDate);
+
+          if (expensesError) {
+            console.error('Error fetching custody expenses:', expensesError);
+            continue;
+          }
+
+          if (!custodyExpenses || custodyExpenses.length === 0) {
+            console.log(`No custody expenses found for entry ${entry.entry_number}`);
+            continue;
+          }
+
+          // جلب معلومات المندوب
+          const { data: repAccount } = await supabase
+            .from('chart_of_accounts')
+            .select('id, name_ar')
+            .eq('id', representativeId)
+            .single();
+
+          if (!repAccount) {
+            console.log(`Representative account not found for ${representativeId}`);
+            continue;
+          }
+
+          // جلب حساب الضريبة
+          const { data: taxAccounts } = await supabase
+            .from('chart_of_accounts')
+            .select('id')
+            .eq('code', '110801')
+            .limit(1);
+          const taxAccountId = taxAccounts?.[0]?.id;
+
+          // حساب المجموعات
+          let totalAmount = 0;
+          let totalTax = 0;
+          const expenseLines: any[] = [];
+
+          for (const expense of custodyExpenses) {
+            const expenseAccount = expense.chart_of_accounts as any;
+            const amount = Number(expense.amount);
+            
+            // افتراض أن المبلغ يشمل الضريبة (15%)
+            const baseAmount = amount / 1.15;
+            const taxAmount = amount - baseAmount;
+            
+            expenseLines.push({
+              journal_entry_id: entry.id,
+              account_id: expense.expense_type,
+              debit: baseAmount,
+              credit: 0,
+              description: expense.description || expenseAccount?.name_ar || ''
+            });
+
+            if (taxAccountId && taxAmount > 0.01) {
+              totalTax += taxAmount;
+            }
+
+            totalAmount += amount;
+          }
+
+          // إضافة سطر الضريبة إن وجد
+          if (taxAccountId && totalTax > 0.01) {
+            expenseLines.push({
+              journal_entry_id: entry.id,
+              account_id: taxAccountId,
+              debit: totalTax,
+              credit: 0,
+              description: 'ضريبة القيمة المضافة 15%'
+            });
+          }
+
+          // إضافة سطر الدائن (المندوب)
+          expenseLines.push({
+            journal_entry_id: entry.id,
+            account_id: repAccount.id,
+            debit: 0,
+            credit: totalAmount,
+            description: `مصروفات ${repAccount.name_ar}`
+          });
+
+          // إدراج السطور
+          const { error: insertError } = await supabase
+            .from('journal_entry_lines')
+            .insert(expenseLines);
+
+          if (insertError) {
+            console.error(`Error inserting lines for entry ${entry.entry_number}:`, insertError);
+          } else {
+            rebuiltCount++;
+            console.log(`✅ Rebuilt entry ${entry.entry_number} with ${expenseLines.length} lines`);
+          }
+        }
+      }
+
+      toast({
+        title: "تم إعادة بناء القيود",
+        description: `تم إعادة بناء ${rebuiltCount} من أصل ${missingEntries.length} قيد ناقص`,
+      });
+
+      // تحديث قائمة القيود
+      fetchJournalEntries();
+    } catch (error) {
+      console.error('Error rebuilding entry lines:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إعادة بناء سطور القيود",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRebuildingEntries(false);
+    }
+  };
+
   // تحديث أرصدة الحسابات من قيود اليومية
   const handleRefreshBalances = async () => {
     setIsRefreshingBalances(true);
@@ -1520,7 +1692,16 @@ const JournalEntries = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRebuildMissingEntryLines}
+                  disabled={isRebuildingEntries}
+                  title="إعادة بناء سطور القيود الناقصة من مصروفات العهد"
+                >
+                  <Wrench className={cn("h-4 w-4 ml-2", isRebuildingEntries && "animate-spin")} />
+                  إصلاح قيود العهد
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={handleRefreshBalances}
