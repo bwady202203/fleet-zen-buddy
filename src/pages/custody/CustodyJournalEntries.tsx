@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import CustodyNavbar from '@/components/CustodyNavbar';
+import { toast } from 'sonner';
 
 interface CustodyJournalEntry {
   id: string;
@@ -49,12 +53,14 @@ const CustodyJournalEntries = () => {
   const [custodyEntries, setCustodyEntries] = useState<CustodyJournalEntry[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchAllEntries();
-  }, []);
-
-  const fetchAllEntries = async () => {
+  // Fetch all entries - wrapped in useCallback
+  const fetchAllEntries = useCallback(async (showToast = false) => {
+    if (showToast) {
+      setIsRefreshing(true);
+    }
+    
     try {
       // Fetch from custody_journal_entries (intermediate table)
       const { data: custodyData, error: custodyError } = await supabase
@@ -95,11 +101,62 @@ const CustodyJournalEntries = () => {
       if (journalError) throw journalError;
 
       setJournalEntries((journalData || []) as JournalEntry[]);
+      
+      if (showToast) {
+        toast.success('تم تحديث البيانات بنجاح');
+      }
     } catch (error) {
       console.error('Error fetching journal entries:', error);
+      if (showToast) {
+        toast.error('حدث خطأ في تحديث البيانات');
+      }
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchAllEntries();
+  }, [fetchAllEntries]);
+
+  // Setup realtime subscription for custody_journal_entries
+  useEffect(() => {
+    const channel = supabase
+      .channel('custody-journal-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'custody_journal_entries'
+        },
+        () => {
+          // Refetch data when changes occur
+          fetchAllEntries();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journal_entry_lines'
+        },
+        () => {
+          // Refetch data when journal lines change
+          fetchAllEntries();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAllEntries]);
+
+  const handleRefresh = () => {
+    fetchAllEntries(true);
   };
 
   const calculateTotals = () => {
@@ -142,11 +199,21 @@ const CustodyJournalEntries = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div>
-            <h1 className="text-3xl font-bold">قيود اليومية - العهد</h1>
-            <p className="text-muted-foreground mt-1">
-              عرض القيود المحاسبية الخاصة بالعهد
-            </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">قيود اليومية - العهد</h1>
+              <p className="text-muted-foreground mt-1">
+                عرض القيود المحاسبية الخاصة بالعهد
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn("h-4 w-4 ml-2", isRefreshing && "animate-spin")} />
+              تحديث البيانات
+            </Button>
           </div>
         </div>
       </header>
@@ -183,10 +250,10 @@ const CustodyJournalEntries = () => {
                       <TableCell>
                         {format(new Date(entry.entry_date), 'PPP', { locale: ar })}
                       </TableCell>
-                      <TableCell className="text-red-600 font-medium">
+                      <TableCell className="text-destructive font-medium">
                         {entry.debit_account_name}
                       </TableCell>
-                      <TableCell className="text-green-600 font-medium">
+                      <TableCell className="text-primary font-medium">
                         {entry.credit_account_name}
                       </TableCell>
                       <TableCell>{entry.description || '-'}</TableCell>
@@ -205,13 +272,13 @@ const CustodyJournalEntries = () => {
                     <TableCell colSpan={5} className="text-left">
                       الإجمالي
                     </TableCell>
-                    <TableCell className="text-red-600">
+                    <TableCell className="text-destructive">
                       {custodyEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                     <TableCell>
                       {custodyEntries.reduce((sum, e) => sum + Number(e.tax_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
-                    <TableCell className="text-green-600">
+                    <TableCell className="text-primary">
                       {custodyEntries.reduce((sum, e) => sum + Number(e.total_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                   </TableRow>
@@ -265,10 +332,10 @@ const CustodyJournalEntries = () => {
                               {line.chart_of_accounts?.name_ar} ({line.chart_of_accounts?.code})
                             </TableCell>
                             <TableCell>{line.description || entry.description || '-'}</TableCell>
-                            <TableCell className="text-red-600 font-medium">
+                            <TableCell className="text-destructive font-medium">
                               {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                             </TableCell>
-                            <TableCell className="text-green-600 font-medium">
+                            <TableCell className="text-primary font-medium">
                               {line.credit > 0 ? line.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                             </TableCell>
                           </TableRow>
@@ -285,19 +352,19 @@ const CustodyJournalEntries = () => {
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي المدين</p>
-                      <p className="text-2xl font-bold text-red-600">
+                      <p className="text-2xl font-bold text-destructive">
                         {totals.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">إجمالي الدائن</p>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-2xl font-bold text-primary">
                         {totals.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                       </p>
                     </div>
                   </div>
                   {totals.debit === totals.credit && totals.debit > 0 && (
-                    <p className="text-center mt-4 text-sm text-green-600 font-medium">
+                    <p className="text-center mt-4 text-sm text-primary font-medium">
                       ✓ القيد متوازن
                     </p>
                   )}
