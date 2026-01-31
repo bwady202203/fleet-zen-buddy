@@ -550,38 +550,26 @@ export default function SmartJournalEntries() {
   const handleAccountSelect = (account: Account) => {
     setSelectedAccountId(account.id);
     
-    // Check if account already exists in entry lines
-    const existingIndex = entryLines.findIndex(line => line.account_id === account.id);
+    // Always add new line when account is selected (even if same account exists)
+    const newLine: EntryLine = {
+      id: crypto.randomUUID(),
+      account_id: account.id,
+      account_name: account.name_ar,
+      account_code: account.code,
+      debit: 0,
+      credit: 0,
+      description: ""
+    };
+    setEntryLines([...entryLines, newLine]);
+    setActiveRowIndex(entryLines.length);
+    setActiveField('debit');
     
-    if (existingIndex === -1) {
-      // Add new line
-      const newLine: EntryLine = {
-        id: crypto.randomUUID(),
-        account_id: account.id,
-        account_name: account.name_ar,
-        account_code: account.code,
-        debit: 0,
-        credit: 0,
-        description: ""
-      };
-      setEntryLines([...entryLines, newLine]);
-      setActiveRowIndex(entryLines.length);
-      setActiveField('debit');
-      
-      // Focus on debit field after render
-      setTimeout(() => {
-        const ref = inputRefs.current[`debit-${newLine.id}`];
-        ref?.focus();
-        ref?.select();
-      }, 50);
-    } else {
-      setActiveRowIndex(existingIndex);
-      setTimeout(() => {
-        const ref = inputRefs.current[`debit-${entryLines[existingIndex].id}`];
-        ref?.focus();
-        ref?.select();
-      }, 50);
-    }
+    // Focus on debit field after render
+    setTimeout(() => {
+      const ref = inputRefs.current[`debit-${newLine.id}`];
+      ref?.focus();
+      ref?.select();
+    }, 50);
   };
 
   // DnD Handlers
