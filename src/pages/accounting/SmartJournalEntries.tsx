@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -368,234 +369,241 @@ export default function SmartJournalEntries() {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-80px)]">
-        {/* Right Panel - Accounts (40%) */}
-        <div className="w-[40%] bg-gray-50 border-l p-4 flex flex-col">
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="بحث بالاسم أو الرقم..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10 bg-white"
-            />
-          </div>
-
-          {/* Accounts List */}
-          <ScrollArea className="flex-1">
-            <div>
-              {loading ? (
-                <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
-              ) : filteredAccounts.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">لا توجد حسابات</div>
-              ) : (
-                <div className="grid grid-cols-4 gap-2">
-                  {filteredAccounts.map((account) => (
-                    <Card
-                      key={account.id}
-                      className={cn(
-                        "p-2 cursor-pointer transition-all hover:shadow-md text-center",
-                        selectedAccountId === account.id 
-                          ? "ring-2 ring-blue-500 bg-blue-50" 
-                          : "bg-white hover:bg-gray-50",
-                        entryLines.some(l => l.account_id === account.id) && "border-b-2 border-b-green-500"
-                      )}
-                      onClick={() => handleAccountSelect(account)}
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">{account.name_ar}</div>
-                        <div className="text-xs text-gray-500">{account.code}</div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleAccountVisibility(account.id);
-                          }}
-                        >
-                          <Eye className="h-3 w-3 text-gray-400" />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
+      <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-80px)]">
+        {/* Right Panel - Accounts */}
+        <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
+          <div className="h-full bg-gray-50 p-4 flex flex-col">
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="بحث بالاسم أو الرقم..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 bg-white"
+              />
             </div>
-            
-            {/* Show hidden accounts count */}
-            {hiddenAccounts.size > 0 && (
-              <div className="mt-4 text-center">
-                <Button
-                  variant="link"
-                  className="text-gray-500 text-sm"
-                  onClick={() => setHiddenAccounts(new Set())}
-                >
-                  <EyeOff className="h-3 w-3 ml-1" />
-                  {hiddenAccounts.size} حسابات مخفية - إظهار الكل
-                </Button>
+
+            {/* Accounts List */}
+            <ScrollArea className="flex-1">
+              <div>
+                {loading ? (
+                  <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+                ) : filteredAccounts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">لا توجد حسابات</div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {filteredAccounts.map((account) => (
+                      <Card
+                        key={account.id}
+                        className={cn(
+                          "p-2 cursor-pointer transition-all hover:shadow-md text-center",
+                          selectedAccountId === account.id 
+                            ? "ring-2 ring-blue-500 bg-blue-50" 
+                            : "bg-white hover:bg-gray-50",
+                          entryLines.some(l => l.account_id === account.id) && "border-b-2 border-b-green-500"
+                        )}
+                        onClick={() => handleAccountSelect(account)}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">{account.name_ar}</div>
+                          <div className="text-xs text-gray-500">{account.code}</div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleAccountVisibility(account.id);
+                            }}
+                          >
+                            <Eye className="h-3 w-3 text-gray-400" />
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </ScrollArea>
-        </div>
-
-        {/* Left Panel - Entry Lines (60%) */}
-        <div className="w-[60%] bg-white p-6 flex flex-col">
-          {/* Entry Description */}
-          <div className="mb-4">
-            <Input
-              placeholder="وصف القيد..."
-              value={entryDescription}
-              onChange={(e) => setEntryDescription(e.target.value)}
-              className="text-lg"
-            />
-          </div>
-
-          {/* Entry Lines Table */}
-          <div className="flex-1 overflow-auto">
-            {entryLines.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                <Plus className="h-12 w-12 mb-4" />
-                <p className="text-lg">اختر حساب من القائمة لبدء القيد</p>
-                <p className="text-sm mt-2">Enter: الحقل التالي | Shift+Enter: سطر جديد | Esc: إلغاء</p>
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="text-right p-3 font-medium text-gray-600 w-8">#</th>
-                    <th className="text-right p-3 font-medium text-gray-600">الحساب</th>
-                    <th className="text-right p-3 font-medium text-gray-600 w-32">مدين</th>
-                    <th className="text-right p-3 font-medium text-gray-600 w-32">دائن</th>
-                    <th className="text-right p-3 font-medium text-gray-600">الوصف</th>
-                    <th className="w-12"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entryLines.map((line, index) => (
-                    <tr
-                      key={line.id}
-                      className={cn(
-                        "border-b transition-colors",
-                        activeRowIndex === index ? "bg-blue-50" : "hover:bg-gray-50"
-                      )}
-                      onClick={() => setActiveRowIndex(index)}
-                    >
-                      <td className="p-3 text-gray-500">{index + 1}</td>
-                      <td className="p-3">
-                        <div className="font-medium">{line.account_name}</div>
-                        <div className="text-sm text-gray-500">{line.account_code}</div>
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          ref={(el) => inputRefs.current[`debit-${line.id}`] = el}
-                          type="number"
-                          value={line.debit || ""}
-                          onChange={(e) => handleLineChange(line.id, 'debit', e.target.value)}
-                          onKeyDown={(e) => handleKeyDownInField(e, line.id, 'debit')}
-                          onFocus={() => {
-                            setActiveRowIndex(index);
-                            setActiveField('debit');
-                          }}
-                          className={cn(
-                            "text-left",
-                            line.debit > 0 && "bg-green-50 border-green-300"
-                          )}
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          ref={(el) => inputRefs.current[`credit-${line.id}`] = el}
-                          type="number"
-                          value={line.credit || ""}
-                          onChange={(e) => handleLineChange(line.id, 'credit', e.target.value)}
-                          onKeyDown={(e) => handleKeyDownInField(e, line.id, 'credit')}
-                          onFocus={() => {
-                            setActiveRowIndex(index);
-                            setActiveField('credit');
-                          }}
-                          className={cn(
-                            "text-left",
-                            line.credit > 0 && "bg-red-50 border-red-300"
-                          )}
-                          placeholder="0"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          ref={(el) => inputRefs.current[`description-${line.id}`] = el}
-                          value={line.description}
-                          onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
-                          onKeyDown={(e) => handleKeyDownInField(e, line.id, 'description')}
-                          onFocus={() => {
-                            setActiveRowIndex(index);
-                            setActiveField('description');
-                          }}
-                          placeholder="وصف..."
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => removeLine(line.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Totals Footer */}
-          {entryLines.length > 0 && (
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-between items-center">
-                <div className="flex gap-8">
-                  <div>
-                    <span className="text-gray-500">مجموع المدين:</span>
-                    <span className="font-bold text-lg mr-2 text-green-600">
-                      {totalDebit.toLocaleString()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">مجموع الدائن:</span>
-                    <span className="font-bold text-lg mr-2 text-red-600">
-                      {totalCredit.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className={cn(
-                    "px-3 py-1 rounded-full text-sm font-medium",
-                    isBalanced ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                  )}>
-                    {isBalanced ? "✓ متوازن" : `✗ فرق: ${Math.abs(totalDebit - totalCredit).toLocaleString()}`}
-                  </div>
-                </div>
-                <div className="flex gap-2">
+              
+              {/* Show hidden accounts count */}
+              {hiddenAccounts.size > 0 && (
+                <div className="mt-4 text-center">
                   <Button
-                    variant="outline"
-                    onClick={() => {
-                      setEntryLines([]);
-                      setSelectedAccountId(null);
-                      setActiveRowIndex(null);
-                    }}
-                    className="gap-2"
+                    variant="link"
+                    className="text-gray-500 text-sm"
+                    onClick={() => setHiddenAccounts(new Set())}
                   >
-                    <X className="h-4 w-4" />
-                    مسح الكل
+                    <EyeOff className="h-3 w-3 ml-1" />
+                    {hiddenAccounts.size} حسابات مخفية - إظهار الكل
                   </Button>
                 </div>
-              </div>
+              )}
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+
+        {/* Resizable Handle */}
+        <ResizableHandle withHandle className="bg-gray-200 hover:bg-blue-400 transition-colors" />
+
+        {/* Left Panel - Entry Lines */}
+        <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
+          <div className="h-full bg-white p-6 flex flex-col">
+            {/* Entry Description */}
+            <div className="mb-4">
+              <Input
+                placeholder="وصف القيد..."
+                value={entryDescription}
+                onChange={(e) => setEntryDescription(e.target.value)}
+                className="text-lg"
+              />
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* Entry Lines Table */}
+            <div className="flex-1 overflow-auto">
+              {entryLines.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                  <Plus className="h-12 w-12 mb-4" />
+                  <p className="text-lg">اختر حساب من القائمة لبدء القيد</p>
+                  <p className="text-sm mt-2">Enter: الحقل التالي | Shift+Enter: سطر جديد | Esc: إلغاء</p>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="text-right p-3 font-medium text-gray-600 w-8">#</th>
+                      <th className="text-right p-3 font-medium text-gray-600">الحساب</th>
+                      <th className="text-right p-3 font-medium text-gray-600 w-32">مدين</th>
+                      <th className="text-right p-3 font-medium text-gray-600 w-32">دائن</th>
+                      <th className="text-right p-3 font-medium text-gray-600">الوصف</th>
+                      <th className="w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entryLines.map((line, index) => (
+                      <tr
+                        key={line.id}
+                        className={cn(
+                          "border-b transition-colors",
+                          activeRowIndex === index ? "bg-blue-50" : "hover:bg-gray-50"
+                        )}
+                        onClick={() => setActiveRowIndex(index)}
+                      >
+                        <td className="p-3 text-gray-500">{index + 1}</td>
+                        <td className="p-3">
+                          <div className="font-medium">{line.account_name}</div>
+                          <div className="text-sm text-gray-500">{line.account_code}</div>
+                        </td>
+                        <td className="p-3">
+                          <Input
+                            ref={(el) => inputRefs.current[`debit-${line.id}`] = el}
+                            type="number"
+                            value={line.debit || ""}
+                            onChange={(e) => handleLineChange(line.id, 'debit', e.target.value)}
+                            onKeyDown={(e) => handleKeyDownInField(e, line.id, 'debit')}
+                            onFocus={() => {
+                              setActiveRowIndex(index);
+                              setActiveField('debit');
+                            }}
+                            className={cn(
+                              "text-left",
+                              line.debit > 0 && "bg-green-50 border-green-300"
+                            )}
+                            placeholder="0"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <Input
+                            ref={(el) => inputRefs.current[`credit-${line.id}`] = el}
+                            type="number"
+                            value={line.credit || ""}
+                            onChange={(e) => handleLineChange(line.id, 'credit', e.target.value)}
+                            onKeyDown={(e) => handleKeyDownInField(e, line.id, 'credit')}
+                            onFocus={() => {
+                              setActiveRowIndex(index);
+                              setActiveField('credit');
+                            }}
+                            className={cn(
+                              "text-left",
+                              line.credit > 0 && "bg-red-50 border-red-300"
+                            )}
+                            placeholder="0"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <Input
+                            ref={(el) => inputRefs.current[`description-${line.id}`] = el}
+                            value={line.description}
+                            onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
+                            onKeyDown={(e) => handleKeyDownInField(e, line.id, 'description')}
+                            onFocus={() => {
+                              setActiveRowIndex(index);
+                              setActiveField('description');
+                            }}
+                            placeholder="وصف..."
+                          />
+                        </td>
+                        <td className="p-3">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => removeLine(line.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Totals Footer */}
+            {entryLines.length > 0 && (
+              <div className="border-t pt-4 mt-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-8">
+                    <div>
+                      <span className="text-gray-500">مجموع المدين:</span>
+                      <span className="font-bold text-lg mr-2 text-green-600">
+                        {totalDebit.toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">مجموع الدائن:</span>
+                      <span className="font-bold text-lg mr-2 text-red-600">
+                        {totalCredit.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className={cn(
+                      "px-3 py-1 rounded-full text-sm font-medium",
+                      isBalanced ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    )}>
+                      {isBalanced ? "✓ متوازن" : `✗ فرق: ${Math.abs(totalDebit - totalCredit).toLocaleString()}`}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEntryLines([]);
+                        setSelectedAccountId(null);
+                        setActiveRowIndex(null);
+                      }}
+                      className="gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      مسح الكل
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
