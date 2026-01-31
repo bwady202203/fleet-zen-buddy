@@ -39,9 +39,31 @@ interface Account {
   name_ar: string;
   name_en: string;
   level: number;
+  type: string;
   is_visible?: boolean;
   order_index?: number;
 }
+
+// Get background color based on account type
+const getAccountTypeColor = (type: string, isSelected: boolean, isFocused: boolean): string => {
+  if (isSelected) return "ring-2 ring-blue-500 bg-blue-100";
+  if (isFocused) return "ring-2 ring-orange-500 bg-orange-100";
+  
+  switch (type) {
+    case 'asset':
+      return "bg-emerald-50 hover:bg-emerald-100 border-emerald-200";
+    case 'liability':
+      return "bg-rose-50 hover:bg-rose-100 border-rose-200";
+    case 'equity':
+      return "bg-purple-50 hover:bg-purple-100 border-purple-200";
+    case 'revenue':
+      return "bg-sky-50 hover:bg-sky-100 border-sky-200";
+    case 'expense':
+      return "bg-amber-50 hover:bg-amber-100 border-amber-200";
+    default:
+      return "bg-gray-50 hover:bg-gray-100 border-gray-200";
+  }
+};
 
 interface EntryLine {
   id: string;
@@ -100,10 +122,9 @@ function DraggableAccountCard({
       {...attributes}
       {...listeners}
       className={cn(
-        "p-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-md text-center relative",
-        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "bg-white hover:bg-gray-50",
+        "p-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-md text-center relative border",
+        getAccountTypeColor(account.type, isSelected, isFocused),
         isInEntry && "border-b-2 border-b-green-500",
-        isFocused && "ring-2 ring-orange-500 bg-orange-50",
         isDragging && "shadow-lg"
       )}
       onClick={onSelect}
@@ -164,9 +185,8 @@ function SortableAccountCard({
       style={style}
       className={cn(
         "p-2 cursor-pointer transition-all hover:shadow-md text-center relative group border-2 border-dashed border-orange-300",
-        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "bg-orange-50 hover:bg-orange-100",
+        getAccountTypeColor(account.type, isSelected, isFocused),
         isInEntry && "border-b-2 border-b-green-500",
-        isFocused && "ring-2 ring-orange-500 bg-orange-50",
         isDragging && "shadow-lg"
       )}
     >
@@ -387,7 +407,7 @@ export default function SmartJournalEntries() {
     try {
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("id, code, name_ar, name_en, level")
+        .select("id, code, name_ar, name_en, level, type")
         .eq("level", 4)
         .eq("is_active", true)
         .order("code");
@@ -840,7 +860,7 @@ export default function SmartJournalEntries() {
         <div className="bg-white border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+              <Button variant="ghost" onClick={() => navigate('/accounting')} className="gap-2">
                 <ArrowRight className="h-4 w-4" />
                 رجوع
               </Button>
