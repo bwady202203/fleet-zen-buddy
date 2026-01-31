@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -53,7 +53,72 @@ interface EntryLine {
   description: string;
 }
 
-// Sortable Account Card Component
+// Draggable Account Card Component for normal mode
+function DraggableAccountCard({
+  account,
+  index,
+  isSelected,
+  isInEntry,
+  isFocused,
+  onSelect,
+  onToggleVisibility,
+}: {
+  account: Account;
+  index: number;
+  isSelected: boolean;
+  isInEntry: boolean;
+  isFocused: boolean;
+  onSelect: () => void;
+  onToggleVisibility: (e: React.MouseEvent) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: account.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "p-2 cursor-grab active:cursor-grabbing transition-all hover:shadow-md text-center relative",
+        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "bg-white hover:bg-gray-50",
+        isInEntry && "border-b-2 border-b-green-500",
+        isFocused && "ring-2 ring-orange-500 bg-orange-50",
+        isDragging && "shadow-lg"
+      )}
+      onClick={onSelect}
+    >
+      <div className="flex flex-col items-center gap-1">
+        <div className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">{account.name_ar}</div>
+        <div className="text-xs text-gray-500">{account.code}</div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={onToggleVisibility}
+        >
+          <Eye className="h-3 w-3 text-gray-400" />
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+// Sortable Account Card Component for reorder mode
 function SortableAccountCard({
   account,
   index,
@@ -92,35 +157,26 @@ function SortableAccountCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "p-2 cursor-pointer transition-all hover:shadow-md text-center relative group",
-        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "bg-white hover:bg-gray-50",
+        "p-2 cursor-pointer transition-all hover:shadow-md text-center relative group border-2 border-dashed border-orange-300",
+        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "bg-orange-50 hover:bg-orange-100",
         isInEntry && "border-b-2 border-b-green-500",
         isFocused && "ring-2 ring-orange-500 bg-orange-50",
         isDragging && "shadow-lg"
       )}
-      onClick={onSelect}
     >
       {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-200"
+        className="absolute top-1 right-1 cursor-grab active:cursor-grabbing p-1 rounded bg-orange-200 hover:bg-orange-300"
         onClick={(e) => e.stopPropagation()}
       >
-        <GripVertical className="h-3 w-3 text-gray-400" />
+        <GripVertical className="h-3 w-3 text-orange-600" />
       </div>
       
-      <div className="flex flex-col items-center gap-1 pt-2">
+      <div className="flex flex-col items-center gap-1 pt-4">
         <div className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">{account.name_ar}</div>
         <div className="text-xs text-gray-500">{account.code}</div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={onToggleVisibility}
-        >
-          <Eye className="h-3 w-3 text-gray-400" />
-        </Button>
       </div>
     </Card>
   );
@@ -175,6 +231,7 @@ export default function SmartJournalEntries() {
   const [isAccountsPanelFocused, setIsAccountsPanelFocused] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isOverDropZone, setIsOverDropZone] = useState(false);
+  const [isReorderMode, setIsReorderMode] = useState(false);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
@@ -510,7 +567,22 @@ export default function SmartJournalEntries() {
 
     if (!over) return;
 
-    // If dropped on entry lines area, add account
+    // In reorder mode, only allow reordering within accounts panel
+    if (isReorderMode) {
+      if (active.id !== over.id) {
+        const oldIndex = accountsOrder.indexOf(active.id as string);
+        const newIndex = accountsOrder.indexOf(over.id as string);
+        
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newOrder = arrayMove(accountsOrder, oldIndex, newIndex);
+          setAccountsOrder(newOrder);
+          saveAccountsOrder(newOrder);
+        }
+      }
+      return;
+    }
+
+    // Normal mode: If dropped on entry lines area, add account
     if (over.id === 'entry-lines-drop-zone') {
       const account = accounts.find(a => a.id === active.id);
       if (account) {
@@ -518,18 +590,6 @@ export default function SmartJournalEntries() {
         toast.success(`تم إضافة حساب "${account.name_ar}" للقيد`);
       }
       return;
-    }
-
-    // Reorder within accounts panel
-    if (active.id !== over.id) {
-      const oldIndex = accountsOrder.indexOf(active.id as string);
-      const newIndex = accountsOrder.indexOf(over.id as string);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = arrayMove(accountsOrder, oldIndex, newIndex);
-        setAccountsOrder(newOrder);
-        saveAccountsOrder(newOrder);
-      }
     }
   };
 
@@ -711,20 +771,49 @@ export default function SmartJournalEntries() {
           {/* Right Panel - Accounts */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={60}>
             <div className="h-full bg-gray-50 p-4 flex flex-col">
-              {/* Search */}
-              <div className="relative mb-4">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="بحث بالاسم أو الرقم..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10 bg-white"
-                />
+              {/* Mode Toggle and Search */}
+              <div className="flex items-center gap-2 mb-4">
+                <Button
+                  variant={isReorderMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsReorderMode(!isReorderMode)}
+                  className={cn(
+                    "gap-2 shrink-0",
+                    isReorderMode && "bg-orange-500 hover:bg-orange-600"
+                  )}
+                >
+                  {isReorderMode ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      تم
+                    </>
+                  ) : (
+                    <>
+                      <Settings2 className="h-4 w-4" />
+                      ترتيب
+                    </>
+                  )}
+                </Button>
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="بحث بالاسم أو الرقم..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pr-10 bg-white"
+                  />
+                </div>
               </div>
 
-              {/* Hint for drag and drop */}
-              <div className="text-xs text-gray-500 mb-2 text-center">
-                اسحب الحساب وأفلته في منطقة القيد أو اضغط لإضافته
+              {/* Mode Hint */}
+              <div className={cn(
+                "text-xs mb-2 text-center py-1 rounded",
+                isReorderMode ? "bg-orange-100 text-orange-700" : "text-gray-500"
+              )}>
+                {isReorderMode 
+                  ? "⚙️ وضع الترتيب: اسحب البطاقات لتغيير مواقعها" 
+                  : "اسحب الحساب وأفلته في منطقة القيد أو اضغط لإضافته"
+                }
               </div>
 
               {/* Accounts List */}
@@ -734,7 +823,8 @@ export default function SmartJournalEntries() {
                   tabIndex={0}
                   className={cn(
                     "outline-none rounded-lg p-1",
-                    isAccountsPanelFocused && "ring-2 ring-blue-500"
+                    isAccountsPanelFocused && "ring-2 ring-blue-500",
+                    isReorderMode && "bg-orange-50"
                   )}
                   onFocus={() => {
                     setIsAccountsPanelFocused(true);
@@ -752,19 +842,32 @@ export default function SmartJournalEntries() {
                     <SortableContext items={filteredAccounts.map(a => a.id)} strategy={rectSortingStrategy}>
                       <div className="grid grid-cols-4 gap-2">
                         {filteredAccounts.map((account, index) => (
-                          <SortableAccountCard
-                            key={account.id}
-                            account={account}
-                            index={index}
-                            isSelected={selectedAccountId === account.id}
-                            isInEntry={entryLines.some(l => l.account_id === account.id)}
-                            isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
-                            onSelect={() => handleAccountSelect(account)}
-                            onToggleVisibility={(e) => {
-                              e.stopPropagation();
-                              toggleAccountVisibility(account.id);
-                            }}
-                          />
+                          isReorderMode ? (
+                            <SortableAccountCard
+                              key={account.id}
+                              account={account}
+                              index={index}
+                              isSelected={selectedAccountId === account.id}
+                              isInEntry={entryLines.some(l => l.account_id === account.id)}
+                              isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
+                              onSelect={() => {}}
+                              onToggleVisibility={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <DraggableAccountCard
+                              key={account.id}
+                              account={account}
+                              index={index}
+                              isSelected={selectedAccountId === account.id}
+                              isInEntry={entryLines.some(l => l.account_id === account.id)}
+                              isFocused={isAccountsPanelFocused && focusedAccountIndex === index}
+                              onSelect={() => handleAccountSelect(account)}
+                              onToggleVisibility={(e) => {
+                                e.stopPropagation();
+                                toggleAccountVisibility(account.id);
+                              }}
+                            />
+                          )
                         ))}
                       </div>
                     </SortableContext>
