@@ -2712,6 +2712,39 @@ export type Database = {
           },
         ]
       }
+      smart_journal_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          entry_lines: Json
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          entry_lines?: Json
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          entry_lines?: Json
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       spare_parts: {
         Row: {
           category: string | null
