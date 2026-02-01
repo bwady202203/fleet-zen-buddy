@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1254,6 +1254,136 @@ export default function SmartJournalEntries() {
               <h1 className="text-xl font-semibold text-gray-900">قيود ذكية</h1>
             </div>
             <div className="flex items-center gap-2">
+              {/* Help & Instructions Dialog */}
+              <Dialog>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="text-blue-600 border-blue-200 hover:bg-blue-50" title="المساعدة والتعليمات">
+                      <HelpCircle className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[400px] max-h-[500px] overflow-y-auto text-right">
+                    <DropdownMenuLabel className="text-lg font-bold text-center border-b pb-2">
+                      📖 دليل استخدام القيود الذكية
+                    </DropdownMenuLabel>
+                    
+                    {/* Keyboard Shortcuts Section */}
+                    <div className="p-3 bg-blue-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-blue-800 mb-2">
+                        <Keyboard className="h-4 w-4" />
+                        اختصارات لوحة المفاتيح
+                      </div>
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between items-center">
+                          <span>إضافة حساب جديد</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">+ أو =</kbd>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>التركيز على الحسابات</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">*</kbd>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>حفظ القيد</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">Shift</kbd>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>تعطيل الضريبة</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">1</kbd>
+                          <span className="text-gray-500 text-xs">(في حقل الدائن)</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>تفعيل الضريبة</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">2</kbd>
+                          <span className="text-gray-500 text-xs">(في حقل الدائن)</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>العودة لاختيار حساب</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">Enter</kbd>
+                          <span className="text-gray-500 text-xs">(في الوصف)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mouse & Drag Section */}
+                    <div className="p-3 bg-green-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-green-800 mb-2">
+                        <MousePointer2 className="h-4 w-4" />
+                        السحب والإفلات
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• <strong>الوضع العادي:</strong> اسحب بطاقة الحساب وأفلتها في جدول القيود</p>
+                        <p>• <strong>وضع الترتيب:</strong> اضغط على "ترتيب" لتغيير مواقع البطاقات</p>
+                        <p>• <strong>الإخفاء:</strong> اضغط على أيقونة العين في البطاقة لإخفائها</p>
+                      </div>
+                    </div>
+
+                    {/* Number Mode Section */}
+                    <div className="p-3 bg-purple-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-purple-800 mb-2">
+                        <Hash className="h-4 w-4" />
+                        وضع الأرقام
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• اضغط على زر <kbd className="px-1.5 bg-white rounded border">#</kbd> لإظهار أرقام البطاقات</p>
+                        <p>• اكتب رقم البطاقة لاختيارها بسرعة</p>
+                        <p>• يمكن تكرار نفس الحساب في أسطر متعددة</p>
+                      </div>
+                    </div>
+
+                    {/* VAT Section */}
+                    <div className="p-3 bg-amber-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-amber-800 mb-2">
+                        <Percent className="h-4 w-4" />
+                        ضريبة القيمة المضافة
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• الضريبة 15% تُحسب تلقائياً على حسابات المصروفات</p>
+                        <p>• يُضاف سطر ضريبة تلقائي غير قابل للتعديل</p>
+                        <p>• استخدم <kbd className="px-1.5 bg-white rounded border">1</kbd> أو <kbd className="px-1.5 bg-white rounded border">2</kbd> للتحكم بالضريبة</p>
+                      </div>
+                    </div>
+
+                    {/* Templates Section */}
+                    <div className="p-3 bg-sky-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-sky-800 mb-2">
+                        <FileText className="h-4 w-4" />
+                        النماذج
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• احفظ هيكل القيد المتكرر كنموذج</p>
+                        <p>• النموذج يحفظ الحسابات فقط (بدون المبالغ)</p>
+                        <p>• استدعِ النموذج وأدخل القيم مباشرة</p>
+                      </div>
+                    </div>
+
+                    {/* Balance Check Section */}
+                    <div className="p-3 bg-rose-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-rose-800 mb-2">
+                        <Calculator className="h-4 w-4" />
+                        التوازن
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• يظهر ملخص القيد أسفل الجدول</p>
+                        <p>• القيد المتوازن = إجمالي المدين يساوي الدائن</p>
+                        <p>• لا يمكن حفظ قيد غير متوازن</p>
+                      </div>
+                    </div>
+
+                    {/* Visibility Section */}
+                    <div className="p-3 bg-gray-100 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-gray-800 mb-2">
+                        <Eye className="h-4 w-4" />
+                        إظهار/إخفاء الحسابات
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• اضغط على زر العين البنفسجي لإظهار الحسابات المخفية</p>
+                        <p>• الرقم على الزر يعرض عدد الحسابات المخفية</p>
+                        <p>• لإلغاء الإخفاء: اظهر المخفية ثم اضغط على أيقونة العين في البطاقة</p>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </Dialog>
               {/* Templates Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
