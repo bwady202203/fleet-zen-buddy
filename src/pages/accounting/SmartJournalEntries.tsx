@@ -9,7 +9,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -85,6 +101,15 @@ interface EntryLine {
   description: string;
   hasTax?: boolean;
   taxLineId?: string; // Reference to auto-generated tax line
+}
+
+interface Template {
+  id: string;
+  name: string;
+  description: string | null;
+  entry_lines: EntryLine[];
+  is_default: boolean;
+  created_at: string;
 }
 
 // VAT Purchases Account (ضريبة القيمة المضافة للمشتريات)
@@ -314,6 +339,13 @@ export default function SmartJournalEntries() {
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [showSaveConfirmDialog, setShowSaveConfirmDialog] = useState(false);
   
+  // Template states
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
@@ -354,6 +386,7 @@ export default function SmartJournalEntries() {
     fetchAccounts();
     fetchVisibilitySettings();
     fetchAccountsOrder();
+    fetchTemplates();
   }, []);
 
   // Handle scroll indicators
@@ -687,6 +720,124 @@ export default function SmartJournalEntries() {
       }
     } catch (error: any) {
       console.error("Error toggling visibility:", error);
+    }
+  };
+
+  // Fetch templates
+  const fetchTemplates = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("smart_journal_templates" as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      setTemplates((data || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        entry_lines: t.entry_lines as EntryLine[],
+        is_default: t.is_default,
+        created_at: t.created_at
+      })));
+    } catch (error: any) {
+      console.error("Error fetching templates:", error);
+    }
+  };
+
+  // Save current entry as template
+  const handleSaveAsTemplate = async () => {
+    if (!user?.id || !templateName.trim()) {
+      toast.error("يرجى إدخال اسم النموذج");
+      return;
+    }
+
+    if (entryLines.length === 0) {
+      toast.error("لا يوجد سطور لحفظها كنموذج");
+      return;
+    }
+
+    setIsSavingTemplate(true);
+    
+    try {
+      // Create template lines without values (keeping only account info)
+      const templateLines = entryLines.map(line => ({
+        id: crypto.randomUUID(),
+        account_id: line.account_id,
+        account_name: line.account_name,
+        account_code: line.account_code,
+        debit: 0,
+        credit: 0,
+        description: "",
+        hasTax: line.hasTax,
+      }));
+
+      const { error } = await supabase
+        .from("smart_journal_templates" as any)
+        .insert({
+          user_id: user.id,
+          name: templateName.trim(),
+          description: templateDescription.trim() || null,
+          entry_lines: templateLines,
+          is_default: false
+        });
+
+      if (error) throw error;
+
+      toast.success(`تم حفظ النموذج "${templateName}" بنجاح`);
+      setShowSaveTemplateDialog(false);
+      setTemplateName("");
+      setTemplateDescription("");
+      fetchTemplates();
+    } catch (error: any) {
+      toast.error("خطأ في حفظ النموذج: " + error.message);
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
+
+  // Load a template
+  const handleLoadTemplate = (template: Template) => {
+    // Regenerate line IDs for the loaded template
+    const newLines = template.entry_lines.map(line => ({
+      ...line,
+      id: crypto.randomUUID(),
+      taxLineId: undefined // Reset tax line references
+    }));
+    
+    setEntryLines(newLines);
+    setActiveRowIndex(0);
+    
+    // Focus on first debit field
+    if (newLines.length > 0) {
+      setTimeout(() => {
+        const ref = inputRefs.current[`debit-${newLines[0].id}`];
+        ref?.focus();
+        ref?.select();
+      }, 100);
+    }
+    
+    toast.success(`تم تحميل نموذج "${template.name}"`);
+  };
+
+  // Delete a template
+  const handleDeleteTemplate = async (templateId: string, templateName: string) => {
+    try {
+      const { error } = await supabase
+        .from("smart_journal_templates" as any)
+        .delete()
+        .eq("id", templateId);
+
+      if (error) throw error;
+
+      toast.success(`تم حذف النموذج "${templateName}"`);
+      fetchTemplates();
+    } catch (error: any) {
+      toast.error("خطأ في حذف النموذج: " + error.message);
     }
   };
 
@@ -1032,6 +1183,58 @@ export default function SmartJournalEntries() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>حفظ كنموذج</DialogTitle>
+            <DialogDescription>
+              احفظ هيكل القيد الحالي كنموذج لاستخدامه لاحقاً
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">اسم النموذج</label>
+              <Input
+                placeholder="مثال: قيد مصروفات الرواتب"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">وصف (اختياري)</label>
+              <Input
+                placeholder="وصف مختصر للنموذج..."
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+              />
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+              <p className="font-medium mb-1">سيتم حفظ:</p>
+              <ul className="list-disc list-inside space-y-1">
+                {entryLines.filter(l => !l.id.startsWith('tax-')).map((line, i) => (
+                  <li key={i}>{line.account_name} ({line.account_code})</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button
+              onClick={handleSaveAsTemplate}
+              disabled={!templateName.trim() || isSavingTemplate}
+              className="gap-2"
+            >
+              <BookmarkPlus className="h-4 w-4" />
+              {isSavingTemplate ? "جاري الحفظ..." : "حفظ النموذج"}
+            </Button>
+            <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>
+              إلغاء
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1050,7 +1253,72 @@ export default function SmartJournalEntries() {
               </Button>
               <h1 className="text-xl font-semibold text-gray-900">قيود ذكية</h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Templates Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <FolderOpen className="h-4 w-4" />
+                    النماذج
+                    {templates.length > 0 && (
+                      <span className="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full text-xs">
+                        {templates.length}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>النماذج المحفوظة</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {templates.length === 0 ? (
+                    <div className="py-4 text-center text-sm text-gray-500">
+                      لا توجد نماذج محفوظة
+                    </div>
+                  ) : (
+                    templates.map((template) => (
+                      <DropdownMenuItem
+                        key={template.id}
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={() => handleLoadTemplate(template)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">{template.name}</div>
+                          {template.description && (
+                            <div className="text-xs text-gray-500 truncate">{template.description}</div>
+                          )}
+                          <div className="text-xs text-gray-400">
+                            {template.entry_lines.length} حسابات
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTemplate(template.id, template.name);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Save as Template Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowSaveTemplateDialog(true)}
+                disabled={entryLines.length === 0}
+                className="gap-2"
+                title="حفظ كنموذج"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                حفظ كنموذج
+              </Button>
+
               <Input
                 type="date"
                 value={entryDate}
