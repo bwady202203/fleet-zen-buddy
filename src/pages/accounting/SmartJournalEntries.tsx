@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table, Copy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1028,6 +1028,37 @@ export default function SmartJournalEntries() {
     }
   };
 
+  // Duplicate a line
+  const duplicateLine = (lineId: string) => {
+    const lineToDuplicate = entryLines.find(l => l.id === lineId);
+    if (!lineToDuplicate) return;
+    
+    // Don't duplicate tax lines
+    if (lineToDuplicate.id.startsWith('tax-')) {
+      toast.error("لا يمكن تكرار سطر الضريبة");
+      return;
+    }
+    
+    const lineIndex = entryLines.findIndex(l => l.id === lineId);
+    const newLine: EntryLine = {
+      ...lineToDuplicate,
+      id: `line-${Date.now()}`,
+      hasTax: false,
+      taxLineId: undefined,
+    };
+    
+    // Insert after the current line (and its tax line if exists)
+    const insertAfterIndex = lineToDuplicate.taxLineId 
+      ? entryLines.findIndex(l => l.id === lineToDuplicate.taxLineId) + 1
+      : lineIndex + 1;
+    
+    const newLines = [...entryLines];
+    newLines.splice(insertAfterIndex, 0, newLine);
+    setEntryLines(newLines);
+    
+    toast.success("تم تكرار السطر");
+  };
+
   // Toggle tax for a line
   const toggleLineTax = async (lineId: string) => {
     const line = entryLines.find(l => l.id === lineId);
@@ -2044,14 +2075,28 @@ export default function SmartJournalEntries() {
                               />
                             </td>
                             <td className="p-3">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => removeLine(line.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {!isTaxLine && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                    onClick={() => duplicateLine(line.id)}
+                                    title="تكرار السطر"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  onClick={() => removeLine(line.id)}
+                                  title="حذف السطر"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
