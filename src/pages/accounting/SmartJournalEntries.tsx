@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -345,6 +345,11 @@ export default function SmartJournalEntries() {
   const [templateName, setTemplateName] = useState("");
   const [templateDescription, setTemplateDescription] = useState("");
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  
+  // Excel paste states
+  const [showPasteDialog, setShowPasteDialog] = useState(false);
+  const [pasteData, setPasteData] = useState("");
+  const [parsedPasteData, setParsedPasteData] = useState<{debit: number; credit: number; description: string}[]>([]);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
@@ -1075,6 +1080,103 @@ export default function SmartJournalEntries() {
     return { totalDebit, totalCredit, isBalanced: Math.abs(totalDebit - totalCredit) < 0.01 };
   };
 
+  // Parse pasted Excel data
+  const handleParsePasteData = (data: string) => {
+    setPasteData(data);
+    
+    if (!data.trim()) {
+      setParsedPasteData([]);
+      return;
+    }
+
+    const lines = data.trim().split('\n');
+    const parsed: {debit: number; credit: number; description: string}[] = [];
+    
+    for (const line of lines) {
+      // Split by tab (Excel default) or multiple spaces
+      const columns = line.split(/\t|  +/).map(col => col.trim());
+      
+      if (columns.length >= 2) {
+        // Try to detect columns: could be [debit, credit, description] or [debit, credit] or [amount, description]
+        let debit = 0;
+        let credit = 0;
+        let description = '';
+        
+        // Parse first column as potential debit
+        const firstNum = parseFloat(columns[0].replace(/,/g, ''));
+        // Parse second column as potential credit
+        const secondNum = parseFloat(columns[1].replace(/,/g, ''));
+        
+        if (!isNaN(firstNum)) {
+          debit = firstNum;
+        }
+        
+        if (!isNaN(secondNum)) {
+          credit = secondNum;
+        }
+        
+        // Third column (if exists) is description
+        if (columns.length >= 3) {
+          description = columns.slice(2).join(' ').trim();
+        }
+        
+        // If only one number and a text, treat as amount + description
+        if (isNaN(secondNum) && !isNaN(firstNum)) {
+          debit = firstNum;
+          credit = 0;
+          description = columns.slice(1).join(' ').trim();
+        }
+        
+        parsed.push({ debit, credit, description });
+      } else if (columns.length === 1) {
+        // Single column - try to parse as amount
+        const num = parseFloat(columns[0].replace(/,/g, ''));
+        if (!isNaN(num)) {
+          parsed.push({ debit: num, credit: 0, description: '' });
+        }
+      }
+    }
+    
+    setParsedPasteData(parsed);
+  };
+
+  // Apply pasted data to entry lines
+  const handleApplyPasteData = () => {
+    if (parsedPasteData.length === 0) {
+      toast.error("لا توجد بيانات للصقها");
+      return;
+    }
+
+    if (entryLines.length === 0) {
+      toast.error("يجب إضافة حسابات أولاً قبل لصق البيانات");
+      return;
+    }
+
+    // Apply data to existing lines (match by index)
+    const updatedLines = [...entryLines];
+    const nonTaxLines = updatedLines.filter(l => !l.id.startsWith('tax-'));
+    
+    parsedPasteData.forEach((pasteRow, index) => {
+      if (index < nonTaxLines.length) {
+        const lineIndex = updatedLines.findIndex(l => l.id === nonTaxLines[index].id);
+        if (lineIndex !== -1) {
+          updatedLines[lineIndex] = {
+            ...updatedLines[lineIndex],
+            debit: pasteRow.debit || updatedLines[lineIndex].debit,
+            credit: pasteRow.credit || updatedLines[lineIndex].credit,
+            description: pasteRow.description || updatedLines[lineIndex].description,
+          };
+        }
+      }
+    });
+
+    setEntryLines(updatedLines);
+    setShowPasteDialog(false);
+    setPasteData("");
+    setParsedPasteData([]);
+    toast.success(`تم لصق البيانات على ${Math.min(parsedPasteData.length, nonTaxLines.length)} أسطر`);
+  };
+
   const handleSaveEntry = async () => {
     const { totalDebit, totalCredit, isBalanced } = calculateTotals();
     
@@ -1235,6 +1337,129 @@ export default function SmartJournalEntries() {
         </DialogContent>
       </Dialog>
 
+      {/* Paste from Excel Dialog */}
+      <Dialog open={showPasteDialog} onOpenChange={(open) => {
+        setShowPasteDialog(open);
+        if (!open) {
+          setPasteData("");
+          setParsedPasteData([]);
+        }
+      }}>
+        <DialogContent dir="rtl" className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardPaste className="h-5 w-5" />
+              لصق من Excel
+            </DialogTitle>
+            <DialogDescription>
+              انسخ البيانات من Excel (مدين، دائن، وصف) والصقها هنا. سيتم تطبيقها على أسطر القيد الموجودة بالترتيب.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4 flex-1 overflow-hidden flex flex-col">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">الصق البيانات هنا:</label>
+              <textarea
+                className="w-full h-32 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="انسخ من Excel والصق هنا...&#10;مثال:&#10;1000	0	مصروفات رواتب&#10;0	1000	نقدية"
+                value={pasteData}
+                onChange={(e) => handleParsePasteData(e.target.value)}
+                autoFocus
+                dir="ltr"
+              />
+            </div>
+            
+            {parsedPasteData.length > 0 && (
+              <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Table className="h-4 w-4" />
+                  معاينة البيانات ({parsedPasteData.length} صف)
+                </label>
+                <div className="border rounded-lg overflow-auto flex-1 max-h-48">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="p-2 text-right border-b w-8">#</th>
+                        <th className="p-2 text-right border-b">الحساب (الوجهة)</th>
+                        <th className="p-2 text-left border-b w-28">مدين</th>
+                        <th className="p-2 text-left border-b w-28">دائن</th>
+                        <th className="p-2 text-right border-b">الوصف</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedPasteData.map((row, index) => {
+                        const targetLine = entryLines.filter(l => !l.id.startsWith('tax-'))[index];
+                        return (
+                          <tr key={index} className={cn(
+                            "border-b",
+                            !targetLine && "bg-red-50 text-red-600"
+                          )}>
+                            <td className="p-2 text-gray-500">{index + 1}</td>
+                            <td className="p-2">
+                              {targetLine ? (
+                                <span className="text-gray-900">{targetLine.account_name}</span>
+                              ) : (
+                                <span className="text-red-500 text-xs">لا يوجد حساب</span>
+                              )}
+                            </td>
+                            <td className="p-2 text-left font-mono">
+                              {row.debit > 0 && (
+                                <span className="text-green-600">{row.debit.toLocaleString()}</span>
+                              )}
+                            </td>
+                            <td className="p-2 text-left font-mono">
+                              {row.credit > 0 && (
+                                <span className="text-red-600">{row.credit.toLocaleString()}</span>
+                              )}
+                            </td>
+                            <td className="p-2 text-gray-600 truncate max-w-[200px]">{row.description}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Summary */}
+                <div className="flex items-center justify-between text-sm bg-gray-50 rounded-lg p-3">
+                  <div className="flex gap-4">
+                    <span>
+                      إجمالي المدين: <span className="font-bold text-green-600">{parsedPasteData.reduce((s, r) => s + r.debit, 0).toLocaleString()}</span>
+                    </span>
+                    <span>
+                      إجمالي الدائن: <span className="font-bold text-red-600">{parsedPasteData.reduce((s, r) => s + r.credit, 0).toLocaleString()}</span>
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">
+                      سيتم تطبيق {Math.min(parsedPasteData.length, entryLines.filter(l => !l.id.startsWith('tax-')).length)} من {parsedPasteData.length} صف
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button
+              onClick={handleApplyPasteData}
+              disabled={parsedPasteData.length === 0}
+              className="gap-2 bg-blue-500 hover:bg-blue-600"
+            >
+              <Check className="h-4 w-4" />
+              تطبيق البيانات
+            </Button>
+            <Button variant="outline" onClick={() => {
+              setShowPasteDialog(false);
+              setPasteData("");
+              setParsedPasteData([]);
+            }}>
+              إلغاء
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1356,6 +1581,19 @@ export default function SmartJournalEntries() {
                       </div>
                     </div>
 
+                    {/* Excel Paste Section */}
+                    <div className="p-3 bg-teal-50 rounded-lg m-2">
+                      <div className="flex items-center gap-2 font-semibold text-teal-800 mb-2">
+                        <ClipboardPaste className="h-4 w-4" />
+                        اللصق من Excel
+                      </div>
+                      <div className="space-y-1.5 text-sm text-gray-700">
+                        <p>• انسخ أعمدة (مدين، دائن، وصف) من Excel</p>
+                        <p>• اضغط "لصق من Excel" والصق البيانات</p>
+                        <p>• سيتم تطبيق القيم على الأسطر الموجودة بالترتيب</p>
+                      </div>
+                    </div>
+
                     {/* Balance Check Section */}
                     <div className="p-3 bg-rose-50 rounded-lg m-2">
                       <div className="flex items-center gap-2 font-semibold text-rose-800 mb-2">
@@ -1436,6 +1674,18 @@ export default function SmartJournalEntries() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Paste from Excel Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowPasteDialog(true)}
+                disabled={entryLines.length === 0}
+                className="gap-2"
+                title="لصق من Excel"
+              >
+                <ClipboardPaste className="h-4 w-4" />
+                لصق من Excel
+              </Button>
 
               {/* Save as Template Button */}
               <Button
