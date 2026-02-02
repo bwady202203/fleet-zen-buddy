@@ -69,7 +69,11 @@ const getAccountTypeColor = (type: string, isSelected: boolean, isFocused: boole
   if (isSelected) return "ring-2 ring-blue-500 bg-blue-100";
   if (isFocused) return "ring-2 ring-orange-500 bg-orange-100";
   
-  // Custody accounts are assets
+  // Color coding by account type
+  if (type === 'expense') {
+    return "bg-rose-50 hover:bg-rose-100 border-rose-200";
+  }
+  // Custody accounts (assets)
   return "bg-emerald-50 hover:bg-emerald-100 border-emerald-200";
 };
 
@@ -343,24 +347,35 @@ export default function CustodySmartJournal() {
 
       if (parentError) throw parentError;
 
-      if (!custodyParent) {
-        toast.error("لم يتم العثور على حساب العهد (1111)");
-        setLoading(false);
-        return;
+      // Fetch custody sub-accounts
+      let custodyAccounts: Account[] = [];
+      if (custodyParent) {
+        const { data, error } = await supabase
+          .from("chart_of_accounts")
+          .select("id, code, name_ar, name_en, level, type")
+          .eq("parent_id", custodyParent.id)
+          .eq("is_active", true)
+          .order("code");
+
+        if (error) throw error;
+        custodyAccounts = data || [];
       }
 
-      // Fetch all sub-accounts under custody
-      const { data, error } = await supabase
+      // Fetch all expense accounts (المصروفات)
+      const { data: expenseAccounts, error: expenseError } = await supabase
         .from("chart_of_accounts")
         .select("id, code, name_ar, name_en, level, type")
-        .eq("parent_id", custodyParent.id)
+        .eq("type", "expense")
         .eq("is_active", true)
         .order("code");
 
-      if (error) throw error;
-      setAccounts(data || []);
+      if (expenseError) throw expenseError;
+
+      // Combine both arrays, custody accounts first then expense accounts
+      const combinedAccounts = [...custodyAccounts, ...(expenseAccounts || [])];
+      setAccounts(combinedAccounts);
     } catch (error: any) {
-      toast.error("خطأ في تحميل حسابات العهد: " + error.message);
+      toast.error("خطأ في تحميل الحسابات: " + error.message);
     } finally {
       setLoading(false);
     }
