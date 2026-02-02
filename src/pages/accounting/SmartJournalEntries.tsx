@@ -946,30 +946,17 @@ export default function SmartJournalEntries() {
       return;
     }
 
-    // Handle 1 and 2 keys in credit field for tax selection
-    if (field === 'credit' && !isTaxLine && line && (line.debit > 0 || line.credit > 0)) {
-      if (e.key === '1') {
-        e.preventDefault();
-        // 1 = No tax, remove if exists and move to description
-        if (line.hasTax && line.taxLineId) {
-          toggleLineTax(lineId);
-        }
-        setTimeout(() => {
-          inputRefs.current[`description-${lineId}`]?.focus();
-        }, 50);
-        return;
+    // Handle '*' key in credit field - calculate tax and move to description
+    if (e.key === '*' && field === 'credit' && !isTaxLine && line && line.debit > 0) {
+      e.preventDefault();
+      // Add tax for the debit amount and move to description
+      if (!line.hasTax) {
+        toggleLineTax(lineId);
       }
-      if (e.key === '2') {
-        e.preventDefault();
-        // 2 = Add tax and move to description
-        if (!line.hasTax) {
-          toggleLineTax(lineId);
-        }
-        setTimeout(() => {
-          inputRefs.current[`description-${lineId}`]?.focus();
-        }, 50);
-        return;
-      }
+      setTimeout(() => {
+        inputRefs.current[`description-${lineId}`]?.focus();
+      }, 50);
+      return;
     }
 
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1543,13 +1530,8 @@ export default function SmartJournalEntries() {
                           <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">Shift</kbd>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span>تعطيل الضريبة</span>
-                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">1</kbd>
-                          <span className="text-gray-500 text-xs">(في حقل الدائن)</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span>تفعيل الضريبة</span>
-                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">2</kbd>
+                          <span>احتساب الضريبة</span>
+                          <kbd className="px-2 py-0.5 bg-white rounded border text-xs font-mono">*</kbd>
                           <span className="text-gray-500 text-xs">(في حقل الدائن)</span>
                         </div>
                         <div className="flex justify-between items-center">
