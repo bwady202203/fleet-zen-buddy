@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
   Table,
   TableBody,
   TableCell,
@@ -25,10 +32,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowRight, Printer, Search, X } from "lucide-react";
+import { ArrowRight, Printer, Search, X, Plus, Star, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toHijri } from "hijri-converter";
+
+// Local storage key for favorite accounts
+const FAVORITE_ACCOUNTS_KEY = "ledger_favorite_accounts";
 
 // Helper function to format numbers with thousand separators
 const formatNumber = (num: number): string => {
@@ -123,6 +133,13 @@ interface JournalEntryDetail {
   }[];
 }
 
+// Favorite account interface
+interface FavoriteAccount {
+  id: string;
+  code: string;
+  name_ar: string;
+}
+
 export default function LedgerNew() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -139,8 +156,70 @@ export default function LedgerNew() {
   const [selectedEntryDetail, setSelectedEntryDetail] = useState<JournalEntryDetail | null>(null);
   const [loadingEntry, setLoadingEntry] = useState(false);
   
+  // Favorite accounts state
+  const [favoriteAccounts, setFavoriteAccounts] = useState<FavoriteAccount[]>([]);
+  const [addFavoritePopoverOpen, setAddFavoritePopoverOpen] = useState(false);
+  const [favoriteSearchQuery, setFavoriteSearchQuery] = useState("");
+  const debouncedFavoriteSearch = useDebounce(favoriteSearchQuery, 300);
+  
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(accountSearchQuery, 300);
+
+  // Load favorite accounts from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(FAVORITE_ACCOUNTS_KEY);
+    if (saved) {
+      try {
+        setFavoriteAccounts(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error parsing favorite accounts:", e);
+      }
+    }
+  }, []);
+
+  // Save favorite accounts to localStorage
+  const saveFavoriteAccounts = (favorites: FavoriteAccount[]) => {
+    localStorage.setItem(FAVORITE_ACCOUNTS_KEY, JSON.stringify(favorites));
+    setFavoriteAccounts(favorites);
+  };
+
+  const addFavoriteAccount = (account: Account) => {
+    if (favoriteAccounts.some(f => f.id === account.id)) {
+      toast.info("الحساب موجود بالفعل في المفضلة");
+      return;
+    }
+    const newFavorite: FavoriteAccount = {
+      id: account.id,
+      code: account.code,
+      name_ar: account.name_ar,
+    };
+    saveFavoriteAccounts([...favoriteAccounts, newFavorite]);
+    setAddFavoritePopoverOpen(false);
+    setFavoriteSearchQuery("");
+    toast.success("تمت إضافة الحساب للمفضلة");
+  };
+
+  const removeFavoriteAccount = (accountId: string) => {
+    saveFavoriteAccounts(favoriteAccounts.filter(f => f.id !== accountId));
+    toast.success("تمت إزالة الحساب من المفضلة");
+  };
+
+  const selectFavoriteAccount = (accountId: string) => {
+    setSelectedAccount(accountId);
+    setAccountSearchQuery("");
+  };
+
+  // Filtered accounts for adding to favorites
+  const filteredFavoriteAccounts = useMemo(() => {
+    if (!debouncedFavoriteSearch.trim()) return [];
+    const query = debouncedFavoriteSearch.toLowerCase().trim();
+    return accounts.filter(account => 
+      (account.name_ar.toLowerCase().includes(query) ||
+      account.name_en.toLowerCase().includes(query) ||
+      account.code.toLowerCase().includes(query)) &&
+      !favoriteAccounts.some(f => f.id === account.id)
+    ).slice(0, 10);
+  }, [accounts, debouncedFavoriteSearch, favoriteAccounts]);
 
   useEffect(() => {
     fetchAccounts();
@@ -380,12 +459,13 @@ export default function LedgerNew() {
   return (
     <div className="container mx-auto p-6 print:p-0 ledger-report-container" dir="rtl">
       {/* Navigation Header - Hidden during print */}
-      <div className="flex items-center justify-between mb-6 print:hidden">
+      <div className="flex items-center justify-between mb-4 print:hidden">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate("/accounting")}>
             <ArrowRight className="ml-2" />
             العودة
           </Button>
+          <h1 className="text-2xl font-bold">كشف الحساب</h1>
         </div>
         <Button onClick={handlePrint} disabled={!selectedAccount || ledgerEntries.length === 0}>
           <Printer className="ml-2" />
@@ -393,8 +473,126 @@ export default function LedgerNew() {
         </Button>
       </div>
 
+      {/* Date Range Bar - Hidden during print */}
+      <div className="flex items-center gap-3 mb-4 print:hidden bg-muted/30 p-3 rounded-lg">
+        <Calendar className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm font-medium">الفترة:</span>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="h-9 w-40"
+            placeholder="من تاريخ"
+          />
+          <span className="text-muted-foreground">-</span>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="h-9 w-40"
+            placeholder="إلى تاريخ"
+          />
+        </div>
+        {(startDate || endDate) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setStartDate(""); setEndDate(""); }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4 ml-1" />
+            مسح
+          </Button>
+        )}
+      </div>
+
+      {/* Quick Access Favorite Accounts Bar - Hidden during print */}
+      <div className="mb-4 print:hidden">
+        <div className="flex items-center gap-2 flex-wrap bg-muted/20 p-3 rounded-lg border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+            <Star className="h-4 w-4" />
+            <span>انتقال سريع:</span>
+          </div>
+          
+          {favoriteAccounts.map((fav) => (
+            <Badge
+              key={fav.id}
+              variant={selectedAccount === fav.id ? "default" : "secondary"}
+              className="cursor-pointer hover:bg-primary/80 transition-colors group py-1.5 px-3"
+              onClick={() => selectFavoriteAccount(fav.id)}
+            >
+              <span className="text-xs">{fav.code} - {fav.name_ar}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeFavoriteAccount(fav.id);
+                }}
+                className="mr-2 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+
+          {/* Add Favorite Button */}
+          <Popover open={addFavoritePopoverOpen} onOpenChange={setAddFavoritePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 px-2 border-dashed">
+                <Plus className="h-3 w-3 ml-1" />
+                إضافة
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-3" align="start">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">إضافة حساب للمفضلة</Label>
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="ابحث عن حساب..."
+                    value={favoriteSearchQuery}
+                    onChange={(e) => setFavoriteSearchQuery(e.target.value)}
+                    className="pr-10"
+                  />
+                </div>
+                {favoriteSearchQuery.trim() && (
+                  <ScrollArea className="h-48">
+                    {filteredFavoriteAccounts.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-4">
+                        لا توجد نتائج
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {filteredFavoriteAccounts.map((account) => (
+                          <div
+                            key={account.id}
+                            className="p-2 rounded-md cursor-pointer hover:bg-muted transition-colors text-sm"
+                            onClick={() => addFavoriteAccount(account)}
+                          >
+                            <span className="font-medium">{account.code}</span>
+                            <span className="mx-1">-</span>
+                            <span>{account.name_ar}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {favoriteAccounts.length === 0 && (
+            <span className="text-xs text-muted-foreground">
+              لا توجد حسابات مفضلة. أضف حسابات للانتقال السريع.
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Report Header - Visible in both view and print */}
-      <div className="mb-6 report-header">
+      <div className="mb-6 report-header print:block hidden">
         <h1 className="text-3xl font-bold text-center mb-4">كشف الحساب</h1>
         <div className="text-right space-y-1">
           <p className="text-sm text-muted-foreground">التاريخ: {getGregorianDate()}</p>
@@ -471,23 +669,6 @@ export default function LedgerNew() {
             </Select>
           </div>
 
-          <div>
-            <Label>من تاريخ</Label>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Label>إلى تاريخ</Label>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
         </div>
 
         {/* Branch Filter */}
