@@ -11,7 +11,21 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Printer, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ArrowRight, Printer, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toHijri } from "hijri-converter";
@@ -91,6 +105,24 @@ interface LedgerEntry {
   branch_name?: string;
 }
 
+interface JournalEntryDetail {
+  id: string;
+  entry_number: string;
+  date: string;
+  description: string | null;
+  lines: {
+    id: string;
+    account_code: string;
+    account_name: string;
+    description: string | null;
+    debit: number;
+    credit: number;
+    branch_name?: string;
+    cost_center_name?: string;
+    project_name?: string;
+  }[];
+}
+
 export default function LedgerNew() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -103,6 +135,9 @@ export default function LedgerNew() {
   const [loading, setLoading] = useState(false);
   const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [accountSearchQuery, setAccountSearchQuery] = useState<string>("");
+  const [entryDialogOpen, setEntryDialogOpen] = useState(false);
+  const [selectedEntryDetail, setSelectedEntryDetail] = useState<JournalEntryDetail | null>(null);
+  const [loadingEntry, setLoadingEntry] = useState(false);
   
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(accountSearchQuery, 300);
@@ -278,6 +313,60 @@ export default function LedgerNew() {
   const handleAccountSelect = (accountId: string) => {
     setSelectedAccount(accountId);
     setAccountSearchQuery("");
+  };
+
+  const fetchEntryDetails = async (journalEntryId: string) => {
+    setLoadingEntry(true);
+    try {
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select(`
+          id,
+          entry_number,
+          date,
+          description,
+          journal_entry_lines (
+            id,
+            debit,
+            credit,
+            description,
+            chart_of_accounts (code, name_ar),
+            branches (name_ar),
+            cost_centers (name_ar),
+            projects (name_ar)
+          )
+        `)
+        .eq("id", journalEntryId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        const entryDetail: JournalEntryDetail = {
+          id: data.id,
+          entry_number: data.entry_number,
+          date: data.date,
+          description: data.description,
+          lines: data.journal_entry_lines.map((line: any) => ({
+            id: line.id,
+            account_code: line.chart_of_accounts?.code || "",
+            account_name: line.chart_of_accounts?.name_ar || "",
+            description: line.description,
+            debit: Number(line.debit) || 0,
+            credit: Number(line.credit) || 0,
+            branch_name: line.branches?.name_ar,
+            cost_center_name: line.cost_centers?.name_ar,
+            project_name: line.projects?.name_ar,
+          })),
+        };
+        setSelectedEntryDetail(entryDetail);
+        setEntryDialogOpen(true);
+      }
+    } catch (error: any) {
+      toast.error("خطأ في جلب تفاصيل القيد: " + error.message);
+    } finally {
+      setLoadingEntry(false);
+    }
   };
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount);
@@ -467,8 +556,9 @@ export default function LedgerNew() {
                       <td className="text-right p-3 border border-border">{entry.description || "-"}</td>
                       <td className="text-right p-3 border border-border">
                         <button
-                          onClick={() => navigate(`/accounting/journal-entries?id=${entry.journal_entry_id}`)}
+                          onClick={() => fetchEntryDetails(entry.journal_entry_id)}
                           className="text-primary hover:underline cursor-pointer font-medium print:no-underline print:text-foreground"
+                          disabled={loadingEntry}
                         >
                           {entry.reference || "-"}
                         </button>
@@ -620,6 +710,79 @@ export default function LedgerNew() {
           }
         }
       `}</style>
+
+      {/* Journal Entry Detail Dialog */}
+      <Dialog open={entryDialogOpen} onOpenChange={setEntryDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden print:hidden" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>تفاصيل القيد</span>
+              <Button variant="ghost" size="icon" onClick={() => setEntryDialogOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          {selectedEntryDetail && (
+            <div className="space-y-4 overflow-y-auto max-h-[calc(85vh-100px)]">
+              {/* Entry Header Info */}
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <Label className="text-sm text-muted-foreground">رقم القيد</Label>
+                  <p className="font-semibold">{selectedEntryDetail.entry_number}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">التاريخ</Label>
+                  <p className="font-semibold">{selectedEntryDetail.date}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">البيان</Label>
+                  <p className="font-semibold">{selectedEntryDetail.description || "-"}</p>
+                </div>
+              </div>
+
+              {/* Entry Lines */}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-right">كود الحساب</TableHead>
+                      <TableHead className="text-right">اسم الحساب</TableHead>
+                      <TableHead className="text-right">البيان</TableHead>
+                      <TableHead className="text-center">المدين</TableHead>
+                      <TableHead className="text-center">الدائن</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedEntryDetail.lines.map((line) => (
+                      <TableRow key={line.id}>
+                        <TableCell className="font-mono">{line.account_code}</TableCell>
+                        <TableCell>{line.account_name}</TableCell>
+                        <TableCell>{line.description || "-"}</TableCell>
+                        <TableCell className="text-center font-medium">
+                          {line.debit > 0 ? formatNumber(line.debit) : "-"}
+                        </TableCell>
+                        <TableCell className="text-center font-medium">
+                          {line.credit > 0 ? formatNumber(line.credit) : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {/* Totals Row */}
+                    <TableRow className="bg-muted font-bold">
+                      <TableCell colSpan={3} className="text-right">الإجمالي</TableCell>
+                      <TableCell className="text-center">
+                        {formatNumber(selectedEntryDetail.lines.reduce((sum, l) => sum + l.debit, 0))}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {formatNumber(selectedEntryDetail.lines.reduce((sum, l) => sum + l.credit, 0))}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
