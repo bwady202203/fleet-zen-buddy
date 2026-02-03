@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw, Wrench } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -63,6 +63,8 @@ const JournalEntries = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const entryIdFromUrl = searchParams.get('id');
   const isNewEntryPage = location.pathname === '/accounting/journal-entries/new';
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -138,6 +140,19 @@ const JournalEntries = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Open entry details when id is provided in URL
+  useEffect(() => {
+    if (entryIdFromUrl && displayedEntries.length > 0) {
+      const entry = displayedEntries.find(e => e.id === entryIdFromUrl);
+      if (entry) {
+        setSelectedEntry(entry);
+        setDetailDialogOpen(true);
+        // Clear the id from URL after opening
+        setSearchParams({});
+      }
+    }
+  }, [entryIdFromUrl, displayedEntries, setSearchParams]);
 
   // Initialize opening entry lines after mount
   useEffect(() => {
