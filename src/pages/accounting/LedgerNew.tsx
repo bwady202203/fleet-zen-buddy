@@ -81,6 +81,7 @@ interface Branch {
 
 interface LedgerEntry {
   id: string;
+  journal_entry_id: string;
   entry_date: string;
   description: string | null;
   reference: string | null;
@@ -251,6 +252,7 @@ export default function LedgerNew() {
 
         entries.push({
           id: line.id,
+          journal_entry_id: line.journal_entry_id,
           entry_date: line.journal_entries.date,
           description: line.description || line.journal_entries.description || "",
           reference: line.journal_entries.entry_number,
@@ -463,7 +465,14 @@ export default function LedgerNew() {
                     <tr key={entry.id} className="ledger-entry-row">
                       <td className="text-right p-3 border border-border">{entry.entry_date}</td>
                       <td className="text-right p-3 border border-border">{entry.description || "-"}</td>
-                      <td className="text-right p-3 border border-border">{entry.reference || "-"}</td>
+                      <td className="text-right p-3 border border-border">
+                        <button
+                          onClick={() => navigate(`/accounting/journal-entries?id=${entry.journal_entry_id}`)}
+                          className="text-primary hover:underline cursor-pointer font-medium print:no-underline print:text-foreground"
+                        >
+                          {entry.reference || "-"}
+                        </button>
+                      </td>
                       <td className="text-center p-3 border border-border">
                         {entry.debit > 0 ? formatNumber(entry.debit) : "-"}
                       </td>
