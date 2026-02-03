@@ -146,7 +146,31 @@ const JournalEntries = () => {
     if (entryIdFromUrl && displayedEntries.length > 0) {
       const entry = displayedEntries.find(e => e.id === entryIdFromUrl);
       if (entry) {
+        // Use same logic as handleViewDetails to properly set up the dialog
         setSelectedEntry(entry);
+        setEditingEntry({
+          id: entry.id,
+          entryNumber: entry.entryNumber,
+          date: entry.date,
+          description: entry.description,
+          organizationId: entry.organizationId,
+          organizationName: entry.organizationName,
+          lines: entry.lines.map((line: any) => ({
+            id: line.id,
+            accountId: line.accountId,
+            accountCode: line.accountCode,
+            accountName: line.accountName,
+            description: line.description,
+            debit: line.debit,
+            credit: line.credit,
+            costCenterId: line.costCenterId,
+            costCenterName: line.costCenterName,
+            projectId: line.projectId,
+            projectName: line.projectName,
+            branchId: line.branchId,
+            branchName: line.branchName,
+          })),
+        });
         setDetailDialogOpen(true);
         // Clear the id from URL after opening
         setSearchParams({});
