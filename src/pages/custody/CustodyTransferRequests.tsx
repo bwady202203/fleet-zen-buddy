@@ -7,7 +7,8 @@
  import { Textarea } from '@/components/ui/textarea';
  import { toast } from 'sonner';
  import { useAuth } from '@/contexts/AuthContext';
- import CustodyNavbar from '@/components/CustodyNavbar';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Printer, FileDown, Calendar, Sparkles, Info, Wallet, SendHorizontal } from 'lucide-react';
  import { format } from 'date-fns';
@@ -183,7 +184,16 @@ import { cn } from '@/lib/utils';
          </div>
        </header>
  
-       <CustodyNavbar />
+        <div className="border-b bg-card/50 backdrop-blur-sm print:hidden">
+          <div className="container mx-auto px-4 py-3">
+            <Link to="/accounting">
+              <Button variant="outline" size="sm" className="gap-2">
+                <ArrowRight className="h-4 w-4" />
+                العودة للمحاسبة
+              </Button>
+            </Link>
+          </div>
+        </div>
  
       <main className="container mx-auto px-4 py-6">
          {/* Add Request Form */}

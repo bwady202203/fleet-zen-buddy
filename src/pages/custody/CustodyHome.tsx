@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, List, Filter, BookOpen, ArrowRight, Banknote, Sparkles, SendHorizontal } from "lucide-react";
+import { Users, FileText, List, Filter, BookOpen, ArrowRight, Banknote, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CustodyHome = () => {
@@ -54,13 +54,6 @@ const CustodyHome = () => {
       color: "from-violet-500 to-violet-600",
       link: "/custody/smart-journal"
     },
-    {
-      title: "طلبات التحويل",
-      description: "إدارة طلبات تحويل العهد والمصروفات",
-      icon: SendHorizontal,
-      color: "from-cyan-500 to-cyan-600",
-      link: "/custody/transfer-requests"
-    }
   ];
 
   return (

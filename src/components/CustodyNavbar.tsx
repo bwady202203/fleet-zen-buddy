@@ -38,11 +38,6 @@ const CustodyNavbar = () => {
       icon: Sparkles 
     },
     { 
-      title: 'طلبات التحويل', 
-      path: '/custody/transfer-requests', 
-      icon: SendHorizontal 
-    },
-    { 
       title: 'قيود اليومية', 
       path: '/custody/journal', 
       icon: BookOpen 
