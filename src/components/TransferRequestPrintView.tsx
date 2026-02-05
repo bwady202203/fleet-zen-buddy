@@ -70,7 +70,6 @@
    return (
      <div 
        id="print-content"
-       className="hidden print:block"
        style={{
          width: '210mm',
          minHeight: '297mm',
