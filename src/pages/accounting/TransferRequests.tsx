@@ -358,9 +358,14 @@ interface TransferRequest {
  
   const handlePrint = (request: TransferRequest) => {
     setPrintingRequest(request);
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    // Use requestAnimationFrame to ensure DOM is updated before printing
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+        // Clear printing state after print dialog closes
+        setTimeout(() => setPrintingRequest(null), 500);
+      });
+    });
   };
  
   const getStatusBadge = (status: string) => {
@@ -721,10 +726,27 @@ interface TransferRequest {
 
       {/* Print View */}
       {printingRequest && (
-        <TransferRequestPrintView 
-          request={printingRequest} 
-          accounts={accounts}
-        />
+        <>
+          {/* Portal-like approach: render at document level for print */}
+          <div 
+            id="print-wrapper"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 99999,
+              pointerEvents: 'none',
+            }}
+            className="hidden print:block"
+          >
+            <TransferRequestPrintView 
+              request={printingRequest} 
+              accounts={accounts}
+            />
+          </div>
+        </>
       )}
 
       {/* Print Styles */}
@@ -740,25 +762,32 @@ interface TransferRequest {
             print-color-adjust: exact !important;
           }
           
-          /* Hide everything except print content */
-          body > *:not(#print-content),
-          header,
-          main,
-          nav,
-          footer,
-          button,
-          .print\\:hidden,
-          [class*="shadow"],
-          [class*="hover"],
-          .container {
+          /* Hide all screen elements */
+          body > div:not(:has(#print-wrapper)),
+          header, main, nav, footer, button,
+          .print\\:hidden {
             display: none !important;
             visibility: hidden !important;
           }
           
-          #print-content {
+          /* Show print wrapper and content */
+          #print-wrapper {
             display: block !important;
             visibility: visible !important;
-            position: absolute !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 99999 !important;
+            pointer-events: auto !important;
+            background: white !important;
+          }
+          
+          #print-wrapper #print-content {
+            display: block !important;
+            visibility: visible !important;
+            position: relative !important;
             left: 0 !important;
             top: 0 !important;
             width: 210mm !important;
@@ -770,17 +799,17 @@ interface TransferRequest {
             font-family: 'Cairo', 'Noto Naskh Arabic', sans-serif !important;
           }
           
-          #print-content * {
+          #print-wrapper #print-content * {
             visibility: visible !important;
           }
           
           /* Table styles */
-          #print-content table {
+          #print-wrapper table {
             page-break-inside: avoid !important;
             border-collapse: collapse !important;
           }
           
-          #print-content tr {
+          #print-wrapper tr {
             page-break-inside: avoid !important;
           }
           
