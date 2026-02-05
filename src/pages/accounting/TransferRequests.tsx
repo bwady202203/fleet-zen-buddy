@@ -374,12 +374,33 @@ interface TransferRequest {
      }
    };
  
-   const handleDeleteRequest = async (id: string) => {
+   const handleDeleteRequest = async (request: TransferRequest) => {
      try {
+       // If posted, delete journal entries first
+       if (request.status === 'posted' && request.journal_entry_id) {
+         // Delete ledger entries first
+         await supabase
+           .from('ledger_entries')
+           .delete()
+           .eq('journal_entry_id', request.journal_entry_id);
+
+         // Delete journal entry lines
+         await supabase
+           .from('journal_entry_lines')
+           .delete()
+           .eq('journal_entry_id', request.journal_entry_id);
+
+         // Delete journal entry
+         await supabase
+           .from('journal_entries')
+           .delete()
+           .eq('id', request.journal_entry_id);
+       }
+
        const { error } = await supabase
          .from('transfer_requests')
          .delete()
-         .eq('id', id);
+         .eq('id', request.id);
  
        if (error) throw error;
  
@@ -1108,15 +1129,6 @@ interface TransferRequest {
                                 <Pencil className="h-4 w-4" />
                                 تعديل
                               </Button>
-                             <Button
-                               onClick={() => handleDeleteRequest(request.id)}
-                               variant="destructive"
-                               size="sm"
-                               className="gap-2"
-                             >
-                               <Trash2 className="h-4 w-4" />
-                               حذف
-                             </Button>
                            </>
                          )}
                          {request.status === 'approved' && (
@@ -1176,6 +1188,15 @@ interface TransferRequest {
                               </Button>
                             </>
                          )}
+                         <Button
+                           onClick={() => handleDeleteRequest(request)}
+                           variant="destructive"
+                           size="sm"
+                           className="gap-2"
+                         >
+                           <Trash2 className="h-4 w-4" />
+                           حذف
+                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handlePrint(request)} className="gap-2">
                            <Printer className="h-4 w-4" />
                            طباعة
