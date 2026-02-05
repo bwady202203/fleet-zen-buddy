@@ -155,20 +155,32 @@ interface TransferRequest {
  
        if (requestsError) throw requestsError;
  
-       // Fetch items for each request
-       const requestsWithItems: TransferRequest[] = [];
-       for (const req of requestsData || []) {
-         const { data: items } = await supabase
-           .from('transfer_request_items')
-           .select('*')
-           .eq('transfer_request_id', req.id)
-           .order('serial_number');
-         
-         requestsWithItems.push({
-           ...req,
-           items: items || []
-         });
-       }
+        // Fetch items for each request with tax fields
+        const requestsWithItems: TransferRequest[] = [];
+        for (const req of requestsData || []) {
+          const { data: items } = await supabase
+            .from('transfer_request_items')
+            .select('id, transfer_request_id, serial_number, description, amount, account_id, has_tax, is_tax_row, parent_item_id, created_at')
+            .eq('transfer_request_id', req.id)
+            .order('serial_number');
+          
+          // Map items with tax fields
+          const mappedItems: TransferRequestItem[] = (items || []).map(item => ({
+            id: item.id,
+            serial_number: item.serial_number,
+            description: item.description,
+            amount: item.amount,
+            account_id: item.account_id,
+            has_tax: item.has_tax || false,
+            is_tax_row: item.is_tax_row || false,
+            parent_item_id: item.parent_item_id || undefined
+          }));
+          
+          requestsWithItems.push({
+            ...req,
+            items: mappedItems
+          });
+        }
  
        setRequests(requestsWithItems);
      } catch (error) {
@@ -234,20 +246,58 @@ interface TransferRequest {
  
        if (requestError) throw requestError;
  
-       // Create items
-       const itemsToInsert = newItems.map(item => ({
-         transfer_request_id: requestData.id,
-         serial_number: item.serial_number,
-         description: item.description,
-         amount: item.amount,
-         account_id: null
-       }));
+        // Create items - first insert non-tax items to get their IDs
+        const nonTaxItems = newItems.filter(item => !item.is_tax_row);
+        const taxItems = newItems.filter(item => item.is_tax_row);
+        
+        // Insert non-tax items first
+        const nonTaxItemsToInsert = nonTaxItems.map(item => ({
+          transfer_request_id: requestData.id,
+          serial_number: item.serial_number,
+          description: item.description,
+          amount: item.amount,
+          account_id: item.account_id || null,
+          has_tax: item.has_tax || false,
+          is_tax_row: false,
+          parent_item_id: null
+        }));
+
+        const { data: insertedNonTaxItems, error: nonTaxError } = await supabase
+          .from('transfer_request_items')
+          .insert(nonTaxItemsToInsert)
+          .select();
+
+        if (nonTaxError) throw nonTaxError;
+
+        // Create a mapping from temp parent IDs to real IDs
+        const parentIdMapping: Record<string, string> = {};
+        nonTaxItems.forEach((item, index) => {
+          if (insertedNonTaxItems && insertedNonTaxItems[index]) {
+            parentIdMapping[`new-${newItems.indexOf(item)}`] = insertedNonTaxItems[index].id;
+          }
+        });
+
+        // Insert tax items with correct parent references
+        if (taxItems.length > 0) {
+          const taxItemsToInsert = taxItems.map(item => ({
+            transfer_request_id: requestData.id,
+            serial_number: item.serial_number,
+            description: item.description,
+            amount: item.amount,
+            account_id: item.account_id || null,
+            has_tax: false,
+            is_tax_row: true,
+            parent_item_id: item.parent_item_id ? parentIdMapping[item.parent_item_id] || null : null
+          }));
+
+          const { error: taxError } = await supabase
+            .from('transfer_request_items')
+            .insert(taxItemsToInsert);
+
+          if (taxError) throw taxError;
+        }
  
-       const { error: itemsError } = await supabase
-         .from('transfer_request_items')
-         .insert(itemsToInsert);
- 
-       if (itemsError) throw itemsError;
+        // Items already inserted above
  
        toast.success(`تم حفظ طلب التحويل رقم ${requestData.request_number}`);
        setNewItems([]);
@@ -650,20 +700,57 @@ interface TransferRequest {
 
       if (deleteError) throw deleteError;
 
-      // Insert new items
-      const itemsToInsert = editItems.map((item, index) => ({
+      // Insert new items - first insert non-tax items
+      const nonTaxEditItems = editItems.filter(item => !item.is_tax_row);
+      const taxEditItems = editItems.filter(item => item.is_tax_row);
+      
+      const nonTaxItemsToInsert = nonTaxEditItems.map((item, index) => ({
         transfer_request_id: editingRequest.id,
-        serial_number: index + 1,
+        serial_number: editItems.indexOf(item) + 1,
         description: item.description,
         amount: item.amount,
-        account_id: item.account_id
+        account_id: item.account_id,
+        has_tax: item.has_tax || false,
+        is_tax_row: false,
+        parent_item_id: null
       }));
 
-      const { error: itemsError } = await supabase
+      const { data: insertedEditItems, error: nonTaxEditError } = await supabase
         .from('transfer_request_items')
-        .insert(itemsToInsert);
+        .insert(nonTaxItemsToInsert)
+        .select();
 
-      if (itemsError) throw itemsError;
+      if (nonTaxEditError) throw nonTaxEditError;
+
+      // Create parent ID mapping for edit items
+      const editParentIdMapping: Record<string, string> = {};
+      nonTaxEditItems.forEach((item, index) => {
+        if (insertedEditItems && insertedEditItems[index]) {
+          editParentIdMapping[item.id] = insertedEditItems[index].id;
+        }
+      });
+
+      // Insert tax items
+      if (taxEditItems.length > 0) {
+        const taxItemsToInsert = taxEditItems.map((item) => ({
+          transfer_request_id: editingRequest.id,
+          serial_number: editItems.indexOf(item) + 1,
+          description: item.description,
+          amount: item.amount,
+          account_id: item.account_id,
+          has_tax: false,
+          is_tax_row: true,
+          parent_item_id: item.parent_item_id ? editParentIdMapping[item.parent_item_id] || null : null
+        }));
+
+        const { error: taxEditError } = await supabase
+          .from('transfer_request_items')
+          .insert(taxItemsToInsert);
+
+        if (taxEditError) throw taxEditError;
+      }
+
+      // Items already inserted above
 
       // If was posted, delete old journal entry
       if (editingRequest.journal_entry_id) {
