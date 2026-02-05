@@ -78,8 +78,8 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
          backgroundColor: '#FFFFFF',
          color: '#222222',
          fontFamily: 'Cairo, "Noto Naskh Arabic", sans-serif',
-         fontSize: '11px',
-         lineHeight: '1.6',
+        fontSize: '14px',
+        lineHeight: '1.7',
          direction: 'rtl',
         display: 'flex',
         flexDirection: 'column',
@@ -90,7 +90,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
        {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '10mm' }}>
          <h1 style={{ 
-          fontSize: '22px', 
+          fontSize: '28px', 
            fontWeight: '700', 
           marginBottom: '8px',
           color: '#1e40af',
@@ -105,10 +105,10 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
            display: 'flex', 
            justifyContent: 'space-between', 
            alignItems: 'center',
-           fontSize: '10px',
+          fontSize: '13px',
            color: '#444444',
           marginTop: '12px',
-          padding: '8px 15px',
+          padding: '10px 18px',
           backgroundColor: '#eff6ff',
           borderRadius: '6px',
           border: '1px solid #bfdbfe',
@@ -131,12 +131,12 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
        {/* Document Title */}
        <h2 style={{ 
          textAlign: 'center', 
-        fontSize: '18px', 
+        fontSize: '22px', 
          fontWeight: '700',
         marginBottom: '8mm',
         color: '#1e40af',
         backgroundColor: '#dbeafe',
-        padding: '10px 20px',
+        padding: '12px 24px',
         borderRadius: '8px',
         border: '2px solid #3b82f6',
        }}>
@@ -155,38 +155,42 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
             <tr>
               <th style={{ 
                 border: '2px solid #3b82f6', 
-                padding: '10px 12px',
+              padding: '12px 14px',
                 backgroundColor: '#1e40af',
                 color: '#FFFFFF',
-                fontWeight: '600',
+              fontWeight: '700',
                 textAlign: 'center',
-                width: '40px'
+              width: '50px',
+              fontSize: '14px',
               }}>م</th>
               <th style={{ 
                 border: '2px solid #3b82f6', 
-                padding: '10px 12px',
+              padding: '12px 14px',
                 backgroundColor: '#1e40af',
                 color: '#FFFFFF',
-                fontWeight: '600',
-                textAlign: 'right'
+              fontWeight: '700',
+              textAlign: 'right',
+              fontSize: '14px',
               }}>الوصف</th>
               <th style={{ 
                 border: '2px solid #3b82f6', 
-                padding: '10px 12px',
+              padding: '12px 14px',
                 backgroundColor: '#1e40af',
                 color: '#FFFFFF',
-                fontWeight: '600',
+              fontWeight: '700',
                 textAlign: 'right',
-                width: '140px'
+              width: '160px',
+              fontSize: '14px',
               }}>الحساب</th>
               <th style={{ 
                 border: '2px solid #3b82f6', 
-                padding: '10px 12px',
+              padding: '12px 14px',
                 backgroundColor: '#1e40af',
                 color: '#FFFFFF',
-                fontWeight: '600',
+              fontWeight: '700',
                 textAlign: 'left',
-                width: '100px'
+              width: '110px',
+              fontSize: '14px',
               }}>المبلغ</th>
             </tr>
           </thead>
@@ -195,29 +199,32 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
               <tr key={item.id} style={{ backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#f0f9ff' }}>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
-                  padding: '8px 10px',
+                padding: '10px 12px',
                   textAlign: 'center',
-                  fontWeight: '600',
-                  color: '#1e40af'
+                fontWeight: '700',
+                color: '#1e40af',
+                fontSize: '14px',
                 }}>{item.serial_number}</td>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
-                  padding: '8px 10px',
-                  textAlign: 'right'
+                padding: '10px 12px',
+                textAlign: 'right',
+                fontSize: '14px',
                 }}>{item.description}</td>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
-                  padding: '8px 10px',
+                padding: '10px 12px',
                   textAlign: 'right',
-                  fontSize: '10px'
+                fontSize: '12px',
                 }}>{getAccountName(item.account_id)}</td>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
-                  padding: '8px 10px',
+                padding: '10px 12px',
                   textAlign: 'left',
                   fontFamily: 'monospace',
-                  fontWeight: '600',
-                  color: '#1e40af'
+                fontWeight: '700',
+                color: '#1e40af',
+                fontSize: '15px',
                 }}>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
@@ -231,11 +238,11 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
           marginBottom: '5mm',
         }}>
           <div style={{ 
-            fontSize: '14px',
+          fontSize: '18px',
             fontWeight: '700',
             color: '#FFFFFF',
             backgroundColor: '#1e40af',
-            padding: '10px 20px',
+          padding: '12px 25px',
             borderRadius: '6px',
           }}>
             <span>الإجمالي: </span>
@@ -250,10 +257,11 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         {request.notes && (
           <div style={{ 
             marginBottom: '5mm',
-            padding: '8px 12px',
+          padding: '10px 15px',
             backgroundColor: '#fef3c7',
             borderRadius: '6px',
             border: '1px solid #fcd34d',
+          fontSize: '14px',
           }}>
             <strong style={{ color: '#92400e' }}>ملاحظات: </strong>
             <span>{request.notes}</span>
@@ -274,7 +282,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
             marginBottom: '20mm', 
             fontWeight: '600',
             color: '#1e40af',
-            fontSize: '12px',
+          fontSize: '16px',
           }}>المحاسب</p>
            <div style={{ 
             borderBottom: '2px solid #1e40af', 
@@ -287,7 +295,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
             marginBottom: '20mm', 
             fontWeight: '600',
             color: '#1e40af',
-            fontSize: '12px',
+          fontSize: '16px',
           }}>المدير العام</p>
            <div style={{ 
             borderBottom: '2px solid #1e40af', 
