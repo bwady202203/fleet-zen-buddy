@@ -469,13 +469,26 @@ interface TransferRequest {
     try {
       // If posted, delete the journal entry first
       if (request.status === 'posted' && request.journal_entry_id) {
+        // Delete ledger entries first (created by trigger)
+        const { error: ledgerDeleteError } = await supabase
+          .from('ledger_entries')
+          .delete()
+          .eq('journal_entry_id', request.journal_entry_id);
+
+        if (ledgerDeleteError) {
+          console.error('Error deleting ledger entries:', ledgerDeleteError);
+          // Continue even if no ledger entries exist
+        }
+
         // Delete journal entry lines first
         const { error: linesDeleteError } = await supabase
           .from('journal_entry_lines')
           .delete()
           .eq('journal_entry_id', request.journal_entry_id);
 
-        if (linesDeleteError) throw linesDeleteError;
+        if (linesDeleteError) {
+          console.error('Error deleting journal lines:', linesDeleteError);
+        }
 
         // Delete journal entry
         const { error: entryDeleteError } = await supabase
