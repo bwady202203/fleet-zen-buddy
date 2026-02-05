@@ -9,12 +9,14 @@
  import { useAuth } from '@/contexts/AuthContext';
  import CustodyNavbar from '@/components/CustodyNavbar';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Printer, FileDown, Calendar, Sparkles, Info, Wallet } from 'lucide-react';
+import { Plus, Trash2, Printer, FileDown, Calendar, Sparkles, Info, Wallet, SendHorizontal } from 'lucide-react';
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
  import html2canvas from 'html2canvas';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
  
  interface TransferRequest {
    id: string;
@@ -145,12 +147,19 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
  
    return (
      <div className="min-h-screen bg-background" dir="rtl">
-       <header className="border-b bg-card print:hidden">
+      <header className="border-b bg-gradient-to-l from-primary/5 via-card to-card print:hidden">
          <div className="container mx-auto px-4 py-6">
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div>
-               <h1 className="text-2xl sm:text-3xl font-bold">طلبات التحويل</h1>
-               <p className="text-muted-foreground mt-1">إدارة طلبات تحويل العهد</p>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/10 rounded-xl">
+                  <SendHorizontal className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold">طلبات التحويل</h1>
+                  <p className="text-muted-foreground mt-1">إدارة طلبات تحويل العهد</p>
+                </div>
+              </div>
              </div>
              <div className="flex items-center gap-3 flex-wrap">
                <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-lg">
@@ -176,25 +185,25 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
  
        <CustodyNavbar />
  
-       <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6">
          {/* Add Request Form */}
-          <Card className="mb-6 print:hidden border-primary/20 shadow-md">
-            <CardHeader className="bg-gradient-to-l from-primary/5 to-transparent pb-4">
+          <Card className="mb-8 print:hidden border-0 shadow-lg bg-gradient-to-br from-card via-card to-primary/5">
+            <CardHeader className="pb-4 border-b border-border/50">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Sparkles className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">✨ إضافة طلب جديد</CardTitle>
+                  <CardTitle className="text-xl">✨ إضافة طلب جديد</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
                     قم بإدخال بيانات طلب التحويل بدقة لضمان تسجيله بشكل صحيح في النظام
                   </p>
                 </div>
               </div>
            </CardHeader>
-           <CardContent>
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <div className="sm:col-span-2 space-y-2">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 space-y-3">
                   <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
                     <Info className="h-4 w-4 text-primary" />
                     وصف التحويل
@@ -204,14 +213,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
                    value={description}
                    onChange={(e) => setDescription(e.target.value)}
                     placeholder="اكتب شرحًا واضحًا ومختصرًا (مثل: مصروف ديزل، صيانة، إيجار...)"
-                   rows={2}
-                    className="resize-none"
+                    rows={3}
+                    className="resize-none text-base border-2 focus:border-primary/50 transition-colors"
                  />
                   <p className="text-xs text-muted-foreground">
                     يوضح سبب التحويل أو نوع المصروف
                   </p>
                </div>
-               <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="amount" className="flex items-center gap-2 text-base font-medium">
                     <Wallet className="h-4 w-4 text-primary" />
                     المبلغ
@@ -223,30 +232,38 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
                    value={amount}
                    onChange={(e) => setAmount(e.target.value)}
                    placeholder="0.00"
-                    className="text-lg font-mono"
+                    className="text-xl font-mono h-14 text-center border-2 focus:border-primary/50 transition-colors"
                  />
                   <p className="text-xs text-muted-foreground">
                     أدخل القيمة بالأرقام
                   </p>
                </div>
              </div>
-              <Button onClick={handleAddRequest} className="mt-6 gap-2 w-full sm:w-auto" size="lg">
-               <Plus className="h-4 w-4" />
-               إضافة الطلب
-             </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                🔹 بعد الانتهاء من إدخال البيانات، اضغط على إضافة الطلب ليتم حفظه
-              </p>
+              
+              <Separator className="my-6" />
+              
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <Button onClick={handleAddRequest} className="gap-3 w-full sm:w-auto px-8" size="lg">
+                  <Plus className="h-5 w-5" />
+                  إضافة الطلب
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  🔹 اضغط على إضافة الطلب ليتم حفظه في القائمة
+                </p>
+              </div>
            </CardContent>
          </Card>
  
          {/* Requests Table */}
          <div id="print-content">
-           <Card>
-             <CardHeader className="print:pb-2">
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-l from-muted/50 to-transparent print:pb-2 border-b">
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <CardTitle>📋 قائمة طلبات التحويل</CardTitle>
+                    <div className="p-2 bg-muted rounded-lg print:hidden">
+                      <FileDown className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <CardTitle className="text-xl">📋 قائمة طلبات التحويل</CardTitle>
                   </div>
                  <div className="hidden print:block text-sm text-muted-foreground">
                    التاريخ: {gregorianDate} | {hijriDate} هـ
@@ -256,9 +273,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
                   تعرض جميع طلبات التحويل التي تم إدخالها، مع تفاصيل كل طلب لسهولة المتابعة والمراجعة
                 </p>
              </CardHeader>
-             <CardContent>
+              <CardContent className="p-0">
                {requests.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-16">
                     <div className="mx-auto w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
                       <FileDown className="h-8 w-8 text-muted-foreground/50" />
                     </div>
@@ -267,7 +284,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
                  </div>
                ) : (
                  <>
-                    <Alert className="mb-4 print:hidden bg-muted/30 border-muted">
+                    <Alert className="mx-6 mt-4 print:hidden bg-muted/30 border-muted rounded-lg">
                       <Info className="h-4 w-4" />
                       <AlertDescription className="text-xs">
                         <strong>وصف التحويل:</strong> يوضح الغرض من الطلب • 
@@ -275,48 +292,65 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
                         <strong className="mr-2">حذف:</strong> إمكانية إزالة أي طلب غير صحيح أو مكرر
                       </AlertDescription>
                     </Alert>
-                   <Table>
-                     <TableHeader>
-                       <TableRow>
-                         <TableHead className="w-20 text-center">م</TableHead>
-                         <TableHead>وصف التحويل</TableHead>
-                         <TableHead className="w-32 text-left">المبلغ</TableHead>
-                         <TableHead className="w-20 text-center print:hidden">حذف</TableHead>
-                       </TableRow>
-                     </TableHeader>
-                     <TableBody>
-                       {requests.map((request) => (
-                         <TableRow key={request.id}>
-                           <TableCell className="text-center font-medium">
-                             {request.serial_number}
-                           </TableCell>
-                           <TableCell>{request.description}</TableCell>
-                           <TableCell className="text-left font-mono">
-                             {request.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                           </TableCell>
-                           <TableCell className="text-center print:hidden">
-                             <Button
-                               variant="ghost"
-                               size="icon"
-                               className="h-8 w-8 text-destructive hover:text-destructive"
-                               onClick={() => handleDeleteRequest(request.id)}
-                             >
-                               <Trash2 className="h-4 w-4" />
-                             </Button>
-                           </TableCell>
+                    <div className="px-6 py-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/30 hover:bg-muted/30">
+                            <TableHead className="w-20 text-center font-bold text-foreground">م</TableHead>
+                            <TableHead className="font-bold text-foreground">وصف التحويل</TableHead>
+                            <TableHead className="w-40 text-left font-bold text-foreground">المبلغ</TableHead>
+                            <TableHead className="w-20 text-center print:hidden font-bold text-foreground">حذف</TableHead>
                          </TableRow>
-                       ))}
-                     </TableBody>
-                   </Table>
-                    <div className="mt-4 pt-4 border-t-2 border-primary/20">
-                      <div className="flex justify-between items-center bg-gradient-to-l from-primary/5 to-transparent p-4 rounded-lg">
+                        </TableHeader>
+                        <TableBody>
+                          {requests.map((request, index) => (
+                            <TableRow 
+                              key={request.id}
+                              className={cn(
+                                "transition-colors",
+                                index % 2 === 0 ? "bg-background" : "bg-muted/20"
+                              )}
+                            >
+                              <TableCell className="text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                                  {request.serial_number}
+                                </span>
+                              </TableCell>
+                              <TableCell className="font-medium text-base">{request.description}</TableCell>
+                              <TableCell className="text-left">
+                                <span className="font-mono text-lg font-semibold text-primary">
+                                  {request.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-center print:hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
+                                  onClick={() => handleDeleteRequest(request.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Total Section */}
+                    <div className="mx-6 mb-6 mt-2">
+                      <div className="flex justify-between items-center bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-5 rounded-xl border-2 border-primary/20">
                         <div className="flex items-center gap-2">
                           <Wallet className="h-5 w-5 text-primary" />
-                          <span className="font-bold text-lg">💰 الإجمالي</span>
+                          <span className="font-bold text-xl">💰 الإجمالي</span>
                         </div>
-                        <span className="font-bold font-mono text-xl text-primary">
-                          {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ريال
-                        </span>
+                        <div className="text-left">
+                          <span className="font-bold font-mono text-2xl text-primary">
+                            {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-lg font-semibold text-primary mr-2">ريال</span>
+                        </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2 text-center print:hidden">
                         يتم تحديث المجموع تلقائيًا عند الإضافة أو الحذف

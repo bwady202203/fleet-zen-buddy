@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Users, FileText, List, Filter, BookOpen, Sparkles } from 'lucide-react';
+import { Home, Users, FileText, List, Filter, BookOpen, Sparkles, SendHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CustodyNavbar = () => {
@@ -36,6 +36,11 @@ const CustodyNavbar = () => {
       title: 'قيود ذكية', 
       path: '/custody/smart-journal', 
       icon: Sparkles 
+    },
+    { 
+      title: 'طلبات التحويل', 
+      path: '/custody/transfer-requests', 
+      icon: SendHorizontal 
     },
     { 
       title: 'قيود اليومية', 
