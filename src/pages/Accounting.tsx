@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send } from "lucide-react";
+ import { SendHorizontal } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -274,10 +275,10 @@ const Accounting = () => {
     },
     {
       title: "طلبات التحويل",
-      description: "إدارة طلبات تحويل العهد",
-      icon: Send,
+      description: "إدارة وتسجيل طلبات التحويل المالية",
+      icon: SendHorizontal,
       link: "/custody/transfer-requests",
-      color: "from-orange-500 to-orange-600"
+      color: "from-cyan-500 to-cyan-600"
     },
     {
       title: "شجرة الحسابات",
