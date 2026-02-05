@@ -243,7 +243,7 @@
          borderTop: '1px solid #EEEEEE'
        }}>
          <div style={{ textAlign: 'center', width: '45%' }}>
-           <p style={{ marginBottom: '20mm', fontWeight: '600' }}>التوقيع</p>
+          <p style={{ marginBottom: '25mm', fontWeight: '600' }}>المحاسب</p>
            <div style={{ 
              borderBottom: '1px solid #000000', 
              width: '80%',
@@ -251,11 +251,10 @@
            }}></div>
          </div>
          <div style={{ textAlign: 'center', width: '45%' }}>
-           <p style={{ marginBottom: '20mm', fontWeight: '600' }}>الختم</p>
+          <p style={{ marginBottom: '25mm', fontWeight: '600' }}>المدير العام</p>
            <div style={{ 
-             width: '50mm',
-             height: '25mm',
-             border: '1px dashed #CCCCCC',
+            borderBottom: '1px solid #000000', 
+            width: '80%',
              margin: '0 auto'
            }}></div>
          </div>
