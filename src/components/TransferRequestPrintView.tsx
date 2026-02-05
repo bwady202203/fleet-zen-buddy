@@ -102,31 +102,31 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
            {companyName}
          </h1>
          
-         <div style={{ 
-           display: 'flex', 
-           justifyContent: 'space-between', 
-           alignItems: 'center',
-          fontSize: '13px',
-           color: '#444444',
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          fontSize: '16px',
+          color: '#333333',
           marginTop: '12px',
-          padding: '10px 18px',
+          padding: '14px 24px',
           backgroundColor: '#eff6ff',
-          borderRadius: '6px',
-          border: '1px solid #bfdbfe',
-         }}>
-           <div>
-             <span>التاريخ الميلادي: </span>
-            <strong style={{ color: '#1e40af' }}>{gregorianDate}</strong>
-           </div>
-           <div>
-             <span>رقم الطلب: </span>
-            <strong style={{ color: '#1e40af' }}>#{request.request_number}</strong>
-           </div>
-           <div>
-             <span>التاريخ الهجري: </span>
-            <strong style={{ color: '#1e40af' }}>{hijriDate} هـ</strong>
-           </div>
-         </div>
+          borderRadius: '8px',
+          border: '2px solid #3b82f6',
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>التاريخ الميلادي</span>
+            <strong style={{ color: '#1e40af', fontSize: '18px', fontWeight: '700' }}>{gregorianDate}</strong>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>رقم الطلب</span>
+            <strong style={{ color: '#1e40af', fontSize: '22px', fontWeight: '800' }}>#{request.request_number}</strong>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>التاريخ الهجري</span>
+            <strong style={{ color: '#1e40af', fontSize: '18px', fontWeight: '700' }}>{hijriDate} هـ</strong>
+          </div>
+        </div>
        </div>
  
        {/* Document Title */}
