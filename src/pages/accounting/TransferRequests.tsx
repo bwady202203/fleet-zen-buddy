@@ -413,26 +413,96 @@ interface TransferRequest {
      }
    };
  
-   const handleUpdateItemAccount = async (accountId: string) => {
-     if (!editingItem) return;
- 
-     try {
-       const { error } = await supabase
-         .from('transfer_request_items')
-         .update({ account_id: accountId })
-         .eq('id', editingItem.itemId);
- 
-       if (error) throw error;
- 
-       toast.success('تم تحديث الحساب');
-       setShowAccountDialog(false);
-       setEditingItem(null);
-       fetchRequests();
-     } catch (error) {
-       console.error('Error updating account:', error);
-       toast.error('خطأ في تحديث الحساب');
-     }
-   };
+  const handleUpdateItemAccount = async (accountId: string) => {
+    if (!editingItem) return;
+
+    try {
+      const { error } = await supabase
+        .from('transfer_request_items')
+        .update({ account_id: accountId })
+        .eq('id', editingItem.itemId);
+
+      if (error) throw error;
+
+      toast.success('تم تحديث الحساب');
+      setShowAccountDialog(false);
+      setEditingItem(null);
+      fetchRequests();
+    } catch (error) {
+      console.error('Error updating account:', error);
+      toast.error('خطأ في تحديث الحساب');
+    }
+  };
+
+  // Toggle tax for saved request items directly
+  const handleToggleSavedItemTax = async (request: TransferRequest, item: TransferRequestItem) => {
+    if (item.is_tax_row) return; // Don't toggle tax rows themselves
+
+    try {
+      if (item.has_tax) {
+        // Remove tax - find and delete the tax row
+        const taxRow = request.items.find(i => i.is_tax_row && i.parent_item_id === item.id);
+        if (taxRow) {
+          await supabase
+            .from('transfer_request_items')
+            .delete()
+            .eq('id', taxRow.id);
+        }
+        
+        // Update parent item
+        await supabase
+          .from('transfer_request_items')
+          .update({ has_tax: false })
+          .eq('id', item.id);
+        
+        // Update total amount
+        const newTotal = request.total_amount - (taxRow?.amount || 0);
+        await supabase
+          .from('transfer_requests')
+          .update({ total_amount: newTotal })
+          .eq('id', request.id);
+        
+        toast.success('تم إزالة الضريبة');
+      } else {
+        // Add tax row
+        const taxAmount = item.amount * 0.15;
+        const maxSerial = Math.max(...request.items.map(i => i.serial_number), 0);
+        
+        await supabase
+          .from('transfer_request_items')
+          .insert({
+            transfer_request_id: request.id,
+            serial_number: maxSerial + 1,
+            description: 'ضريبة القيمة المضافة 15%',
+            amount: taxAmount,
+            account_id: null,
+            has_tax: false,
+            is_tax_row: true,
+            parent_item_id: item.id
+          });
+        
+        // Update parent item
+        await supabase
+          .from('transfer_request_items')
+          .update({ has_tax: true })
+          .eq('id', item.id);
+        
+        // Update total amount
+        const newTotal = request.total_amount + taxAmount;
+        await supabase
+          .from('transfer_requests')
+          .update({ total_amount: newTotal })
+          .eq('id', request.id);
+        
+        toast.success('تم إضافة الضريبة 15%');
+      }
+      
+      fetchRequests();
+    } catch (error) {
+      console.error('Error toggling tax:', error);
+      toast.error('خطأ في تحديث الضريبة');
+    }
+  };
  
    const handleDeleteRequest = async (request: TransferRequest) => {
      try {
@@ -1342,64 +1412,101 @@ interface TransferRequest {
                        </div>
                      </CardHeader>
                      <CardContent>
-                       {/* جدول البنود */}
-                       <div className="border rounded-lg overflow-hidden mb-4">
-                         <Table>
-                           <TableHeader>
-                             <TableRow className="bg-muted/30">
-                               <TableHead className="w-12 text-center">م</TableHead>
-                               <TableHead>الوصف</TableHead>
-                               <TableHead className="w-48">الحساب</TableHead>
-                               <TableHead className="w-28 text-left">المبلغ</TableHead>
-                               {request.status !== 'posted' && (
-                                 <TableHead className="w-16 text-center">تعديل</TableHead>
-                               )}
-                             </TableRow>
-                           </TableHeader>
-                           <TableBody>
-                             {request.items.map((item, index) => (
-                               <TableRow key={item.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/10'}>
-                                 <TableCell className="text-center">
-                                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
-                                     {item.serial_number}
-                                   </span>
-                                 </TableCell>
-                                 <TableCell className="font-medium">{item.description}</TableCell>
-                                 <TableCell>
-                                   <span className={cn(
-                                     "text-sm",
-                                     item.account_id ? "text-emerald-600 font-medium" : "text-muted-foreground italic"
-                                   )}>
-                                     {getAccountName(item.account_id)}
-                                   </span>
-                                 </TableCell>
-                                 <TableCell className="text-left font-mono font-semibold text-primary">
-                                   {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                 </TableCell>
-                                 {request.status !== 'posted' && (
-                                   <TableCell className="text-center">
-                                     <Button
-                                       variant="ghost"
-                                       size="icon"
-                                       className="h-8 w-8"
-                                       onClick={() => {
-                                         setEditingItem({
-                                           requestId: request.id,
-                                           itemId: item.id,
-                                           currentAccountId: item.account_id
-                                         });
-                                         setShowAccountDialog(true);
-                                       }}
-                                     >
-                                       <Edit className="h-4 w-4" />
-                                     </Button>
-                                   </TableCell>
-                                 )}
-                               </TableRow>
-                             ))}
-                           </TableBody>
-                         </Table>
-                       </div>
+                      {/* جدول البنود */}
+                      <div className="border rounded-lg overflow-hidden mb-4">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/30">
+                              <TableHead className="w-12 text-center">م</TableHead>
+                              <TableHead>الوصف</TableHead>
+                              <TableHead className="w-48">الحساب</TableHead>
+                              <TableHead className="w-28 text-left">المبلغ</TableHead>
+                              {request.status !== 'posted' && (
+                                <>
+                                  <TableHead className="w-16 text-center">ضريبة</TableHead>
+                                  <TableHead className="w-16 text-center">تعديل</TableHead>
+                                </>
+                              )}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {request.items.map((item, index) => (
+                              <TableRow key={item.id} className={cn(
+                                item.is_tax_row ? 'bg-emerald-50 dark:bg-emerald-900/20' : (index % 2 === 0 ? 'bg-background' : 'bg-muted/10')
+                              )}>
+                                <TableCell className="text-center">
+                                  <span className={cn(
+                                    "inline-flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs",
+                                    item.is_tax_row ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-300" : "bg-primary/10 text-primary"
+                                  )}>
+                                    {item.serial_number}
+                                  </span>
+                                </TableCell>
+                                <TableCell className={cn("font-medium", item.is_tax_row && "text-emerald-700 dark:text-emerald-400")}>
+                                  {item.is_tax_row && <span className="ml-2">📋</span>}
+                                  {item.description}
+                                </TableCell>
+                                <TableCell>
+                                  <span className={cn(
+                                    "text-sm",
+                                    item.is_tax_row ? "text-emerald-600 font-medium" :
+                                    item.account_id ? "text-emerald-600 font-medium" : "text-muted-foreground italic"
+                                  )}>
+                                    {item.is_tax_row ? 'ضريبة المشتريات' : getAccountName(item.account_id)}
+                                  </span>
+                                </TableCell>
+                                <TableCell className={cn(
+                                  "text-left font-mono font-semibold",
+                                  item.is_tax_row ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
+                                )}>
+                                  {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </TableCell>
+                                {request.status !== 'posted' && (
+                                  <>
+                                    <TableCell className="text-center">
+                                      {!item.is_tax_row && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className={cn(
+                                            "h-8 w-8 font-bold text-lg",
+                                            item.has_tax 
+                                              ? "text-emerald-600 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:hover:bg-emerald-800" 
+                                              : "text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                                          )}
+                                          onClick={() => handleToggleSavedItemTax(request, item)}
+                                          title={item.has_tax ? "إزالة الضريبة" : "إضافة ضريبة 15%"}
+                                        >
+                                          ض
+                                        </Button>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {!item.is_tax_row && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            setEditingItem({
+                                              requestId: request.id,
+                                              itemId: item.id,
+                                              currentAccountId: item.account_id
+                                            });
+                                            setShowAccountDialog(true);
+                                          }}
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </TableCell>
+                                  </>
+                                )}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
  
                        {/* أزرار الإجراءات */}
                        <div className="flex items-center gap-2 flex-wrap">
