@@ -8,7 +8,7 @@
  import { toast } from 'sonner';
  import { useAuth } from '@/contexts/AuthContext';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
- import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal } from 'lucide-react';
+import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search } from 'lucide-react';
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
@@ -68,6 +68,23 @@ interface TransferRequest {
    const [showAccountDialog, setShowAccountDialog] = useState(false);
    const [editingItem, setEditingItem] = useState<{requestId: string, itemId: string, currentAccountId: string | null} | null>(null);
   const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
+  const [accountSearch, setAccountSearch] = useState('');
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+
+  // Arabic alphabet for quick navigation
+  const arabicLetters = ['ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'];
+
+  // Filter accounts based on search and selected letter
+  const filteredAccounts = accounts.filter(account => {
+    const matchesSearch = accountSearch === '' || 
+      account.name_ar.includes(accountSearch) || 
+      account.code.includes(accountSearch);
+    
+    const matchesLetter = selectedLetter === null || 
+      account.name_ar.startsWith(selectedLetter);
+    
+    return matchesSearch && matchesLetter;
+  });
  
    // Get today's dates
    const today = new Date();
@@ -938,7 +955,7 @@ interface TransferRequest {
       `}</style>
 
        <Dialog open={showAccountDialog} onOpenChange={setShowAccountDialog}>
-         <DialogContent className="max-w-4xl max-h-[85vh]" dir="rtl">
+         <DialogContent className="max-w-5xl max-h-[90vh]" dir="rtl">
            <DialogHeader>
              <DialogTitle className="text-xl flex items-center gap-2">
                <Wallet className="h-5 w-5 text-primary" />
@@ -946,42 +963,106 @@ interface TransferRequest {
              </DialogTitle>
            </DialogHeader>
            <div className="py-4">
-             <p className="text-sm text-muted-foreground mb-4">اختر الحساب المناسب من القائمة أدناه (المستوى الرابع)</p>
-             <div className="max-h-[60vh] overflow-y-auto pr-2">
-               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                 {accounts.map((account) => (
-                   <div
-                     key={account.id}
-                     onClick={() => handleUpdateItemAccount(account.id)}
+             {/* Search Input */}
+             <div className="relative mb-4">
+               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+               <Input
+                 placeholder="ابحث بالاسم أو الكود..."
+                 value={accountSearch}
+                 onChange={(e) => {
+                   setAccountSearch(e.target.value);
+                   setSelectedLetter(null);
+                 }}
+                 className="pr-10 text-lg h-12"
+                 autoFocus
+               />
+             </div>
+             
+             <div className="flex gap-3">
+               {/* Arabic Letters Sidebar */}
+               <div className="flex flex-col gap-1 bg-muted/50 rounded-lg p-2 max-h-[55vh] overflow-y-auto">
+                 <button
+                   onClick={() => {
+                     setSelectedLetter(null);
+                     setAccountSearch('');
+                   }}
+                   className={cn(
+                     "w-8 h-8 rounded-lg text-sm font-bold transition-all",
+                     selectedLetter === null && accountSearch === ''
+                       ? "bg-primary text-primary-foreground"
+                       : "hover:bg-primary/20 text-muted-foreground"
+                   )}
+                 >
+                   الكل
+                 </button>
+                 {arabicLetters.map((letter) => (
+                   <button
+                     key={letter}
+                     onClick={() => {
+                       setSelectedLetter(letter);
+                       setAccountSearch('');
+                     }}
                      className={cn(
-                       "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
-                       "hover:border-primary hover:bg-primary/5 hover:shadow-md",
-                       "flex flex-col items-center justify-center text-center gap-2 min-h-[100px]",
-                       editingItem?.currentAccountId === account.id
-                         ? "border-primary bg-primary/10 shadow-md"
-                         : "border-border bg-card"
+                       "w-8 h-8 rounded-lg text-base font-bold transition-all",
+                       selectedLetter === letter
+                         ? "bg-primary text-primary-foreground"
+                         : "hover:bg-primary/20 text-foreground"
                      )}
                    >
-                     <span className="font-mono text-sm font-bold text-primary bg-primary/10 px-2 py-1 rounded">
-                       {account.code}
-                     </span>
-                     <span className="text-sm font-medium leading-tight">
-                       {account.name_ar}
-                     </span>
-                     <span className="text-xs text-muted-foreground">
-                       {account.type === 'asset' && 'أصول'}
-                       {account.type === 'liability' && 'خصوم'}
-                       {account.type === 'equity' && 'حقوق ملكية'}
-                       {account.type === 'revenue' && 'إيرادات'}
-                       {account.type === 'expense' && 'مصروفات'}
-                     </span>
-                   </div>
+                     {letter}
+                   </button>
                  ))}
                </div>
+               
+               {/* Accounts Grid */}
+               <div className="flex-1 max-h-[55vh] overflow-y-auto pr-2">
+                 <p className="text-sm text-muted-foreground mb-3">
+                   {filteredAccounts.length} حساب من أصل {accounts.length}
+                 </p>
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                   {filteredAccounts.map((account) => (
+                     <div
+                       key={account.id}
+                       onClick={() => handleUpdateItemAccount(account.id)}
+                       className={cn(
+                         "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                         "hover:border-primary hover:bg-primary/5 hover:shadow-md",
+                         "flex flex-col items-center justify-center text-center gap-2 min-h-[100px]",
+                         editingItem?.currentAccountId === account.id
+                           ? "border-primary bg-primary/10 shadow-md"
+                           : "border-border bg-card"
+                       )}
+                     >
+                       <span className="font-mono text-sm font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                         {account.code}
+                       </span>
+                       <span className="text-sm font-medium leading-tight">
+                         {account.name_ar}
+                       </span>
+                       <span className="text-xs text-muted-foreground">
+                         {account.type === 'asset' && 'أصول'}
+                         {account.type === 'liability' && 'خصوم'}
+                         {account.type === 'equity' && 'حقوق ملكية'}
+                         {account.type === 'revenue' && 'إيرادات'}
+                         {account.type === 'expense' && 'مصروفات'}
+                       </span>
+                     </div>
+                   ))}
+                   {filteredAccounts.length === 0 && (
+                     <div className="col-span-full text-center py-12 text-muted-foreground">
+                       لا توجد حسابات مطابقة للبحث
+                     </div>
+                   )}
+                 </div>
+               </div>
+               </div>
              </div>
-           </div>
            <DialogFooter>
-             <Button variant="outline" onClick={() => setShowAccountDialog(false)}>
+             <Button variant="outline" onClick={() => {
+               setShowAccountDialog(false);
+               setAccountSearch('');
+               setSelectedLetter(null);
+             }}>
                إلغاء
              </Button>
            </DialogFooter>
