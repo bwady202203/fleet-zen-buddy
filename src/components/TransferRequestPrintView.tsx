@@ -277,26 +277,57 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         paddingTop: '15mm',
         borderTop: '2px solid #3b82f6',
        }}>
-         <div style={{ textAlign: 'center', width: '45%' }}>
+         <div style={{ textAlign: 'center', width: '30%' }}>
           <p style={{ 
-            marginBottom: '20mm', 
+            marginBottom: '15mm', 
             fontWeight: '600',
             color: '#1e40af',
           fontSize: '16px',
           }}>المحاسب</p>
+          <p style={{ 
+            fontWeight: '700',
+            color: '#1e40af',
+            fontSize: '14px',
+            marginBottom: '5mm',
+          }}>حارس</p>
            <div style={{ 
             borderBottom: '2px solid #1e40af', 
              width: '80%',
              margin: '0 auto'
            }}></div>
          </div>
-         <div style={{ textAlign: 'center', width: '45%' }}>
+         <div style={{ textAlign: 'center', width: '30%' }}>
           <p style={{ 
-            marginBottom: '20mm', 
+            marginBottom: '15mm', 
+            fontWeight: '600',
+            color: '#1e40af',
+          fontSize: '16px',
+          }}>المدير التنفيذي</p>
+          <p style={{ 
+            fontWeight: '700',
+            color: '#1e40af',
+            fontSize: '14px',
+            marginBottom: '5mm',
+          }}>عمر خضر</p>
+           <div style={{ 
+            borderBottom: '2px solid #1e40af', 
+            width: '80%',
+             margin: '0 auto'
+           }}></div>
+         </div>
+         <div style={{ textAlign: 'center', width: '30%' }}>
+          <p style={{ 
+            marginBottom: '15mm', 
             fontWeight: '600',
             color: '#1e40af',
           fontSize: '16px',
           }}>المدير العام</p>
+          <p style={{ 
+            fontWeight: '700',
+            color: '#1e40af',
+            fontSize: '14px',
+            marginBottom: '5mm',
+          }}>ناجي الجهني</p>
            <div style={{ 
             borderBottom: '2px solid #1e40af', 
             width: '80%',
