@@ -938,30 +938,53 @@ interface TransferRequest {
       `}</style>
 
        <Dialog open={showAccountDialog} onOpenChange={setShowAccountDialog}>
-         <DialogContent className="max-w-lg" dir="rtl">
+         <DialogContent className="max-w-4xl max-h-[85vh]" dir="rtl">
            <DialogHeader>
-             <DialogTitle>اختيار الحساب</DialogTitle>
+             <DialogTitle className="text-xl flex items-center gap-2">
+               <Wallet className="h-5 w-5 text-primary" />
+               اختيار الحساب المحاسبي
+             </DialogTitle>
            </DialogHeader>
            <div className="py-4">
-             <Label className="mb-2 block">الحساب المحاسبي</Label>
-             <Select
-               value={editingItem?.currentAccountId || ''}
-               onValueChange={handleUpdateItemAccount}
-             >
-               <SelectTrigger>
-                 <SelectValue placeholder="اختر الحساب..." />
-               </SelectTrigger>
-               <SelectContent className="max-h-80">
+             <p className="text-sm text-muted-foreground mb-4">اختر الحساب المناسب من القائمة أدناه (المستوى الرابع)</p>
+             <div className="max-h-[60vh] overflow-y-auto pr-2">
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                  {accounts.map((account) => (
-                   <SelectItem key={account.id} value={account.id}>
-                     <span className="font-mono text-sm">{account.code}</span>
-                     <span className="mx-2">-</span>
-                     <span>{account.name_ar}</span>
-                   </SelectItem>
+                   <div
+                     key={account.id}
+                     onClick={() => handleUpdateItemAccount(account.id)}
+                     className={cn(
+                       "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                       "hover:border-primary hover:bg-primary/5 hover:shadow-md",
+                       "flex flex-col items-center justify-center text-center gap-2 min-h-[100px]",
+                       editingItem?.currentAccountId === account.id
+                         ? "border-primary bg-primary/10 shadow-md"
+                         : "border-border bg-card"
+                     )}
+                   >
+                     <span className="font-mono text-sm font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                       {account.code}
+                     </span>
+                     <span className="text-sm font-medium leading-tight">
+                       {account.name_ar}
+                     </span>
+                     <span className="text-xs text-muted-foreground">
+                       {account.type === 'asset' && 'أصول'}
+                       {account.type === 'liability' && 'خصوم'}
+                       {account.type === 'equity' && 'حقوق ملكية'}
+                       {account.type === 'revenue' && 'إيرادات'}
+                       {account.type === 'expense' && 'مصروفات'}
+                     </span>
+                   </div>
                  ))}
-               </SelectContent>
-             </Select>
+               </div>
+             </div>
            </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setShowAccountDialog(false)}>
+               إلغاء
+             </Button>
+           </DialogFooter>
          </DialogContent>
        </Dialog>
      </div>
