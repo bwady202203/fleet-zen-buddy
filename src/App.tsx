@@ -27,6 +27,7 @@ import CustodyRecords from "./pages/custody/CustodyRecords";
 import CustodyFilter from "./pages/custody/CustodyFilter";
 import CustodyJournalEntries from "./pages/custody/CustodyJournalEntries";
 import CustodySmartJournal from "./pages/custody/CustodySmartJournal";
+import CustodyTransferRequests from "./pages/custody/CustodyTransferRequests";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
 import JournalEntriesReports from "./pages/accounting/JournalEntriesReports";
@@ -189,6 +190,7 @@ const App = () => {
                                   <Route path="/custody/filter" element={<CustodyFilter />} />
                                   <Route path="/custody/journal" element={<CustodyJournalEntries />} />
                                   <Route path="/custody/smart-journal" element={<CustodySmartJournal />} />
+                                  <Route path="/custody/transfer-requests" element={<CustodyTransferRequests />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
                               </ProtectedRoute>
