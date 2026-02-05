@@ -2971,7 +2971,10 @@ export type Database = {
           amount: number
           created_at: string
           description: string
+          has_tax: boolean | null
           id: string
+          is_tax_row: boolean | null
+          parent_item_id: string | null
           serial_number: number
           transfer_request_id: string
         }
@@ -2980,7 +2983,10 @@ export type Database = {
           amount: number
           created_at?: string
           description: string
+          has_tax?: boolean | null
           id?: string
+          is_tax_row?: boolean | null
+          parent_item_id?: string | null
           serial_number: number
           transfer_request_id: string
         }
@@ -2989,7 +2995,10 @@ export type Database = {
           amount?: number
           created_at?: string
           description?: string
+          has_tax?: boolean | null
           id?: string
+          is_tax_row?: boolean | null
+          parent_item_id?: string | null
           serial_number?: number
           transfer_request_id?: string
         }
@@ -2999,6 +3008,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_request_items_parent_item_id_fkey"
+            columns: ["parent_item_id"]
+            isOneToOne: false
+            referencedRelation: "transfer_request_items"
             referencedColumns: ["id"]
           },
           {
