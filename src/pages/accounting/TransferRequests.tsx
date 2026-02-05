@@ -371,23 +371,39 @@ interface TransferRequest {
   const handleDownloadPDF = async (request: TransferRequest) => {
     setPrintingRequest(request);
     
-    // Wait for the component to render
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Add class to body for PDF generation styling
+    document.body.classList.add('pdf-generating');
     
+    // Wait for the component to render
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     const printContent = document.getElementById('print-content');
     if (!printContent) {
       toast.error('خطأ في إنشاء PDF');
+      document.body.classList.remove('pdf-generating');
       setPrintingRequest(null);
       return;
     }
 
     try {
+      // Temporarily make visible for capture
+      const wrapper = document.getElementById('print-wrapper');
+      if (wrapper) {
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.zIndex = '-1';
+        wrapper.style.opacity = '1';
+        wrapper.style.display = 'block';
+      }
+
       const canvas = await html2canvas(printContent, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#FFFFFF',
-        width: 794, // A4 width in pixels at 96 DPI
-        height: 1123, // A4 height in pixels at 96 DPI
+        logging: false,
+        windowWidth: 794,
+        windowHeight: 1123,
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -408,6 +424,7 @@ interface TransferRequest {
       console.error('Error generating PDF:', error);
       toast.error('خطأ في إنشاء PDF');
     } finally {
+      document.body.classList.remove('pdf-generating');
       setPrintingRequest(null);
     }
   };
@@ -789,7 +806,7 @@ interface TransferRequest {
               overflow: 'hidden',
               background: 'white',
             }}
-            className="print:block"
+            className="hidden print:block"
           >
             <TransferRequestPrintView 
               request={printingRequest} 
@@ -801,6 +818,29 @@ interface TransferRequest {
 
       {/* Print Styles */}
       <style>{`
+        /* PDF Generation Mode */
+        .pdf-generating #print-wrapper {
+          display: block !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 210mm !important;
+          height: 297mm !important;
+          z-index: -1 !important;
+          opacity: 1 !important;
+          pointer-events: none !important;
+          background: white !important;
+        }
+        
+        .pdf-generating #print-wrapper #print-content {
+          display: flex !important;
+          flex-direction: column !important;
+          width: 210mm !important;
+          height: 297mm !important;
+          padding: 20mm 15mm !important;
+          box-sizing: border-box !important;
+        }
+
         @media print {
           @page {
             size: A4 portrait;

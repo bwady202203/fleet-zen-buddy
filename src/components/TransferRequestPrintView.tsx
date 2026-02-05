@@ -31,7 +31,7 @@
    companyName?: string;
  }
  
- const TransferRequestPrintView = ({ request, accounts, companyName = 'اسم الشركة / المؤسسة' }: Props) => {
+const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة الرمال الناعمة' }: Props) => {
    const requestDate = new Date(request.request_date);
    const gregorianDate = format(requestDate, 'yyyy/MM/dd');
    
@@ -73,6 +73,7 @@
        style={{
          width: '210mm',
          minHeight: '297mm',
+        height: '297mm',
          padding: '20mm 15mm',
          backgroundColor: '#FFFFFF',
          color: '#222222',
@@ -80,15 +81,22 @@
          fontSize: '11px',
          lineHeight: '1.6',
          direction: 'rtl',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        position: 'relative',
        }}
      >
        {/* Header */}
-       <div style={{ textAlign: 'center', marginBottom: '15mm' }}>
+      <div style={{ textAlign: 'center', marginBottom: '10mm' }}>
          <h1 style={{ 
-           fontSize: '18px', 
+          fontSize: '22px', 
            fontWeight: '700', 
-           marginBottom: '10px',
-           color: '#000000'
+          marginBottom: '8px',
+          color: '#1e40af',
+          borderBottom: '3px solid #3b82f6',
+          paddingBottom: '8px',
+          display: 'inline-block',
          }}>
            {companyName}
          </h1>
@@ -99,161 +107,190 @@
            alignItems: 'center',
            fontSize: '10px',
            color: '#444444',
-           marginTop: '8px'
+          marginTop: '12px',
+          padding: '8px 15px',
+          backgroundColor: '#eff6ff',
+          borderRadius: '6px',
+          border: '1px solid #bfdbfe',
          }}>
            <div>
              <span>التاريخ الميلادي: </span>
-             <strong>{gregorianDate}</strong>
+            <strong style={{ color: '#1e40af' }}>{gregorianDate}</strong>
            </div>
            <div>
              <span>رقم الطلب: </span>
-             <strong>#{request.request_number}</strong>
+            <strong style={{ color: '#1e40af' }}>#{request.request_number}</strong>
            </div>
            <div>
              <span>التاريخ الهجري: </span>
-             <strong>{hijriDate} هـ</strong>
+            <strong style={{ color: '#1e40af' }}>{hijriDate} هـ</strong>
            </div>
          </div>
-         
-         <hr style={{ 
-           border: 'none', 
-           borderTop: '1px solid #DDDDDD', 
-           marginTop: '10px' 
-         }} />
        </div>
  
        {/* Document Title */}
        <h2 style={{ 
          textAlign: 'center', 
-         fontSize: '20px', 
+        fontSize: '18px', 
          fontWeight: '700',
-         marginBottom: '12mm',
-         color: '#000000'
+        marginBottom: '8mm',
+        color: '#1e40af',
+        backgroundColor: '#dbeafe',
+        padding: '10px 20px',
+        borderRadius: '8px',
+        border: '2px solid #3b82f6',
        }}>
          طلب تحويل
        </h2>
  
-       {/* Data Table */}
-       <table style={{ 
-         width: '100%', 
-         borderCollapse: 'collapse',
-         marginBottom: '10mm'
-       }}>
-         <thead>
-           <tr>
-             <th style={{ 
-               border: '1px solid #CCCCCC', 
-               padding: '8px 10px',
-               backgroundColor: '#FAFAFA',
-               fontWeight: '600',
-               textAlign: 'center',
-               width: '40px'
-             }}>م</th>
-             <th style={{ 
-               border: '1px solid #CCCCCC', 
-               padding: '8px 10px',
-               backgroundColor: '#FAFAFA',
-               fontWeight: '600',
-               textAlign: 'right'
-             }}>الوصف</th>
-             <th style={{ 
-               border: '1px solid #CCCCCC', 
-               padding: '8px 10px',
-               backgroundColor: '#FAFAFA',
-               fontWeight: '600',
-               textAlign: 'right',
-               width: '140px'
-             }}>الحساب</th>
-             <th style={{ 
-               border: '1px solid #CCCCCC', 
-               padding: '8px 10px',
-               backgroundColor: '#FAFAFA',
-               fontWeight: '600',
-               textAlign: 'left',
-               width: '100px'
-             }}>المبلغ</th>
-           </tr>
-         </thead>
-         <tbody>
-           {request.items.map((item) => (
-             <tr key={item.id}>
-               <td style={{ 
-                 border: '1px solid #CCCCCC', 
-                 padding: '8px 10px',
-                 textAlign: 'center',
-                 fontWeight: '600'
-               }}>{item.serial_number}</td>
-               <td style={{ 
-                 border: '1px solid #CCCCCC', 
-                 padding: '8px 10px',
-                 textAlign: 'right'
-               }}>{item.description}</td>
-               <td style={{ 
-                 border: '1px solid #CCCCCC', 
-                 padding: '8px 10px',
-                 textAlign: 'right',
-                 fontSize: '10px'
-               }}>{getAccountName(item.account_id)}</td>
-               <td style={{ 
-                 border: '1px solid #CCCCCC', 
-                 padding: '8px 10px',
-                 textAlign: 'left',
-                 fontFamily: 'monospace',
-                 fontWeight: '600'
-               }}>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-             </tr>
-           ))}
-         </tbody>
-       </table>
+      {/* Content Area - grows to push signatures to bottom */}
+      <div style={{ flex: 1 }}>
+        {/* Data Table */}
+        <table style={{ 
+          width: '100%', 
+          borderCollapse: 'collapse',
+          marginBottom: '8mm'
+        }}>
+          <thead>
+            <tr>
+              <th style={{ 
+                border: '2px solid #3b82f6', 
+                padding: '10px 12px',
+                backgroundColor: '#1e40af',
+                color: '#FFFFFF',
+                fontWeight: '600',
+                textAlign: 'center',
+                width: '40px'
+              }}>م</th>
+              <th style={{ 
+                border: '2px solid #3b82f6', 
+                padding: '10px 12px',
+                backgroundColor: '#1e40af',
+                color: '#FFFFFF',
+                fontWeight: '600',
+                textAlign: 'right'
+              }}>الوصف</th>
+              <th style={{ 
+                border: '2px solid #3b82f6', 
+                padding: '10px 12px',
+                backgroundColor: '#1e40af',
+                color: '#FFFFFF',
+                fontWeight: '600',
+                textAlign: 'right',
+                width: '140px'
+              }}>الحساب</th>
+              <th style={{ 
+                border: '2px solid #3b82f6', 
+                padding: '10px 12px',
+                backgroundColor: '#1e40af',
+                color: '#FFFFFF',
+                fontWeight: '600',
+                textAlign: 'left',
+                width: '100px'
+              }}>المبلغ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {request.items.map((item, index) => (
+              <tr key={item.id} style={{ backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#f0f9ff' }}>
+                <td style={{ 
+                  border: '1px solid #93c5fd', 
+                  padding: '8px 10px',
+                  textAlign: 'center',
+                  fontWeight: '600',
+                  color: '#1e40af'
+                }}>{item.serial_number}</td>
+                <td style={{ 
+                  border: '1px solid #93c5fd', 
+                  padding: '8px 10px',
+                  textAlign: 'right'
+                }}>{item.description}</td>
+                <td style={{ 
+                  border: '1px solid #93c5fd', 
+                  padding: '8px 10px',
+                  textAlign: 'right',
+                  fontSize: '10px'
+                }}>{getAccountName(item.account_id)}</td>
+                <td style={{ 
+                  border: '1px solid #93c5fd', 
+                  padding: '8px 10px',
+                  textAlign: 'left',
+                  fontFamily: 'monospace',
+                  fontWeight: '600',
+                  color: '#1e40af'
+                }}>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
  
-       {/* Total */}
-       <div style={{ 
-         display: 'flex', 
-         justifyContent: 'flex-end',
-         marginBottom: '20mm',
-         paddingTop: '5mm'
-       }}>
-         <div style={{ 
-           fontSize: '14px',
-           fontWeight: '700',
-           color: '#000000'
-         }}>
-           <span>الإجمالي: </span>
-           <span style={{ fontFamily: 'monospace', marginRight: '10px' }}>
-             {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-           </span>
-           <span>ريال</span>
+        {/* Total */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end',
+          marginBottom: '5mm',
+        }}>
+          <div style={{ 
+            fontSize: '14px',
+            fontWeight: '700',
+            color: '#FFFFFF',
+            backgroundColor: '#1e40af',
+            padding: '10px 20px',
+            borderRadius: '6px',
+          }}>
+            <span>الإجمالي: </span>
+            <span style={{ fontFamily: 'monospace', marginRight: '10px' }}>
+              {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+            <span>ريال</span>
+          </div>
          </div>
-       </div>
  
-       {/* Notes */}
-       {request.notes && (
-         <div style={{ marginBottom: '15mm' }}>
-           <strong>ملاحظات: </strong>
-           <span>{request.notes}</span>
-         </div>
-       )}
+        {/* Notes */}
+        {request.notes && (
+          <div style={{ 
+            marginBottom: '5mm',
+            padding: '8px 12px',
+            backgroundColor: '#fef3c7',
+            borderRadius: '6px',
+            border: '1px solid #fcd34d',
+          }}>
+            <strong style={{ color: '#92400e' }}>ملاحظات: </strong>
+            <span>{request.notes}</span>
+          </div>
+        )}
+      </div>
  
-       {/* Signature & Stamp Section */}
+      {/* Signature Section - Always at bottom */}
        <div style={{ 
          display: 'flex', 
          justifyContent: 'space-between',
-         marginTop: '25mm',
-         paddingTop: '10mm',
-         borderTop: '1px solid #EEEEEE'
+        marginTop: 'auto',
+        paddingTop: '15mm',
+        borderTop: '2px solid #3b82f6',
        }}>
          <div style={{ textAlign: 'center', width: '45%' }}>
-          <p style={{ marginBottom: '25mm', fontWeight: '600' }}>المحاسب</p>
+          <p style={{ 
+            marginBottom: '20mm', 
+            fontWeight: '600',
+            color: '#1e40af',
+            fontSize: '12px',
+          }}>المحاسب</p>
            <div style={{ 
-             borderBottom: '1px solid #000000', 
+            borderBottom: '2px solid #1e40af', 
              width: '80%',
              margin: '0 auto'
            }}></div>
          </div>
          <div style={{ textAlign: 'center', width: '45%' }}>
-          <p style={{ marginBottom: '25mm', fontWeight: '600' }}>المدير العام</p>
+          <p style={{ 
+            marginBottom: '20mm', 
+            fontWeight: '600',
+            color: '#1e40af',
+            fontSize: '12px',
+          }}>المدير العام</p>
            <div style={{ 
-            borderBottom: '1px solid #000000', 
+            borderBottom: '2px solid #1e40af', 
             width: '80%',
              margin: '0 auto'
            }}></div>
