@@ -1,17 +1,52 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 const Accounting = () => {
   const { userRole, user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+
+  // Get today's dates
+  const today = new Date();
+  const gregorianDate = format(today, 'yyyy/MM/dd', { locale: ar });
+  const dayName = format(today, 'EEEE', { locale: ar });
+
+  // Simple Hijri approximation
+  const getHijriDate = (date: Date) => {
+    const gregorianYear = date.getFullYear();
+    const gregorianMonth = date.getMonth();
+    const gregorianDay = date.getDate();
+    
+    const julianDay = Math.floor(365.25 * (gregorianYear + 4716)) + 
+                      Math.floor(30.6001 * (gregorianMonth + 1 + 1)) + 
+                      gregorianDay - 1524.5;
+    
+    const l = Math.floor(julianDay - 1948439.5 + 10632);
+    const n = Math.floor((l - 1) / 10631);
+    const l2 = l - 10631 * n + 354;
+    const j = Math.floor((10985 - l2) / 5316) * Math.floor((50 * l2) / 17719) + 
+              Math.floor(l2 / 5670) * Math.floor((43 * l2) / 15238);
+    const l3 = l2 - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - 
+               Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+    const hijriMonth = Math.floor((24 * l3) / 709);
+    const hijriDay = l3 - Math.floor((709 * hijriMonth) / 24);
+    const hijriYear = 30 * n + j - 30;
+    
+    return `${hijriDay}/${hijriMonth}/${hijriYear}`;
+  };
+
+  const hijriDate = getHijriDate(today);
+
+  const handlePrint = () => window.print();
 
   const convertToCSV = (data: any[], headers: string[]) => {
     const csvRows = [];
@@ -238,6 +273,13 @@ const Accounting = () => {
       color: "from-gradient-start to-gradient-end"
     },
     {
+      title: "طلبات التحويل",
+      description: "إدارة طلبات تحويل العهد",
+      icon: Send,
+      link: "/custody/transfer-requests",
+      color: "from-orange-500 to-orange-600"
+    },
+    {
       title: "شجرة الحسابات",
       description: "إدارة الدليل المحاسبي - 4 مستويات",
       icon: BookOpen,
@@ -420,7 +462,27 @@ const Accounting = () => {
                 </p>
               </div>
             </div>
-            {userRole === 'admin' && (
+            
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Date Display */}
+              <div className="hidden sm:flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-lg">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="font-medium">{dayName}</span>
+                <span className="text-muted-foreground">|</span>
+                <span>{gregorianDate}</span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-primary">{hijriDate} هـ</span>
+              </div>
+              
+              {/* Action Icons */}
+              <Button variant="outline" size="icon" onClick={handlePrint} title="معاينة الطباعة">
+                <Printer className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" title="تحميل PDF">
+                <FileDown className="h-4 w-4" />
+              </Button>
+              
+              {userRole === 'admin' && (
               <Button
                 onClick={handleExportData}
                 disabled={isExporting}
@@ -430,7 +492,8 @@ const Accounting = () => {
                 <Download className={cn("h-4 w-4", isExporting && "animate-bounce")} />
                 {isExporting ? "جاري التصدير..." : "تصدير البيانات"}
               </Button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </header>
