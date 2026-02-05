@@ -7,6 +7,7 @@
    description: string;
    amount: number;
    account_id: string | null;
+  is_tax_row?: boolean;
  }
  
  interface TransferRequest {
@@ -196,13 +197,13 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
           </thead>
           <tbody>
             {request.items.map((item, index) => (
-              <tr key={item.id} style={{ backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#f0f9ff' }}>
+             <tr key={item.id} style={{ backgroundColor: item.is_tax_row ? '#ecfdf5' : (index % 2 === 0 ? '#FFFFFF' : '#f0f9ff') }}>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
                 padding: '10px 12px',
                   textAlign: 'center',
                 fontWeight: '700',
-                color: '#1e40af',
+               color: item.is_tax_row ? '#059669' : '#1e40af',
                 fontSize: '14px',
                 }}>{item.serial_number}</td>
                 <td style={{ 
@@ -210,20 +211,23 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
                 padding: '10px 12px',
                 textAlign: 'right',
                 fontSize: '14px',
-                }}>{item.description}</td>
+               color: item.is_tax_row ? '#059669' : 'inherit',
+               fontWeight: item.is_tax_row ? '600' : 'normal',
+               }}>{item.is_tax_row ? '📋 ' : ''}{item.description}</td>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
                 padding: '10px 12px',
                   textAlign: 'right',
                 fontSize: '12px',
-                }}>{getAccountName(item.account_id)}</td>
+               color: item.is_tax_row ? '#059669' : 'inherit',
+               }}>{item.is_tax_row ? 'ضريبة المشتريات' : getAccountName(item.account_id)}</td>
                 <td style={{ 
                   border: '1px solid #93c5fd', 
                 padding: '10px 12px',
                   textAlign: 'left',
                   fontFamily: 'monospace',
                 fontWeight: '700',
-                color: '#1e40af',
+               color: item.is_tax_row ? '#059669' : '#1e40af',
                 fontSize: '15px',
                 }}>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
               </tr>
