@@ -378,6 +378,14 @@ interface TransferRequest {
      try {
        // If posted, delete journal entries first
        if (request.status === 'posted' && request.journal_entry_id) {
+         // First, clear the journal_entry_id reference to avoid FK constraint
+         const { error: clearRefError } = await supabase
+           .from('transfer_requests')
+           .update({ journal_entry_id: null })
+           .eq('id', request.id);
+
+         if (clearRefError) throw clearRefError;
+
          // Delete ledger entries first
          await supabase
            .from('ledger_entries')
@@ -391,10 +399,12 @@ interface TransferRequest {
            .eq('journal_entry_id', request.journal_entry_id);
 
          // Delete journal entry
-         await supabase
+         const { error: journalDeleteError } = await supabase
            .from('journal_entries')
            .delete()
            .eq('id', request.journal_entry_id);
+
+         if (journalDeleteError) throw journalDeleteError;
        }
 
        const { error } = await supabase
@@ -490,6 +500,14 @@ interface TransferRequest {
     try {
       // If posted, delete the journal entry first
       if (request.status === 'posted' && request.journal_entry_id) {
+        // First, clear the journal_entry_id reference to avoid FK constraint
+        const { error: clearRefError } = await supabase
+          .from('transfer_requests')
+          .update({ journal_entry_id: null })
+          .eq('id', request.id);
+
+        if (clearRefError) throw clearRefError;
+
         // Delete ledger entries first (created by trigger)
         const { error: ledgerDeleteError } = await supabase
           .from('ledger_entries')
@@ -528,8 +546,7 @@ interface TransferRequest {
           approved_at: null,
           approved_by: null,
           posted_at: null,
-          posted_by: null,
-          journal_entry_id: null
+          posted_by: null
         })
         .eq('id', request.id);
 
