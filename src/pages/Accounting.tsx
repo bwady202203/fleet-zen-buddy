@@ -277,7 +277,7 @@ const Accounting = () => {
       title: "طلبات التحويل",
       description: "إدارة وتسجيل طلبات التحويل المالية",
       icon: SendHorizontal,
-      link: "/custody/transfer-requests",
+      link: "/accounting/transfer-requests",
       color: "from-cyan-500 to-cyan-600"
     },
     {

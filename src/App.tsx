@@ -190,7 +190,7 @@ const App = () => {
                                   <Route path="/custody/filter" element={<CustodyFilter />} />
                                   <Route path="/custody/journal" element={<CustodyJournalEntries />} />
                                   <Route path="/custody/smart-journal" element={<CustodySmartJournal />} />
-                                  <Route path="/custody/transfer-requests" element={<CustodyTransferRequests />} />
+                                  <Route path="/accounting/transfer-requests" element={<CustodyTransferRequests />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
                               </ProtectedRoute>
