@@ -11,6 +11,34 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { ArrowRight, Plus, Trash2, Printer, Search } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+// دالة لتحويل الأرقام العشرية مع دعم الفاصلة العربية والإنجليزية
+const parseLocalizedNumber = (value: string): number => {
+  if (!value || value === "") return 0;
+  
+  let str = String(value).trim();
+  
+  // Remove currency symbols and whitespace
+  str = str.replace(/[¤$\u20AC£¥\s]/g, "");
+  
+  // Auto-detect format based on separator positions
+  const lastComma = str.lastIndexOf(",");
+  const lastDot = str.lastIndexOf(".");
+  
+  // If comma is the last separator, treat it as decimal (Arabic format)
+  const isCommaDecimal = lastComma > lastDot;
+  
+  if (isCommaDecimal) {
+    // Comma as decimal: Remove all periods (thousand separators) and replace comma with period
+    str = str.replace(/\./g, "");
+    str = str.replace(",", ".");
+  } else {
+    // Dot as decimal: Remove all commas (thousand separators)
+    str = str.replace(/,/g, "");
+  }
+  
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? 0 : parsed;
+};
 
 const SalesInvoice = () => {
   const { addInvoice, getInvoicesByType, getNextInvoiceNumber } = useInvoices();
@@ -243,25 +271,31 @@ const SalesInvoice = () => {
                         <div>
                           <Label>الكمية</Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={currentItem.quantity}
-                            onChange={(e) => setCurrentItem({ ...currentItem, quantity: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setCurrentItem({ ...currentItem, quantity: parseLocalizedNumber(e.target.value) })}
+                            placeholder="0"
                           />
                         </div>
                         <div>
                           <Label>السعر</Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={currentItem.unitPrice}
-                            onChange={(e) => setCurrentItem({ ...currentItem, unitPrice: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setCurrentItem({ ...currentItem, unitPrice: parseLocalizedNumber(e.target.value) })}
+                            placeholder="0.00"
                           />
                         </div>
                         <div>
                           <Label>الضريبة %</Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={currentItem.taxRate}
-                            onChange={(e) => setCurrentItem({ ...currentItem, taxRate: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setCurrentItem({ ...currentItem, taxRate: parseLocalizedNumber(e.target.value) })}
+                            placeholder="15"
                           />
                         </div>
                         <div>
@@ -348,11 +382,11 @@ const SalesInvoice = () => {
                       <div className="flex items-center gap-2">
                         <Input
                           id="discount"
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           value={formData.discount}
-                          onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => setFormData({ ...formData, discount: parseLocalizedNumber(e.target.value) })}
                           className="w-40 h-10 text-right"
-                          min="0"
                           placeholder="0.00"
                         />
                         <span className="font-bold">ريال</span>
