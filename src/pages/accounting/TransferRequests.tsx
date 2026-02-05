@@ -67,12 +67,16 @@ interface TransferRequest {
    const [newItems, setNewItems] = useState<Omit<TransferRequestItem, 'id'>[]>([]);
    const [notes, setNotes] = useState('');
  
-   // Dialog for account selection
-   const [showAccountDialog, setShowAccountDialog] = useState(false);
-   const [editingItem, setEditingItem] = useState<{requestId: string, itemId: string, currentAccountId: string | null} | null>(null);
-  const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
-  const [accountSearch, setAccountSearch] = useState('');
-  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  // Dialog for account selection
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<{requestId: string, itemId: string, currentAccountId: string | null} | null>(null);
+ const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
+ const [accountSearch, setAccountSearch] = useState('');
+ const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+ 
+ // Edit description dialog state
+ const [editingDescription, setEditingDescription] = useState<{requestId: string, itemId: string, currentDescription: string} | null>(null);
+ const [newDescriptionValue, setNewDescriptionValue] = useState('');
   
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
@@ -535,6 +539,28 @@ interface TransferRequest {
     } catch (error) {
       console.error('Error deleting tax row:', error);
       toast.error('خطأ في حذف الضريبة');
+    }
+  };
+
+  // Update saved item description
+  const handleUpdateSavedItemDescription = async () => {
+    if (!editingDescription) return;
+    
+    try {
+      const { error } = await supabase
+        .from('transfer_request_items')
+        .update({ description: newDescriptionValue.trim() })
+        .eq('id', editingDescription.itemId);
+      
+      if (error) throw error;
+      
+      toast.success('تم تحديث البيان');
+      setEditingDescription(null);
+      setNewDescriptionValue('');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error updating description:', error);
+      toast.error('خطأ في تحديث البيان');
     }
   };
  
@@ -1477,8 +1503,28 @@ interface TransferRequest {
                                   </span>
                                 </TableCell>
                                 <TableCell className={cn("font-medium", item.is_tax_row && "text-emerald-700 dark:text-emerald-400")}>
-                                  {item.is_tax_row && <span className="ml-2">📋</span>}
-                                  {item.description}
+                                  <div className="flex items-center gap-2">
+                                    {item.is_tax_row && <span>📋</span>}
+                                    <span>{item.description}</span>
+                                    {!item.is_tax_row && request.status !== 'posted' && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 opacity-50 hover:opacity-100"
+                                        onClick={() => {
+                                          setEditingDescription({
+                                            requestId: request.id,
+                                            itemId: item.id,
+                                            currentDescription: item.description
+                                          });
+                                          setNewDescriptionValue(item.description);
+                                        }}
+                                        title="تعديل البيان"
+                                      >
+                                        <Pencil className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell>
                                   <span className={cn(
@@ -1924,9 +1970,51 @@ interface TransferRequest {
              </Button>
            </DialogFooter>
          </DialogContent>
-       </Dialog>
-     </div>
-   );
- };
+      </Dialog>
+
+      {/* Edit Description Dialog */}
+      <Dialog open={!!editingDescription} onOpenChange={(open) => {
+        if (!open) {
+          setEditingDescription(null);
+          setNewDescriptionValue('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>تعديل البيان</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newDescription">البيان</Label>
+              <Textarea
+                id="newDescription"
+                value={newDescriptionValue}
+                onChange={(e) => setNewDescriptionValue(e.target.value)}
+                placeholder="أدخل البيان الجديد..."
+                className="min-h-[100px]"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditingDescription(null);
+              setNewDescriptionValue('');
+            }}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleUpdateSavedItemDescription}
+              disabled={!newDescriptionValue.trim()}
+            >
+              <Save className="h-4 w-4 ml-2" />
+              حفظ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
  
  export default TransferRequests;
