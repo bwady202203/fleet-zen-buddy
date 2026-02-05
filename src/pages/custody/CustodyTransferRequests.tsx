@@ -9,11 +9,12 @@
  import { useAuth } from '@/contexts/AuthContext';
  import CustodyNavbar from '@/components/CustodyNavbar';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
- import { Plus, Trash2, Printer, FileDown, Calendar } from 'lucide-react';
+import { Plus, Trash2, Printer, FileDown, Calendar, Sparkles, Info, Wallet } from 'lucide-react';
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
  import html2canvas from 'html2canvas';
+import { Alert, AlertDescription } from '@/components/ui/alert';
  
  interface TransferRequest {
    id: string;
@@ -177,24 +178,44 @@
  
        <main className="container mx-auto px-4 py-8">
          {/* Add Request Form */}
-         <Card className="mb-6 print:hidden">
-           <CardHeader>
-             <CardTitle className="text-lg">إضافة طلب جديد</CardTitle>
+          <Card className="mb-6 print:hidden border-primary/20 shadow-md">
+            <CardHeader className="bg-gradient-to-l from-primary/5 to-transparent pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">✨ إضافة طلب جديد</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    قم بإدخال بيانات طلب التحويل بدقة لضمان تسجيله بشكل صحيح في النظام
+                  </p>
+                </div>
+              </div>
            </CardHeader>
            <CardContent>
              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                <div className="sm:col-span-2 space-y-2">
-                 <Label htmlFor="description">وصف التحويل</Label>
+                  <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
+                    <Info className="h-4 w-4 text-primary" />
+                    وصف التحويل
+                  </Label>
                  <Textarea
                    id="description"
                    value={description}
                    onChange={(e) => setDescription(e.target.value)}
-                   placeholder="أدخل وصف طلب التحويل"
+                    placeholder="اكتب شرحًا واضحًا ومختصرًا (مثل: مصروف ديزل، صيانة، إيجار...)"
                    rows={2}
+                    className="resize-none"
                  />
+                  <p className="text-xs text-muted-foreground">
+                    يوضح سبب التحويل أو نوع المصروف
+                  </p>
                </div>
                <div className="space-y-2">
-                 <Label htmlFor="amount">المبلغ</Label>
+                  <Label htmlFor="amount" className="flex items-center gap-2 text-base font-medium">
+                    <Wallet className="h-4 w-4 text-primary" />
+                    المبلغ
+                  </Label>
                  <Input
                    id="amount"
                    type="number"
@@ -202,13 +223,20 @@
                    value={amount}
                    onChange={(e) => setAmount(e.target.value)}
                    placeholder="0.00"
+                    className="text-lg font-mono"
                  />
+                  <p className="text-xs text-muted-foreground">
+                    أدخل القيمة بالأرقام
+                  </p>
                </div>
              </div>
-             <Button onClick={handleAddRequest} className="mt-4 gap-2">
+              <Button onClick={handleAddRequest} className="mt-6 gap-2 w-full sm:w-auto" size="lg">
                <Plus className="h-4 w-4" />
                إضافة الطلب
              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                🔹 بعد الانتهاء من إدخال البيانات، اضغط على إضافة الطلب ليتم حفظه
+              </p>
            </CardContent>
          </Card>
  
@@ -217,19 +245,36 @@
            <Card>
              <CardHeader className="print:pb-2">
                <div className="flex items-center justify-between">
-                 <CardTitle>قائمة طلبات التحويل</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <CardTitle>📋 قائمة طلبات التحويل</CardTitle>
+                  </div>
                  <div className="hidden print:block text-sm text-muted-foreground">
                    التاريخ: {gregorianDate} | {hijriDate} هـ
                  </div>
                </div>
+                <p className="text-sm text-muted-foreground mt-1 print:hidden">
+                  تعرض جميع طلبات التحويل التي تم إدخالها، مع تفاصيل كل طلب لسهولة المتابعة والمراجعة
+                </p>
              </CardHeader>
              <CardContent>
                {requests.length === 0 ? (
-                 <div className="text-center py-12 text-muted-foreground">
-                   لا توجد طلبات تحويل حالياً
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                      <FileDown className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                    <p className="text-muted-foreground font-medium">لا توجد طلبات تحويل حالياً</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">ابدأ بإضافة طلب جديد من النموذج أعلاه</p>
                  </div>
                ) : (
                  <>
+                    <Alert className="mb-4 print:hidden bg-muted/30 border-muted">
+                      <Info className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        <strong>وصف التحويل:</strong> يوضح الغرض من الطلب • 
+                        <strong className="mr-2">المبلغ:</strong> قيمة التحويل المسجلة • 
+                        <strong className="mr-2">حذف:</strong> إمكانية إزالة أي طلب غير صحيح أو مكرر
+                      </AlertDescription>
+                    </Alert>
                    <Table>
                      <TableHeader>
                        <TableRow>
@@ -263,11 +308,19 @@
                        ))}
                      </TableBody>
                    </Table>
-                   <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                     <span className="font-bold">الإجمالي</span>
-                     <span className="font-bold font-mono text-lg">
-                       {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ريال
-                     </span>
+                    <div className="mt-4 pt-4 border-t-2 border-primary/20">
+                      <div className="flex justify-between items-center bg-gradient-to-l from-primary/5 to-transparent p-4 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="h-5 w-5 text-primary" />
+                          <span className="font-bold text-lg">💰 الإجمالي</span>
+                        </div>
+                        <span className="font-bold font-mono text-xl text-primary">
+                          {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ريال
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2 text-center print:hidden">
+                        يتم تحديث المجموع تلقائيًا عند الإضافة أو الحذف
+                      </p>
                    </div>
                  </>
                )}
