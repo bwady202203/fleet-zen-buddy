@@ -238,15 +238,16 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
           marginBottom: '5mm',
         }}>
           <div style={{ 
-          fontSize: '18px',
+          fontSize: '20px',
             fontWeight: '700',
-            color: '#FFFFFF',
-            backgroundColor: '#1e40af',
-          padding: '12px 25px',
+            color: '#000000',
+            backgroundColor: '#FFFFFF',
+          padding: '14px 30px',
             borderRadius: '6px',
+          border: '2px solid #1e40af',
           }}>
             <span>الإجمالي: </span>
-            <span style={{ fontFamily: 'monospace', marginRight: '10px' }}>
+            <span style={{ fontFamily: 'monospace', marginRight: '10px', fontWeight: '800' }}>
               {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </span>
             <span>ريال</span>
