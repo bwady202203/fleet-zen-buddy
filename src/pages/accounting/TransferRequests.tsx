@@ -503,6 +503,40 @@ interface TransferRequest {
       toast.error('خطأ في تحديث الضريبة');
     }
   };
+
+  // Delete saved tax row directly
+  const handleDeleteSavedTaxRow = async (request: TransferRequest, taxItem: TransferRequestItem) => {
+    if (!taxItem.is_tax_row) return;
+    
+    try {
+      // Find and update parent item
+      if (taxItem.parent_item_id) {
+        await supabase
+          .from('transfer_request_items')
+          .update({ has_tax: false })
+          .eq('id', taxItem.parent_item_id);
+      }
+      
+      // Delete the tax row
+      await supabase
+        .from('transfer_request_items')
+        .delete()
+        .eq('id', taxItem.id);
+      
+      // Update total amount
+      const newTotal = request.total_amount - taxItem.amount;
+      await supabase
+        .from('transfer_requests')
+        .update({ total_amount: newTotal })
+        .eq('id', request.id);
+      
+      toast.success('تم حذف الضريبة');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error deleting tax row:', error);
+      toast.error('خطأ في حذف الضريبة');
+    }
+  };
  
    const handleDeleteRequest = async (request: TransferRequest) => {
      try {
@@ -1482,7 +1516,7 @@ interface TransferRequest {
                                       )}
                                     </TableCell>
                                     <TableCell className="text-center">
-                                      {!item.is_tax_row && (
+                                      {!item.is_tax_row ? (
                                         <Button
                                           variant="ghost"
                                           size="icon"
@@ -1497,6 +1531,16 @@ interface TransferRequest {
                                           }}
                                         >
                                           <Edit className="h-4 w-4" />
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() => handleDeleteSavedTaxRow(request, item)}
+                                          title="حذف الضريبة"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
                                         </Button>
                                       )}
                                     </TableCell>
