@@ -8,7 +8,7 @@
  import { toast } from 'sonner';
  import { useAuth } from '@/contexts/AuthContext';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search } from 'lucide-react';
+  import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search, XCircle, RotateCcw, Pencil } from 'lucide-react';
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
@@ -70,6 +70,13 @@ interface TransferRequest {
   const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
   const [accountSearch, setAccountSearch] = useState('');
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  
+  // Edit mode state
+  const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
+  const [editItems, setEditItems] = useState<TransferRequestItem[]>([]);
+  const [editNotes, setEditNotes] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editAmount, setEditAmount] = useState('');
 
   // Arabic alphabet for quick navigation
   const arabicLetters = ['ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'];
@@ -457,6 +464,174 @@ interface TransferRequest {
     }
   };
  
+  // Cancel/Revert a request to draft status
+  const handleCancelRequest = async (request: TransferRequest) => {
+    try {
+      // If posted, delete the journal entry first
+      if (request.status === 'posted' && request.journal_entry_id) {
+        // Delete journal entry lines first
+        const { error: linesDeleteError } = await supabase
+          .from('journal_entry_lines')
+          .delete()
+          .eq('journal_entry_id', request.journal_entry_id);
+
+        if (linesDeleteError) throw linesDeleteError;
+
+        // Delete journal entry
+        const { error: entryDeleteError } = await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('id', request.journal_entry_id);
+
+        if (entryDeleteError) throw entryDeleteError;
+      }
+
+      // Revert request to draft
+      const { error } = await supabase
+        .from('transfer_requests')
+        .update({
+          status: 'draft',
+          approved_at: null,
+          approved_by: null,
+          posted_at: null,
+          posted_by: null,
+          journal_entry_id: null
+        })
+        .eq('id', request.id);
+
+      if (error) throw error;
+
+      toast.success('تم إلغاء الطلب وإعادته لحالة المسودة');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      toast.error('خطأ في إلغاء الطلب');
+    }
+  };
+
+  // Start editing a request
+  const handleStartEdit = (request: TransferRequest) => {
+    setEditingRequest(request);
+    setEditItems([...request.items]);
+    setEditNotes(request.notes || '');
+    setEditDescription('');
+    setEditAmount('');
+  };
+
+  // Add item to edit
+  const handleAddEditItem = () => {
+    if (!editDescription.trim() || !editAmount) {
+      toast.error('الرجاء ملء جميع الحقول');
+      return;
+    }
+
+    const newItem: TransferRequestItem = {
+      id: `temp-${Date.now()}`,
+      serial_number: editItems.length + 1,
+      description: editDescription.trim(),
+      amount: parseFloat(editAmount),
+      account_id: null
+    };
+
+    setEditItems([...editItems, newItem]);
+    setEditDescription('');
+    setEditAmount('');
+  };
+
+  // Remove item from edit
+  const handleRemoveEditItem = (index: number) => {
+    const updated = editItems.filter((_, i) => i !== index).map((item, i) => ({
+      ...item,
+      serial_number: i + 1
+    }));
+    setEditItems(updated);
+  };
+
+  // Save edited request
+  const handleSaveEdit = async () => {
+    if (!editingRequest || editItems.length === 0) {
+      toast.error('الرجاء إضافة عنصر واحد على الأقل');
+      return;
+    }
+
+    try {
+      const totalAmount = editItems.reduce((sum, item) => sum + item.amount, 0);
+
+      // Update the request
+      const { error: requestError } = await supabase
+        .from('transfer_requests')
+        .update({
+          total_amount: totalAmount,
+          notes: editNotes || null,
+          status: 'draft',
+          approved_at: null,
+          approved_by: null,
+          posted_at: null,
+          posted_by: null,
+          journal_entry_id: null
+        })
+        .eq('id', editingRequest.id);
+
+      if (requestError) throw requestError;
+
+      // Delete old items
+      const { error: deleteError } = await supabase
+        .from('transfer_request_items')
+        .delete()
+        .eq('transfer_request_id', editingRequest.id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new items
+      const itemsToInsert = editItems.map((item, index) => ({
+        transfer_request_id: editingRequest.id,
+        serial_number: index + 1,
+        description: item.description,
+        amount: item.amount,
+        account_id: item.account_id
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('transfer_request_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
+
+      // If was posted, delete old journal entry
+      if (editingRequest.journal_entry_id) {
+        await supabase
+          .from('journal_entry_lines')
+          .delete()
+          .eq('journal_entry_id', editingRequest.journal_entry_id);
+
+        await supabase
+          .from('journal_entries')
+          .delete()
+          .eq('id', editingRequest.journal_entry_id);
+      }
+
+      toast.success('تم حفظ التعديلات بنجاح');
+      setEditingRequest(null);
+      setEditItems([]);
+      setEditNotes('');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error saving edit:', error);
+      toast.error('خطأ في حفظ التعديلات');
+    }
+  };
+
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setEditingRequest(null);
+    setEditItems([]);
+    setEditNotes('');
+    setEditDescription('');
+    setEditAmount('');
+  };
+
+  const editItemsTotal = editItems.reduce((sum, item) => sum + item.amount, 0);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'draft':
@@ -651,8 +826,150 @@ interface TransferRequest {
            </Card>
          )}
  
+          {/* نموذج تعديل طلب */}
+          {editingRequest && (
+            <Card className="mb-8 border-0 shadow-lg bg-gradient-to-br from-card via-card to-amber-500/5">
+              <CardHeader className="pb-4 border-b border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-500/10 rounded-lg">
+                      <Pencil className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">✏️ تعديل طلب التحويل #{editingRequest.request_number}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        عدّل البنود ثم احفظ التغييرات - سيُعاد الطلب لحالة المسودة
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" onClick={handleCancelEdit}>
+                    إلغاء التعديل
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <div className="lg:col-span-3 space-y-3">
+                    <Label htmlFor="editDescription" className="flex items-center gap-2 text-base font-medium">
+                      <Info className="h-4 w-4 text-amber-600" />
+                      وصف التحويل
+                    </Label>
+                    <Textarea
+                      id="editDescription"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      placeholder="اكتب شرحًا واضحًا ومختصرًا..."
+                      rows={2}
+                      className="resize-none text-base border-2 focus:border-amber-500/50 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="editAmountInput" className="flex items-center gap-2 text-base font-medium">
+                      <Wallet className="h-4 w-4 text-amber-600" />
+                      المبلغ
+                    </Label>
+                    <Input
+                      id="editAmountInput"
+                      type="number"
+                      step="0.01"
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="text-xl font-mono h-14 text-center border-2 focus:border-amber-500/50 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleAddEditItem} variant="outline" className="gap-2 mb-6 border-amber-500/30 hover:bg-amber-500/10">
+                  <Plus className="h-4 w-4" />
+                  إضافة بند
+                </Button>
+
+                {/* جدول البنود */}
+                {editItems.length > 0 && (
+                  <div className="border rounded-lg overflow-hidden mb-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-amber-500/10">
+                          <TableHead className="w-16 text-center">م</TableHead>
+                          <TableHead>الوصف</TableHead>
+                          <TableHead className="w-48">الحساب</TableHead>
+                          <TableHead className="w-32 text-left">المبلغ</TableHead>
+                          <TableHead className="w-16 text-center">حذف</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {editItems.map((item, index) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/10 text-amber-600 font-bold text-sm">
+                                {index + 1}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-medium">{item.description}</TableCell>
+                            <TableCell>
+                              <span className={cn(
+                                "text-sm",
+                                item.account_id ? "text-emerald-600 font-medium" : "text-muted-foreground italic"
+                              )}>
+                                {getAccountName(item.account_id)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-left font-mono font-semibold text-amber-600">
+                              {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                onClick={() => handleRemoveEditItem(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <div className="p-4 bg-gradient-to-l from-amber-500/10 to-transparent border-t">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-lg">الإجمالي</span>
+                        <span className="font-bold font-mono text-xl text-amber-600">
+                          {editItemsTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} ريال
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3 mb-6">
+                  <Label>ملاحظات (اختياري)</Label>
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="أي ملاحظات إضافية..."
+                    rows={2}
+                  />
+                </div>
+
+                <Separator className="my-6" />
+
+                <div className="flex gap-3">
+                  <Button onClick={handleSaveEdit} className="gap-2 bg-amber-600 hover:bg-amber-700" size="lg" disabled={editItems.length === 0}>
+                    <Save className="h-5 w-5" />
+                    حفظ التعديلات
+                  </Button>
+                  <Button onClick={handleCancelEdit} variant="outline" size="lg">
+                    إلغاء
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
          {/* قائمة الطلبات */}
-         {!isCreating && (
+          {!isCreating && !editingRequest && (
            <div className="space-y-4">
              <h2 className="text-xl font-bold flex items-center gap-2">
                <FileDown className="h-5 w-5 text-primary" />
@@ -769,6 +1086,15 @@ interface TransferRequest {
                                <CheckCircle className="h-4 w-4" />
                                اعتماد
                              </Button>
+                              <Button
+                                onClick={() => handleStartEdit(request)}
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                تعديل
+                              </Button>
                              <Button
                                onClick={() => handleDeleteRequest(request.id)}
                                variant="destructive"
@@ -781,21 +1107,61 @@ interface TransferRequest {
                            </>
                          )}
                          {request.status === 'approved' && (
-                           <Button
-                             onClick={() => handlePost(request)}
-                             className="gap-2 bg-green-600 hover:bg-green-700"
-                           >
-                             <ArrowUpCircle className="h-4 w-4" />
-                             ترحيل لقيود اليومية
-                           </Button>
+                            <>
+                              <Button
+                                onClick={() => handlePost(request)}
+                                className="gap-2 bg-green-600 hover:bg-green-700"
+                              >
+                                <ArrowUpCircle className="h-4 w-4" />
+                                ترحيل لقيود اليومية
+                              </Button>
+                              <Button
+                                onClick={() => handleStartEdit(request)}
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                تعديل
+                              </Button>
+                              <Button
+                                onClick={() => handleCancelRequest(request)}
+                                variant="outline"
+                                size="sm"
+                                className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                إعادة لمسودة
+                              </Button>
+                            </>
                          )}
                          {request.status === 'posted' && request.journal_entry_id && (
-                           <Link to={`/accounting/journal-entries`}>
-                             <Button variant="outline" className="gap-2">
-                               <FileDown className="h-4 w-4" />
-                               عرض القيد
-                             </Button>
-                           </Link>
+                            <>
+                              <Link to={`/accounting/journal-entries`}>
+                                <Button variant="outline" className="gap-2">
+                                  <FileDown className="h-4 w-4" />
+                                  عرض القيد
+                                </Button>
+                              </Link>
+                              <Button
+                                onClick={() => handleStartEdit(request)}
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                تعديل
+                              </Button>
+                              <Button
+                                onClick={() => handleCancelRequest(request)}
+                                variant="outline"
+                                size="sm"
+                                className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                              >
+                                <XCircle className="h-4 w-4" />
+                                إلغاء الترحيل
+                              </Button>
+                            </>
                          )}
                         <Button variant="outline" size="sm" onClick={() => handlePrint(request)} className="gap-2">
                            <Printer className="h-4 w-4" />
