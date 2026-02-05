@@ -41,6 +41,9 @@ interface TransferRequest {
    description: string;
    amount: number;
    account_id: string | null;
+  has_tax?: boolean;
+  is_tax_row?: boolean;
+  parent_item_id?: string;
  }
  
  interface Account {
@@ -195,7 +198,14 @@ interface TransferRequest {
    };
  
    const handleRemoveNewItem = (index: number) => {
-     const updated = newItems.filter((_, i) => i !== index).map((item, i) => ({
+     const itemToRemove = newItems[index];
+     // Also remove tax row if this item has tax
+     const updated = newItems.filter((item, i) => {
+       if (i === index) return false;
+       // Remove tax row associated with this item
+       if (item.is_tax_row && item.parent_item_id === `new-${index}`) return false;
+       return true;
+     }).map((item, i) => ({
        ...item,
        serial_number: i + 1
      }));
@@ -591,7 +601,14 @@ interface TransferRequest {
 
   // Remove item from edit
   const handleRemoveEditItem = (index: number) => {
-    const updated = editItems.filter((_, i) => i !== index).map((item, i) => ({
+   const itemToRemove = editItems[index];
+   // Also remove tax row if this item has tax
+   const updated = editItems.filter((item, i) => {
+     if (i === index) return false;
+     // Remove tax row associated with this item
+     if (item.is_tax_row && item.parent_item_id === itemToRemove.id) return false;
+     return true;
+   }).map((item, i) => ({
       ...item,
       serial_number: i + 1
     }));
@@ -682,6 +699,117 @@ interface TransferRequest {
   };
 
   const editItemsTotal = editItems.reduce((sum, item) => sum + item.amount, 0);
+
+  // VAT Tax Account ID (ضريبة المشتريات - كود 110801)
+  const VAT_ACCOUNT_ID = '110801';
+
+  // Toggle tax on new item
+  const handleToggleNewItemTax = (index: number) => {
+    const item = newItems[index];
+    
+    if (item.has_tax) {
+      // Remove tax - find and remove tax row
+      const updated = newItems.filter((i, idx) => {
+        if (i.is_tax_row && i.parent_item_id === `new-${index}`) {
+          return false;
+        }
+        return true;
+      }).map((i, idx) => {
+        if (idx === index || (idx < newItems.length && newItems.findIndex((_, origIdx) => origIdx === index) === idx)) {
+          return { ...i, has_tax: false };
+        }
+        return i;
+      });
+      
+      // Recalculate serial numbers
+      const renumbered = updated.map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1
+      }));
+      setNewItems(renumbered);
+    } else {
+      // Add tax row after this item
+      const taxAmount = item.amount * 0.15;
+      const taxItem: Omit<TransferRequestItem, 'id'> = {
+        serial_number: 0, // Will be recalculated
+        description: 'ضريبة القيمة المضافة 15%',
+        amount: taxAmount,
+        account_id: null,
+        is_tax_row: true,
+        parent_item_id: `new-${index}`
+      };
+      
+      // Mark original item as having tax
+      const updatedItems = [...newItems];
+      updatedItems[index] = { ...item, has_tax: true };
+      
+      // Insert tax row after the item
+      updatedItems.splice(index + 1, 0, taxItem);
+      
+      // Recalculate serial numbers
+      const renumbered = updatedItems.map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1
+      }));
+      setNewItems(renumbered);
+    }
+  };
+
+  // Toggle tax on edit item
+  const handleToggleEditItemTax = (index: number) => {
+    const item = editItems[index];
+    
+    if (item.has_tax) {
+      // Remove tax row
+      const updated = editItems.filter((i) => {
+        if (i.is_tax_row && i.parent_item_id === item.id) {
+          return false;
+        }
+        return true;
+      });
+      
+      // Update original item
+      const finalItems = updated.map((i) => {
+        if (i.id === item.id) {
+          return { ...i, has_tax: false };
+        }
+        return i;
+      });
+      
+      // Recalculate serial numbers
+      const renumbered = finalItems.map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1
+      }));
+      setEditItems(renumbered);
+    } else {
+      // Add tax row
+      const taxAmount = item.amount * 0.15;
+      const taxItem: TransferRequestItem = {
+        id: `tax-${Date.now()}`,
+        serial_number: 0,
+        description: 'ضريبة القيمة المضافة 15%',
+        amount: taxAmount,
+        account_id: null,
+        is_tax_row: true,
+        parent_item_id: item.id
+      };
+      
+      // Mark original item as having tax
+      const updatedItems = [...editItems];
+      updatedItems[index] = { ...item, has_tax: true };
+      
+      // Insert tax row after the item
+      updatedItems.splice(index + 1, 0, taxItem);
+      
+      // Recalculate serial numbers
+      const renumbered = updatedItems.map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1
+      }));
+      setEditItems(renumbered);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -817,22 +945,51 @@ interface TransferRequest {
                          <TableHead className="w-16 text-center">م</TableHead>
                          <TableHead>الوصف</TableHead>
                          <TableHead className="w-32 text-left">المبلغ</TableHead>
+                         <TableHead className="w-16 text-center">ضريبة</TableHead>
                          <TableHead className="w-16 text-center">حذف</TableHead>
                        </TableRow>
                      </TableHeader>
                      <TableBody>
                        {newItems.map((item, index) => (
-                         <TableRow key={index}>
+                         <TableRow key={index} className={item.is_tax_row ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}>
                            <TableCell className="text-center">
-                             <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                             <span className={cn(
+                               "inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm",
+                               item.is_tax_row ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-300" : "bg-primary/10 text-primary"
+                             )}>
                                {item.serial_number}
                              </span>
                            </TableCell>
-                           <TableCell className="font-medium">{item.description}</TableCell>
-                           <TableCell className="text-left font-mono font-semibold text-primary">
+                           <TableCell className={cn("font-medium", item.is_tax_row && "text-emerald-700 dark:text-emerald-400")}>
+                             {item.is_tax_row && <span className="ml-2">📋</span>}
+                             {item.description}
+                           </TableCell>
+                           <TableCell className={cn(
+                             "text-left font-mono font-semibold",
+                             item.is_tax_row ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
+                           )}>
                              {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                            </TableCell>
                            <TableCell className="text-center">
+                             {!item.is_tax_row && (
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 className={cn(
+                                   "h-8 w-8 font-bold text-lg",
+                                   item.has_tax 
+                                     ? "text-emerald-600 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:hover:bg-emerald-800" 
+                                     : "text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                                 )}
+                                 onClick={() => handleToggleNewItemTax(index)}
+                                 title={item.has_tax ? "إزالة الضريبة" : "إضافة ضريبة 15%"}
+                               >
+                                 ض
+                               </Button>
+                             )}
+                           </TableCell>
+                           <TableCell className="text-center">
+                             {!item.is_tax_row && (
                              <Button
                                variant="ghost"
                                size="icon"
@@ -841,6 +998,7 @@ interface TransferRequest {
                              >
                                <Trash2 className="h-4 w-4" />
                              </Button>
+                             )}
                            </TableCell>
                          </TableRow>
                        ))}
@@ -946,38 +1104,69 @@ interface TransferRequest {
                           <TableHead>الوصف</TableHead>
                           <TableHead className="w-48">الحساب</TableHead>
                           <TableHead className="w-32 text-left">المبلغ</TableHead>
+                         <TableHead className="w-16 text-center">ضريبة</TableHead>
                           <TableHead className="w-16 text-center">حذف</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {editItems.map((item, index) => (
-                          <TableRow key={item.id}>
+                         <TableRow key={item.id} className={item.is_tax_row ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}>
                             <TableCell className="text-center">
-                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/10 text-amber-600 font-bold text-sm">
+                             <span className={cn(
+                               "inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm",
+                               item.is_tax_row ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-300" : "bg-amber-500/10 text-amber-600"
+                             )}>
                                 {index + 1}
                               </span>
                             </TableCell>
-                            <TableCell className="font-medium">{item.description}</TableCell>
+                           <TableCell className={cn("font-medium", item.is_tax_row && "text-emerald-700 dark:text-emerald-400")}>
+                             {item.is_tax_row && <span className="ml-2">📋</span>}
+                             {item.description}
+                           </TableCell>
                             <TableCell>
                               <span className={cn(
                                 "text-sm",
-                                item.account_id ? "text-emerald-600 font-medium" : "text-muted-foreground italic"
+                               item.is_tax_row ? "text-emerald-600 font-medium" :
+                               item.account_id ? "text-emerald-600 font-medium" : "text-muted-foreground italic"
                               )}>
-                                {getAccountName(item.account_id)}
+                               {item.is_tax_row ? 'ضريبة المشتريات' : getAccountName(item.account_id)}
                               </span>
                             </TableCell>
-                            <TableCell className="text-left font-mono font-semibold text-amber-600">
+                           <TableCell className={cn(
+                             "text-left font-mono font-semibold",
+                             item.is_tax_row ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600"
+                           )}>
                               {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </TableCell>
                             <TableCell className="text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                onClick={() => handleRemoveEditItem(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                             {!item.is_tax_row && (
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 className={cn(
+                                   "h-8 w-8 font-bold text-lg",
+                                   item.has_tax 
+                                     ? "text-emerald-600 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:hover:bg-emerald-800" 
+                                     : "text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                                 )}
+                                 onClick={() => handleToggleEditItemTax(index)}
+                                 title={item.has_tax ? "إزالة الضريبة" : "إضافة ضريبة 15%"}
+                               >
+                                 ض
+                               </Button>
+                             )}
+                           </TableCell>
+                           <TableCell className="text-center">
+                             {!item.is_tax_row && (
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                 onClick={() => handleRemoveEditItem(index)}
+                               >
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             )}
                             </TableCell>
                           </TableRow>
                         ))}
