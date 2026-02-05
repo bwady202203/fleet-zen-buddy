@@ -16,8 +16,11 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         }).join('');
       };
 
-      // Convert the value
-      const convertedValue = arabicToEnglish(e.target.value);
+      // Convert the value and remove asterisk (often typed accidentally on Arabic keyboards)
+      let convertedValue = arabicToEnglish(e.target.value);
+      
+      // Remove asterisk character which can be typed accidentally
+      convertedValue = convertedValue.replace(/\*/g, '');
       
       // Update the input value if it changed
       if (convertedValue !== e.target.value) {
