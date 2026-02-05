@@ -1177,14 +1177,16 @@ interface TransferRequest {
                               </Button>
                             </>
                          )}
-                         {request.status === 'posted' && request.journal_entry_id && (
+                         {request.status === 'posted' && (
                             <>
-                              <Link to={`/accounting/journal-entries`}>
-                                <Button variant="outline" className="gap-2">
-                                  <FileDown className="h-4 w-4" />
-                                  عرض القيد
-                                </Button>
-                              </Link>
+                              {request.journal_entry_id && (
+                                <Link to={`/accounting/journal-entries`}>
+                                  <Button variant="outline" className="gap-2">
+                                    <FileDown className="h-4 w-4" />
+                                    عرض القيد
+                                  </Button>
+                                </Link>
+                              )}
                               <Button
                                 onClick={() => handleStartEdit(request)}
                                 variant="outline"
