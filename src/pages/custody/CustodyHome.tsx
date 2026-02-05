@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, List, Filter, BookOpen, ArrowRight, Banknote } from "lucide-react";
+import { Users, FileText, List, Filter, BookOpen, ArrowRight, Banknote, Sparkles, SendHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CustodyHome = () => {
@@ -46,6 +46,20 @@ const CustodyHome = () => {
       icon: BookOpen,
       color: "from-teal-500 to-teal-600",
       link: "/custody/journal"
+    },
+    {
+      title: "قيود ذكية",
+      description: "إنشاء قيود محاسبية بطريقة ذكية وسريعة",
+      icon: Sparkles,
+      color: "from-violet-500 to-violet-600",
+      link: "/custody/smart-journal"
+    },
+    {
+      title: "طلبات التحويل",
+      description: "إدارة طلبات تحويل العهد والمصروفات",
+      icon: SendHorizontal,
+      color: "from-cyan-500 to-cyan-600",
+      link: "/custody/transfer-requests"
     }
   ];
 
