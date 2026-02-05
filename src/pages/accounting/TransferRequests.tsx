@@ -20,6 +20,7 @@
  import { Badge } from '@/components/ui/badge';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import TransferRequestPrintView from '@/components/TransferRequestPrintView';
  
 interface TransferRequest {
   id: string;
@@ -66,6 +67,7 @@ interface TransferRequest {
    // Dialog for account selection
    const [showAccountDialog, setShowAccountDialog] = useState(false);
    const [editingItem, setEditingItem] = useState<{requestId: string, itemId: string, currentAccountId: string | null} | null>(null);
+  const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
  
    // Get today's dates
    const today = new Date();
@@ -354,7 +356,12 @@ interface TransferRequest {
      }
    };
  
-   const handlePrint = () => window.print();
+  const handlePrint = (request: TransferRequest) => {
+    setPrintingRequest(request);
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
  
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -696,7 +703,7 @@ interface TransferRequest {
                              </Button>
                            </Link>
                          )}
-                         <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePrint(request)} className="gap-2">
                            <Printer className="h-4 w-4" />
                            طباعة
                          </Button>
@@ -711,6 +718,80 @@ interface TransferRequest {
        </main>
  
        {/* Dialog لاختيار الحساب */}
+
+      {/* Print View */}
+      {printingRequest && (
+        <TransferRequestPrintView 
+          request={printingRequest} 
+          accounts={accounts}
+        />
+      )}
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          /* Hide everything except print content */
+          body > *:not(#print-content),
+          header,
+          main,
+          nav,
+          footer,
+          button,
+          .print\\:hidden,
+          [class*="shadow"],
+          [class*="hover"],
+          .container {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          
+          #print-content {
+            display: block !important;
+            visibility: visible !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            padding: 20mm 15mm !important;
+            margin: 0 !important;
+            background: #FFFFFF !important;
+            color: #222222 !important;
+            font-family: 'Cairo', 'Noto Naskh Arabic', sans-serif !important;
+          }
+          
+          #print-content * {
+            visibility: visible !important;
+          }
+          
+          /* Table styles */
+          #print-content table {
+            page-break-inside: avoid !important;
+            border-collapse: collapse !important;
+          }
+          
+          #print-content tr {
+            page-break-inside: avoid !important;
+          }
+          
+          /* Remove shadows and effects */
+          * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+          }
+        }
+      `}</style>
+
        <Dialog open={showAccountDialog} onOpenChange={setShowAccountDialog}>
          <DialogContent className="max-w-lg" dir="rtl">
            <DialogHeader>
