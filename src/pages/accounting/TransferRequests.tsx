@@ -295,8 +295,11 @@ interface TransferRequest {
  
        if (journalError) throw journalError;
  
-       // Create journal entry lines - each item as debit
-       const lines = request.items.map(item => ({
+  // حساب بنك الرياض شركة الرمال - الحساب الدائن الافتراضي
+        const RIYADH_BANK_ACCOUNT_ID = '2edc3d0d-7582-4173-81f2-4b547ad32874';
+        
+        // Create journal entry lines - each item as debit with corresponding credit
+        const debitLines = request.items.map(item => ({
          journal_entry_id: journalEntry.id,
          account_id: item.account_id,
          debit: item.amount,
@@ -304,13 +307,21 @@ interface TransferRequest {
          description: item.description
        }));
  
-       // Add credit line (you might want to make this configurable)
-       // For now, we'll use a generic cash/bank account or skip if not set
-       // The total credit should equal total debit
+        // إضافة سطر دائن لكل بند - حساب بنك الرياض شركة
+        const creditLines = request.items.map(item => ({
+          journal_entry_id: journalEntry.id,
+          account_id: RIYADH_BANK_ACCOUNT_ID,
+          debit: 0,
+          credit: item.amount,
+          description: item.description
+        }));
+
+        // دمج جميع الأسطر
+        const allLines = [...debitLines, ...creditLines];
  
        const { error: linesError } = await supabase
          .from('journal_entry_lines')
-         .insert(lines);
+          .insert(allLines);
  
        if (linesError) throw linesError;
  
