@@ -367,6 +367,50 @@ interface TransferRequest {
       });
     });
   };
+
+  const handleDownloadPDF = async (request: TransferRequest) => {
+    setPrintingRequest(request);
+    
+    // Wait for the component to render
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    const printContent = document.getElementById('print-content');
+    if (!printContent) {
+      toast.error('خطأ في إنشاء PDF');
+      setPrintingRequest(null);
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(printContent, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        width: 794, // A4 width in pixels at 96 DPI
+        height: 1123, // A4 height in pixels at 96 DPI
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`طلب-تحويل-${request.request_number}.pdf`);
+      
+      toast.success('تم تحميل PDF بنجاح');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('خطأ في إنشاء PDF');
+    } finally {
+      setPrintingRequest(null);
+    }
+  };
  
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -712,6 +756,10 @@ interface TransferRequest {
                            <Printer className="h-4 w-4" />
                            طباعة
                          </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(request)} className="gap-2">
+                          <FileDown className="h-4 w-4" />
+                          تحميل PDF
+                        </Button>
                        </div>
                      </CardContent>
                    </Card>
@@ -738,8 +786,10 @@ interface TransferRequest {
               height: '100%',
               zIndex: 99999,
               pointerEvents: 'none',
+              overflow: 'hidden',
+              background: 'white',
             }}
-            className="hidden print:block"
+            className="print:block"
           >
             <TransferRequestPrintView 
               request={printingRequest} 
@@ -760,17 +810,20 @@ interface TransferRequest {
           body {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            overflow: hidden !important;
           }
           
           /* Hide all screen elements */
-          body > div:not(:has(#print-wrapper)),
-          header, main, nav, footer, button,
+          body > *,
+          header, main, nav, footer, button, aside,
           .print\\:hidden {
             display: none !important;
             visibility: hidden !important;
           }
           
           /* Show print wrapper and content */
+          body > div:has(#print-wrapper),
+          body > div:has(#print-wrapper) > *,
           #print-wrapper {
             display: block !important;
             visibility: visible !important;
@@ -782,6 +835,7 @@ interface TransferRequest {
             z-index: 99999 !important;
             pointer-events: auto !important;
             background: white !important;
+            overflow: hidden !important;
           }
           
           #print-wrapper #print-content {
@@ -792,11 +846,14 @@ interface TransferRequest {
             top: 0 !important;
             width: 210mm !important;
             min-height: 297mm !important;
+            max-height: 297mm !important;
             padding: 20mm 15mm !important;
             margin: 0 !important;
             background: #FFFFFF !important;
             color: #222222 !important;
             font-family: 'Cairo', 'Noto Naskh Arabic', sans-serif !important;
+            overflow: hidden !important;
+            page-break-after: avoid !important;
           }
           
           #print-wrapper #print-content * {
@@ -818,6 +875,25 @@ interface TransferRequest {
             box-shadow: none !important;
             text-shadow: none !important;
           }
+
+          /* Ensure only one page */
+          html, body {
+            height: 297mm !important;
+            overflow: hidden !important;
+          }
+        }
+
+        /* Hide print wrapper on screen unless printing */
+        #print-wrapper:not(.printing-active) {
+          display: none;
+        }
+        
+        /* Show for PDF generation */
+        .pdf-generating #print-wrapper {
+          display: block !important;
+          position: fixed !important;
+          top: -9999px !important;
+          left: -9999px !important;
         }
       `}</style>
 
