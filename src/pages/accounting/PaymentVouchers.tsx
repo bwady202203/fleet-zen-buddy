@@ -41,6 +41,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
 
 interface Account {
   id: string;
@@ -65,6 +66,7 @@ interface PaymentVoucher {
 export default function PaymentVouchers() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
   const [vouchers, setVouchers] = useState<PaymentVoucher[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -399,27 +401,33 @@ export default function PaymentVouchers() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا السند؟")) return;
+  const handleDelete = (id: string) => {
+    requestDelete(
+      async () => {
+        try {
+          // Delete associated journal entry
+          await supabase
+            .from("journal_entries")
+            .delete()
+            .eq("reference", `payment_voucher_${id}`);
 
-    try {
-      // Delete associated journal entry
-      await supabase
-        .from("journal_entries")
-        .delete()
-        .eq("reference", `payment_voucher_${id}`);
+          const { error } = await supabase
+            .from("payment_vouchers")
+            .delete()
+            .eq("id", id);
 
-      const { error } = await supabase
-        .from("payment_vouchers")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      toast.success("تم حذف السند بنجاح");
-      fetchVouchers();
-    } catch (error: any) {
-      toast.error("خطأ في حذف السند: " + error.message);
-    }
+          if (error) throw error;
+          toast.success("تم حذف السند بنجاح");
+          fetchVouchers();
+        } catch (error: any) {
+          toast.error("خطأ في حذف السند: " + error.message);
+        }
+      },
+      {
+        title: "حذف سند الصرف",
+        description: "هل أنت متأكد من حذف هذا السند؟ سيتم حذف القيد المحاسبي المرتبط به أيضاً.",
+      }
+    );
   };
 
   const handleView = (voucher: PaymentVoucher) => {
@@ -1119,6 +1127,8 @@ export default function PaymentVouchers() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteDialog />
     </div>
   );
 }

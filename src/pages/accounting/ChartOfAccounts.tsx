@@ -32,6 +32,7 @@ import * as XLSX from 'xlsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
 
 interface Account {
   id: string;
@@ -48,6 +49,7 @@ interface Account {
 
 const ChartOfAccounts = () => {
   const { toast } = useToast();
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -423,8 +425,67 @@ const ChartOfAccounts = () => {
   };
 
   const confirmDelete = (account: Account) => {
-    setAccountToDelete(account);
-    setDeleteDialogOpen(true);
+    requestDelete(
+      () => handleDeleteWithCode(account),
+      {
+        title: "حذف حساب من شجرة الحسابات",
+        description: `هل أنت متأكد من حذف الحساب "${account.name_ar}"؟ هذا الإجراء لا يمكن التراجع عنه.`,
+      }
+    );
+  };
+
+  const handleDeleteWithCode = async (account: Account) => {
+    try {
+      // Check if account has children
+      const hasChildren = accounts.some(acc => acc.parent_id === account.id);
+      if (hasChildren) {
+        toast({
+          title: "لا يمكن الحذف / Cannot Delete",
+          description: "لا يمكن حذف حساب له حسابات فرعية / Cannot delete account with sub-accounts",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if account is used in journal entries
+      const { data: journalEntries, error: checkError } = await supabase
+        .from('journal_entry_lines')
+        .select('id')
+        .eq('account_id', account.id)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (journalEntries && journalEntries.length > 0) {
+        toast({
+          title: "لا يمكن الحذف / Cannot Delete",
+          description: "لا يمكن حذف حساب مستخدم في قيود اليومية / Cannot delete account used in journal entries",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('chart_of_accounts')
+        .delete()
+        .eq('id', account.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف بنجاح / Deleted Successfully",
+        description: "تم حذف الحساب / Account has been deleted",
+      });
+      
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "خطأ / Error",
+        description: "حدث خطأ في حذف الحساب / Error deleting account",
+        variant: "destructive",
+      });
+    }
   };
 
   const exportToExcel = () => {
@@ -1282,6 +1343,8 @@ const ChartOfAccounts = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        <DeleteDialog />
       </main>
     </div>
   );
