@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
 
 interface Account {
   id: string;
@@ -61,6 +62,7 @@ const JournalEntries = () => {
     getNextEntryNumber
   } = useAccounting();
   const { toast } = useToast();
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -705,31 +707,37 @@ const JournalEntries = () => {
   };
 
 
-  const handleDelete = async (entryId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا القيد؟ / Are you sure you want to delete this entry?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('journal_entries')
-        .delete()
-        .eq('id', entryId);
+  const handleDelete = (entryId: string) => {
+    requestDelete(
+      async () => {
+        try {
+          const { error } = await supabase
+            .from('journal_entries')
+            .delete()
+            .eq('id', entryId);
 
-      if (error) throw error;
+          if (error) throw error;
 
-      toast({
-        title: "تم الحذف بنجاح / Deleted Successfully",
-        description: "تم حذف القيد بنجاح / Entry deleted successfully",
-      });
+          toast({
+            title: "تم الحذف بنجاح / Deleted Successfully",
+            description: "تم حذف القيد بنجاح / Entry deleted successfully",
+          });
 
-      fetchJournalEntries();
-    } catch (error) {
-      console.error('Error deleting entry:', error);
-      toast({
-        title: "خطأ / Error",
-        description: "فشل في حذف القيد / Failed to delete entry",
-        variant: "destructive",
-      });
-    }
+          fetchJournalEntries();
+        } catch (error) {
+          console.error('Error deleting entry:', error);
+          toast({
+            title: "خطأ / Error",
+            description: "فشل في حذف القيد / Failed to delete entry",
+            variant: "destructive",
+          });
+        }
+      },
+      {
+        title: "حذف قيد اليومية",
+        description: "هل أنت متأكد من حذف هذا القيد؟ سيتم حذف جميع البيانات المرتبطة به.",
+      }
+    );
   };
 
   const filteredEntries = displayedEntries.filter(entry => {
@@ -2583,6 +2591,7 @@ const JournalEntries = () => {
             )}
           </DialogContent>
         </Dialog>
+        <DeleteDialog />
       </>
     );
   };
