@@ -196,6 +196,19 @@ const LoadInvoices = () => {
     setItems(newItems);
   };
 
+  const addNewItem = () => {
+    const newItem = {
+      loadId: null,
+      loadTypeId: null,
+      description: '',
+      quantity: 0,
+      unitPrice: 0,
+      total: 0,
+      loadIds: []
+    };
+    setItems([...items, newItem]);
+  };
+
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
   };
@@ -622,6 +635,16 @@ const LoadInvoices = () => {
                   <div className="flex items-center justify-between">
                     <Label className="text-lg font-semibold">الأصناف</Label>
                     <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={addNewItem}
+                        className="gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        إضافة صنف
+                      </Button>
                       {items.length > 0 && (
                         <>
                           <Button
