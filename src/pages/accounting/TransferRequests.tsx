@@ -74,9 +74,13 @@ interface TransferRequest {
  const [accountSearch, setAccountSearch] = useState('');
  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
  
- // Edit description dialog state
- const [editingDescription, setEditingDescription] = useState<{requestId: string, itemId: string, currentDescription: string} | null>(null);
- const [newDescriptionValue, setNewDescriptionValue] = useState('');
+// Edit description dialog state
+const [editingDescription, setEditingDescription] = useState<{requestId: string, itemId: string, currentDescription: string} | null>(null);
+const [newDescriptionValue, setNewDescriptionValue] = useState('');
+
+// Edit amount dialog state
+const [editingItemAmount, setEditingItemAmount] = useState<{requestId: string, itemId: string, currentAmount: number, hasTax: boolean} | null>(null);
+const [newAmountValue, setNewAmountValue] = useState('');
   
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
@@ -561,6 +565,73 @@ interface TransferRequest {
     } catch (error) {
       console.error('Error updating description:', error);
       toast.error('خطأ في تحديث البيان');
+    }
+  };
+
+  // Update saved item amount
+  const handleUpdateSavedItemAmount = async () => {
+    if (!editingItemAmount || !newAmountValue) return;
+    
+    const newAmount = parseFloat(newAmountValue);
+    if (isNaN(newAmount) || newAmount <= 0) {
+      toast.error('الرجاء إدخال مبلغ صحيح');
+      return;
+    }
+    
+    try {
+      // Get current request
+      const currentRequest = requests.find(r => r.id === editingItemAmount.requestId);
+      if (!currentRequest) return;
+
+      const oldAmount = editingItemAmount.currentAmount;
+      const amountDiff = newAmount - oldAmount;
+
+      // Update the item amount
+      const { error } = await supabase
+        .from('transfer_request_items')
+        .update({ amount: newAmount })
+        .eq('id', editingItemAmount.itemId);
+      
+      if (error) throw error;
+
+      // If item has tax, update the tax row amount too
+      if (editingItemAmount.hasTax) {
+        const taxRow = currentRequest.items.find(
+          i => i.is_tax_row && i.parent_item_id === editingItemAmount.itemId
+        );
+        if (taxRow) {
+          const newTaxAmount = newAmount * 0.15;
+          const oldTaxAmount = taxRow.amount;
+          const taxDiff = newTaxAmount - oldTaxAmount;
+
+          await supabase
+            .from('transfer_request_items')
+            .update({ amount: newTaxAmount })
+            .eq('id', taxRow.id);
+
+          // Update total with both item and tax changes
+          const newTotal = currentRequest.total_amount + amountDiff + taxDiff;
+          await supabase
+            .from('transfer_requests')
+            .update({ total_amount: newTotal })
+            .eq('id', editingItemAmount.requestId);
+        }
+      } else {
+        // Update total amount without tax consideration
+        const newTotal = currentRequest.total_amount + amountDiff;
+        await supabase
+          .from('transfer_requests')
+          .update({ total_amount: newTotal })
+          .eq('id', editingItemAmount.requestId);
+      }
+      
+      toast.success('تم تحديث المبلغ');
+      setEditingItemAmount(null);
+      setNewAmountValue('');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error updating amount:', error);
+      toast.error('خطأ في تحديث المبلغ');
     }
   };
  
@@ -1539,7 +1610,28 @@ interface TransferRequest {
                                   "text-left font-mono font-semibold",
                                   item.is_tax_row ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
                                 )}>
-                                  {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                  <div className="flex items-center gap-1 justify-start">
+                                    <span>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    {!item.is_tax_row && request.status !== 'posted' && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 opacity-50 hover:opacity-100"
+                                        onClick={() => {
+                                          setEditingItemAmount({
+                                            requestId: request.id,
+                                            itemId: item.id,
+                                            currentAmount: item.amount,
+                                            hasTax: item.has_tax || false
+                                          });
+                                          setNewAmountValue(item.amount.toString());
+                                        }}
+                                        title="تعديل المبلغ"
+                                      >
+                                        <Pencil className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 {request.status !== 'posted' && (
                                   <>
@@ -2006,6 +2098,65 @@ interface TransferRequest {
             <Button 
               onClick={handleUpdateSavedItemDescription}
               disabled={!newDescriptionValue.trim()}
+            >
+              <Save className="h-4 w-4 ml-2" />
+              حفظ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Amount Dialog */}
+      <Dialog open={!!editingItemAmount} onOpenChange={(open) => {
+        if (!open) {
+          setEditingItemAmount(null);
+          setNewAmountValue('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              تعديل المبلغ
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newAmount">المبلغ الجديد</Label>
+              <Input
+                id="newAmount"
+                type="number"
+                step="0.01"
+                value={newAmountValue}
+                onChange={(e) => setNewAmountValue(e.target.value)}
+                placeholder="0.00"
+                className="text-xl font-mono h-14 text-center"
+                autoFocus
+              />
+            </div>
+            {editingItemAmount?.hasTax && (
+              <Alert className="border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20">
+                <Info className="h-4 w-4 text-emerald-600" />
+                <AlertDescription className="text-emerald-700 dark:text-emerald-300">
+                  سيتم تحديث مبلغ الضريبة تلقائياً (15%)
+                  <br />
+                  <span className="font-mono font-bold">
+                    الضريبة الجديدة: {(parseFloat(newAmountValue || '0') * 0.15).toLocaleString('en-US', { minimumFractionDigits: 2 })} ريال
+                  </span>
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditingItemAmount(null);
+              setNewAmountValue('');
+            }}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleUpdateSavedItemAmount}
+              disabled={!newAmountValue || parseFloat(newAmountValue) <= 0}
             >
               <Save className="h-4 w-4 ml-2" />
               حفظ
