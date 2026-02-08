@@ -81,6 +81,10 @@ const [newDescriptionValue, setNewDescriptionValue] = useState('');
 // Edit amount dialog state
 const [editingItemAmount, setEditingItemAmount] = useState<{requestId: string, itemId: string, currentAmount: number, hasTax: boolean} | null>(null);
 const [newAmountValue, setNewAmountValue] = useState('');
+
+// Edit date dialog state
+const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
+const [newDateValue, setNewDateValue] = useState('');
   
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
@@ -632,6 +636,28 @@ const [newAmountValue, setNewAmountValue] = useState('');
     } catch (error) {
       console.error('Error updating amount:', error);
       toast.error('خطأ في تحديث المبلغ');
+    }
+  };
+
+  // Update request date
+  const handleUpdateRequestDate = async () => {
+    if (!editingDate || !newDateValue) return;
+    
+    try {
+      const { error } = await supabase
+        .from('transfer_requests')
+        .update({ request_date: newDateValue })
+        .eq('id', editingDate.requestId);
+      
+      if (error) throw error;
+      
+      toast.success('تم تحديث التاريخ');
+      setEditingDate(null);
+      setNewDateValue('');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error updating date:', error);
+      toast.error('خطأ في تحديث التاريخ');
     }
   };
  
@@ -1525,15 +1551,35 @@ const [newAmountValue, setNewAmountValue] = useState('');
                              <span className="font-bold text-primary">#{request.request_number}</span>
                            </div>
                            <div>
-                             <div className="flex items-center gap-2">
-                               <span className="font-semibold">طلب تحويل</span>
-                               {getStatusBadge(request.status)}
-                             </div>
-                             <p className="text-sm text-muted-foreground mt-1">
-                               {format(new Date(request.request_date), 'yyyy/MM/dd')}
-                             </p>
-                           </div>
-                         </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">طلب تحويل</span>
+                                {getStatusBadge(request.status)}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <p className="text-sm text-muted-foreground">
+                                  {format(new Date(request.request_date), 'yyyy/MM/dd')}
+                                </p>
+                                {request.status !== 'posted' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 opacity-50 hover:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingDate({
+                                        requestId: request.id,
+                                        currentDate: request.request_date
+                                      });
+                                      setNewDateValue(request.request_date.split('T')[0]);
+                                    }}
+                                    title="تعديل التاريخ"
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                          <div className="flex items-center gap-2">
                            <span className="font-bold text-xl text-primary font-mono">
                              {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -2157,6 +2203,59 @@ const [newAmountValue, setNewAmountValue] = useState('');
             <Button 
               onClick={handleUpdateSavedItemAmount}
               disabled={!newAmountValue || parseFloat(newAmountValue) <= 0}
+            >
+              <Save className="h-4 w-4 ml-2" />
+              حفظ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Date Dialog */}
+      <Dialog open={!!editingDate} onOpenChange={(open) => {
+        if (!open) {
+          setEditingDate(null);
+          setNewDateValue('');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              تعديل تاريخ الطلب
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newDate">التاريخ الجديد</Label>
+              <Input
+                id="newDate"
+                type="date"
+                value={newDateValue}
+                onChange={(e) => setNewDateValue(e.target.value)}
+                className="text-lg h-12"
+                autoFocus
+              />
+            </div>
+            {newDateValue && (
+              <div className="p-3 bg-muted/50 rounded-lg text-center">
+                <span className="text-muted-foreground">التاريخ المحدد: </span>
+                <span className="font-bold text-primary">
+                  {format(new Date(newDateValue), 'yyyy/MM/dd', { locale: ar })}
+                </span>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditingDate(null);
+              setNewDateValue('');
+            }}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleUpdateRequestDate}
+              disabled={!newDateValue}
             >
               <Save className="h-4 w-4 ml-2" />
               حفظ
