@@ -1901,6 +1901,7 @@ export default function SmartJournalEntries() {
                         <th className="p-2 text-left border-b w-24">دائن (إيداع)</th>
                         <th className="p-2 text-right border-b">التفاصيل</th>
                         <th className="p-2 text-right border-b w-48">الحساب</th>
+                        <th className="p-2 text-center border-b w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1911,7 +1912,7 @@ export default function SmartJournalEntries() {
                         
                         return (
                           <tr key={index} className={cn(
-                            "border-b hover:bg-gray-50",
+                            "border-b hover:bg-gray-50 group",
                             activeBankRowIndex === index && "bg-blue-50"
                           )}>
                             <td className="p-2 text-gray-500">{index + 1}</td>
@@ -2075,6 +2076,24 @@ export default function SmartJournalEntries() {
                                   )}
                                 </div>
                               )}
+                            </td>
+                            <td className="p-2 text-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setParsedBankStatements(prev => prev.filter((_, i) => i !== index));
+                                  if (activeBankRowIndex === index) {
+                                    setActiveBankRowIndex(null);
+                                  }
+                                  toast.success("تم حذف السجل");
+                                }}
+                                title="حذف السجل"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </td>
                           </tr>
                         );
