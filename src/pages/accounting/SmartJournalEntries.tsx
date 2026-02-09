@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table, Copy, FileSpreadsheet, Building2, ChevronRight } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table, Copy, FileSpreadsheet, Building2, ChevronRight, Languages, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -350,6 +350,7 @@ export default function SmartJournalEntries() {
   const [showPasteDialog, setShowPasteDialog] = useState(false);
   const [pasteData, setPasteData] = useState("");
   const [parsedPasteData, setParsedPasteData] = useState<{debit: number; credit: number; description: string}[]>([]);
+  const [isTranslatingExcel, setIsTranslatingExcel] = useState(false);
   
   // Bank statement import states
   const [showBankStatementDialog, setShowBankStatementDialog] = useState(false);
@@ -1214,6 +1215,49 @@ export default function SmartJournalEntries() {
     toast.success(`تم لصق البيانات على ${Math.min(parsedPasteData.length, nonTaxLines.length)} أسطر`);
   };
 
+  // Translate Excel paste descriptions
+  const handleTranslateExcelDescriptions = async () => {
+    if (parsedPasteData.length === 0) return;
+    
+    setIsTranslatingExcel(true);
+    try {
+      const textsToTranslate = parsedPasteData.map(row => row.description).filter(d => d.trim());
+      
+      if (textsToTranslate.length === 0) {
+        toast.error("لا توجد تفاصيل للترجمة");
+        return;
+      }
+      
+      const response = await supabase.functions.invoke('translate-text', {
+        body: { texts: textsToTranslate, targetLanguage: 'ar' }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message || 'خطأ في الترجمة');
+      }
+      
+      const { translations } = response.data;
+      
+      if (translations && Array.isArray(translations)) {
+        let translationIndex = 0;
+        setParsedPasteData(prev => prev.map(row => {
+          if (row.description.trim()) {
+            const translated = translations[translationIndex] || row.description;
+            translationIndex++;
+            return { ...row, description: translated };
+          }
+          return row;
+        }));
+        toast.success('تمت ترجمة التفاصيل بنجاح');
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast.error(error instanceof Error ? error.message : 'خطأ في ترجمة التفاصيل');
+    } finally {
+      setIsTranslatingExcel(false);
+    }
+  };
+
   // Parse bank statement data
   const handleParseBankStatement = (data: string) => {
     setBankStatementData(data);
@@ -1641,10 +1685,31 @@ export default function SmartJournalEntries() {
             
             {parsedPasteData.length > 0 && (
               <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Table className="h-4 w-4" />
-                  معاينة البيانات ({parsedPasteData.length} صف)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Table className="h-4 w-4" />
+                    معاينة البيانات ({parsedPasteData.length} صف)
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslateExcelDescriptions}
+                    disabled={isTranslatingExcel}
+                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                  >
+                    {isTranslatingExcel ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        جاري الترجمة...
+                      </>
+                    ) : (
+                      <>
+                        <Languages className="h-4 w-4" />
+                        ترجمة التفاصيل للعربية
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <div className="border rounded-lg overflow-auto flex-1 max-h-48">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 sticky top-0">
