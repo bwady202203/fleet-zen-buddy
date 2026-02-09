@@ -2024,30 +2024,51 @@ export default function SmartJournalEntries() {
                                   )}
                                 </div>
                               ) : (
-                                <Button
-                                  variant={selectedAccount ? "outline" : "ghost"}
-                                  size="sm"
-                                  className={cn(
-                                    "h-8 text-xs gap-1 w-full justify-between",
-                                    selectedAccount && "border-green-300 bg-green-50 text-green-700"
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant={selectedAccount ? "outline" : "ghost"}
+                                    size="sm"
+                                    className={cn(
+                                      "h-8 text-xs gap-1 flex-1 justify-between",
+                                      selectedAccount && "border-green-300 bg-green-50 text-green-700"
+                                    )}
+                                    onClick={() => {
+                                      setActiveBankRowIndex(index);
+                                      setBankStatementAccountSearch("");
+                                    }}
+                                  >
+                                    {selectedAccount ? (
+                                      <>
+                                        <span className="truncate">{selectedAccount.name_ar}</span>
+                                        <span className="text-gray-400">{selectedAccount.code}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="text-gray-400">اختر حساب</span>
+                                        <ChevronRight className="h-3 w-3" />
+                                      </>
+                                    )}
+                                  </Button>
+                                  {selectedAccount && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 px-2 text-xs text-violet-600 border-violet-200 hover:bg-violet-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Copy account name to description
+                                        setParsedBankStatements(prev => prev.map((r, i) => 
+                                          i === index ? { ...r, description: selectedAccount.name_ar } : r
+                                        ));
+                                        toast.success(`تم نسخ "${selectedAccount.name_ar}" للتفاصيل`);
+                                      }}
+                                      title="نسخ اسم الحساب للتفاصيل"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                      نسخ
+                                    </Button>
                                   )}
-                                  onClick={() => {
-                                    setActiveBankRowIndex(index);
-                                    setBankStatementAccountSearch("");
-                                  }}
-                                >
-                                  {selectedAccount ? (
-                                    <>
-                                      <span className="truncate">{selectedAccount.name_ar}</span>
-                                      <span className="text-gray-400">{selectedAccount.code}</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span className="text-gray-400">اختر حساب</span>
-                                      <ChevronRight className="h-3 w-3" />
-                                    </>
-                                  )}
-                                </Button>
+                                </div>
                               )}
                             </td>
                           </tr>
