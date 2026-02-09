@@ -84,6 +84,34 @@ export default function BankStatementImport() {
     }
   };
 
+  // Locale-aware number parsing function
+  const parseLocalizedNumber = (value: string, useCommaDecimal?: boolean): number => {
+    if (!value || value === "") return 0;
+
+    let str = String(value).trim();
+
+    // Remove currency symbols and whitespace
+    str = str.replace(/[¤$\u20AC£¥\s]/g, "");
+
+    // Auto-detect format if not specified
+    const lastComma = str.lastIndexOf(",");
+    const lastDot = str.lastIndexOf(".");
+
+    const isCommaDecimal = useCommaDecimal ?? (lastComma > lastDot);
+
+    if (isCommaDecimal) {
+      // Comma as decimal: 1.234,56
+      str = str.replace(/\./g, ""); // Remove thousand separators
+      str = str.replace(",", "."); // Convert decimal separator
+    } else {
+      // Dot as decimal: 1,234.56
+      str = str.replace(/,/g, ""); // Remove thousand separators
+    }
+
+    const parsed = parseFloat(str);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const handleParseBankStatement = (text: string) => {
     setBankStatementData(text);
     
@@ -104,11 +132,20 @@ export default function BankStatementImport() {
         const dateMatch = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
         const date = dateMatch ? dateMatch[1] : '';
         
-        // Find numeric values (potential amounts)
-        const numbers = line.match(/[\d,]+\.?\d*/g)?.map(n => parseFloat(n.replace(/,/g, ''))) || [];
+        // Find numeric values (potential amounts) - supports both comma and dot as decimal
+        const numberMatches = line.match(/[\d.,]+/g) || [];
+        const validNumbers: number[] = [];
         
-        // Filter valid numbers (greater than 0 and less than a reasonable max)
-        const validNumbers = numbers.filter(n => n > 0 && n < 1000000000);
+        for (const match of numberMatches) {
+          // Skip if it looks like a date part
+          if (match.match(/^\d{1,4}$/) && dateMatch && dateMatch[0].includes(match)) {
+            continue;
+          }
+          const num = parseLocalizedNumber(match);
+          if (num > 0 && num < 1000000000) {
+            validNumbers.push(num);
+          }
+        }
         
         // Determine debit/credit based on position or context
         let debit = 0;
@@ -144,7 +181,7 @@ export default function BankStatementImport() {
         // Description is the remaining text
         let description = line
           .replace(dateMatch?.[0] || '', '')
-          .replace(/[\d,]+\.?\d*/g, '')
+          .replace(/[\d.,]+/g, '')
           .replace(/REF\s*[A-Z0-9]+/gi, '')
           .replace(/\t+/g, ' ')
           .trim();
