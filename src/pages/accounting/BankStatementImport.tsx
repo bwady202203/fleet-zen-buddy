@@ -124,7 +124,7 @@ export default function BankStatementImport() {
     const parsed: BankStatementRow[] = [];
 
     for (const line of lines) {
-      // Try to parse each line
+      // Split by tab to get columns
       const parts = line.split('\t');
       
       if (parts.length >= 2) {
@@ -132,65 +132,32 @@ export default function BankStatementImport() {
         const dateMatch = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
         const date = dateMatch ? dateMatch[1] : '';
         
-        // Find numeric values (potential amounts) - supports both comma and dot as decimal
-        const numberMatches = line.match(/[\d.,]+/g) || [];
-        const validNumbers: number[] = [];
-        
-        for (const match of numberMatches) {
-          // Skip if it looks like a date part
-          if (match.match(/^\d{1,4}$/) && dateMatch && dateMatch[0].includes(match)) {
-            continue;
-          }
-          const num = parseLocalizedNumber(match);
-          if (num > 0 && num < 1000000000) {
-            validNumbers.push(num);
-          }
-        }
-        
-        // Determine debit/credit based on position or context
         let debit = 0;
         let credit = 0;
         let balance = 0;
 
-        // Smart detection: if we have multiple numbers, the largest is likely the balance
-        // Sort to find the pattern - balance is usually the largest value
-        if (validNumbers.length >= 2) {
-          const sortedBySize = [...validNumbers].sort((a, b) => b - a);
-          const largest = sortedBySize[0];
-          const secondLargest = sortedBySize[1];
-          
-          // If largest is significantly bigger (10x+), it's the balance
-          if (largest > secondLargest * 10) {
-            balance = largest;
-            // The smaller value(s) are the transaction amount
-            const transactionAmount = validNumbers.find(n => n !== largest) || 0;
-            
-            // Check if it's credit or debit
-            if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR') || line.includes('تحويل وارد')) {
-              credit = transactionAmount;
-            } else {
-              debit = transactionAmount;
-            }
-          } else if (validNumbers.length >= 3) {
-            // Three similar-sized numbers: debit, credit, balance
-            debit = validNumbers[0] || 0;
-            credit = validNumbers[1] || 0;
-            balance = validNumbers[2] || 0;
-          } else {
-            // Two similar-sized numbers: amount and balance
-            if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR') || line.includes('تحويل وارد')) {
-              credit = validNumbers[0];
-            } else {
-              debit = validNumbers[0];
-            }
-            balance = validNumbers[1];
+        // Use specific columns: Column 6 = Debit, Column 7 = Credit (0-indexed: 5 and 6)
+        if (parts.length >= 7) {
+          debit = parseLocalizedNumber(parts[5]?.trim() || '');
+          credit = parseLocalizedNumber(parts[6]?.trim() || '');
+          // Balance from column 8 if exists
+          if (parts.length >= 8) {
+            balance = parseLocalizedNumber(parts[7]?.trim() || '');
           }
-        } else if (validNumbers.length === 1) {
-          // Single amount - check context
-          if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR') || line.includes('تحويل وارد')) {
-            credit = validNumbers[0];
-          } else {
-            debit = validNumbers[0];
+        } else if (parts.length >= 3) {
+          // Fallback: try to find numbers in the parts
+          const numbers: number[] = [];
+          for (const part of parts) {
+            const num = parseLocalizedNumber(part.trim());
+            if (num > 0) {
+              numbers.push(num);
+            }
+          }
+          if (numbers.length >= 2) {
+            debit = numbers[numbers.length - 2] || 0;
+            credit = numbers[numbers.length - 1] || 0;
+          } else if (numbers.length === 1) {
+            debit = numbers[0];
           }
         }
 
@@ -198,13 +165,19 @@ export default function BankStatementImport() {
         const refMatch = line.match(/REF\s*([A-Z0-9]+)/i) || line.match(/(\d{10,})/);
         const reference = refMatch ? refMatch[1] : '';
 
-        // Description is the remaining text
-        let description = line
-          .replace(dateMatch?.[0] || '', '')
-          .replace(/[\d.,]+/g, '')
-          .replace(/REF\s*[A-Z0-9]+/gi, '')
-          .replace(/\t+/g, ' ')
-          .trim();
+        // Description from columns before the numbers (typically columns 2-4)
+        let description = '';
+        if (parts.length >= 5) {
+          // Take description from middle columns
+          description = parts.slice(1, 5).join(' ').replace(/[\d.,]+/g, '').trim();
+        } else {
+          description = line
+            .replace(dateMatch?.[0] || '', '')
+            .replace(/[\d.,]+/g, '')
+            .replace(/REF\s*[A-Z0-9]+/gi, '')
+            .replace(/\t+/g, ' ')
+            .trim();
+        }
 
         if (date || debit > 0 || credit > 0) {
           parsed.push({
