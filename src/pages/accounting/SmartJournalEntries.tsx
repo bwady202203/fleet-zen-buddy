@@ -1273,19 +1273,31 @@ export default function SmartJournalEntries() {
         }
         
         // Analyze numeric columns pattern
-        // Expected pattern for Saudi banks: الرصيد (col 0), الخصم (col 1), الإيداع (col 2)
+        // Expected pattern for Saudi banks: الرصيد (col 0), الخصم/مبلغ الخصم (col 1), الإيداع/مبلغ الإيداع (col 2)
         // Or 3 consecutive numbers: balance, debit, credit
-        if (numericColumns.length >= 1) {
-          // First check for consecutive numeric columns (typical bank format)
-          if (numericColumns.length >= 3 && 
-              numericColumns[0].index === 0 && 
-              numericColumns[1].index === 1 && 
-              numericColumns[2].index === 2) {
-            // Standard format: Balance, Debit, Credit
-            balance = numericColumns[0].value;
-            debit = numericColumns[1].value;
-            credit = numericColumns[2].value;
-          } else if (numericColumns.length >= 2 && 
+        
+        // Also check for explicit 0.00 values in original columns
+        const col0Clean = columns[0]?.replace(/,/g, '').replace(/[^\d.-]/g, '') || '';
+        const col1Clean = columns[1]?.replace(/,/g, '').replace(/[^\d.-]/g, '') || '';
+        const col2Clean = columns[2]?.replace(/,/g, '').replace(/[^\d.-]/g, '') || '';
+        
+        const col0Num = parseFloat(col0Clean);
+        const col1Num = parseFloat(col1Clean);
+        const col2Num = parseFloat(col2Clean);
+        
+        const col0IsNumeric = columns[0]?.match(/^[\d,.-]+$/) && !isNaN(col0Num);
+        const col1IsNumeric = columns[1]?.match(/^[\d,.-]+$/) && !isNaN(col1Num);
+        const col2IsNumeric = columns[2]?.match(/^[\d,.-]+$/) && !isNaN(col2Num);
+        
+        // If first 3 columns are all numeric format (including 0.00), use standard bank format
+        if (col0IsNumeric && col1IsNumeric && col2IsNumeric) {
+          // Standard Saudi bank format: الرصيد, مبلغ الخصم, مبلغ الإيداع
+          balance = col0Num || 0;
+          debit = col1Num || 0;    // Column 1 is always debit (مبلغ الخصم)
+          credit = col2Num || 0;   // Column 2 is always credit (مبلغ الإيداع)
+        } else if (numericColumns.length >= 1) {
+          // Fallback: Try to identify debit/credit based on column content and keywords
+          if (numericColumns.length >= 2 && 
                      numericColumns[0].index === 0 && 
                      numericColumns[1].index === 1) {
             // Two columns: Balance, Amount (determine if debit or credit by context)
