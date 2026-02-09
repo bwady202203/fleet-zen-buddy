@@ -152,22 +152,42 @@ export default function BankStatementImport() {
         let credit = 0;
         let balance = 0;
 
-        if (validNumbers.length >= 3) {
-          // Assume: debit, credit, balance
-          debit = validNumbers[0] || 0;
-          credit = validNumbers[1] || 0;
-          balance = validNumbers[2] || 0;
-        } else if (validNumbers.length === 2) {
-          // Assume: amount, balance
-          if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR')) {
-            credit = validNumbers[0];
+        // Smart detection: if we have multiple numbers, the largest is likely the balance
+        // Sort to find the pattern - balance is usually the largest value
+        if (validNumbers.length >= 2) {
+          const sortedBySize = [...validNumbers].sort((a, b) => b - a);
+          const largest = sortedBySize[0];
+          const secondLargest = sortedBySize[1];
+          
+          // If largest is significantly bigger (10x+), it's the balance
+          if (largest > secondLargest * 10) {
+            balance = largest;
+            // The smaller value(s) are the transaction amount
+            const transactionAmount = validNumbers.find(n => n !== largest) || 0;
+            
+            // Check if it's credit or debit
+            if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR') || line.includes('تحويل وارد')) {
+              credit = transactionAmount;
+            } else {
+              debit = transactionAmount;
+            }
+          } else if (validNumbers.length >= 3) {
+            // Three similar-sized numbers: debit, credit, balance
+            debit = validNumbers[0] || 0;
+            credit = validNumbers[1] || 0;
+            balance = validNumbers[2] || 0;
           } else {
-            debit = validNumbers[0];
+            // Two similar-sized numbers: amount and balance
+            if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR') || line.includes('تحويل وارد')) {
+              credit = validNumbers[0];
+            } else {
+              debit = validNumbers[0];
+            }
+            balance = validNumbers[1];
           }
-          balance = validNumbers[1];
         } else if (validNumbers.length === 1) {
           // Single amount - check context
-          if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR')) {
+          if (line.toLowerCase().includes('credit') || line.includes('إيداع') || line.includes('CR') || line.includes('تحويل وارد')) {
             credit = validNumbers[0];
           } else {
             debit = validNumbers[0];
