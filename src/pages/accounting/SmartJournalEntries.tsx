@@ -366,6 +366,8 @@ export default function SmartJournalEntries() {
   }[]>([]);
   const [bankStatementAccountSearch, setBankStatementAccountSearch] = useState("");
   const [activeBankRowIndex, setActiveBankRowIndex] = useState<number | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [expandedDescriptionIndex, setExpandedDescriptionIndex] = useState<number | null>(null);
   
   // Edit account in entry lines states
   const [editingLineAccountId, setEditingLineAccountId] = useState<string | null>(null);
@@ -1491,6 +1493,39 @@ export default function SmartJournalEntries() {
     setLineAccountSearch("");
   };
 
+  // Translate bank statement descriptions to Arabic
+  const handleTranslateBankDescriptions = async () => {
+    if (parsedBankStatements.length === 0) return;
+    
+    setIsTranslating(true);
+    try {
+      const textsToTranslate = parsedBankStatements.map(row => row.description);
+      
+      const response = await supabase.functions.invoke('translate-text', {
+        body: { texts: textsToTranslate, targetLanguage: 'ar' }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message || 'خطأ في الترجمة');
+      }
+      
+      const { translations } = response.data;
+      
+      if (translations && Array.isArray(translations)) {
+        setParsedBankStatements(prev => prev.map((row, index) => ({
+          ...row,
+          description: translations[index] || row.description
+        })));
+        toast.success('تمت ترجمة التفاصيل بنجاح');
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast.error(error instanceof Error ? error.message : 'خطأ في ترجمة التفاصيل');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleSaveEntry = async () => {
     const { totalDebit, totalCredit, isBalanced } = calculateTotals();
     
@@ -1805,7 +1840,7 @@ export default function SmartJournalEntries() {
           setBankStatementAccountSearch("");
         }
       }}>
-        <DialogContent dir="rtl" className="sm:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent dir="rtl" className="sm:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" />
@@ -1831,10 +1866,31 @@ export default function SmartJournalEntries() {
             
             {parsedBankStatements.length > 0 && (
               <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  العمليات المكتشفة ({parsedBankStatements.length} عملية)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    العمليات المكتشفة ({parsedBankStatements.length} عملية)
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslateBankDescriptions}
+                    disabled={isTranslating}
+                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        جاري الترجمة...
+                      </>
+                    ) : (
+                      <>
+                        <Languages className="h-4 w-4" />
+                        ترجمة التفاصيل للعربية
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <div className="border rounded-lg overflow-auto flex-1">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 sticky top-0">
@@ -1870,8 +1926,68 @@ export default function SmartJournalEntries() {
                                 <span className="text-green-600">{row.credit.toLocaleString()}</span>
                               )}
                             </td>
-                            <td className="p-2 text-gray-600 truncate max-w-[300px] text-xs" title={row.description}>
-                              {row.description.slice(0, 80)}...
+                            <td className="p-2">
+                              <button
+                                className="text-gray-600 text-xs text-right hover:text-blue-600 hover:underline cursor-pointer max-w-[350px] truncate block"
+                                onClick={() => setExpandedDescriptionIndex(expandedDescriptionIndex === index ? null : index)}
+                                title="انقر لعرض التفاصيل كاملة"
+                              >
+                                {row.description.slice(0, 60)}...
+                              </button>
+                              {expandedDescriptionIndex === index && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setExpandedDescriptionIndex(null)}>
+                                  <div 
+                                    className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[70vh] overflow-hidden"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
+                                      <h3 className="font-medium text-gray-900">تفاصيل العملية #{index + 1}</h3>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => setExpandedDescriptionIndex(null)}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <div className="p-4 space-y-4 overflow-auto max-h-[60vh]">
+                                      <div className="grid grid-cols-3 gap-4 text-sm">
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                          <div className="text-gray-500 text-xs mb-1">التاريخ</div>
+                                          <div className="font-medium">{row.date || '-'}</div>
+                                        </div>
+                                        <div className="bg-red-50 rounded-lg p-3">
+                                          <div className="text-gray-500 text-xs mb-1">مبلغ الخصم (مدين)</div>
+                                          <div className="font-mono text-red-600 font-medium">{row.debit > 0 ? row.debit.toLocaleString() : '-'}</div>
+                                        </div>
+                                        <div className="bg-green-50 rounded-lg p-3">
+                                          <div className="text-gray-500 text-xs mb-1">مبلغ الإيداع (دائن)</div>
+                                          <div className="font-mono text-green-600 font-medium">{row.credit > 0 ? row.credit.toLocaleString() : '-'}</div>
+                                        </div>
+                                      </div>
+                                      {row.reference && (
+                                        <div className="bg-blue-50 rounded-lg p-3">
+                                          <div className="text-gray-500 text-xs mb-1">رقم المرجع</div>
+                                          <div className="font-mono text-blue-700 text-sm break-all">{row.reference}</div>
+                                        </div>
+                                      )}
+                                      <div className="bg-gray-50 rounded-lg p-3">
+                                        <div className="text-gray-500 text-xs mb-2">التفاصيل الكاملة</div>
+                                        <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words" dir="auto">
+                                          {row.description}
+                                        </div>
+                                      </div>
+                                      {row.balance > 0 && (
+                                        <div className="bg-amber-50 rounded-lg p-3">
+                                          <div className="text-gray-500 text-xs mb-1">الرصيد</div>
+                                          <div className="font-mono text-amber-700 font-medium">{row.balance.toLocaleString()}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </td>
                             <td className="p-2">
                               {activeBankRowIndex === index ? (
