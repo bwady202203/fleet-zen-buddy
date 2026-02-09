@@ -356,7 +356,17 @@ export default function BankStatementImport() {
     const rowsWithAccounts = parsedBankStatements.filter(r => r.selectedAccountId);
     
     if (rowsWithAccounts.length === 0) {
-      toast.error("لا توجد عمليات محددة للحفظ");
+      toast.error("لا توجد عمليات محددة للحفظ - يرجى اختيار حساب لكل عملية");
+      return;
+    }
+
+    // Calculate totals for selected rows only
+    const selectedTotalDebit = rowsWithAccounts.reduce((sum, r) => sum + r.debit, 0);
+    const selectedTotalCredit = rowsWithAccounts.reduce((sum, r) => sum + r.credit, 0);
+
+    // Check if entry is balanced
+    if (Math.abs(selectedTotalDebit - selectedTotalCredit) > 0.01) {
+      toast.error(`القيد غير متوازن - المدين: ${selectedTotalDebit.toLocaleString()} | الدائن: ${selectedTotalCredit.toLocaleString()}`);
       return;
     }
 
@@ -407,7 +417,7 @@ export default function BankStatementImport() {
 
       if (linesError) throw linesError;
 
-      toast.success(`تم حفظ القيد رقم ${entryNumber} بنجاح`);
+      toast.success(`تم حفظ القيد رقم ${entryNumber} بنجاح - إجمالي: ${selectedTotalDebit.toLocaleString()} ريال`);
       
       // Clear form
       setBankStatementData("");
@@ -424,6 +434,8 @@ export default function BankStatementImport() {
   const totalDebit = parsedBankStatements.reduce((sum, r) => sum + r.debit, 0);
   const totalCredit = parsedBankStatements.reduce((sum, r) => sum + r.credit, 0);
   const selectedCount = parsedBankStatements.filter(r => r.selectedAccountId).length;
+  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+  const balanceDifference = totalDebit - totalCredit;
 
   if (loading) {
     return (
@@ -543,6 +555,12 @@ export default function BankStatementImport() {
                 </span>
                 <span>
                   إجمالي الإيداع: <span className="font-mono text-green-600">{totalCredit.toLocaleString()}</span>
+                </span>
+                <span className={cn(
+                  "font-medium px-2 py-1 rounded",
+                  isBalanced ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                )}>
+                  {isBalanced ? "✓ متوازن" : `✗ فرق: ${balanceDifference.toLocaleString()}`}
                 </span>
                 <span className="text-gray-500">
                   تم اختيار حساب لـ {selectedCount} من {parsedBankStatements.length} عملية
