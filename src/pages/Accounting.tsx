@@ -274,6 +274,13 @@ const Accounting = () => {
       color: "from-gradient-start to-gradient-end"
     },
     {
+      title: "استيراد كشف بنكي",
+      description: "استيراد وتحليل كشوف الحسابات البنكية",
+      icon: FileBarChart,
+      link: "/accounting/bank-statement",
+      color: "from-teal-500 to-teal-600"
+    },
+    {
       title: "طلبات التحويل",
       description: "إدارة وتسجيل طلبات التحويل المالية",
       icon: SendHorizontal,
