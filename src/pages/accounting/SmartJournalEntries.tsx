@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table, Copy } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Search, Plus, Trash2, Save, X, GripVertical, Settings2, Check, ChevronUp, ChevronDown, Hash, Bookmark, BookmarkPlus, FolderOpen, HelpCircle, Keyboard, MousePointer2, Calculator, FileText, Percent, ClipboardPaste, Table, Copy, FileSpreadsheet, Building2, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -350,6 +350,21 @@ export default function SmartJournalEntries() {
   const [showPasteDialog, setShowPasteDialog] = useState(false);
   const [pasteData, setPasteData] = useState("");
   const [parsedPasteData, setParsedPasteData] = useState<{debit: number; credit: number; description: string}[]>([]);
+  
+  // Bank statement import states
+  const [showBankStatementDialog, setShowBankStatementDialog] = useState(false);
+  const [bankStatementData, setBankStatementData] = useState("");
+  const [parsedBankStatements, setParsedBankStatements] = useState<{
+    date: string;
+    debit: number;
+    credit: number;
+    description: string;
+    reference: string;
+    balance: number;
+    selectedAccountId: string | null;
+  }[]>([]);
+  const [bankStatementAccountSearch, setBankStatementAccountSearch] = useState("");
+  const [activeBankRowIndex, setActiveBankRowIndex] = useState<number | null>(null);
   
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
@@ -1195,6 +1210,136 @@ export default function SmartJournalEntries() {
     toast.success(`تم لصق البيانات على ${Math.min(parsedPasteData.length, nonTaxLines.length)} أسطر`);
   };
 
+  // Parse bank statement data
+  const handleParseBankStatement = (data: string) => {
+    setBankStatementData(data);
+    
+    if (!data.trim()) {
+      setParsedBankStatements([]);
+      return;
+    }
+
+    const lines = data.trim().split('\n');
+    const parsed: typeof parsedBankStatements = [];
+    
+    for (const line of lines) {
+      // Split by tab or multiple spaces
+      const columns = line.split(/\t/).map(col => col.trim());
+      
+      if (columns.length >= 4) {
+        // Try to detect bank statement format
+        // Expected: الرصيد, مبلغ الخصم, مبلغ الإيداع, نوع العملية, رقم الشيك, رقم المرجع, التفاصيل, تاريخ
+        // Or: Balance, Debit, Credit, Type, Check#, Ref#, Details, Date
+        
+        let balance = 0;
+        let debit = 0;
+        let credit = 0;
+        let description = '';
+        let reference = '';
+        let date = '';
+        
+        // Try parsing numbers from different columns
+        for (let i = 0; i < columns.length; i++) {
+          const col = columns[i];
+          const numValue = parseFloat(col.replace(/,/g, '').replace(/[^\d.-]/g, ''));
+          
+          // Detect date pattern (dd/mm/yyyy or yyyy-mm-dd)
+          if (/\d{2}\/\d{2}\/\d{4}/.test(col) || /\d{4}-\d{2}-\d{2}/.test(col)) {
+            date = col;
+            continue;
+          }
+          
+          // First numeric column is usually balance
+          if (!isNaN(numValue) && numValue !== 0) {
+            if (balance === 0 && i === 0) {
+              balance = numValue;
+            } else if (debit === 0 && i === 1) {
+              debit = numValue;
+            } else if (credit === 0 && i === 2) {
+              credit = numValue;
+            }
+          }
+          
+          // Reference usually contains REF or numbers
+          if (col.includes('REF') || /^\d{10,}/.test(col)) {
+            reference = col;
+          }
+          
+          // Long text is usually description
+          if (col.length > 30 && !description) {
+            description = col;
+          }
+        }
+        
+        // If no description found, use the longest column
+        if (!description) {
+          description = columns.reduce((a, b) => a.length > b.length ? a : b, '');
+        }
+        
+        // Only add if we have debit or credit
+        if (debit > 0 || credit > 0) {
+          parsed.push({
+            date,
+            debit,
+            credit,
+            description: description.slice(0, 200), // Limit description length
+            reference,
+            balance,
+            selectedAccountId: null
+          });
+        }
+      }
+    }
+    
+    setParsedBankStatements(parsed);
+  };
+
+  // Select account for bank statement row
+  const handleSelectBankStatementAccount = (rowIndex: number, accountId: string) => {
+    setParsedBankStatements(prev => prev.map((row, i) => 
+      i === rowIndex ? { ...row, selectedAccountId: accountId } : row
+    ));
+    setActiveBankRowIndex(null);
+    setBankStatementAccountSearch("");
+  };
+
+  // Apply bank statement data as entry lines
+  const handleApplyBankStatement = () => {
+    const validRows = parsedBankStatements.filter(row => row.selectedAccountId);
+    
+    if (validRows.length === 0) {
+      toast.error("يجب اختيار حساب واحد على الأقل");
+      return;
+    }
+
+    // Create entry lines from bank statement
+    const newLines: EntryLine[] = validRows.map(row => {
+      const account = accounts.find(a => a.id === row.selectedAccountId);
+      return {
+        id: `bank-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        account_id: row.selectedAccountId!,
+        account_name: account?.name_ar || '',
+        account_code: account?.code || '',
+        debit: row.debit,
+        credit: row.credit,
+        description: row.description
+      };
+    });
+
+    setEntryLines([...entryLines, ...newLines]);
+    setShowBankStatementDialog(false);
+    setBankStatementData("");
+    setParsedBankStatements([]);
+    toast.success(`تم إضافة ${newLines.length} سطر من كشف الحساب`);
+  };
+
+  // Get filtered accounts for bank statement dialog
+  const filteredBankStatementAccounts = accounts.filter(account => 
+    bankStatementAccountSearch === "" ||
+    account.name_ar.includes(bankStatementAccountSearch) ||
+    account.code.includes(bankStatementAccountSearch)
+  ).slice(0, 10);
+
   const handleSaveEntry = async () => {
     const { totalDebit, totalCredit, isBalanced } = calculateTotals();
     
@@ -1478,6 +1623,196 @@ export default function SmartJournalEntries() {
         </DialogContent>
       </Dialog>
 
+      {/* Bank Statement Import Dialog */}
+      <Dialog open={showBankStatementDialog} onOpenChange={(open) => {
+        setShowBankStatementDialog(open);
+        if (!open) {
+          setBankStatementData("");
+          setParsedBankStatements([]);
+          setActiveBankRowIndex(null);
+          setBankStatementAccountSearch("");
+        }
+      }}>
+        <DialogContent dir="rtl" className="sm:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              استيراد كشف حساب بنكي
+            </DialogTitle>
+            <DialogDescription>
+              الصق بيانات كشف الحساب البنكي هنا واختر الحسابات المناسبة لكل عملية
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4 flex-1 overflow-hidden flex flex-col">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">الصق بيانات كشف الحساب:</label>
+              <textarea
+                className="w-full h-24 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="انسخ بيانات كشف الحساب من البنك والصقها هنا..."
+                value={bankStatementData}
+                onChange={(e) => handleParseBankStatement(e.target.value)}
+                autoFocus
+                dir="ltr"
+              />
+            </div>
+            
+            {parsedBankStatements.length > 0 && (
+              <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  العمليات المكتشفة ({parsedBankStatements.length} عملية)
+                </label>
+                <div className="border rounded-lg overflow-auto flex-1">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="p-2 text-right border-b w-8">#</th>
+                        <th className="p-2 text-right border-b w-24">التاريخ</th>
+                        <th className="p-2 text-left border-b w-24">مدين (خصم)</th>
+                        <th className="p-2 text-left border-b w-24">دائن (إيداع)</th>
+                        <th className="p-2 text-right border-b">التفاصيل</th>
+                        <th className="p-2 text-right border-b w-48">الحساب</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedBankStatements.map((row, index) => {
+                        const selectedAccount = row.selectedAccountId 
+                          ? accounts.find(a => a.id === row.selectedAccountId)
+                          : null;
+                        
+                        return (
+                          <tr key={index} className={cn(
+                            "border-b hover:bg-gray-50",
+                            activeBankRowIndex === index && "bg-blue-50"
+                          )}>
+                            <td className="p-2 text-gray-500">{index + 1}</td>
+                            <td className="p-2 text-xs">{row.date || '-'}</td>
+                            <td className="p-2 text-left font-mono">
+                              {row.debit > 0 && (
+                                <span className="text-red-600">{row.debit.toLocaleString()}</span>
+                              )}
+                            </td>
+                            <td className="p-2 text-left font-mono">
+                              {row.credit > 0 && (
+                                <span className="text-green-600">{row.credit.toLocaleString()}</span>
+                              )}
+                            </td>
+                            <td className="p-2 text-gray-600 truncate max-w-[300px] text-xs" title={row.description}>
+                              {row.description.slice(0, 80)}...
+                            </td>
+                            <td className="p-2">
+                              {activeBankRowIndex === index ? (
+                                <div className="space-y-1">
+                                  <Input
+                                    placeholder="ابحث عن حساب..."
+                                    value={bankStatementAccountSearch}
+                                    onChange={(e) => setBankStatementAccountSearch(e.target.value)}
+                                    className="h-8 text-xs"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Escape') {
+                                        setActiveBankRowIndex(null);
+                                        setBankStatementAccountSearch("");
+                                      }
+                                    }}
+                                  />
+                                  {filteredBankStatementAccounts.length > 0 && (
+                                    <div className="absolute z-50 bg-white border rounded-lg shadow-lg max-h-48 overflow-auto w-64">
+                                      {filteredBankStatementAccounts.map(account => (
+                                        <button
+                                          key={account.id}
+                                          className={cn(
+                                            "w-full text-right px-3 py-2 text-xs hover:bg-blue-50 flex items-center justify-between",
+                                            getAccountTypeColor(account.type, false, false)
+                                          )}
+                                          onClick={() => handleSelectBankStatementAccount(index, account.id)}
+                                        >
+                                          <span>{account.name_ar}</span>
+                                          <span className="text-gray-400">{account.code}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <Button
+                                  variant={selectedAccount ? "outline" : "ghost"}
+                                  size="sm"
+                                  className={cn(
+                                    "h-8 text-xs gap-1 w-full justify-between",
+                                    selectedAccount && "border-green-300 bg-green-50 text-green-700"
+                                  )}
+                                  onClick={() => {
+                                    setActiveBankRowIndex(index);
+                                    setBankStatementAccountSearch("");
+                                  }}
+                                >
+                                  {selectedAccount ? (
+                                    <>
+                                      <span className="truncate">{selectedAccount.name_ar}</span>
+                                      <span className="text-gray-400">{selectedAccount.code}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-gray-400">اختر حساب</span>
+                                      <ChevronRight className="h-3 w-3" />
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Summary */}
+                <div className="flex items-center justify-between text-sm bg-gray-50 rounded-lg p-3">
+                  <div className="flex gap-4">
+                    <span>
+                      إجمالي الخصم: <span className="font-mono text-red-600">
+                        {parsedBankStatements.reduce((sum, r) => sum + r.debit, 0).toLocaleString()}
+                      </span>
+                    </span>
+                    <span>
+                      إجمالي الإيداع: <span className="font-mono text-green-600">
+                        {parsedBankStatements.reduce((sum, r) => sum + r.credit, 0).toLocaleString()}
+                      </span>
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">
+                      تم اختيار حساب لـ {parsedBankStatements.filter(r => r.selectedAccountId).length} من {parsedBankStatements.length} عملية
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button
+              onClick={handleApplyBankStatement}
+              disabled={parsedBankStatements.filter(r => r.selectedAccountId).length === 0}
+              className="gap-2 bg-blue-500 hover:bg-blue-600"
+            >
+              <Check className="h-4 w-4" />
+              إضافة للقيد ({parsedBankStatements.filter(r => r.selectedAccountId).length} عملية)
+            </Button>
+            <Button variant="outline" onClick={() => {
+              setShowBankStatementDialog(false);
+              setBankStatementData("");
+              setParsedBankStatements([]);
+            }}>
+              إلغاء
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -1687,6 +2022,17 @@ export default function SmartJournalEntries() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Bank Statement Import Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowBankStatementDialog(true)}
+                className="gap-2 border-teal-300 text-teal-700 hover:bg-teal-50"
+                title="استيراد كشف حساب بنكي"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                كشف بنكي
+              </Button>
 
               {/* Paste from Excel Button */}
               <Button
