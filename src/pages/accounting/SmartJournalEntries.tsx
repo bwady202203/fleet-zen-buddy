@@ -2657,26 +2657,44 @@ export default function SmartJournalEntries() {
                                   )}
                                 </div>
                               ) : (
-                                <button
-                                  className={cn(
-                                    "w-full text-right cursor-pointer hover:bg-gray-100 rounded p-1 -m-1 transition-colors",
-                                    isTaxLine && "cursor-not-allowed opacity-70"
+                                <div className="flex items-center gap-1 group">
+                                  <button
+                                    className={cn(
+                                      "flex-1 text-right cursor-pointer hover:bg-gray-100 rounded p-1 -m-1 transition-colors",
+                                      isTaxLine && "cursor-not-allowed opacity-70"
+                                    )}
+                                    onClick={(e) => {
+                                      if (!isTaxLine) {
+                                        e.stopPropagation();
+                                        setEditingLineAccountId(line.id);
+                                        setLineAccountSearch("");
+                                      }
+                                    }}
+                                    disabled={isTaxLine}
+                                    title={isTaxLine ? "" : "انقر لتغيير الحساب"}
+                                  >
+                                    <div className={cn("font-medium", isTaxLine && "text-amber-700")}>
+                                      {isTaxLine && "↳ "}{line.account_name}
+                                    </div>
+                                    <div className="text-sm text-gray-500">{line.account_code}</div>
+                                  </button>
+                                  {!isTaxLine && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500 hover:text-violet-600 hover:bg-violet-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Copy account name to current line's description
+                                        handleLineChange(line.id, 'description', line.account_name);
+                                        toast.success(`تم نسخ "${line.account_name}" للوصف`);
+                                      }}
+                                      title="نسخ اسم الحساب للوصف"
+                                    >
+                                      <ChevronRight className="h-3 w-3" />
+                                    </Button>
                                   )}
-                                  onClick={(e) => {
-                                    if (!isTaxLine) {
-                                      e.stopPropagation();
-                                      setEditingLineAccountId(line.id);
-                                      setLineAccountSearch("");
-                                    }
-                                  }}
-                                  disabled={isTaxLine}
-                                  title={isTaxLine ? "" : "انقر لتغيير الحساب"}
-                                >
-                                  <div className={cn("font-medium", isTaxLine && "text-amber-700")}>
-                                    {isTaxLine && "↳ "}{line.account_name}
-                                  </div>
-                                  <div className="text-sm text-gray-500">{line.account_code}</div>
-                                </button>
+                                </div>
                               )}
                             </td>
                             <td className="p-3">
