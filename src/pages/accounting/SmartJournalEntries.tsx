@@ -2049,20 +2049,20 @@ export default function SmartJournalEntries() {
                                       </>
                                     )}
                                   </Button>
-                                  {selectedAccount && (
+                                  {selectedAccount && index < parsedBankStatements.length - 1 && (
                                     <Button
                                       variant="outline"
                                       size="sm"
                                       className="h-8 px-2 text-xs text-violet-600 border-violet-200 hover:bg-violet-50"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        // Copy account name to description
+                                        // Copy account to next row
                                         setParsedBankStatements(prev => prev.map((r, i) => 
-                                          i === index ? { ...r, description: selectedAccount.name_ar } : r
+                                          i === index + 1 ? { ...r, selectedAccountId: selectedAccount.id } : r
                                         ));
-                                        toast.success(`تم نسخ "${selectedAccount.name_ar}" للتفاصيل`);
+                                        toast.success(`تم نسخ "${selectedAccount.name_ar}" للصف التالي`);
                                       }}
-                                      title="نسخ اسم الحساب للتفاصيل"
+                                      title="نسخ الحساب للصف التالي"
                                     >
                                       <Copy className="h-3 w-3" />
                                       نسخ
