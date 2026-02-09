@@ -1989,7 +1989,7 @@ export default function SmartJournalEntries() {
                                 </div>
                               )}
                             </td>
-                            <td className="p-2">
+                            <td className="p-2 relative">
                               {activeBankRowIndex === index ? (
                                 <div className="space-y-1">
                                   <Input
@@ -2006,13 +2006,11 @@ export default function SmartJournalEntries() {
                                     }}
                                   />
                                   {filteredBankStatementAccounts.length > 0 && (
-                                    <div className="fixed z-[100] bg-white border rounded-lg shadow-xl max-h-48 overflow-auto w-64"
-                                      style={{
-                                        top: 'auto',
-                                        bottom: index > 8 ? '100%' : 'auto',
-                                        marginBottom: index > 8 ? '4px' : '0',
-                                        marginTop: index > 8 ? '0' : '4px',
-                                      }}
+                                    <div 
+                                      className={cn(
+                                        "absolute z-[100] bg-white border rounded-lg shadow-xl max-h-48 overflow-auto w-64 right-2",
+                                        index >= parsedBankStatements.length - 5 ? "bottom-full mb-1" : "top-full mt-1"
+                                      )}
                                     >
                                       {filteredBankStatementAccounts.map(account => (
                                         <button
