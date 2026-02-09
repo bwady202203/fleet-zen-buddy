@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -319,6 +319,31 @@ export default function BankStatementImport() {
     }));
   };
 
+  // Riyadh Bank Al-Remal account ID
+  const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
+
+  const handleCreateMirrorRows = () => {
+    if (parsedBankStatements.length === 0) {
+      toast.error("لا توجد صفوف لإنشاء صفوف معكوسة");
+      return;
+    }
+
+    // Create mirror rows with reversed debit/credit and Riyadh Bank account
+    const mirrorRows: BankStatementRow[] = parsedBankStatements.map(row => ({
+      date: row.date,
+      debit: row.credit, // Swap: original credit becomes debit
+      credit: row.debit, // Swap: original debit becomes credit
+      balance: 0,
+      description: row.description,
+      reference: row.reference,
+      selectedAccountId: RIYADH_BANK_ACCOUNT_ID,
+    }));
+
+    // Add mirror rows to the list
+    setParsedBankStatements(prev => [...prev, ...mirrorRows]);
+    toast.success(`تم إنشاء ${mirrorRows.length} صف معكوس بحساب بنك الرياض الرمال`);
+  };
+
   const filteredAccounts = accountSearch
     ? accounts.filter(a => 
         a.name_ar.includes(accountSearch) || 
@@ -450,25 +475,36 @@ export default function BankStatementImport() {
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">الصق بيانات كشف الحساب البنكي:</label>
               {parsedBankStatements.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTranslateDescriptions}
-                  disabled={isTranslating}
-                  className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
-                >
-                  {isTranslating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      جاري الترجمة...
-                    </>
-                  ) : (
-                    <>
-                      <Languages className="h-4 w-4" />
-                      ترجمة التفاصيل للعربية
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateMirrorRows}
+                    className="gap-2 text-teal-600 border-teal-200 hover:bg-teal-50"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    إنشاء صفوف معكوسة (بنك الرياض)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslateDescriptions}
+                    disabled={isTranslating}
+                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        جاري الترجمة...
+                      </>
+                    ) : (
+                      <>
+                        <Languages className="h-4 w-4" />
+                        ترجمة التفاصيل للعربية
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
             <textarea
