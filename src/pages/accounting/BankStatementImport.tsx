@@ -112,6 +112,36 @@ export default function BankStatementImport() {
     return isNaN(parsed) ? 0 : parsed;
   };
 
+  // Helper to normalize column names for matching
+  const normalizeColumnName = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[_\s]+/g, " ")
+      .trim();
+  };
+
+  // Find column index by possible names
+  const findColumnIndex = (headers: string[], possibleNames: string[]): number => {
+    const normalizedHeaders = headers.map(h => h ? normalizeColumnName(String(h)) : "");
+    const normalizedNames = possibleNames.map(normalizeColumnName);
+
+    // Priority 1: Exact match
+    for (const name of normalizedNames) {
+      const idx = normalizedHeaders.indexOf(name);
+      if (idx !== -1) return idx;
+    }
+
+    // Priority 2: Contains
+    for (const name of normalizedNames) {
+      const idx = normalizedHeaders.findIndex(h => h.includes(name));
+      if (idx !== -1) return idx;
+    }
+
+    return -1;
+  };
+
   const handleParseBankStatement = (text: string) => {
     setBankStatementData(text);
     
@@ -121,63 +151,85 @@ export default function BankStatementImport() {
     }
 
     const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length === 0) {
+      setParsedBankStatements([]);
+      return;
+    }
+
+    // First line might be headers - detect column positions
+    const headerLine = lines[0].split('\t');
+    
+    // Try to find column indices dynamically
+    let debitColIndex = findColumnIndex(headerLine, ['مبلغ الخصم', 'خصم', 'debit', 'withdrawal', 'مدين']);
+    let creditColIndex = findColumnIndex(headerLine, ['مبلغ الايداع', 'مبلغ الإيداع', 'ايداع', 'إيداع', 'credit', 'deposit', 'دائن']);
+    let balanceColIndex = findColumnIndex(headerLine, ['الرصيد', 'رصيد', 'balance']);
+    let descColIndex = findColumnIndex(headerLine, ['البيان', 'الوصف', 'تفاصيل', 'description', 'details']);
+    let dateColIndex = findColumnIndex(headerLine, ['التاريخ', 'تاريخ', 'date']);
+
+    // Check if first line is a header (has column names, no numbers)
+    const firstLineHasNumbers = headerLine.some(cell => parseLocalizedNumber(cell) > 0);
+    const startIndex = firstLineHasNumbers ? 0 : 1;
+
+    // If no header detection worked, use fallback positions
+    if (debitColIndex === -1 && creditColIndex === -1) {
+      // Fallback: assume last 3 columns are debit, credit, balance
+      if (headerLine.length >= 3) {
+        debitColIndex = headerLine.length - 3;
+        creditColIndex = headerLine.length - 2;
+        balanceColIndex = headerLine.length - 1;
+      }
+    }
+
     const parsed: BankStatementRow[] = [];
 
-    for (const line of lines) {
-      // Split by tab to get columns
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i];
       const parts = line.split('\t');
       
       if (parts.length >= 2) {
-        // Find date pattern (DD/MM/YYYY or YYYY-MM-DD or similar)
-        const dateMatch = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
-        const date = dateMatch ? dateMatch[1] : '';
+        // Find date
+        let date = '';
+        if (dateColIndex !== -1 && parts[dateColIndex]) {
+          date = parts[dateColIndex].trim();
+        } else {
+          const dateMatch = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
+          date = dateMatch ? dateMatch[1] : '';
+        }
         
+        // Get debit and credit from detected columns
         let debit = 0;
         let credit = 0;
         let balance = 0;
 
-        // Use specific columns: Column 6 = Debit, Column 7 = Credit (0-indexed: 5 and 6)
-        if (parts.length >= 7) {
-          debit = parseLocalizedNumber(parts[5]?.trim() || '');
-          credit = parseLocalizedNumber(parts[6]?.trim() || '');
-          // Balance from column 8 if exists
-          if (parts.length >= 8) {
-            balance = parseLocalizedNumber(parts[7]?.trim() || '');
-          }
-        } else if (parts.length >= 3) {
-          // Fallback: try to find numbers in the parts
-          const numbers: number[] = [];
-          for (const part of parts) {
-            const num = parseLocalizedNumber(part.trim());
-            if (num > 0) {
-              numbers.push(num);
-            }
-          }
-          if (numbers.length >= 2) {
-            debit = numbers[numbers.length - 2] || 0;
-            credit = numbers[numbers.length - 1] || 0;
-          } else if (numbers.length === 1) {
-            debit = numbers[0];
-          }
+        if (debitColIndex !== -1 && parts[debitColIndex]) {
+          debit = parseLocalizedNumber(parts[debitColIndex].trim());
+        }
+        if (creditColIndex !== -1 && parts[creditColIndex]) {
+          credit = parseLocalizedNumber(parts[creditColIndex].trim());
+        }
+        if (balanceColIndex !== -1 && parts[balanceColIndex]) {
+          balance = parseLocalizedNumber(parts[balanceColIndex].trim());
+        }
+
+        // Get description
+        let description = '';
+        if (descColIndex !== -1 && parts[descColIndex]) {
+          description = parts[descColIndex].trim();
+        } else {
+          // Take non-numeric columns as description
+          const descParts = parts.filter((p, idx) => 
+            idx !== debitColIndex && 
+            idx !== creditColIndex && 
+            idx !== balanceColIndex &&
+            idx !== dateColIndex &&
+            parseLocalizedNumber(p) === 0
+          );
+          description = descParts.join(' ').trim();
         }
 
         // Extract reference number if present
         const refMatch = line.match(/REF\s*([A-Z0-9]+)/i) || line.match(/(\d{10,})/);
         const reference = refMatch ? refMatch[1] : '';
-
-        // Description from columns before the numbers (typically columns 2-4)
-        let description = '';
-        if (parts.length >= 5) {
-          // Take description from middle columns
-          description = parts.slice(1, 5).join(' ').replace(/[\d.,]+/g, '').trim();
-        } else {
-          description = line
-            .replace(dateMatch?.[0] || '', '')
-            .replace(/[\d.,]+/g, '')
-            .replace(/REF\s*[A-Z0-9]+/gi, '')
-            .replace(/\t+/g, ' ')
-            .trim();
-        }
 
         if (date || debit > 0 || credit > 0) {
           parsed.push({
@@ -195,6 +247,7 @@ export default function BankStatementImport() {
 
     setParsedBankStatements(parsed);
   };
+
 
   const handleTranslateDescriptions = async () => {
     if (parsedBankStatements.length === 0) return;
