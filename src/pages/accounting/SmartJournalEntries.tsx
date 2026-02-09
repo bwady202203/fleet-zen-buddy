@@ -2006,7 +2006,14 @@ export default function SmartJournalEntries() {
                                     }}
                                   />
                                   {filteredBankStatementAccounts.length > 0 && (
-                                    <div className="absolute z-50 bg-white border rounded-lg shadow-lg max-h-48 overflow-auto w-64">
+                                    <div className="fixed z-[100] bg-white border rounded-lg shadow-xl max-h-48 overflow-auto w-64"
+                                      style={{
+                                        top: 'auto',
+                                        bottom: index > 8 ? '100%' : 'auto',
+                                        marginBottom: index > 8 ? '4px' : '0',
+                                        marginTop: index > 8 ? '0' : '4px',
+                                      }}
+                                    >
                                       {filteredBankStatementAccounts.map(account => (
                                         <button
                                           key={account.id}
