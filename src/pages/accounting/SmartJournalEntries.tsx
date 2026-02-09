@@ -366,6 +366,10 @@ export default function SmartJournalEntries() {
   const [bankStatementAccountSearch, setBankStatementAccountSearch] = useState("");
   const [activeBankRowIndex, setActiveBankRowIndex] = useState<number | null>(null);
   
+  // Edit account in entry lines states
+  const [editingLineAccountId, setEditingLineAccountId] = useState<string | null>(null);
+  const [lineAccountSearch, setLineAccountSearch] = useState("");
+  
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const accountsPanelRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
@@ -1226,10 +1230,9 @@ export default function SmartJournalEntries() {
       // Split by tab or multiple spaces
       const columns = line.split(/\t/).map(col => col.trim());
       
-      if (columns.length >= 4) {
+      if (columns.length >= 3) {
         // Try to detect bank statement format
-        // Expected: الرصيد, مبلغ الخصم, مبلغ الإيداع, نوع العملية, رقم الشيك, رقم المرجع, التفاصيل, تاريخ
-        // Or: Balance, Debit, Credit, Type, Check#, Ref#, Details, Date
+        // الرصيد, مبلغ الخصم, مبلغ الإيداع, نوع العملية, رقم الشيك, رقم المرجع, التفاصيل, تاريخ
         
         let balance = 0;
         let debit = 0;
@@ -1238,10 +1241,11 @@ export default function SmartJournalEntries() {
         let reference = '';
         let date = '';
         
-        // Try parsing numbers from different columns
+        // Collect all numeric values and their positions
+        const numericColumns: {index: number; value: number}[] = [];
+        
         for (let i = 0; i < columns.length; i++) {
           const col = columns[i];
-          const numValue = parseFloat(col.replace(/,/g, '').replace(/[^\d.-]/g, ''));
           
           // Detect date pattern (dd/mm/yyyy or yyyy-mm-dd)
           if (/\d{2}\/\d{2}\/\d{4}/.test(col) || /\d{4}-\d{2}-\d{2}/.test(col)) {
@@ -1249,18 +1253,15 @@ export default function SmartJournalEntries() {
             continue;
           }
           
-          // First numeric column is usually balance
-          if (!isNaN(numValue) && numValue !== 0) {
-            if (balance === 0 && i === 0) {
-              balance = numValue;
-            } else if (debit === 0 && i === 1) {
-              debit = numValue;
-            } else if (credit === 0 && i === 2) {
-              credit = numValue;
-            }
+          // Clean and parse numeric values
+          const cleanedNum = col.replace(/,/g, '').replace(/[^\d.-]/g, '');
+          const numValue = parseFloat(cleanedNum);
+          
+          if (!isNaN(numValue) && numValue > 0 && col.match(/^[\d,.-]+$/)) {
+            numericColumns.push({ index: i, value: numValue });
           }
           
-          // Reference usually contains REF or numbers
+          // Reference usually contains REF or long numbers
           if (col.includes('REF') || /^\d{10,}/.test(col)) {
             reference = col;
           }
@@ -1271,9 +1272,82 @@ export default function SmartJournalEntries() {
           }
         }
         
-        // If no description found, use the longest column
+        // Analyze numeric columns pattern
+        // Expected pattern for Saudi banks: الرصيد (col 0), الخصم (col 1), الإيداع (col 2)
+        // Or 3 consecutive numbers: balance, debit, credit
+        if (numericColumns.length >= 1) {
+          // First check for consecutive numeric columns (typical bank format)
+          if (numericColumns.length >= 3 && 
+              numericColumns[0].index === 0 && 
+              numericColumns[1].index === 1 && 
+              numericColumns[2].index === 2) {
+            // Standard format: Balance, Debit, Credit
+            balance = numericColumns[0].value;
+            debit = numericColumns[1].value;
+            credit = numericColumns[2].value;
+          } else if (numericColumns.length >= 2 && 
+                     numericColumns[0].index === 0 && 
+                     numericColumns[1].index === 1) {
+            // Two columns: Balance, Amount (determine if debit or credit by context)
+            balance = numericColumns[0].value;
+            const amount = numericColumns[1].value;
+            
+            // Check description to determine if it's debit or credit
+            const descText = columns.join(' ').toLowerCase();
+            const isCredit = descText.includes('واردة') || descText.includes('إيداع') || 
+                           descText.includes('تحويل وارد') || descText.includes('incoming');
+            
+            if (isCredit) {
+              credit = amount;
+            } else {
+              debit = amount;
+            }
+          } else {
+            // Try to identify debit/credit based on column content
+            for (const numCol of numericColumns) {
+              const leftContext = columns.slice(0, numCol.index).join(' ');
+              const rightContext = columns.slice(numCol.index + 1).join(' ');
+              const fullContext = leftContext + ' ' + rightContext;
+              
+              // Check if this is a balance column (first column with large value)
+              if (numCol.index === 0 && balance === 0) {
+                balance = numCol.value;
+              }
+              // Check for deposit/credit keywords nearby
+              else if (credit === 0 && (
+                fullContext.includes('واردة') || 
+                fullContext.includes('إيداع') ||
+                leftContext.includes('0.00') // If previous column is 0.00, this might be credit
+              )) {
+                credit = numCol.value;
+              }
+              // Check for withdrawal/debit keywords
+              else if (debit === 0 && (
+                fullContext.includes('صادرة') || 
+                fullContext.includes('خصم') ||
+                fullContext.includes('رسوم')
+              )) {
+                debit = numCol.value;
+              }
+              // Default assignment by position
+              else if (debit === 0 && numCol.index === 1) {
+                debit = numCol.value;
+              }
+              else if (credit === 0 && numCol.index === 2) {
+                credit = numCol.value;
+              }
+            }
+          }
+        }
+        
+        // If no description found, use the longest text column
         if (!description) {
-          description = columns.reduce((a, b) => a.length > b.length ? a : b, '');
+          const textColumns = columns.filter(col => col.length > 10 && isNaN(parseFloat(col.replace(/,/g, ''))));
+          if (textColumns.length > 0) {
+            description = textColumns.reduce((a, b) => a.length > b.length ? a : b, '');
+          } else {
+            description = columns.reduce((a, b) => a.length > b.length ? a : b, '');
+          }
         }
         
         // Only add if we have debit or credit
@@ -1282,7 +1356,7 @@ export default function SmartJournalEntries() {
             date,
             debit,
             credit,
-            description: description.slice(0, 200), // Limit description length
+            description: description.slice(0, 200),
             reference,
             balance,
             selectedAccountId: null
@@ -1339,6 +1413,27 @@ export default function SmartJournalEntries() {
     account.name_ar.includes(bankStatementAccountSearch) ||
     account.code.includes(bankStatementAccountSearch)
   ).slice(0, 10);
+
+  // Get filtered accounts for line account change
+  const filteredLineAccounts = accounts.filter(account => 
+    lineAccountSearch === "" ||
+    account.name_ar.includes(lineAccountSearch) ||
+    account.code.includes(lineAccountSearch)
+  ).slice(0, 10);
+
+  // Handle changing account for an entry line
+  const handleChangeLineAccount = (lineId: string, newAccountId: string) => {
+    const account = accounts.find(a => a.id === newAccountId);
+    if (!account) return;
+    
+    setEntryLines(lines => lines.map(line => 
+      line.id === lineId 
+        ? { ...line, account_id: newAccountId, account_name: account.name_ar, account_code: account.code }
+        : line
+    ));
+    setEditingLineAccountId(null);
+    setLineAccountSearch("");
+  };
 
   const handleSaveEntry = async () => {
     const { totalDebit, totalCredit, isBalanced } = calculateTotals();
@@ -2324,11 +2419,72 @@ export default function SmartJournalEntries() {
                             onClick={() => setActiveRowIndex(index)}
                           >
                             <td className="p-3 text-gray-500">{index + 1}</td>
-                            <td className="p-3">
-                              <div className={cn("font-medium", isTaxLine && "text-amber-700")}>
-                                {isTaxLine && "↳ "}{line.account_name}
-                              </div>
-                              <div className="text-sm text-gray-500">{line.account_code}</div>
+                            <td className="p-3 relative">
+                              {editingLineAccountId === line.id ? (
+                                <div className="space-y-1">
+                                  <Input
+                                    placeholder="ابحث عن حساب..."
+                                    value={lineAccountSearch}
+                                    onChange={(e) => setLineAccountSearch(e.target.value)}
+                                    className="h-8 text-xs"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Escape') {
+                                        setEditingLineAccountId(null);
+                                        setLineAccountSearch("");
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      // Delay to allow click on dropdown
+                                      setTimeout(() => {
+                                        setEditingLineAccountId(null);
+                                        setLineAccountSearch("");
+                                      }, 200);
+                                    }}
+                                  />
+                                  {filteredLineAccounts.length > 0 && (
+                                    <div className="absolute z-50 bg-white border rounded-lg shadow-lg max-h-48 overflow-auto w-64 top-full mt-1 right-3">
+                                      {filteredLineAccounts.map(account => (
+                                        <button
+                                          key={account.id}
+                                          className={cn(
+                                            "w-full text-right px-3 py-2 text-xs hover:bg-blue-50 flex items-center justify-between",
+                                            getAccountTypeColor(account.type, false, false)
+                                          )}
+                                          onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            handleChangeLineAccount(line.id, account.id);
+                                          }}
+                                        >
+                                          <span>{account.name_ar}</span>
+                                          <span className="text-gray-400">{account.code}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  className={cn(
+                                    "w-full text-right cursor-pointer hover:bg-gray-100 rounded p-1 -m-1 transition-colors",
+                                    isTaxLine && "cursor-not-allowed opacity-70"
+                                  )}
+                                  onClick={(e) => {
+                                    if (!isTaxLine) {
+                                      e.stopPropagation();
+                                      setEditingLineAccountId(line.id);
+                                      setLineAccountSearch("");
+                                    }
+                                  }}
+                                  disabled={isTaxLine}
+                                  title={isTaxLine ? "" : "انقر لتغيير الحساب"}
+                                >
+                                  <div className={cn("font-medium", isTaxLine && "text-amber-700")}>
+                                    {isTaxLine && "↳ "}{line.account_name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">{line.account_code}</div>
+                                </button>
+                              )}
                             </td>
                             <td className="p-3">
                               <Input
