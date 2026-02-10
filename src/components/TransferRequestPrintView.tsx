@@ -204,14 +204,14 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
       paddingTop: '12mm',
       borderTop: '1.5px solid #1a3a6b',
     }}>
-      {[
+    {[
         { title: 'المحاسب', name: 'حارس' },
         { title: 'المدير التنفيذي', name: 'عمر خضر' },
         { title: 'المدير العام', name: 'ناجي الجهني' },
       ].map((sig, i) => (
         <div key={i} style={{ textAlign: 'center', width: '30%' }}>
           <p style={{ marginBottom: '12mm', fontWeight: '700', color: '#1a3a6b', fontSize: '14px' }}>{sig.title}</p>
-          <p style={{ fontWeight: '700', color: '#1a3a6b', fontSize: '12px', marginBottom: '4mm' }}>{sig.name}</p>
+          <p style={{ fontWeight: '700', color: '#1a3a6b', fontSize: '12px', marginBottom: '15mm' }}>{sig.name}</p>
           <div style={{ borderBottom: '1.5px solid #1a3a6b', width: '80%', margin: '0 auto' }} />
         </div>
       ))}
