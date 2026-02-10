@@ -1915,24 +1915,27 @@ const [newDateValue, setNewDateValue] = useState('');
           }
           
           /* Hide all screen elements */
-          body > *,
-          header, main, nav, footer, button, aside,
-          .print\\:hidden {
+          body > * {
             display: none !important;
             visibility: hidden !important;
           }
           
-          /* Show print wrapper and content */
-          body > div:has(#print-wrapper),
-          body > div:has(#print-wrapper) > *,
+          /* Show only the React root and print wrapper chain */
+          body > #root,
+          body > #root > * {
+            display: contents !important;
+            visibility: hidden !important;
+          }
+
           #print-wrapper {
             display: block !important;
             visibility: visible !important;
-            position: static !important;
-            width: 100% !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 210mm !important;
             height: auto !important;
             z-index: 99999 !important;
-            pointer-events: auto !important;
             background: white !important;
             overflow: visible !important;
           }
