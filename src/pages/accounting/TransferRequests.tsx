@@ -750,26 +750,30 @@ const [newDateValue, setNewDateValue] = useState('');
         wrapper.style.display = 'block';
       }
 
-      const canvas = await html2canvas(printContent, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#FFFFFF',
-        logging: false,
-        windowWidth: 794,
-        windowHeight: 1123,
-      });
-
-      const imgData = canvas.toDataURL('image/png');
+      const pages = printContent.querySelectorAll('.print-page');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
       });
-
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i] as HTMLElement;
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#FFFFFF',
+          logging: false,
+          windowWidth: 794,
+          windowHeight: 1123,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+
       pdf.save(`طلب-تحويل-${request.request_number}.pdf`);
       
       toast.success('تم تحميل PDF بنجاح');
@@ -1908,7 +1912,6 @@ const [newDateValue, setNewDateValue] = useState('');
           body {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-            overflow: hidden !important;
           }
           
           /* Hide all screen elements */
@@ -1925,42 +1928,48 @@ const [newDateValue, setNewDateValue] = useState('');
           #print-wrapper {
             display: block !important;
             visibility: visible !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
+            position: static !important;
             width: 100% !important;
-            height: 100% !important;
+            height: auto !important;
             z-index: 99999 !important;
             pointer-events: auto !important;
             background: white !important;
-            overflow: hidden !important;
+            overflow: visible !important;
           }
           
           #print-wrapper #print-content {
             display: block !important;
             visibility: visible !important;
             position: relative !important;
-            left: 0 !important;
-            top: 0 !important;
             width: 210mm !important;
-            min-height: 297mm !important;
-            max-height: 297mm !important;
-            padding: 20mm 15mm !important;
+            height: auto !important;
             margin: 0 !important;
+            padding: 0 !important;
             background: #FFFFFF !important;
             color: #222222 !important;
             font-family: 'Cairo', 'Noto Naskh Arabic', sans-serif !important;
-            overflow: hidden !important;
-            page-break-after: avoid !important;
+            overflow: visible !important;
           }
           
           #print-wrapper #print-content * {
             visibility: visible !important;
           }
+
+          #print-wrapper .print-page {
+            width: 210mm !important;
+            height: 297mm !important;
+            padding: 15mm !important;
+            page-break-after: always !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+          }
+
+          #print-wrapper .print-page:last-child {
+            page-break-after: auto !important;
+          }
           
           /* Table styles */
           #print-wrapper table {
-            page-break-inside: avoid !important;
             border-collapse: collapse !important;
           }
           
@@ -1972,12 +1981,6 @@ const [newDateValue, setNewDateValue] = useState('');
           * {
             box-shadow: none !important;
             text-shadow: none !important;
-          }
-
-          /* Ensure only one page */
-          html, body {
-            height: 297mm !important;
-            overflow: hidden !important;
           }
         }
 
