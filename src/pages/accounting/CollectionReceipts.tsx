@@ -43,7 +43,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download } from "lucide-react";
+import { FileText, Plus, Printer, Eye, Pencil, Trash2, Check, ChevronsUpDown, Download, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -71,6 +72,7 @@ interface CollectionReceipt {
 }
 
 export default function CollectionReceipts() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [receipts, setReceipts] = useState<CollectionReceipt[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -714,12 +716,22 @@ export default function CollectionReceipts() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950" dir="rtl">
       <header className="border-b bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <FileText className="h-10 w-10 text-white" />
-            <div>
-              <h1 className="text-3xl font-bold text-white">سندات القبض</h1>
-              <p className="text-blue-100 mt-1">إدارة سندات القبض المحاسبية</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <FileText className="h-10 w-10 text-white" />
+              <div>
+                <h1 className="text-3xl font-bold text-white">سندات القبض</h1>
+                <p className="text-blue-100 mt-1">إدارة سندات القبض المحاسبية</p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/accounting")}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowRight className="h-5 w-5 ml-2" />
+              رجوع
+            </Button>
           </div>
         </div>
       </header>
