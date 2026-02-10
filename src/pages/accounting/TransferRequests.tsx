@@ -1914,23 +1914,20 @@ const [newDateValue, setNewDateValue] = useState('');
             print-color-adjust: exact !important;
           }
           
-          /* Hide all screen elements */
-          body > * {
-            display: none !important;
+          /* Hide everything */
+          body * {
             visibility: hidden !important;
           }
           
-          /* Show only the React root and print wrapper chain */
-          body > #root,
-          body > #root > * {
-            display: contents !important;
-            visibility: hidden !important;
+          /* Show only print wrapper and its contents */
+          #print-wrapper,
+          #print-wrapper * {
+            visibility: visible !important;
           }
 
           #print-wrapper {
             display: block !important;
-            visibility: visible !important;
-            position: fixed !important;
+            position: absolute !important;
             top: 0 !important;
             left: 0 !important;
             width: 210mm !important;
