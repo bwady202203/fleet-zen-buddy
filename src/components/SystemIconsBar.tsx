@@ -119,7 +119,7 @@ export const SystemIconsBar = () => {
   const timeStr = format(currentTime, "HH:mm:ss", { locale: ar });
 
   return (
-    <div className="border-b bg-card/80 backdrop-blur-sm shadow-sm sticky top-0 z-40 print:hidden">
+    <div className="border-b bg-card/80 backdrop-blur-sm shadow-sm sticky top-0 z-40 print:hidden" style={{ }}>
       <div className="container mx-auto px-4 py-2">
         {/* Date, Time and Logout Section */}
         <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground" dir="rtl">
