@@ -100,18 +100,23 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
 
   const renderHeader = (pageNum: number) => (
     <div style={{ marginBottom: '6mm' }}>
-      {/* Company Name - centered */}
-      <div style={{ textAlign: 'center', marginBottom: '5mm' }}>
+      {/* Company Name - solid blue bar */}
+      <div style={{
+        textAlign: 'center',
+        backgroundColor: '#1a3a6b',
+        padding: '12px 20px',
+        borderRadius: '6px',
+        marginBottom: '5mm',
+      }}>
         <h1 style={{
           fontSize: '20px',
           fontWeight: '700',
-          color: '#1a3a6b',
-          margin: '0 0 6px 0',
+          color: '#FFFFFF',
+          margin: '0',
           letterSpacing: '0.5px',
         }}>
           {companyName}
         </h1>
-        <div style={{ width: '60%', margin: '0 auto', borderBottom: '2px solid #1a3a6b' }} />
       </div>
 
       {/* Document info bar */}
@@ -120,37 +125,36 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '10px 20px',
-        backgroundColor: '#f0f4fa',
+        backgroundColor: '#FFFFFF',
         borderRadius: '6px',
-        border: '1px solid #d0d9e8',
+        border: '1.5px solid #c5d3e8',
         fontSize: '13px',
         color: '#333',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>التاريخ الميلادي</span>
-          <strong style={{ fontSize: '14px', fontWeight: '700' }}>{gregorianDate}</strong>
+          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>التاريخ الهجري</span>
+          <strong style={{ fontSize: '13px', fontWeight: '700' }}>{hijriDate} هـ</strong>
         </div>
         <div style={{ textAlign: 'center' }}>
           <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>رقم الطلب</span>
           <strong style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a6b' }}>#{request.request_number}</strong>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>التاريخ الهجري</span>
-          <strong style={{ fontSize: '14px', fontWeight: '700' }}>{hijriDate} هـ</strong>
+          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>التاريخ الميلادي</span>
+          <strong style={{ fontSize: '13px', fontWeight: '700' }}>{gregorianDate}</strong>
         </div>
       </div>
 
-      {/* Document Title */}
+      {/* Document Title - solid blue bar */}
       <h2 style={{
         textAlign: 'center',
         fontSize: '16px',
         fontWeight: '700',
         marginTop: '5mm',
-        color: '#1a3a6b',
-        backgroundColor: '#e8eef7',
+        color: '#FFFFFF',
+        backgroundColor: '#1a3a6b',
         padding: '8px 20px',
         borderRadius: '6px',
-        border: '1px solid #c5d3e8',
       }}>
         طلب تحويل {pageNum > 1 ? `(تابع - صفحة ${pageNum})` : ''}
       </h2>
@@ -215,21 +219,21 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   );
 
   const renderTotal = () => (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4mm', marginTop: '4mm' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '4mm', marginTop: '4mm' }}>
       <div style={{
-        fontSize: '16px',
+        fontSize: '14px',
         fontWeight: '700',
         color: '#1a3a6b',
-        backgroundColor: '#f0f4fa',
+        backgroundColor: '#e8eef7',
         padding: '10px 24px',
         borderRadius: '6px',
-        border: '1.5px solid #1a3a6b',
+        border: '2px solid #1a3a6b',
       }}>
         <span>الإجمالي: </span>
-        <span style={{ fontFamily: 'monospace', marginRight: '8px', fontWeight: '800', fontSize: '18px', color: '#000' }}>
+        <span style={{ marginRight: '8px', fontWeight: '800', fontSize: '16px', color: '#000' }}>
           {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
-        <span>ريال سعودي</span>
+        <span> ريال سعودي</span>
       </div>
     </div>
   );
