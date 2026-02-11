@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,16 @@ interface WatchedAccount {
   balance: number;
 }
 
+interface LedgerEntry {
+  id: string;
+  entry_date: string;
+  description: string;
+  reference: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
 type DateFilter = 'all' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'lastWeek';
 
 const ImportantBalances = () => {
@@ -31,6 +42,10 @@ const ImportantBalances = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [allAccounts, setAllAccounts] = useState<any[]>([]);
   const [accountSearch, setAccountSearch] = useState("");
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [ledgerAccount, setLedgerAccount] = useState<WatchedAccount | null>(null);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -173,6 +188,41 @@ const ImportantBalances = () => {
     }
   };
 
+  const handleOpenLedger = async (acc: WatchedAccount) => {
+    setLedgerAccount(acc);
+    setLedgerOpen(true);
+    setLedgerLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('ledger_entries')
+        .select('*')
+        .eq('account_id', acc.account_id)
+        .order('entry_date', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      let runningBalance = 0;
+      const entries: LedgerEntry[] = (data || []).map(e => {
+        runningBalance += (e.debit || 0) - (e.credit || 0);
+        return {
+          id: e.id,
+          entry_date: e.entry_date,
+          description: e.description || '',
+          reference: e.reference || '',
+          debit: e.debit || 0,
+          credit: e.credit || 0,
+          balance: runningBalance,
+        };
+      });
+      setLedgerEntries(entries);
+    } catch (error) {
+      console.error('Error loading ledger:', error);
+    } finally {
+      setLedgerLoading(false);
+    }
+  };
+
   const filteredAccounts = allAccounts.filter(acc => {
     if (!accountSearch) return true;
     const q = accountSearch.toLowerCase();
@@ -250,12 +300,12 @@ const ImportantBalances = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {watchedAccounts.map(acc => (
-              <Card key={acc.id} className="relative group hover:shadow-lg transition-shadow">
+              <Card key={acc.id} className="relative group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleOpenLedger(acc)}>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-destructive hover:bg-destructive/10"
-                  onClick={() => handleRemove(acc.id)}
+                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-destructive hover:bg-destructive/10 z-10"
+                  onClick={(e) => { e.stopPropagation(); handleRemove(acc.id); }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -327,6 +377,68 @@ const ImportantBalances = () => {
               <p className="text-center py-8 text-muted-foreground">لا توجد نتائج</p>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ledger Dialog */}
+      <Dialog open={ledgerOpen} onOpenChange={setLedgerOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span>كشف حساب:</span>
+              {ledgerAccount && (
+                <>
+                  <span className="font-mono text-sm bg-muted px-2 py-0.5 rounded">{ledgerAccount.account_code}</span>
+                  <span>{ledgerAccount.account_name}</span>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {ledgerLoading ? (
+            <div className="text-center py-16 text-muted-foreground">جاري تحميل كشف الحساب...</div>
+          ) : ledgerEntries.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">لا توجد حركات لهذا الحساب</div>
+          ) : (
+            <div className="overflow-auto max-h-[65vh]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right w-[50px]">#</TableHead>
+                    <TableHead className="text-right">التاريخ</TableHead>
+                    <TableHead className="text-right">البيان</TableHead>
+                    <TableHead className="text-right">المرجع</TableHead>
+                    <TableHead className="text-right">مدين</TableHead>
+                    <TableHead className="text-right">دائن</TableHead>
+                    <TableHead className="text-right">الرصيد</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ledgerEntries.map((entry, idx) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                      <TableCell className="font-mono text-xs">{entry.entry_date}</TableCell>
+                      <TableCell className="text-sm">{entry.description}</TableCell>
+                      <TableCell className="font-mono text-xs text-primary">{entry.reference}</TableCell>
+                      <TableCell className={entry.debit > 0 ? 'text-red-600 font-medium' : ''}>{entry.debit > 0 ? formatNum(entry.debit) : '-'}</TableCell>
+                      <TableCell className={entry.credit > 0 ? 'text-emerald-600 font-medium' : ''}>{entry.credit > 0 ? formatNum(entry.credit) : '-'}</TableCell>
+                      <TableCell className={`font-bold ${entry.balance > 0 ? 'text-red-600' : entry.balance < 0 ? 'text-emerald-600' : ''}`}>
+                        {formatNum(Math.abs(entry.balance))} {entry.balance > 0 ? 'مدين' : entry.balance < 0 ? 'دائن' : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Totals Row */}
+                  <TableRow className="bg-muted/50 font-bold border-t-2">
+                    <TableCell colSpan={4} className="text-right">الإجمالي</TableCell>
+                    <TableCell className="text-red-600">{formatNum(ledgerEntries.reduce((s, e) => s + e.debit, 0))}</TableCell>
+                    <TableCell className="text-emerald-600">{formatNum(ledgerEntries.reduce((s, e) => s + e.credit, 0))}</TableCell>
+                    <TableCell className={`${ledgerEntries.length > 0 && ledgerEntries[ledgerEntries.length - 1].balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {ledgerEntries.length > 0 ? `${formatNum(Math.abs(ledgerEntries[ledgerEntries.length - 1].balance))} ${ledgerEntries[ledgerEntries.length - 1].balance > 0 ? 'مدين' : 'دائن'}` : '-'}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
