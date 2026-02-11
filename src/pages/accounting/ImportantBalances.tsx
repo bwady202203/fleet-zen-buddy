@@ -84,59 +84,112 @@ const ImportantBalances = () => {
 
       const accountIds = watched.map((w: any) => w.account_id);
 
-      // Get journal entry lines for these accounts
-      let query = supabase
-        .from('journal_entry_lines')
-        .select('account_id, debit, credit, journal_entries(date)')
-        .in('account_id', accountIds);
+      if (!dateRange) {
+        // For "all" filter, use the pre-calculated balance from chart_of_accounts
+        // and get totals from all journal_entry_lines
+        const balances: Record<string, { debit: number; credit: number }> = {};
+        accountIds.forEach(id => { balances[id] = { debit: 0, credit: 0 }; });
 
-      if (dateRange) {
-        // We need to filter by date through the journal_entries relation
-        // Supabase doesn't support filtering on joined tables directly in .in(),
-        // so we'll filter client-side
-      }
+        // Fetch all lines in batches to avoid 1000 row limit
+        for (const accId of accountIds) {
+          let allLines: any[] = [];
+          let from = 0;
+          const batchSize = 1000;
+          let hasMore = true;
+          
+          while (hasMore) {
+            const { data: batch } = await supabase
+              .from('journal_entry_lines')
+              .select('debit, credit')
+              .eq('account_id', accId)
+              .range(from, from + batchSize - 1);
+            
+            if (batch && batch.length > 0) {
+              allLines = allLines.concat(batch);
+              hasMore = batch.length === batchSize;
+              from += batchSize;
+            } else {
+              hasMore = false;
+            }
+          }
 
-      const { data: lines, error: lErr } = await query;
-      if (lErr) throw lErr;
+          allLines.forEach((line: any) => {
+            balances[accId].debit += (line.debit || 0);
+            balances[accId].credit += (line.credit || 0);
+          });
+        }
 
-      // Filter by date if needed
-      let filteredLines = lines || [];
-      if (dateRange) {
+        const result: WatchedAccount[] = watched.map((w: any) => {
+          const acc = w.chart_of_accounts as any;
+          const bal = balances[w.account_id] || { debit: 0, credit: 0 };
+          return {
+            id: w.id,
+            account_id: w.account_id,
+            account_code: acc?.code || '',
+            account_name: acc?.name_ar || '',
+            account_name_en: acc?.name_en || '',
+            totalDebit: bal.debit,
+            totalCredit: bal.credit,
+            balance: bal.debit - bal.credit,
+          };
+        });
+        setWatchedAccounts(result);
+      } else {
+        // For date-filtered views, fetch with date filtering
         const startStr = format(dateRange.start, 'yyyy-MM-dd');
         const endStr = format(dateRange.end, 'yyyy-MM-dd');
-        filteredLines = filteredLines.filter((l: any) => {
-          const date = (l.journal_entries as any)?.date;
-          return date && date >= startStr && date <= endStr;
+        
+        const balances: Record<string, { debit: number; credit: number }> = {};
+        accountIds.forEach(id => { balances[id] = { debit: 0, credit: 0 }; });
+
+        for (const accId of accountIds) {
+          let allLines: any[] = [];
+          let from = 0;
+          const batchSize = 1000;
+          let hasMore = true;
+          
+          while (hasMore) {
+            const { data: batch } = await supabase
+              .from('journal_entry_lines')
+              .select('debit, credit, journal_entries!inner(date)')
+              .eq('account_id', accId)
+              .gte('journal_entries.date', startStr)
+              .lte('journal_entries.date', endStr)
+              .range(from, from + batchSize - 1);
+            
+            if (batch && batch.length > 0) {
+              allLines = allLines.concat(batch);
+              hasMore = batch.length === batchSize;
+              from += batchSize;
+            } else {
+              hasMore = false;
+            }
+          }
+
+          allLines.forEach((line: any) => {
+            balances[accId].debit += (line.debit || 0);
+            balances[accId].credit += (line.credit || 0);
+          });
+        }
+
+        const result: WatchedAccount[] = watched.map((w: any) => {
+          const acc = w.chart_of_accounts as any;
+          const bal = balances[w.account_id] || { debit: 0, credit: 0 };
+          return {
+            id: w.id,
+            account_id: w.account_id,
+            account_code: acc?.code || '',
+            account_name: acc?.name_ar || '',
+            account_name_en: acc?.name_en || '',
+            totalDebit: bal.debit,
+            totalCredit: bal.credit,
+            balance: bal.debit - bal.credit,
+          };
         });
+        setWatchedAccounts(result);
       }
 
-      // Aggregate by account
-      const balances: Record<string, { debit: number; credit: number }> = {};
-      accountIds.forEach(id => { balances[id] = { debit: 0, credit: 0 }; });
-      
-      filteredLines.forEach((line: any) => {
-        if (balances[line.account_id]) {
-          balances[line.account_id].debit += (line.debit || 0);
-          balances[line.account_id].credit += (line.credit || 0);
-        }
-      });
-
-      const result: WatchedAccount[] = watched.map((w: any) => {
-        const acc = w.chart_of_accounts as any;
-        const bal = balances[w.account_id] || { debit: 0, credit: 0 };
-        return {
-          id: w.id,
-          account_id: w.account_id,
-          account_code: acc?.code || '',
-          account_name: acc?.name_ar || '',
-          account_name_en: acc?.name_en || '',
-          totalDebit: bal.debit,
-          totalCredit: bal.credit,
-          balance: bal.debit - bal.credit,
-        };
-      });
-
-      setWatchedAccounts(result);
+      // balances already set inside the if/else blocks above
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
