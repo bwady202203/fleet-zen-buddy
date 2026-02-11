@@ -352,6 +352,15 @@ export default function CollectionReceipts() {
           </div>
           ` : ''}
           
+          ${(receipt as any).recipient_name ? `
+          <div class="received-from-section">
+            <div class="received-from-box">
+              <div class="received-from-label">👤 اسم المستلم:</div>
+              <div class="received-from-value">${(receipt as any).recipient_name}</div>
+            </div>
+          </div>
+          ` : ''}
+          
           <div class="amount-section">
             <div class="amount-box">
               <div class="amount-label">💵 المبلغ المستحق</div>
