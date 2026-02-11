@@ -99,6 +99,11 @@ export default function CollectionReceipts() {
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
   const [downloadWidth, setDownloadWidth] = useState(600);
   const [companySettings, setCompanySettings] = useState<any>(null);
+  const [accountPickerOpen, setAccountPickerOpen] = useState(false);
+  const [accountPickerTarget, setAccountPickerTarget] = useState<'debit' | 'credit'>('debit');
+  const [accountSearchQuery, setAccountSearchQuery] = useState('');
+  const [selectedDebitAccount, setSelectedDebitAccount] = useState<Account | null>(null);
+  const [selectedCreditAccount, setSelectedCreditAccount] = useState<Account | null>(null);
 
   useEffect(() => {
     fetchReceipts();
@@ -589,6 +594,8 @@ export default function CollectionReceipts() {
       recipient_name: (receipt as any).recipient_name || "",
       received_from: (receipt as any).received_from || "",
     });
+    setSelectedDebitAccount(receipt.debit_account || null);
+    setSelectedCreditAccount(receipt.credit_account || null);
     setShowForm(true);
   };
 
@@ -630,6 +637,8 @@ export default function CollectionReceipts() {
       received_from: "",
     });
     setEditingReceipt(null);
+    setSelectedDebitAccount(null);
+    setSelectedCreditAccount(null);
     setShowForm(false);
   };
 
@@ -839,30 +848,85 @@ export default function CollectionReceipts() {
           </CardContent>
         </Card>
 
+        {/* Account Picker Dialog */}
+        <Dialog open={accountPickerOpen} onOpenChange={setAccountPickerOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-xl">
+                اختر {accountPickerTarget === 'debit' ? 'الحساب المدين' : 'الحساب الدائن'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="px-1 pb-2">
+              <Input
+                placeholder="ابحث بالكود أو الاسم..."
+                value={accountSearchQuery}
+                onChange={(e) => setAccountSearchQuery(e.target.value)}
+                className="text-base"
+                autoFocus
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 p-1">
+              {accounts
+                .filter(acc => {
+                  if (!accountSearchQuery) return true;
+                  const q = accountSearchQuery.toLowerCase();
+                  return acc.code.includes(accountSearchQuery) || acc.name_ar.toLowerCase().includes(q) || acc.name_en.toLowerCase().includes(q);
+                })
+                .map(account => (
+                  <button
+                    key={account.id}
+                    type="button"
+                    onClick={() => {
+                      if (accountPickerTarget === 'debit') {
+                        setFormData({ ...formData, debit_account_id: account.id });
+                        setSelectedDebitAccount(account);
+                      } else {
+                        setFormData({ ...formData, credit_account_id: account.id });
+                        setSelectedCreditAccount(account);
+                      }
+                      setAccountPickerOpen(false);
+                      setAccountSearchQuery('');
+                    }}
+                    className={cn(
+                      "p-3 rounded-lg border-2 text-right transition-all hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950",
+                      (accountPickerTarget === 'debit' ? formData.debit_account_id : formData.credit_account_id) === account.id
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
+                        : "border-muted"
+                    )}
+                  >
+                    <div className="text-xs font-mono text-muted-foreground">{account.code}</div>
+                    <div className="text-sm font-semibold truncate">{account.name_ar}</div>
+                  </button>
+                ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Form Dialog */}
         <Dialog open={showForm} onOpenChange={(open) => {
           if (!open) resetForm();
           setShowForm(open);
         }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle className="text-2xl flex items-center gap-2">
                 <FileText className="h-6 w-6 text-blue-600" />
                 {editingReceipt ? "تعديل سند قبض" : "سند قبض جديد"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-6 p-4">
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">التاريخ *</Label>
-                <Input
-                  type="date"
-                  value={formData.receipt_date}
-                  onChange={(e) => setFormData({ ...formData, receipt_date: e.target.value })}
-                  required
-                  className="text-base"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-5 p-2">
+              {/* Row 1: Date, Amount, Received From */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">التاريخ *</Label>
+                  <Input
+                    type="date"
+                    value={formData.receipt_date}
+                    onChange={(e) => setFormData({ ...formData, receipt_date: e.target.value })}
+                    required
+                    className="text-base"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label className="text-base font-semibold">المبلغ *</Label>
                   <Input
@@ -875,73 +939,92 @@ export default function CollectionReceipts() {
                     className="text-base"
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label className="text-base font-semibold">الحساب الدائن *</Label>
-                  <Select
-                    value={formData.credit_account_id}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, credit_account_id: value })
-                    }
-                  >
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="اختر الحساب الدائن" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.code} - {account.name_ar}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-base font-semibold">استلمنا من *</Label>
+                  <Input
+                    type="text"
+                    value={formData.received_from}
+                    onChange={(e) => setFormData({ ...formData, received_from: e.target.value })}
+                    required
+                    placeholder="اسم الشخص أو الجهة..."
+                    className="text-base"
+                  />
                 </div>
               </div>
 
+              {/* Row 2: Debit and Credit accounts */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">الحساب المدين *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setAccountPickerTarget('debit');
+                      setAccountPickerOpen(true);
+                    }}
+                    className="w-full justify-start text-base h-10"
+                  >
+                    {selectedDebitAccount
+                      ? <span>{selectedDebitAccount.code} - {selectedDebitAccount.name_ar}</span>
+                      : <span className="text-muted-foreground">اختر الحساب المدين</span>
+                    }
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">الحساب الدائن *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setAccountPickerTarget('credit');
+                      setAccountPickerOpen(true);
+                    }}
+                    className="w-full justify-start text-base h-10"
+                  >
+                    {selectedCreditAccount
+                      ? <span>{selectedCreditAccount.code} - {selectedCreditAccount.name_ar}</span>
+                      : <span className="text-muted-foreground">اختر الحساب الدائن</span>
+                    }
+                  </Button>
+                </div>
+              </div>
+
+              {/* Amount in words */}
               {formData.amount && parseFloat(formData.amount) > 0 && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                  <div className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">تفقيط المبلغ:</div>
-                  <div className="text-base font-bold text-blue-900 dark:text-blue-100">
+                <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-300 ml-2">تفقيط:</span>
+                  <span className="text-sm font-bold text-blue-900 dark:text-blue-100">
                     {numberToWords(parseFloat(formData.amount))}
-                  </div>
+                  </span>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">استلمنا من *</Label>
-                <Input
-                  type="text"
-                  value={formData.received_from}
-                  onChange={(e) => setFormData({ ...formData, received_from: e.target.value })}
-                  required
-                  placeholder="أدخل اسم الشخص أو الجهة..."
-                  className="text-base"
-                />
+              {/* Row 3: Description and Recipient */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">البيان / الوصف</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    placeholder="أدخل وصف السند..."
+                    className="text-base resize-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">اسم المستلم</Label>
+                  <Input
+                    type="text"
+                    value={formData.recipient_name}
+                    onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
+                    placeholder="أدخل اسم المستلم..."
+                    className="text-base"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">البيان / الوصف</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  placeholder="أدخل وصف السند..."
-                  className="text-base resize-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-base font-semibold">اسم المستلم</Label>
-                <Input
-                  type="text"
-                  value={formData.recipient_name}
-                  onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  placeholder="أدخل اسم المستلم..."
-                  className="text-base"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <Button 
                   type="submit" 
                   size="lg"
