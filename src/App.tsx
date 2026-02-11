@@ -50,6 +50,7 @@ import PurchaseOrder from "./pages/accounting/PurchaseOrder";
 import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
+import ImportantBalances from "./pages/accounting/ImportantBalances";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import LoadsRegister from "./pages/loads/LoadsRegister";
@@ -193,6 +194,7 @@ const App = () => {
                                   <Route path="/custody/journal" element={<CustodyJournalEntries />} />
                                   <Route path="/custody/smart-journal" element={<CustodySmartJournal />} />
                                   <Route path="/accounting/transfer-requests" element={<TransferRequests />} />
+                                  <Route path="/accounting/important-balances" element={<ImportantBalances />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
                               </ProtectedRoute>
