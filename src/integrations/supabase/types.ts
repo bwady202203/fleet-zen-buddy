@@ -3323,6 +3323,45 @@ export type Database = {
           },
         ]
       }
+      watched_accounts: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watched_accounts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watched_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

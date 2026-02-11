@@ -288,6 +288,13 @@ const Accounting = () => {
       color: "from-cyan-500 to-cyan-600"
     },
     {
+      title: "أرصدة الحسابات الهامة",
+      description: "مراقبة أرصدة العهد والبنوك والحسابات المهمة",
+      icon: BarChart3,
+      link: "/accounting/important-balances",
+      color: "from-amber-600 to-yellow-500"
+    },
+    {
       title: "شجرة الحسابات",
       description: "إدارة الدليل المحاسبي - 4 مستويات",
       icon: BookOpen,
