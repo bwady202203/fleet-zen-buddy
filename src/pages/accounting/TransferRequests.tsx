@@ -15,8 +15,9 @@
  import html2canvas from 'html2canvas';
  import { Alert, AlertDescription } from '@/components/ui/alert';
  import { Separator } from '@/components/ui/separator';
- import { cn } from '@/lib/utils';
- import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import { useDeleteConfirmation } from '@/components/DeleteConfirmationDialog';
  import { Badge } from '@/components/ui/badge';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -92,6 +93,8 @@ const [newDateValue, setNewDateValue] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editAmount, setEditAmount] = useState('');
+
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
 
   // Arabic alphabet for quick navigation
   const arabicLetters = ['ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'];
@@ -547,6 +550,66 @@ const [newDateValue, setNewDateValue] = useState('');
     } catch (error) {
       console.error('Error deleting tax row:', error);
       toast.error('خطأ في حذف الضريبة');
+    }
+  };
+
+  // Delete a single saved item from a request
+  const handleDeleteSavedItem = async (request: TransferRequest, item: TransferRequestItem) => {
+    if (item.is_tax_row) return;
+    
+    try {
+      // If item has tax, delete the tax row first
+      if (item.has_tax) {
+        const taxRow = request.items.find(i => i.is_tax_row && i.parent_item_id === item.id);
+        if (taxRow) {
+          await supabase
+            .from('transfer_request_items')
+            .delete()
+            .eq('id', taxRow.id);
+        }
+      }
+
+      // Delete the item itself
+      const { error } = await supabase
+        .from('transfer_request_items')
+        .delete()
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      // Recalculate total
+      const remainingItems = request.items.filter(i => {
+        if (i.id === item.id) return false;
+        if (i.is_tax_row && i.parent_item_id === item.id) return false;
+        return true;
+      });
+
+      if (remainingItems.length === 0) {
+        // If no items left, delete the entire request
+        await handleDeleteRequest(request);
+        return;
+      }
+
+      const newTotal = remainingItems.reduce((sum, i) => sum + i.amount, 0);
+      await supabase
+        .from('transfer_requests')
+        .update({ total_amount: newTotal })
+        .eq('id', request.id);
+
+      // Renumber remaining items
+      const nonTaxItems = remainingItems.filter(i => !i.is_tax_row);
+      for (let idx = 0; idx < nonTaxItems.length; idx++) {
+        await supabase
+          .from('transfer_request_items')
+          .update({ serial_number: idx + 1 })
+          .eq('id', nonTaxItems[idx].id);
+      }
+
+      toast.success('تم حذف البند');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast.error('خطأ في حذف البند');
     }
   };
 
@@ -1606,6 +1669,7 @@ const [newDateValue, setNewDateValue] = useState('');
                                 <>
                                   <TableHead className="w-16 text-center">ضريبة</TableHead>
                                   <TableHead className="w-16 text-center">تعديل</TableHead>
+                                  <TableHead className="w-16 text-center">حذف</TableHead>
                                 </>
                               )}
                             </TableRow>
@@ -1732,6 +1796,22 @@ const [newDateValue, setNewDateValue] = useState('');
                                         </Button>
                                       )}
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                      {!item.is_tax_row && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                          onClick={() => requestDelete(
+                                            () => handleDeleteSavedItem(request, item),
+                                            { title: 'حذف البند', description: `هل أنت متأكد من حذف البند "${item.description}"؟` }
+                                          )}
+                                          title="حذف البند"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </TableCell>
                                   </>
                                 )}
                               </TableRow>
@@ -1823,7 +1903,10 @@ const [newDateValue, setNewDateValue] = useState('');
                             </>
                          )}
                          <Button
-                           onClick={() => handleDeleteRequest(request)}
+                           onClick={() => requestDelete(
+                             () => handleDeleteRequest(request),
+                             { title: 'حذف طلب التحويل', description: `هل أنت متأكد من حذف طلب التحويل رقم ${request.request_number}؟ سيتم حذف جميع البنود والقيود المحاسبية المرتبطة.` }
+                           )}
                            variant="destructive"
                            size="sm"
                            className="gap-2"
@@ -2266,6 +2349,7 @@ const [newDateValue, setNewDateValue] = useState('');
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <DeleteDialog />
     </div>
   );
 };
