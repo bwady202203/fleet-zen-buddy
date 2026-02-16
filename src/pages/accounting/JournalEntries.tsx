@@ -1711,7 +1711,7 @@ const JournalEntries = () => {
             width: 100%;
             background: white;
           }
-          .no-print {
+          .no-print, .screen-only-content {
             display: none !important;
           }
         }
@@ -1722,7 +1722,7 @@ const JournalEntries = () => {
         }
       `}</style>
       
-      <div className="min-h-screen bg-background" dir="rtl">
+      <div className="min-h-screen bg-background screen-only-content" dir="rtl">
         <header className="border-b bg-card no-print">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
