@@ -585,8 +585,9 @@ const [newDateValue, setNewDateValue] = useState('');
       });
 
       if (remainingItems.length === 0) {
-        // If no items left, delete the entire request
-        await handleDeleteRequest(request);
+        // Don't auto-delete the request - require explicit deletion with security code
+        toast.info('تم حذف جميع البنود. يمكنك حذف الطلب بالكامل من زر حذف الطلب.');
+        fetchRequests();
         return;
       }
 
