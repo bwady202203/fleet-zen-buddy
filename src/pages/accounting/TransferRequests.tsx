@@ -12,7 +12,8 @@
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
- import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas';
+import LoadingCup from '@/components/LoadingCup';
  import { Alert, AlertDescription } from '@/components/ui/alert';
  import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -1598,8 +1599,8 @@ const [newDateValue, setNewDateValue] = useState('');
                قائمة طلبات التحويل
              </h2>
  
-             {loading ? (
-               <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>
+              {loading ? (
+                <LoadingCup text="جاري تحميل الطلبات..." />
              ) : requests.length === 0 ? (
                <Card className="border-dashed">
                  <CardContent className="text-center py-12">
