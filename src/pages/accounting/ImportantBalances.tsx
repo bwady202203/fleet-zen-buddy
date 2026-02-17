@@ -4,12 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, getDaysInMonth, isSameDay } from "date-fns";
 import { ar } from "date-fns/locale";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface WatchedAccount {
   id: string;
@@ -32,13 +33,14 @@ interface LedgerEntry {
   balance: number;
 }
 
-type DateFilter = 'all' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'lastWeek';
+type DateFilter = 'all' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'lastWeek' | 'specificDay';
 
 const ImportantBalances = () => {
   const { toast } = useToast();
   const [watchedAccounts, setWatchedAccounts] = useState<WatchedAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [specificDay, setSpecificDay] = useState<Date | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [allAccounts, setAllAccounts] = useState<any[]>([]);
   const [accountSearch, setAccountSearch] = useState("");
@@ -46,6 +48,19 @@ const ImportantBalances = () => {
   const [ledgerAccount, setLedgerAccount] = useState<WatchedAccount | null>(null);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
+
+  // Generate current month days
+  const currentMonthDays = useMemo(() => {
+    const now = new Date();
+    const totalDays = getDaysInMonth(now);
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const days: Date[] = [];
+    for (let d = 1; d <= totalDays; d++) {
+      days.push(new Date(year, month, d));
+    }
+    return days;
+  }, []);
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -58,18 +73,26 @@ const ImportantBalances = () => {
         return { start: startOfMonth(lm), end: endOfMonth(lm) };
       }
       case 'lastWeek': return { start: startOfWeek(subDays(now, 7), { weekStartsOn: 0 }), end: endOfWeek(subDays(now, 7), { weekStartsOn: 0 }) };
+      case 'specificDay': {
+        if (specificDay) return { start: specificDay, end: specificDay };
+        return null;
+      }
       default: return null;
     }
-  }, [dateFilter]);
+  }, [dateFilter, specificDay]);
 
   useEffect(() => {
     loadData();
-  }, [dateFilter]);
+  }, [dateFilter, specificDay]);
+
+  const handleDayClick = (day: Date) => {
+    setSpecificDay(day);
+    setDateFilter('specificDay');
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Get watched accounts with account details
       const { data: watched, error: wErr } = await supabase
         .from('watched_accounts')
         .select('id, account_id, chart_of_accounts(id, code, name_ar, name_en)');
@@ -84,112 +107,83 @@ const ImportantBalances = () => {
 
       const accountIds = watched.map((w: any) => w.account_id);
 
+      // Fetch all journal_entry_lines for all watched accounts in ONE query (parallel batches)
+      const balances: Record<string, { debit: number; credit: number }> = {};
+      accountIds.forEach(id => { balances[id] = { debit: 0, credit: 0 }; });
+
       if (!dateRange) {
-        // For "all" filter, use the pre-calculated balance from chart_of_accounts
-        // and get totals from all journal_entry_lines
-        const balances: Record<string, { debit: number; credit: number }> = {};
-        accountIds.forEach(id => { balances[id] = { debit: 0, credit: 0 }; });
-
-        // Fetch all lines in batches to avoid 1000 row limit
-        for (const accId of accountIds) {
-          let allLines: any[] = [];
-          let from = 0;
-          const batchSize = 1000;
-          let hasMore = true;
+        // "all" filter - fetch all lines for all accounts at once
+        let from = 0;
+        const batchSize = 1000;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const { data: batch } = await supabase
+            .from('journal_entry_lines')
+            .select('account_id, debit, credit')
+            .in('account_id', accountIds)
+            .range(from, from + batchSize - 1);
           
-          while (hasMore) {
-            const { data: batch } = await supabase
-              .from('journal_entry_lines')
-              .select('debit, credit')
-              .eq('account_id', accId)
-              .range(from, from + batchSize - 1);
-            
-            if (batch && batch.length > 0) {
-              allLines = allLines.concat(batch);
-              hasMore = batch.length === batchSize;
-              from += batchSize;
-            } else {
-              hasMore = false;
-            }
+          if (batch && batch.length > 0) {
+            batch.forEach((line: any) => {
+              if (balances[line.account_id]) {
+                balances[line.account_id].debit += (line.debit || 0);
+                balances[line.account_id].credit += (line.credit || 0);
+              }
+            });
+            hasMore = batch.length === batchSize;
+            from += batchSize;
+          } else {
+            hasMore = false;
           }
-
-          allLines.forEach((line: any) => {
-            balances[accId].debit += (line.debit || 0);
-            balances[accId].credit += (line.credit || 0);
-          });
         }
-
-        const result: WatchedAccount[] = watched.map((w: any) => {
-          const acc = w.chart_of_accounts as any;
-          const bal = balances[w.account_id] || { debit: 0, credit: 0 };
-          return {
-            id: w.id,
-            account_id: w.account_id,
-            account_code: acc?.code || '',
-            account_name: acc?.name_ar || '',
-            account_name_en: acc?.name_en || '',
-            totalDebit: bal.debit,
-            totalCredit: bal.credit,
-            balance: bal.debit - bal.credit,
-          };
-        });
-        setWatchedAccounts(result);
       } else {
-        // For date-filtered views, fetch with date filtering
         const startStr = format(dateRange.start, 'yyyy-MM-dd');
         const endStr = format(dateRange.end, 'yyyy-MM-dd');
         
-        const balances: Record<string, { debit: number; credit: number }> = {};
-        accountIds.forEach(id => { balances[id] = { debit: 0, credit: 0 }; });
-
-        for (const accId of accountIds) {
-          let allLines: any[] = [];
-          let from = 0;
-          const batchSize = 1000;
-          let hasMore = true;
+        let from = 0;
+        const batchSize = 1000;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const { data: batch } = await supabase
+            .from('journal_entry_lines')
+            .select('account_id, debit, credit, journal_entries!inner(date)')
+            .in('account_id', accountIds)
+            .gte('journal_entries.date', startStr)
+            .lte('journal_entries.date', endStr)
+            .range(from, from + batchSize - 1);
           
-          while (hasMore) {
-            const { data: batch } = await supabase
-              .from('journal_entry_lines')
-              .select('debit, credit, journal_entries!inner(date)')
-              .eq('account_id', accId)
-              .gte('journal_entries.date', startStr)
-              .lte('journal_entries.date', endStr)
-              .range(from, from + batchSize - 1);
-            
-            if (batch && batch.length > 0) {
-              allLines = allLines.concat(batch);
-              hasMore = batch.length === batchSize;
-              from += batchSize;
-            } else {
-              hasMore = false;
-            }
+          if (batch && batch.length > 0) {
+            batch.forEach((line: any) => {
+              if (balances[line.account_id]) {
+                balances[line.account_id].debit += (line.debit || 0);
+                balances[line.account_id].credit += (line.credit || 0);
+              }
+            });
+            hasMore = batch.length === batchSize;
+            from += batchSize;
+          } else {
+            hasMore = false;
           }
-
-          allLines.forEach((line: any) => {
-            balances[accId].debit += (line.debit || 0);
-            balances[accId].credit += (line.credit || 0);
-          });
         }
-
-        const result: WatchedAccount[] = watched.map((w: any) => {
-          const acc = w.chart_of_accounts as any;
-          const bal = balances[w.account_id] || { debit: 0, credit: 0 };
-          return {
-            id: w.id,
-            account_id: w.account_id,
-            account_code: acc?.code || '',
-            account_name: acc?.name_ar || '',
-            account_name_en: acc?.name_en || '',
-            totalDebit: bal.debit,
-            totalCredit: bal.credit,
-            balance: bal.debit - bal.credit,
-          };
-        });
-        setWatchedAccounts(result);
       }
 
-      // balances already set inside the if/else blocks above
+      const result: WatchedAccount[] = watched.map((w: any) => {
+        const acc = w.chart_of_accounts as any;
+        const bal = balances[w.account_id] || { debit: 0, credit: 0 };
+        return {
+          id: w.id,
+          account_id: w.account_id,
+          account_code: acc?.code || '',
+          account_name: acc?.name_ar || '',
+          account_name_en: acc?.name_en || '',
+          totalDebit: bal.debit,
+          totalCredit: bal.credit,
+          balance: bal.debit - bal.credit,
+        };
+      });
+      setWatchedAccounts(result);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -213,7 +207,6 @@ const ImportantBalances = () => {
   };
 
   const handleAddAccount = async (accountId: string) => {
-    // Check if already added
     if (watchedAccounts.some(w => w.account_id === accountId)) {
       toast({ title: "الحساب مضاف مسبقاً", variant: "destructive" });
       return;
@@ -250,24 +243,34 @@ const ImportantBalances = () => {
         .from('ledger_entries')
         .select('*')
         .eq('account_id', acc.account_id)
-        .order('entry_date', { ascending: true })
-        .order('created_at', { ascending: true });
+        .order('entry_date', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      let runningBalance = 0;
-      const entries: LedgerEntry[] = (data || []).map(e => {
-        runningBalance += (e.debit || 0) - (e.credit || 0);
-        return {
-          id: e.id,
-          entry_date: e.entry_date,
-          description: e.description || '',
-          reference: e.reference || '',
-          debit: e.debit || 0,
-          credit: e.credit || 0,
-          balance: runningBalance,
-        };
+      // Calculate running balance from oldest to newest first, then reverse for display
+      const sorted = [...(data || [])].sort((a, b) => {
+        if (a.entry_date !== b.entry_date) return a.entry_date.localeCompare(b.entry_date);
+        return (a.created_at || '').localeCompare(b.created_at || '');
       });
+
+      let runningBalance = 0;
+      const balanceMap = new Map<string, number>();
+      sorted.forEach(e => {
+        runningBalance += (e.debit || 0) - (e.credit || 0);
+        balanceMap.set(e.id, runningBalance);
+      });
+
+      // Display newest first
+      const entries: LedgerEntry[] = (data || []).map(e => ({
+        id: e.id,
+        entry_date: e.entry_date,
+        description: e.description || '',
+        reference: e.reference || '',
+        debit: e.debit || 0,
+        credit: e.credit || 0,
+        balance: balanceMap.get(e.id) || 0,
+      }));
       setLedgerEntries(entries);
     } catch (error) {
       console.error('Error loading ledger:', error);
@@ -293,6 +296,9 @@ const ImportantBalances = () => {
 
   const formatNum = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  const today = new Date();
+  const dayNames = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
@@ -315,15 +321,61 @@ const ImportantBalances = () => {
         </div>
       </header>
 
+      {/* Current Month Days Strip */}
+      <div className="border-b bg-card/50 print:hidden">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">
+              أيام {format(today, 'MMMM yyyy', { locale: ar })}
+            </span>
+          </div>
+          <ScrollArea className="w-full" dir="rtl">
+            <div className="flex gap-1.5 pb-2">
+              {currentMonthDays.map((day) => {
+                const isToday = isSameDay(day, today);
+                const isSelected = dateFilter === 'specificDay' && specificDay && isSameDay(day, specificDay);
+                const isFuture = day > today;
+                const dayOfWeek = day.getDay();
+                const isFriday = dayOfWeek === 5;
+                
+                return (
+                  <button
+                    key={day.getDate()}
+                    disabled={isFuture}
+                    onClick={() => handleDayClick(day)}
+                    className={`flex flex-col items-center min-w-[3rem] px-2 py-1.5 rounded-lg border text-xs transition-all ${
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : isToday
+                        ? 'bg-accent text-accent-foreground border-accent font-bold'
+                        : isFuture
+                        ? 'opacity-30 cursor-not-allowed border-border'
+                        : isFriday
+                        ? 'border-border bg-muted/30 hover:bg-muted hover:border-primary/30'
+                        : 'border-border hover:bg-muted hover:border-primary/30 cursor-pointer'
+                    }`}
+                  >
+                    <span className="text-[10px] leading-tight opacity-70">{dayNames[dayOfWeek]}</span>
+                    <span className="text-sm font-bold leading-tight">{day.getDate()}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+      </div>
+
       {/* Quick Filters */}
-      <div className="container mx-auto px-4 py-4 print:hidden">
+      <div className="container mx-auto px-4 py-3 print:hidden">
         <div className="flex flex-wrap gap-2">
           {filterButtons.map(f => (
             <Button
               key={f.key}
               variant={dateFilter === f.key ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setDateFilter(f.key)}
+              onClick={() => { setDateFilter(f.key); setSpecificDay(null); }}
               className="rounded-full"
             >
               {f.label}
@@ -332,7 +384,10 @@ const ImportantBalances = () => {
         </div>
         {dateRange && (
           <p className="text-xs text-muted-foreground mt-2">
-            الفترة: {format(dateRange.start, 'yyyy/MM/dd', { locale: ar })} - {format(dateRange.end, 'yyyy/MM/dd', { locale: ar })}
+            {dateFilter === 'specificDay' && specificDay
+              ? `اليوم: ${format(specificDay, 'EEEE yyyy/MM/dd', { locale: ar })}`
+              : `الفترة: ${format(dateRange.start, 'yyyy/MM/dd', { locale: ar })} - ${format(dateRange.end, 'yyyy/MM/dd', { locale: ar })}`
+            }
           </p>
         )}
       </div>
@@ -484,8 +539,8 @@ const ImportantBalances = () => {
                     <TableCell colSpan={4} className="text-right">الإجمالي</TableCell>
                     <TableCell className="text-red-600">{formatNum(ledgerEntries.reduce((s, e) => s + e.debit, 0))}</TableCell>
                     <TableCell className="text-emerald-600">{formatNum(ledgerEntries.reduce((s, e) => s + e.credit, 0))}</TableCell>
-                    <TableCell className={`${ledgerEntries.length > 0 && ledgerEntries[ledgerEntries.length - 1].balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                      {ledgerEntries.length > 0 ? `${formatNum(Math.abs(ledgerEntries[ledgerEntries.length - 1].balance))} ${ledgerEntries[ledgerEntries.length - 1].balance > 0 ? 'مدين' : 'دائن'}` : '-'}
+                    <TableCell className={`${ledgerEntries.length > 0 && ledgerEntries[0].balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {ledgerEntries.length > 0 ? `${formatNum(Math.abs(ledgerEntries[0].balance))} ${ledgerEntries[0].balance > 0 ? 'مدين' : 'دائن'}` : '-'}
                     </TableCell>
                   </TableRow>
                 </TableBody>
