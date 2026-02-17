@@ -2138,7 +2138,11 @@ const JournalEntries = () => {
                     </div>
 
                     {/* معلومات القيد */}
-                    <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
+                    <div className="grid grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded">
+                      <div>
+                        <div className="text-sm text-gray-600">المسلسل</div>
+                        <div className="font-bold text-lg text-blue-800 font-mono">{selectedEntry.universalSerial || '—'}</div>
+                      </div>
                       <div>
                         <div className="text-sm text-gray-600">رقم القيد</div>
                         <div className="font-bold text-lg text-gray-800">{selectedEntry.entryNumber}</div>
