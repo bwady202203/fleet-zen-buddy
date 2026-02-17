@@ -1999,15 +1999,32 @@ const [newDateValue, setNewDateValue] = useState('');
             print-color-adjust: exact !important;
           }
           
-          /* Hide everything */
+          /* Hide everything by default */
           body * {
             visibility: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
           }
           
-          /* Show only print wrapper and its contents */
+          /* Reset body containers to not take space */
+          body, #root, #root > * {
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+
+          /* Show print wrapper and contents */
           #print-wrapper,
           #print-wrapper * {
             visibility: visible !important;
+            height: auto !important;
+            overflow: visible !important;
+            margin: unset !important;
+            padding: unset !important;
           }
 
           #print-wrapper {
@@ -2016,10 +2033,8 @@ const [newDateValue, setNewDateValue] = useState('');
             top: 0 !important;
             left: 0 !important;
             width: 210mm !important;
-            height: auto !important;
             z-index: 99999 !important;
             background: white !important;
-            overflow: visible !important;
           }
           
           #print-wrapper #print-content {
