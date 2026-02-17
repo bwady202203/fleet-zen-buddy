@@ -316,6 +316,10 @@ export default function PaymentVouchers() {
         entryNumber = `JE-${year}${String(lastNumber + 1).padStart(6, "0")}`;
       }
 
+      // Generate universal serial for payment voucher
+      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'PV' });
+      const universalSerial = serialData as string;
+
       // Create journal entry
       const { data: journalEntry, error: entryError } = await supabase
         .from("journal_entries")
@@ -325,6 +329,7 @@ export default function PaymentVouchers() {
           description: `سند صرف رقم ${voucherNumber}`,
           reference: `payment_voucher_${voucherId}`,
           created_by: user?.id,
+          universal_serial: universalSerial,
         }])
         .select()
         .single();
