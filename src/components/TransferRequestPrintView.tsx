@@ -31,8 +31,8 @@ interface Props {
   companyName?: string;
 }
 
-const ITEMS_PER_FIRST_PAGE = 12;
-const ITEMS_PER_OTHER_PAGE = 18;
+const ITEMS_PER_FIRST_PAGE = 11;
+const ITEMS_PER_OTHER_PAGE = 16;
 
 const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة الرمال الناعمة' }: Props) => {
   const requestDate = new Date(request.request_date);
@@ -178,7 +178,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
     fontWeight: '700',
     textAlign: 'center',
     fontSize: '16px',
-    height: '25mm',
+    height: '27.5mm',
     verticalAlign: 'middle',
     ...extra,
   });
@@ -187,7 +187,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
     border: `1px solid ${BORDER}`,
     padding: '8px 12px',
     fontSize: '16px',
-    height: '16mm',
+    height: '17.6mm',
     verticalAlign: 'middle',
     ...extra,
   });
@@ -223,7 +223,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
       marginTop: 'auto',
       paddingTop: '10mm',
       borderTop: `2px solid ${PRIMARY}`,
-      height: '30mm',
+      height: '33mm',
     }}>
       {[
         { title: 'المحاسب', name: 'حارس' },
