@@ -1387,6 +1387,7 @@ export type Database = {
           id: string
           organization_id: string | null
           reference: string | null
+          universal_serial: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1398,6 +1399,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           reference?: string | null
+          universal_serial?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1409,6 +1411,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           reference?: string | null
+          universal_serial?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -3395,6 +3398,7 @@ export type Database = {
         }
         Returns: string
       }
+      generate_universal_serial: { Args: { prefix: string }; Returns: string }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_organizations: { Args: { _user_id: string }; Returns: string[] }
       get_user_role: { Args: { _user_id: string }; Returns: string }

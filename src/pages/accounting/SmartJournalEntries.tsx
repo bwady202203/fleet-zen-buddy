@@ -1555,6 +1555,10 @@ export default function SmartJournalEntries() {
         entryNumber = `JE-${year}${String(lastNumber + 1).padStart(6, "0")}`;
       }
 
+      // Generate universal serial for smart journal
+      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'ST' });
+      const universalSerial = serialData as string;
+
       // Create journal entry
       const { data: journalEntry, error: entryError } = await supabase
         .from("journal_entries")
@@ -1563,7 +1567,8 @@ export default function SmartJournalEntries() {
           date: entryDate,
           description: entryDescription || "قيد ذكي",
           reference: `smart_journal_${Date.now()}`,
-          created_by: user?.id
+          created_by: user?.id,
+          universal_serial: universalSerial
         })
         .select()
         .single();

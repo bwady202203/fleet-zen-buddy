@@ -371,6 +371,10 @@ const CustodyExpenses = () => {
         const randomPart = Math.floor(Math.random() * 1000);
         const entryNumber = `JE-${timestamp}-${randomPart}`;
 
+        // Generate universal serial for custody expense
+        const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'JE' });
+        const universalSerial = serialData as string;
+
         const { data: journalEntry, error: journalError } = await supabase
           .from('journal_entries')
           .insert([{
@@ -378,7 +382,8 @@ const CustodyExpenses = () => {
             date: expenseDateStr,
             description: `مصروفات ${repAccount.name_ar} - ${expenseDateStr}`,
             reference: `custody_daily_${selectedRepId}_${expenseDateStr}`,
-            created_by: user?.id
+            created_by: user?.id,
+            universal_serial: universalSerial
           }])
           .select()
           .single();
