@@ -341,20 +341,21 @@ const JournalEntries = () => {
   });
 
   useEffect(() => {
-    if (isNewEntryPage && !formData.entryNumber) {
+    if (isNewEntryPage) {
       generateNextEntryNumber();
     }
-  }, [isNewEntryPage]);
+  }, [isNewEntryPage, formData.date]);
 
   const generateNextEntryNumber = async () => {
     try {
-      const currentYear = new Date().getFullYear();
+      // استخدام سنة تاريخ القيد المختار وليس السنة الحالية
+      const entryYear = formData.date ? new Date(formData.date).getFullYear() : new Date().getFullYear();
       
-      // البحث عن أعلى رقم قيد للسنة الحالية فقط
+      // البحث عن أعلى رقم قيد لسنة القيد المحدد
       const { data, error } = await supabase
         .from('journal_entries')
         .select('entry_number')
-        .like('entry_number', `JE-${currentYear}%`)
+        .like('entry_number', `JE-${entryYear}%`)
         .order('entry_number', { ascending: false })
         .limit(1);
 
@@ -372,12 +373,12 @@ const JournalEntries = () => {
         }
       }
 
-      const newEntryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
+      const newEntryNumber = `JE-${entryYear}${nextNumber.toString().padStart(6, '0')}`;
       setFormData(prev => ({ ...prev, entryNumber: newEntryNumber }));
     } catch (error) {
       console.error('Error generating entry number:', error);
-      // في حالة الخطأ، استخدم رقم افتراضي
-      const fallbackNumber = `JE-${new Date().getFullYear()}${Date.now().toString().slice(-6)}`;
+      const entryYear = formData.date ? new Date(formData.date).getFullYear() : new Date().getFullYear();
+      const fallbackNumber = `JE-${entryYear}${Date.now().toString().slice(-6)}`;
       setFormData(prev => ({ ...prev, entryNumber: fallbackNumber }));
     }
   };
