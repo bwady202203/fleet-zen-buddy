@@ -164,39 +164,44 @@ const [newDateValue, setNewDateValue] = useState('');
    const fetchRequests = async () => {
      setLoading(true);
      try {
-       const { data: requestsData, error: requestsError } = await supabase
-         .from('transfer_requests')
-         .select('*')
-         .order('request_number', { ascending: false });
+       // Fetch all requests and all items in parallel (2 queries instead of N+1)
+       const [requestsRes, itemsRes] = await Promise.all([
+         supabase
+           .from('transfer_requests')
+           .select('*')
+           .order('request_number', { ascending: false }),
+         supabase
+           .from('transfer_request_items')
+           .select('id, transfer_request_id, serial_number, description, amount, account_id, has_tax, is_tax_row, parent_item_id, created_at')
+           .order('serial_number')
+       ]);
  
-       if (requestsError) throw requestsError;
+       if (requestsRes.error) throw requestsRes.error;
+       if (itemsRes.error) throw itemsRes.error;
  
-        // Fetch items for each request with tax fields
-        const requestsWithItems: TransferRequest[] = [];
-        for (const req of requestsData || []) {
-          const { data: items } = await supabase
-            .from('transfer_request_items')
-            .select('id, transfer_request_id, serial_number, description, amount, account_id, has_tax, is_tax_row, parent_item_id, created_at')
-            .eq('transfer_request_id', req.id)
-            .order('serial_number');
-          
-          // Map items with tax fields
-          const mappedItems: TransferRequestItem[] = (items || []).map(item => ({
-            id: item.id,
-            serial_number: item.serial_number,
-            description: item.description,
-            amount: item.amount,
-            account_id: item.account_id,
-            has_tax: item.has_tax || false,
-            is_tax_row: item.is_tax_row || false,
-            parent_item_id: item.parent_item_id || undefined
-          }));
-          
-          requestsWithItems.push({
-            ...req,
-            items: mappedItems
-          });
-        }
+       // Group items by transfer_request_id
+       const itemsByRequestId = new Map<string, TransferRequestItem[]>();
+       for (const item of itemsRes.data || []) {
+         const requestId = item.transfer_request_id;
+         if (!itemsByRequestId.has(requestId)) {
+           itemsByRequestId.set(requestId, []);
+         }
+         itemsByRequestId.get(requestId)!.push({
+           id: item.id,
+           serial_number: item.serial_number,
+           description: item.description,
+           amount: item.amount,
+           account_id: item.account_id,
+           has_tax: item.has_tax || false,
+           is_tax_row: item.is_tax_row || false,
+           parent_item_id: item.parent_item_id || undefined
+         });
+       }
+ 
+       const requestsWithItems: TransferRequest[] = (requestsRes.data || []).map(req => ({
+         ...req,
+         items: itemsByRequestId.get(req.id) || []
+       }));
  
        setRequests(requestsWithItems);
      } catch (error) {
