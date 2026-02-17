@@ -485,7 +485,12 @@ export default function BankStatementImport() {
         <Card className="p-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">الصق بيانات كشف الحساب البنكي:</label>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">الصق بيانات كشف الحساب البنكي:</label>
+                <span className="text-xs text-muted-foreground font-light">
+                  (قم بنسخ الجدول من البنك أو ملف إكسيل ولصقه هنا. يدعم النظام التعرف التلقائي على أعمدة: التاريخ، المدين، الدائن، الوصف، والوصول إلى 10 أعمدة)
+                </span>
+              </div>
               {parsedBankStatements.length > 0 && (
                 <div className="flex gap-2">
                   <Button
