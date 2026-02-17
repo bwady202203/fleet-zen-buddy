@@ -29,12 +29,13 @@ interface Props {
   request: TransferRequest;
   accounts: Account[];
   companyName?: string;
+  scale?: number;
 }
 
 const ITEMS_PER_FIRST_PAGE = 11;
 const ITEMS_PER_OTHER_PAGE = 16;
 
-const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة الرمال الناعمة' }: Props) => {
+const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة الرمال الناعمة', scale = 1 }: Props) => {
   const requestDate = new Date(request.request_date);
   const gregorianDate = format(requestDate, 'yyyy/MM/dd');
 
@@ -85,17 +86,23 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   const PRIMARY = '#1F3A5F';
   const BORDER = '#C5CED8';
 
+  // Scale helper
+  const s = (val: number) => val * scale;
+  const sPx = (val: number) => `${val * scale}px`;
+  const sMm = (val: number) => `${val * scale}mm`;
+  const sPt = (val: number) => `${val * scale}pt`;
+
   const pageStyle: React.CSSProperties = {
     width: '210mm',
     height: '297mm',
-    paddingTop: '15mm',
-    paddingBottom: '20mm',
-    paddingRight: '15mm',
-    paddingLeft: '15mm',
+    paddingTop: sMm(15),
+    paddingBottom: sMm(20),
+    paddingRight: sMm(15),
+    paddingLeft: sMm(15),
     backgroundColor: '#FFFFFF',
     color: '#222222',
     fontFamily: 'Cairo, sans-serif',
-    fontSize: '16px',
+    fontSize: sPx(16),
     lineHeight: '1.5',
     direction: 'rtl',
     display: 'flex',
@@ -106,17 +113,17 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   };
 
   const renderHeader = (pageNum: number) => (
-    <div style={{ marginBottom: '8mm' }}>
+    <div style={{ marginBottom: sMm(8) }}>
       {/* Company Name */}
       <div style={{
         textAlign: 'center',
         backgroundColor: PRIMARY,
-        padding: '14px 24px',
+        padding: `${s(14)}px ${s(24)}px`,
         borderRadius: '4px',
-        marginBottom: '6mm',
+        marginBottom: sMm(6),
       }}>
         <h1 style={{
-          fontSize: '32pt',
+          fontSize: sPt(32),
           fontWeight: '700',
           color: '#FFFFFF',
           margin: '0',
@@ -132,37 +139,37 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '12px 24px',
+        padding: `${s(12)}px ${s(24)}px`,
         backgroundColor: '#FFFFFF',
         borderRadius: '4px',
         border: `2px solid ${BORDER}`,
-        fontSize: '16px',
+        fontSize: sPx(16),
         color: '#333',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '13px', color: '#777', marginBottom: '3px' }}>التاريخ الهجري</span>
-          <strong style={{ fontSize: '16px', fontWeight: '700' }}>{hijriDate} هـ</strong>
+          <span style={{ display: 'block', fontSize: sPx(13), color: '#777', marginBottom: '3px' }}>التاريخ الهجري</span>
+          <strong style={{ fontSize: sPx(16), fontWeight: '700' }}>{hijriDate} هـ</strong>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '13px', color: '#777', marginBottom: '3px' }}>رقم الطلب</span>
-          <strong style={{ fontSize: '20px', fontWeight: '800', color: PRIMARY }}>#{request.request_number}</strong>
+          <span style={{ display: 'block', fontSize: sPx(13), color: '#777', marginBottom: '3px' }}>رقم الطلب</span>
+          <strong style={{ fontSize: sPx(20), fontWeight: '800', color: PRIMARY }}>#{request.request_number}</strong>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '13px', color: '#777', marginBottom: '3px' }}>التاريخ الميلادي</span>
-          <strong style={{ fontSize: '16px', fontWeight: '700' }}>{gregorianDate}</strong>
+          <span style={{ display: 'block', fontSize: sPx(13), color: '#777', marginBottom: '3px' }}>التاريخ الميلادي</span>
+          <strong style={{ fontSize: sPx(16), fontWeight: '700' }}>{gregorianDate}</strong>
         </div>
       </div>
 
       {/* Document Title */}
       <h2 style={{
         textAlign: 'center',
-        fontSize: '18pt',
+        fontSize: sPt(18),
         fontWeight: '700',
-        marginTop: '6mm',
+        marginTop: sMm(6),
         marginBottom: '0',
         color: '#FFFFFF',
         backgroundColor: PRIMARY,
-        padding: '10px 24px',
+        padding: `${s(10)}px ${s(24)}px`,
         borderRadius: '4px',
       }}>
         طلب تحويل {pageNum > 1 ? `(تابع - صفحة ${pageNum})` : ''}
@@ -172,22 +179,22 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
 
   const thStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
     border: `1.5px solid ${BORDER}`,
-    padding: '10px 12px',
+    padding: `${s(10)}px ${s(12)}px`,
     backgroundColor: PRIMARY,
     color: '#FFFFFF',
     fontWeight: '700',
     textAlign: 'center',
-    fontSize: '16px',
-    height: '27.5mm',
+    fontSize: sPx(16),
+    height: sMm(27.5),
     verticalAlign: 'middle',
     ...extra,
   });
 
   const tdStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
     border: `1px solid ${BORDER}`,
-    padding: '8px 12px',
-    fontSize: '16px',
-    height: '17.6mm',
+    padding: `${s(8)}px ${s(12)}px`,
+    fontSize: sPx(16),
+    height: sMm(17.6),
     verticalAlign: 'middle',
     ...extra,
   });
@@ -206,9 +213,9 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   const renderFooter = (pageNum: number) => (
     <div style={{
       marginTop: 'auto',
-      paddingTop: '4mm',
+      paddingTop: sMm(4),
       textAlign: 'center',
-      fontSize: '13px',
+      fontSize: sPx(13),
       color: '#999',
       borderTop: `1px solid ${BORDER}`,
     }}>
@@ -221,9 +228,9 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
       display: 'flex',
       justifyContent: 'space-between',
       marginTop: 'auto',
-      paddingTop: '10mm',
+      paddingTop: sMm(10),
       borderTop: `2px solid ${PRIMARY}`,
-      height: '33mm',
+      height: sMm(33),
     }}>
       {[
         { title: 'المحاسب', name: 'حارس' },
@@ -231,8 +238,8 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         { title: 'المدير العام', name: 'ناجي الجهني' },
       ].map((sig, i) => (
         <div key={i} style={{ textAlign: 'center', width: '30%' }}>
-          <p style={{ marginBottom: '10mm', fontWeight: '700', color: PRIMARY, fontSize: '16px' }}>{sig.title}</p>
-          <p style={{ fontWeight: '700', color: PRIMARY, fontSize: '14px', marginBottom: '8mm' }}>{sig.name}</p>
+          <p style={{ marginBottom: sMm(10), fontWeight: '700', color: PRIMARY, fontSize: sPx(16) }}>{sig.title}</p>
+          <p style={{ fontWeight: '700', color: PRIMARY, fontSize: sPx(14), marginBottom: sMm(8) }}>{sig.name}</p>
           <div style={{ borderBottom: `2px solid ${PRIMARY}`, width: '80%', margin: '0 auto' }} />
         </div>
       ))}
@@ -240,13 +247,13 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   );
 
   const renderTotal = () => (
-    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '5mm', marginTop: '5mm' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: sMm(5), marginTop: sMm(5) }}>
       <div style={{
-        fontSize: '20pt',
+        fontSize: sPt(20),
         fontWeight: '700',
         color: PRIMARY,
         backgroundColor: '#EDF1F7',
-        padding: '12px 28px',
+        padding: `${s(12)}px ${s(28)}px`,
         borderRadius: '4px',
         border: `2.5px solid ${PRIMARY}`,
       }}>
@@ -254,7 +261,7 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         <span style={{ marginRight: '10px', fontWeight: '800', color: '#000' }}>
           {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
-        <span style={{ fontSize: '16px' }}> ريال سعودي</span>
+        <span style={{ fontSize: sPx(16) }}> ريال سعودي</span>
       </div>
     </div>
   );
@@ -263,12 +270,12 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
     if (!request.notes) return null;
     return (
       <div style={{
-        marginBottom: '5mm',
-        padding: '10px 14px',
+        marginBottom: sMm(5),
+        padding: `${s(10)}px ${s(14)}px`,
         backgroundColor: '#FEF9E7',
         borderRadius: '4px',
         border: `1px solid #F0DFA0`,
-        fontSize: '16px',
+        fontSize: sPx(16),
       }}>
         <strong style={{ color: '#7A6200' }}>ملاحظات: </strong>
         <span>{request.notes}</span>

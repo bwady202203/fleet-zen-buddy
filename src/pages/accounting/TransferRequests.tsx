@@ -8,7 +8,7 @@
  import { toast } from 'sonner';
  import { useAuth } from '@/contexts/AuthContext';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-  import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search, XCircle, RotateCcw, Pencil } from 'lucide-react';
+  import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search, XCircle, RotateCcw, Pencil, ZoomIn, ZoomOut } from 'lucide-react';
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
@@ -23,6 +23,7 @@ import { useDeleteConfirmation } from '@/components/DeleteConfirmationDialog';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import TransferRequestPrintView from '@/components/TransferRequestPrintView';
+import { Slider } from '@/components/ui/slider';
  
 interface TransferRequest {
   id: string;
@@ -87,6 +88,7 @@ const [newAmountValue, setNewAmountValue] = useState('');
 // Edit date dialog state
 const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
 const [newDateValue, setNewDateValue] = useState('');
+const [printScale, setPrintScale] = useState(1);
   
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
@@ -1926,14 +1928,40 @@ const [newDateValue, setNewDateValue] = useState('');
                            <Trash2 className="h-4 w-4" />
                            حذف
                          </Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePrint(request)} className="gap-2">
-                           <Printer className="h-4 w-4" />
-                           طباعة
+                         <Button variant="outline" size="sm" onClick={() => handlePrint(request)} className="gap-2">
+                            <Printer className="h-4 w-4" />
+                            طباعة
+                          </Button>
+                         <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(request)} className="gap-2">
+                           <FileDown className="h-4 w-4" />
+                           تحميل PDF
                          </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(request)} className="gap-2">
-                          <FileDown className="h-4 w-4" />
-                          تحميل PDF
-                        </Button>
+                       </div>
+                       {/* أداة التحكم بحجم المعاينة */}
+                       <div className="flex items-center gap-3 mt-3 p-3 bg-muted/50 rounded-lg border">
+                         <ZoomOut className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                         <Slider
+                           value={[printScale * 100]}
+                           onValueChange={(val) => setPrintScale(val[0] / 100)}
+                           min={70}
+                           max={130}
+                           step={5}
+                           className="w-40"
+                         />
+                         <ZoomIn className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                         <span className="text-xs text-muted-foreground font-medium min-w-[3rem] text-center">
+                           {Math.round(printScale * 100)}%
+                         </span>
+                         {printScale !== 1 && (
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => setPrintScale(1)}
+                             className="h-6 px-2 text-xs"
+                           >
+                             إعادة ضبط
+                           </Button>
+                         )}
                        </div>
                      </CardContent>
                    </Card>
@@ -1968,6 +1996,7 @@ const [newDateValue, setNewDateValue] = useState('');
             <TransferRequestPrintView 
               request={printingRequest} 
               accounts={accounts}
+              scale={printScale}
             />
           </div>
         </>
