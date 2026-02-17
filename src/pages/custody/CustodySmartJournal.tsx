@@ -701,6 +701,10 @@ export default function CustodySmartJournal() {
         entryNumber = `JE-${year}${String(lastNumber + 1).padStart(6, "0")}`;
       }
 
+      // Generate universal serial for custody smart journal
+      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'CS' });
+      const universalSerial = serialData as string;
+
       // Create journal entry with custody reference
       const { data: journalEntry, error: entryError } = await supabase
         .from("journal_entries")
@@ -709,7 +713,8 @@ export default function CustodySmartJournal() {
           date: entryDate,
           description: entryDescription || "قيد عهدة ذكي",
           reference: `custody_smart_${Date.now()}`,
-          created_by: user?.id
+          created_by: user?.id,
+          universal_serial: universalSerial
         })
         .select()
         .single();

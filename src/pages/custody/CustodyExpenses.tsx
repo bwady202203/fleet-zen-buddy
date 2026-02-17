@@ -372,7 +372,7 @@ const CustodyExpenses = () => {
         const entryNumber = `JE-${timestamp}-${randomPart}`;
 
         // Generate universal serial for custody expense
-        const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'JE' });
+        const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'CD' });
         const universalSerial = serialData as string;
 
         const { data: journalEntry, error: journalError } = await supabase

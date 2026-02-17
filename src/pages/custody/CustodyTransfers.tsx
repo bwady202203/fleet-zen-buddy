@@ -102,7 +102,7 @@ const CustodyTransfers = () => {
       const entryNumber = `JE-${timestamp}-${randomPart}`;
 
       // Generate universal serial for custody transfer
-      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'JE' });
+      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'CT' });
       const universalSerial = serialData as string;
 
       // Insert journal entry
