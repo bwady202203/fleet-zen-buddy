@@ -361,20 +361,25 @@ const [newDateValue, setNewDateValue] = useState('');
      }
  
      try {
-       // Create journal entry
-       const entryNumber = `TR-${request.request_number}`;
-       
-       const { data: journalEntry, error: journalError } = await supabase
-         .from('journal_entries')
-         .insert({
-           entry_number: entryNumber,
-           date: request.request_date,
-           description: `طلب تحويل رقم ${request.request_number}`,
-           reference: `transfer_request_${request.id}`,
-           created_by: user?.id
-         })
-         .select()
-         .single();
+        // Create journal entry
+        const entryNumber = `TR-${request.request_number}`;
+        
+        // Generate universal serial for transfer request
+        const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'TR' });
+        const universalSerial = serialData as string;
+        
+        const { data: journalEntry, error: journalError } = await supabase
+          .from('journal_entries')
+          .insert({
+            entry_number: entryNumber,
+            date: request.request_date,
+            description: `طلب تحويل رقم ${request.request_number}`,
+            reference: `transfer_request_${request.id}`,
+            created_by: user?.id,
+            universal_serial: universalSerial
+          })
+          .select()
+          .single();
  
        if (journalError) throw journalError;
  

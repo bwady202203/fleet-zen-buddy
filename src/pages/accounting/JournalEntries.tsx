@@ -265,6 +265,7 @@ const JournalEntries = () => {
       const formattedEntries = entries?.map(entry => ({
         id: entry.id,
         entryNumber: entry.entry_number,
+        universalSerial: entry.universal_serial,
         date: entry.date,
         description: entry.description,
         lines: entry.journal_entry_lines.map((line: any) => ({
@@ -1146,6 +1147,7 @@ const JournalEntries = () => {
   const handleExportToExcel = () => {
     const exportData = filteredEntries.flatMap((entry) => {
       return entry.lines.map((line: any) => ({
+        'المسلسل': entry.universalSerial || '',
         'رقم القيد': entry.entryNumber,
         'التاريخ': format(new Date(entry.date), 'dd/MM/yyyy'),
         'البيان العام': entry.description,
@@ -1844,6 +1846,7 @@ const JournalEntries = () => {
                     <TableRow>
                       <TableHead className="text-right w-12"></TableHead>
                       <TableHead className="text-right">م</TableHead>
+                      <TableHead className="text-right">المسلسل</TableHead>
                       <TableHead className="text-right">رقم القيد</TableHead>
                       <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">البيان</TableHead>
@@ -1871,6 +1874,7 @@ const JournalEntries = () => {
                             </Button>
                           </TableCell>
                           <TableCell className="font-medium">{filteredEntries.length - index}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{entry.universalSerial || '—'}</TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
                           <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>{entry.description}</TableCell>
@@ -2086,7 +2090,8 @@ const JournalEntries = () => {
                 try {
                   setIsSaving(true);
                   const { data: { user } } = await supabase.auth.getUser();
-                  const { data: entryData, error: entryError } = await supabase.from('journal_entries').insert({entry_number: formData.entryNumber, date: openingEntryData.date, description: openingEntryData.description, reference: 'opening_entry', created_by: user?.id}).select().single();
+                   const { data: openingSerialData } = await supabase.rpc('generate_universal_serial', { prefix: 'JE' });
+                   const { data: entryData, error: entryError } = await supabase.from('journal_entries').insert({entry_number: formData.entryNumber, date: openingEntryData.date, description: openingEntryData.description, reference: 'opening_entry', created_by: user?.id, universal_serial: openingSerialData as string}).select().single();
                   if (entryError) throw entryError;
                   const { error: linesError } = await supabase.from('journal_entry_lines').insert(validLines.map(line => ({journal_entry_id: entryData.id, account_id: line.accountId, debit: line.debit || 0, credit: line.credit || 0, description: line.description || openingEntryData.description})));
                   if (linesError) throw linesError;

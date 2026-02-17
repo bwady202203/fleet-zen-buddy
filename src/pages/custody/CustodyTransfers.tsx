@@ -101,6 +101,10 @@ const CustodyTransfers = () => {
       const randomPart = Math.floor(Math.random() * 1000);
       const entryNumber = `JE-${timestamp}-${randomPart}`;
 
+      // Generate universal serial for custody transfer
+      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'JE' });
+      const universalSerial = serialData as string;
+
       // Insert journal entry
       const { data: journalEntry, error: journalError } = await supabase
         .from('journal_entries')
@@ -109,7 +113,8 @@ const CustodyTransfers = () => {
           date: format(date, 'yyyy-MM-dd'),
           description: `تحويل عهدة - ${repAccount.name_ar}`,
           reference: `custody_transfer_${transfer.id}`,
-          created_by: user?.id
+          created_by: user?.id,
+          universal_serial: universalSerial
         }])
         .select()
         .single();
