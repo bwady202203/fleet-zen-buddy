@@ -31,8 +31,8 @@ interface Props {
   companyName?: string;
 }
 
-const ITEMS_PER_FIRST_PAGE = 14;
-const ITEMS_PER_OTHER_PAGE = 20;
+const ITEMS_PER_FIRST_PAGE = 12;
+const ITEMS_PER_OTHER_PAGE = 18;
 
 const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة الرمال الناعمة' }: Props) => {
   const requestDate = new Date(request.request_date);
@@ -81,15 +81,22 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
 
   const totalPages = pages.length;
 
+  // Colors
+  const PRIMARY = '#1F3A5F';
+  const BORDER = '#C5CED8';
+
   const pageStyle: React.CSSProperties = {
     width: '210mm',
     height: '297mm',
-    padding: '20mm',
+    paddingTop: '15mm',
+    paddingBottom: '20mm',
+    paddingRight: '15mm',
+    paddingLeft: '15mm',
     backgroundColor: '#FFFFFF',
     color: '#222222',
-    fontFamily: 'Cairo, Tajawal, sans-serif',
-    fontSize: '12px',
-    lineHeight: '1.6',
+    fontFamily: 'Cairo, sans-serif',
+    fontSize: '16px',
+    lineHeight: '1.5',
     direction: 'rtl',
     display: 'flex',
     flexDirection: 'column',
@@ -99,21 +106,22 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   };
 
   const renderHeader = (pageNum: number) => (
-    <div style={{ marginBottom: '6mm' }}>
-      {/* Company Name - solid blue bar */}
+    <div style={{ marginBottom: '8mm' }}>
+      {/* Company Name */}
       <div style={{
         textAlign: 'center',
-        backgroundColor: '#1a3a6b',
-        padding: '12px 20px',
-        borderRadius: '6px',
-        marginBottom: '5mm',
+        backgroundColor: PRIMARY,
+        padding: '14px 24px',
+        borderRadius: '4px',
+        marginBottom: '6mm',
       }}>
         <h1 style={{
-          fontSize: '20px',
+          fontSize: '32pt',
           fontWeight: '700',
           color: '#FFFFFF',
           margin: '0',
-          letterSpacing: '0.5px',
+          letterSpacing: '1px',
+          lineHeight: '1.3',
         }}>
           {companyName}
         </h1>
@@ -124,37 +132,38 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '10px 20px',
+        padding: '12px 24px',
         backgroundColor: '#FFFFFF',
-        borderRadius: '6px',
-        border: '1.5px solid #c5d3e8',
-        fontSize: '13px',
+        borderRadius: '4px',
+        border: `2px solid ${BORDER}`,
+        fontSize: '16px',
         color: '#333',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>التاريخ الهجري</span>
-          <strong style={{ fontSize: '13px', fontWeight: '700' }}>{hijriDate} هـ</strong>
+          <span style={{ display: 'block', fontSize: '13px', color: '#777', marginBottom: '3px' }}>التاريخ الهجري</span>
+          <strong style={{ fontSize: '16px', fontWeight: '700' }}>{hijriDate} هـ</strong>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>رقم الطلب</span>
-          <strong style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a6b' }}>#{request.request_number}</strong>
+          <span style={{ display: 'block', fontSize: '13px', color: '#777', marginBottom: '3px' }}>رقم الطلب</span>
+          <strong style={{ fontSize: '20px', fontWeight: '800', color: PRIMARY }}>#{request.request_number}</strong>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '2px' }}>التاريخ الميلادي</span>
-          <strong style={{ fontSize: '13px', fontWeight: '700' }}>{gregorianDate}</strong>
+          <span style={{ display: 'block', fontSize: '13px', color: '#777', marginBottom: '3px' }}>التاريخ الميلادي</span>
+          <strong style={{ fontSize: '16px', fontWeight: '700' }}>{gregorianDate}</strong>
         </div>
       </div>
 
-      {/* Document Title - solid blue bar */}
+      {/* Document Title */}
       <h2 style={{
         textAlign: 'center',
-        fontSize: '16px',
+        fontSize: '18pt',
         fontWeight: '700',
-        marginTop: '5mm',
+        marginTop: '6mm',
+        marginBottom: '0',
         color: '#FFFFFF',
-        backgroundColor: '#1a3a6b',
-        padding: '8px 20px',
-        borderRadius: '6px',
+        backgroundColor: PRIMARY,
+        padding: '10px 24px',
+        borderRadius: '4px',
       }}>
         طلب تحويل {pageNum > 1 ? `(تابع - صفحة ${pageNum})` : ''}
       </h2>
@@ -162,23 +171,34 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   );
 
   const thStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
-    border: '1px solid #b8c9e0',
-    padding: '8px 10px',
-    backgroundColor: '#1a3a6b',
+    border: `1.5px solid ${BORDER}`,
+    padding: '10px 12px',
+    backgroundColor: PRIMARY,
     color: '#FFFFFF',
     fontWeight: '700',
     textAlign: 'center',
-    fontSize: '12px',
+    fontSize: '16px',
+    height: '25mm',
+    verticalAlign: 'middle',
+    ...extra,
+  });
+
+  const tdStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
+    border: `1px solid ${BORDER}`,
+    padding: '8px 12px',
+    fontSize: '16px',
+    height: '16mm',
+    verticalAlign: 'middle',
     ...extra,
   });
 
   const renderTableHeader = () => (
     <thead>
       <tr>
-        <th style={thStyle({ width: '40px' })}>م</th>
+        <th style={thStyle({ width: '50px' })}>م</th>
         <th style={thStyle({ textAlign: 'right' })}>الوصف</th>
-        <th style={thStyle({ textAlign: 'right', width: '150px' })}>الحساب</th>
-        <th style={thStyle({ textAlign: 'center', width: '100px' })}>المبلغ</th>
+        <th style={thStyle({ textAlign: 'right', width: '180px' })}>الحساب</th>
+        <th style={thStyle({ textAlign: 'center', width: '120px' })}>المبلغ</th>
       </tr>
     </thead>
   );
@@ -188,9 +208,9 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
       marginTop: 'auto',
       paddingTop: '4mm',
       textAlign: 'center',
-      fontSize: '11px',
-      color: '#888',
-      borderTop: '1px solid #ddd',
+      fontSize: '13px',
+      color: '#999',
+      borderTop: `1px solid ${BORDER}`,
     }}>
       صفحة {pageNum} من {totalPages}
     </div>
@@ -201,39 +221,40 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
       display: 'flex',
       justifyContent: 'space-between',
       marginTop: 'auto',
-      paddingTop: '12mm',
-      borderTop: '1.5px solid #1a3a6b',
+      paddingTop: '10mm',
+      borderTop: `2px solid ${PRIMARY}`,
+      height: '30mm',
     }}>
-    {[
+      {[
         { title: 'المحاسب', name: 'حارس' },
         { title: 'المدير التنفيذي', name: 'عمر خضر' },
         { title: 'المدير العام', name: 'ناجي الجهني' },
       ].map((sig, i) => (
         <div key={i} style={{ textAlign: 'center', width: '30%' }}>
-          <p style={{ marginBottom: '12mm', fontWeight: '700', color: '#1a3a6b', fontSize: '14px' }}>{sig.title}</p>
-          <p style={{ fontWeight: '700', color: '#1a3a6b', fontSize: '12px', marginBottom: '15mm' }}>{sig.name}</p>
-          <div style={{ borderBottom: '1.5px solid #1a3a6b', width: '80%', margin: '0 auto' }} />
+          <p style={{ marginBottom: '10mm', fontWeight: '700', color: PRIMARY, fontSize: '16px' }}>{sig.title}</p>
+          <p style={{ fontWeight: '700', color: PRIMARY, fontSize: '14px', marginBottom: '8mm' }}>{sig.name}</p>
+          <div style={{ borderBottom: `2px solid ${PRIMARY}`, width: '80%', margin: '0 auto' }} />
         </div>
       ))}
     </div>
   );
 
   const renderTotal = () => (
-    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '4mm', marginTop: '4mm' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '5mm', marginTop: '5mm' }}>
       <div style={{
-        fontSize: '14px',
+        fontSize: '20pt',
         fontWeight: '700',
-        color: '#1a3a6b',
-        backgroundColor: '#e8eef7',
-        padding: '10px 24px',
-        borderRadius: '6px',
-        border: '2px solid #1a3a6b',
+        color: PRIMARY,
+        backgroundColor: '#EDF1F7',
+        padding: '12px 28px',
+        borderRadius: '4px',
+        border: `2.5px solid ${PRIMARY}`,
       }}>
         <span>الإجمالي: </span>
-        <span style={{ marginRight: '8px', fontWeight: '800', fontSize: '16px', color: '#000' }}>
+        <span style={{ marginRight: '10px', fontWeight: '800', color: '#000' }}>
           {request.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
-        <span> ريال سعودي</span>
+        <span style={{ fontSize: '16px' }}> ريال سعودي</span>
       </div>
     </div>
   );
@@ -242,14 +263,14 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
     if (!request.notes) return null;
     return (
       <div style={{
-        marginBottom: '4mm',
-        padding: '8px 12px',
-        backgroundColor: '#fef9e7',
-        borderRadius: '5px',
-        border: '1px solid #f0dfa0',
-        fontSize: '12px',
+        marginBottom: '5mm',
+        padding: '10px 14px',
+        backgroundColor: '#FEF9E7',
+        borderRadius: '4px',
+        border: `1px solid #F0DFA0`,
+        fontSize: '16px',
       }}>
-        <strong style={{ color: '#7a6200' }}>ملاحظات: </strong>
+        <strong style={{ color: '#7A6200' }}>ملاحظات: </strong>
         <span>{request.notes}</span>
       </div>
     );
@@ -273,45 +294,33 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
             {renderHeader(pageIndex + 1)}
 
             <div style={{ flex: 1 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4mm' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '5mm' }}>
                 {renderTableHeader()}
                 <tbody>
                   {pageItems.map((item, index) => {
                     const globalIndex = isFirstPage ? index : ITEMS_PER_FIRST_PAGE + (pageIndex - 1) * ITEMS_PER_OTHER_PAGE + index;
                     return (
-                      <tr key={item.id} style={{ backgroundColor: item.is_tax_row ? '#f0faf5' : (globalIndex % 2 === 0 ? '#FFFFFF' : '#f7f9fc') }}>
-                        <td style={{
-                          border: '1px solid #d0d9e8',
-                          padding: '7px 8px',
+                      <tr key={item.id} style={{ backgroundColor: item.is_tax_row ? '#F0FAF5' : (globalIndex % 2 === 0 ? '#FFFFFF' : '#F7F9FC') }}>
+                        <td style={tdStyle({
                           textAlign: 'center',
                           fontWeight: '700',
-                          color: item.is_tax_row ? '#0d7a4a' : '#1a3a6b',
-                          fontSize: '11px',
-                        }}>{item.serial_number}</td>
-                        <td style={{
-                          border: '1px solid #d0d9e8',
-                          padding: '7px 8px',
+                          color: item.is_tax_row ? '#0D7A4A' : PRIMARY,
+                        })}>{item.serial_number}</td>
+                        <td style={tdStyle({
                           textAlign: 'right',
-                          fontSize: '11px',
-                          color: item.is_tax_row ? '#0d7a4a' : 'inherit',
+                          color: item.is_tax_row ? '#0D7A4A' : 'inherit',
                           fontWeight: item.is_tax_row ? '600' : 'normal',
-                        }}>{item.is_tax_row ? '📋 ' : ''}{item.description}</td>
-                        <td style={{
-                          border: '1px solid #d0d9e8',
-                          padding: '7px 8px',
+                        })}>{item.is_tax_row ? '📋 ' : ''}{item.description}</td>
+                        <td style={tdStyle({
                           textAlign: 'right',
-                          fontSize: '11px',
-                          color: item.is_tax_row ? '#0d7a4a' : 'inherit',
-                        }}>{item.is_tax_row ? 'ضريبة المشتريات' : getAccountName(item.account_id)}</td>
-                        <td style={{
-                          border: '1px solid #d0d9e8',
-                          padding: '7px 8px',
+                          color: item.is_tax_row ? '#0D7A4A' : 'inherit',
+                        })}>{item.is_tax_row ? 'ضريبة المشتريات' : getAccountName(item.account_id)}</td>
+                        <td style={tdStyle({
                           textAlign: 'center',
-                          fontFamily: 'monospace',
+                          fontFamily: 'Cairo, monospace',
                           fontWeight: '700',
-                          color: item.is_tax_row ? '#0d7a4a' : '#1a3a6b',
-                          fontSize: '12px',
-                        }}>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          color: item.is_tax_row ? '#0D7A4A' : PRIMARY,
+                        })}>{item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                       </tr>
                     );
                   })}
