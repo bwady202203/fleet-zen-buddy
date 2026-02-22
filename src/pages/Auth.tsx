@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { LogIn, Calculator } from 'lucide-react';
+import { LogIn, Calculator, KeyRound } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
@@ -42,6 +46,25 @@ const Auth = () => {
     } else {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error('الرجاء إدخال البريد الإلكتروني');
+      return;
+    }
+    setIsResetting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setIsResetting(false);
+    if (error) {
+      toast.error('حدث خطأ أثناء إرسال رابط إعادة التعيين');
+    } else {
+      toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+      setShowForgotPassword(false);
     }
   };
 
@@ -101,7 +124,41 @@ const Auth = () => {
                 <LogIn className="h-5 w-5" />
                 {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
+
+              <Button
+                type="button"
+                variant="link"
+                className="w-full text-muted-foreground"
+                onClick={() => { setShowForgotPassword(true); setResetEmail(email); }}
+              >
+                <KeyRound className="h-4 w-4 ml-1" />
+                نسيت كلمة المرور؟
+              </Button>
             </form>
+
+            {showForgotPassword && (
+              <div className="mt-4 p-4 rounded-lg border bg-muted/30 space-y-3">
+                <p className="text-sm font-medium">أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور:</p>
+                <form onSubmit={handleForgotPassword} className="space-y-3">
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="h-10"
+                    dir="ltr"
+                  />
+                  <div className="flex gap-2">
+                    <Button type="submit" size="sm" disabled={isResetting} className="flex-1">
+                      {isResetting ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setShowForgotPassword(false)}>
+                      إلغاء
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
           </CardContent>
         </Card>
 
