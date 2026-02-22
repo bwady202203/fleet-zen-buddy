@@ -90,6 +90,7 @@ import VehicleMaintenanceCosts from "./pages/VehicleMaintenanceCosts";
 import VehicleCostReport from "./pages/VehicleCostReport";
 import MaintenancePurchaseInvoices from "./pages/MaintenancePurchaseInvoices";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +113,7 @@ const App = () => {
                         <BrowserRouter>
                           <Routes>
                             <Route path="/auth" element={<Auth />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
                             
                             {/* Protected Routes with Icons Bar */}
                             <Route path="/*" element={
