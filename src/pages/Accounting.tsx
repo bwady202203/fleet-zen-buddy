@@ -465,22 +465,22 @@ const Accounting = () => {
             </div>
           </div>
           
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link to="/" className="hover:text-primary transition-colors">
                 <ArrowRight className="h-6 w-6" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold">المحاسبة المالية</h1>
-                <p className="text-muted-foreground mt-1">
+                <h1 className="text-xl sm:text-3xl font-bold">المحاسبة المالية</h1>
+                <p className="text-muted-foreground mt-1 text-xs sm:text-base">
                   إدارة شاملة للعمليات المحاسبية والتقارير المالية
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {/* Date Display */}
-              <div className="hidden sm:flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-lg">
+              <div className="hidden md:flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-lg">
                 <Calendar className="h-4 w-4 text-primary" />
                 <span className="font-medium">{dayName}</span>
                 <span className="text-muted-foreground">|</span>
@@ -502,10 +502,12 @@ const Accounting = () => {
                 onClick={handleExportData}
                 disabled={isExporting}
                 variant="outline"
-                className="gap-2"
+                className="gap-2 text-xs sm:text-sm"
+                size="sm"
               >
                 <Download className={cn("h-4 w-4", isExporting && "animate-bounce")} />
-                {isExporting ? "جاري التصدير..." : "تصدير البيانات"}
+                <span className="hidden sm:inline">{isExporting ? "جاري التصدير..." : "تصدير البيانات"}</span>
+                <span className="sm:hidden">{isExporting ? "تصدير..." : "تصدير"}</span>
               </Button>
               )}
             </div>

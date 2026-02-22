@@ -84,87 +84,76 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary">
                 <Truck className="h-6 w-6 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
+              <h1 className="text-lg sm:text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* قسم الإدارة */}
-              <div className="flex items-center gap-2 pl-2 border-l">
-                <Link to="/spare-parts">
-                  <Button variant="outline" size="sm">
-                    <Package className="h-4 w-4 ml-2" />
-                    قطع الغيار
-                  </Button>
-                </Link>
-                <Link to="/purchases">
-                  <Button variant="outline" size="sm">
-                    <ShoppingCart className="h-4 w-4 ml-2" />
-                    المشتريات
-                  </Button>
-                </Link>
-                <Link to="/maintenance-purchase-invoices">
-                  <Button variant="outline" size="sm">
-                    <Receipt className="h-4 w-4 ml-2" />
-                    فواتير المشتريات
-                  </Button>
-                </Link>
-              </div>
-
-              {/* قسم التقارير */}
-              <div className="flex items-center gap-2 pl-2 border-l">
-                <Link to="/reports">
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 ml-2" />
-                    تقرير الصيانة
-                  </Button>
-                </Link>
-                <Link to="/vehicle-cost-report">
-                  <Button variant="outline" size="sm">
-                    <Receipt className="h-4 w-4 ml-2" />
-                    تقرير التكاليف
-                  </Button>
-                </Link>
-                <Link to="/vehicle-mileage">
-                  <Button variant="outline" size="sm">
-                    <Gauge className="h-4 w-4 ml-2" />
-                    تقرير الكيلومترات
-                  </Button>
-                </Link>
-              </div>
-
-              {/* قسم العمليات */}
-              <div className="flex items-center gap-2">
-                <Link to="/bulk-vehicles">
-                  <Button variant="outline" size="sm">
-                    <List className="h-4 w-4 ml-2" />
-                    تسجيل عدة مركبات
-                  </Button>
-                </Link>
-                <Link to="/edit-vehicles">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 ml-2" />
-                    تعديل الأسماء
-                  </Button>
-                </Link>
-                <Button variant="outline" size="sm" onClick={exportToExcel} title="تصدير إلى Excel">
-                  <FileSpreadsheet className="h-4 w-4 ml-2" />
-                  تصدير Excel
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap gap-2">
+              <Link to="/spare-parts">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <Package className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">قطع الغيار</span>
                 </Button>
-                <AddVehicleDialog />
-              </div>
+              </Link>
+              <Link to="/purchases">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <ShoppingCart className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">المشتريات</span>
+                </Button>
+              </Link>
+              <Link to="/maintenance-purchase-invoices">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <Receipt className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">فواتير المشتريات</span>
+                </Button>
+              </Link>
+              <Link to="/reports">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <FileText className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">تقرير الصيانة</span>
+                </Button>
+              </Link>
+              <Link to="/vehicle-cost-report">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <Receipt className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">تقرير التكاليف</span>
+                </Button>
+              </Link>
+              <Link to="/vehicle-mileage">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <Gauge className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">تقرير الكيلومترات</span>
+                </Button>
+              </Link>
+              <Link to="/bulk-vehicles">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <List className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">تسجيل عدة مركبات</span>
+                </Button>
+              </Link>
+              <Link to="/edit-vehicles">
+                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                  <Edit className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                  <span className="truncate">تعديل الأسماء</span>
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={exportToExcel} title="تصدير إلى Excel" className="text-xs sm:text-sm">
+                <FileSpreadsheet className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
+                <span className="truncate">تصدير Excel</span>
+              </Button>
+              <AddVehicleDialog />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <section className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">نظرة عامة على الأسطول</h2>
-          <p className="text-muted-foreground mb-6">راقب وأدر جدول صيانة أسطولك</p>
+      <main className="container mx-auto px-4 py-4 sm:py-8">
+        <section className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-3xl font-bold mb-2">نظرة عامة على الأسطول</h2>
+          <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">راقب وأدر جدول صيانة أسطولك</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard

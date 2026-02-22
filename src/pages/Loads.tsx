@@ -128,17 +128,17 @@ const Loads = () => {
               <ArrowRight className="h-6 w-6" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">إدارة الحمولات / Loads Management</h1>
-              <p className="text-muted-foreground mt-1">
-                تتبع وإدارة الشحنات والحمولات / Track and Manage Loads
+              <h1 className="text-xl sm:text-3xl font-bold">إدارة الحمولات</h1>
+              <p className="text-muted-foreground mt-1 text-xs sm:text-base">
+                تتبع وإدارة الشحنات والحمولات
               </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <main className="container mx-auto px-4 py-6 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {sections.map((section) => {
             if (section.onClick) {
               return (
