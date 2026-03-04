@@ -180,13 +180,14 @@ const LoadInvoices = () => {
 
   const updateItem = (index: number, field: string, value: any) => {
     const newItems = [...items];
+    const parseNum = (v: string) => parseFloat(String(v).replace(/,/g, '.')) || 0;
     
     if (field === 'quantity') {
-      const quantity = parseFloat(value) || 0;
+      const quantity = parseNum(value);
       newItems[index].quantity = quantity;
       newItems[index].total = quantity * newItems[index].unitPrice;
     } else if (field === 'unitPrice') {
-      const unitPrice = parseFloat(value) || 0;
+      const unitPrice = parseNum(value);
       newItems[index].unitPrice = unitPrice;
       newItems[index].total = newItems[index].quantity * unitPrice;
     } else {
@@ -697,9 +698,8 @@ const LoadInvoices = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
+                                  type="text"
+                                  inputMode="decimal"
                                   value={item.quantity}
                                   onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                   className="text-right"
@@ -708,9 +708,8 @@ const LoadInvoices = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
+                                  type="text"
+                                  inputMode="decimal"
                                   value={item.unitPrice}
                                   onChange={(e) => updateItem(index, 'unitPrice', e.target.value)}
                                   className="text-right"
@@ -749,11 +748,10 @@ const LoadInvoices = () => {
                     <div className="flex items-center gap-2">
                       <Input
                         id="discount-amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        type="text"
+                        inputMode="decimal"
                         value={discountAmount}
-                        onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => setDiscountAmount(parseFloat(e.target.value.replace(/,/g, '.')) || 0)}
                         className="w-40 h-10 text-right"
                         placeholder="0.00"
                       />
