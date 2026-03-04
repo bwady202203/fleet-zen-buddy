@@ -178,23 +178,37 @@ const LoadInvoices = () => {
     return { subtotal, taxAmount, totalAmount, afterDiscount };
   };
 
+  // Track raw input strings for decimal support
+  const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
+
   const updateItem = (index: number, field: string, value: any) => {
     const newItems = [...items];
-    const parseNum = (v: string) => parseFloat(String(v).replace(/,/g, '.')) || 0;
     
-    if (field === 'quantity') {
-      const quantity = parseNum(value);
-      newItems[index].quantity = quantity;
-      newItems[index].total = quantity * newItems[index].unitPrice;
-    } else if (field === 'unitPrice') {
-      const unitPrice = parseNum(value);
-      newItems[index].unitPrice = unitPrice;
-      newItems[index].total = newItems[index].quantity * unitPrice;
+    if (field === 'quantity' || field === 'unitPrice') {
+      const rawStr = String(value).replace(/,/g, '.');
+      // Allow empty, digits, and one decimal point (including trailing dot like "5.")
+      if (rawStr !== '' && !/^\d*\.?\d*$/.test(rawStr)) return;
+      
+      setRawInputs(prev => ({ ...prev, [`${index}-${field}`]: rawStr }));
+      
+      const numVal = parseFloat(rawStr) || 0;
+      newItems[index][field] = numVal;
+      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
     } else {
       newItems[index][field] = value;
     }
     
     setItems(newItems);
+  };
+
+  const getInputValue = (index: number, field: string, numValue: number) => {
+    const key = `${index}-${field}`;
+    const raw = rawInputs[key];
+    // Show raw value if it ends with dot or has trailing decimal input
+    if (raw !== undefined && (raw.endsWith('.') || raw.endsWith('.0') || raw.endsWith('.00'))) {
+      return raw;
+    }
+    return numValue === 0 && raw === '' ? '' : String(numValue);
   };
 
   const addNewItem = () => {
@@ -700,7 +714,7 @@ const LoadInvoices = () => {
                                 <Input
                                   type="text"
                                   inputMode="decimal"
-                                  value={item.quantity}
+                                  value={getInputValue(index, 'quantity', item.quantity)}
                                   onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                   className="text-right"
                                   placeholder="0"
@@ -710,7 +724,7 @@ const LoadInvoices = () => {
                                 <Input
                                   type="text"
                                   inputMode="decimal"
-                                  value={item.unitPrice}
+                                  value={getInputValue(index, 'unitPrice', item.unitPrice)}
                                   onChange={(e) => updateItem(index, 'unitPrice', e.target.value)}
                                   className="text-right"
                                   placeholder="0.00"
@@ -750,8 +764,13 @@ const LoadInvoices = () => {
                         id="discount-amount"
                         type="text"
                         inputMode="decimal"
-                        value={discountAmount}
-                        onChange={(e) => setDiscountAmount(parseFloat(e.target.value.replace(/,/g, '.')) || 0)}
+                        value={rawInputs['discount'] !== undefined ? rawInputs['discount'] : discountAmount}
+                        onChange={(e) => {
+                          const rawStr = String(e.target.value).replace(/,/g, '.');
+                          if (rawStr !== '' && !/^\d*\.?\d*$/.test(rawStr)) return;
+                          setRawInputs(prev => ({ ...prev, discount: rawStr }));
+                          setDiscountAmount(parseFloat(rawStr) || 0);
+                        }}
                         className="w-40 h-10 text-right"
                         placeholder="0.00"
                       />
