@@ -88,7 +88,8 @@ const [newAmountValue, setNewAmountValue] = useState('');
 // Edit date dialog state
 const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
 const [newDateValue, setNewDateValue] = useState('');
-const [printScale, setPrintScale] = useState(1);
+  const [printScale, setPrintScale] = useState(1);
+  const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
