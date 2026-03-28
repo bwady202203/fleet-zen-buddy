@@ -88,7 +88,8 @@ const [newAmountValue, setNewAmountValue] = useState('');
 // Edit date dialog state
 const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
 const [newDateValue, setNewDateValue] = useState('');
-const [printScale, setPrintScale] = useState(1);
+  const [printScale, setPrintScale] = useState(1);
+  const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
@@ -1605,25 +1606,52 @@ const [printScale, setPrintScale] = useState(1);
 
          {/* قائمة الطلبات */}
           {!isCreating && !editingRequest && (
-           <div className="space-y-4">
-             <h2 className="text-xl font-bold flex items-center gap-2">
-               <FileDown className="h-5 w-5 text-primary" />
-               قائمة طلبات التحويل
-             </h2>
- 
-              {loading ? (
-                <LoadingCup text="جاري تحميل الطلبات..." />
-             ) : requests.length === 0 ? (
-               <Card className="border-dashed">
-                 <CardContent className="text-center py-12">
-                   <SendHorizontal className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                   <p className="text-muted-foreground">لا توجد طلبات تحويل</p>
-                   <p className="text-sm text-muted-foreground/70 mt-1">ابدأ بإنشاء طلب جديد</p>
-                 </CardContent>
-               </Card>
-             ) : (
-               <div className="grid gap-4">
-                 {requests.map((request) => (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <FileDown className="h-5 w-5 text-primary" />
+                  قائمة طلبات التحويل
+                </h2>
+                <div className="relative w-full sm:w-80">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="بحث في وصف البنود..."
+                    value={requestSearchQuery}
+                    onChange={(e) => setRequestSearchQuery(e.target.value)}
+                    className="pr-9"
+                  />
+                  {requestSearchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setRequestSearchQuery('')}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+  
+               {loading ? (
+                 <LoadingCup text="جاري تحميل الطلبات..." />
+              ) : requests.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="text-center py-12">
+                    <SendHorizontal className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground">لا توجد طلبات تحويل</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">ابدأ بإنشاء طلب جديد</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {requests.filter(req => {
+                    if (!requestSearchQuery.trim()) return true;
+                    const query = requestSearchQuery.trim().toLowerCase();
+                    return req.items.some(item => item.description.toLowerCase().includes(query)) ||
+                           (req.notes && req.notes.toLowerCase().includes(query)) ||
+                           String(req.request_number).includes(query);
+                  }).map((request) => (
                    <Card key={request.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
                      <CardHeader className="pb-3">
                        <div className="flex items-center justify-between">
