@@ -1665,6 +1665,127 @@ export default function SmartJournalEntries() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Entry Preview Dialog */}
+      <Dialog open={showEntryPreview} onOpenChange={setShowEntryPreview}>
+        <DialogContent dir="rtl" className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>معاينة القيد - {savedEntryPreview?.entryNumber}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => {
+                  const printContent = document.getElementById('entry-print-area');
+                  if (!printContent) return;
+                  const win = window.open('', '_blank');
+                  if (!win) return;
+                  win.document.write(`
+                    <html dir="rtl">
+                    <head>
+                      <title>قيد يومية - ${savedEntryPreview?.entryNumber}</title>
+                      <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+                        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+                        body { padding: 20mm; direction: rtl; }
+                        .header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1e40af; padding-bottom: 15px; }
+                        .header h1 { font-size: 22px; font-weight: 700; color: #1e40af; }
+                        .meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
+                        .meta-item { display: flex; gap: 8px; }
+                        .meta-label { font-weight: 600; color: #374151; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th { background: #1e40af; color: white; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+                        td { padding: 8px 12px; border: 1px solid #d1d5db; font-size: 13px; }
+                        tr:nth-child(even) { background: #f9fafb; }
+                        .totals { font-weight: 700; background: #eff6ff !important; }
+                        .footer { margin-top: 30px; display: flex; justify-content: space-around; font-size: 13px; }
+                        .footer-item { text-align: center; }
+                        .footer-label { font-weight: 600; border-top: 1px solid #000; padding-top: 8px; min-width: 120px; }
+                        .number { direction: ltr; text-align: left; }
+                        @media print { body { padding: 10mm; } }
+                      </style>
+                    </head>
+                    <body>
+                      ${printContent.innerHTML}
+                    </body>
+                    </html>
+                  `);
+                  win.document.close();
+                  win.print();
+                }}
+              >
+                <Printer className="h-4 w-4" />
+                طباعة
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div id="entry-print-area">
+            <div className="header" style={{ textAlign: 'center', borderBottom: '3px solid #1e40af', paddingBottom: '12px', marginBottom: '16px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#1e40af' }}>قيد يومية</h1>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px' }}>
+              <div><span style={{ fontWeight: 600 }}>رقم القيد: </span>{savedEntryPreview?.entryNumber}</div>
+              <div><span style={{ fontWeight: 600 }}>التاريخ: </span>{savedEntryPreview?.date}</div>
+              {savedEntryPreview?.universalSerial && (
+                <div><span style={{ fontWeight: 600 }}>المسلسل العام: </span>{savedEntryPreview?.universalSerial}</div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '12px', fontSize: '14px' }}>
+              <span style={{ fontWeight: 600 }}>البيان: </span>{savedEntryPreview?.description}
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '10px 12px', fontSize: '14px', border: '1px solid #1e40af' }}>رقم الحساب</th>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '10px 12px', fontSize: '14px', border: '1px solid #1e40af' }}>اسم الحساب</th>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '10px 12px', fontSize: '14px', border: '1px solid #1e40af' }}>البيان</th>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '10px 12px', fontSize: '14px', border: '1px solid #1e40af' }}>مدين</th>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '10px 12px', fontSize: '14px', border: '1px solid #1e40af' }}>دائن</th>
+                </tr>
+              </thead>
+              <tbody>
+                {savedEntryPreview?.lines.map((line, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#f9fafb' }}>
+                    <td style={{ padding: '8px 12px', border: '1px solid #d1d5db', textAlign: 'center' }}>{line.account_code}</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #d1d5db' }}>{line.account_name}</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #d1d5db' }}>{line.description}</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #d1d5db', direction: 'ltr', textAlign: 'left' }}>{line.debit > 0 ? line.debit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #d1d5db', direction: 'ltr', textAlign: 'left' }}>{line.credit > 0 ? line.credit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 700, background: '#eff6ff' }}>
+                  <td colSpan={3} style={{ padding: '10px 12px', border: '1px solid #d1d5db', textAlign: 'center' }}>الإجمالي</td>
+                  <td style={{ padding: '10px 12px', border: '1px solid #d1d5db', direction: 'ltr', textAlign: 'left' }}>{savedEntryPreview?.totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '10px 12px', border: '1px solid #d1d5db', direction: 'ltr', textAlign: 'left' }}>{savedEntryPreview?.totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-around', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '8px', minWidth: '120px', fontWeight: 600 }}>المحاسب</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '8px', minWidth: '120px', fontWeight: 600 }}>المدير المالي</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '8px', minWidth: '120px', fontWeight: 600 }}>المدير العام</div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-row-reverse gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowEntryPreview(false)}>
+              إغلاق
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Save Template Dialog */}
       <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
         <DialogContent dir="rtl" className="sm:max-w-md">
