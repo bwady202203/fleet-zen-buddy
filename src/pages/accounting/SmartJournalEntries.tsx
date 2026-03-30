@@ -2611,6 +2611,33 @@ export default function SmartJournalEntries() {
           {/* Left Panel - Entry Lines */}
           <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
             <div className="h-full bg-white p-6 flex flex-col">
+              {/* Saved Templates */}
+              {templates.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {templates.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleLoadTemplate(template)}
+                      title={template.description || template.name}
+                      className="group relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 text-blue-700 text-sm font-medium transition-all hover:shadow-sm"
+                    >
+                      <Bookmark className="h-3.5 w-3.5 text-blue-400 group-hover:text-blue-600" />
+                      <span>{template.name}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTemplate(template.id, template.name);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity mr-1 text-red-400 hover:text-red-600"
+                        title="حذف النموذج"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Entry Description */}
               <div className="mb-4">
                 <Input
