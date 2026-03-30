@@ -1604,6 +1604,20 @@ export default function SmartJournalEntries() {
 
       toast.success(`تم حفظ القيد رقم ${entryNumber} بنجاح`);
       
+      // Store preview data before resetting
+      const savedTotalDebit = entryLines.reduce((sum, l) => sum + l.debit, 0);
+      const savedTotalCredit = entryLines.reduce((sum, l) => sum + l.credit, 0);
+      setSavedEntryPreview({
+        entryNumber,
+        date: entryDate,
+        description: entryDescription || "قيد ذكي",
+        lines: [...entryLines],
+        totalDebit: savedTotalDebit,
+        totalCredit: savedTotalCredit,
+        universalSerial: universalSerial || '',
+      });
+      setShowEntryPreview(true);
+      
       // Reset form
       setEntryLines([]);
       setSelectedAccountId(null);
