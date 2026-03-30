@@ -339,6 +339,18 @@ export default function SmartJournalEntries() {
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [showSaveConfirmDialog, setShowSaveConfirmDialog] = useState(false);
   
+  // Saved entry preview state
+  const [savedEntryPreview, setSavedEntryPreview] = useState<{
+    entryNumber: string;
+    date: string;
+    description: string;
+    lines: EntryLine[];
+    totalDebit: number;
+    totalCredit: number;
+    universalSerial: string;
+  } | null>(null);
+  const [showEntryPreview, setShowEntryPreview] = useState(false);
+  
   // Template states
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
