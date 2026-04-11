@@ -696,7 +696,7 @@ const LoadInvoices = () => {
             </DialogTrigger>
             <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">فاتورة مبيعات جديدة</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">{selectedInvoice ? 'تعديل الفاتورة' : 'فاتورة مبيعات جديدة'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
