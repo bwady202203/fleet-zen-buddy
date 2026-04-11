@@ -250,29 +250,63 @@ const LoadInvoices = () => {
       const { data: { user } } = await supabase.auth.getUser();
       const { subtotal, taxAmount, totalAmount } = calculateTotals();
       let createdJournalEntryId: string | null = null;
-      
-      const invoiceNumber = `${Date.now().toString().slice(-6)}`;
 
-      // Create invoice
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('load_invoices')
-        .insert({
-          invoice_number: invoiceNumber,
-          date: formData.date,
-          company_id: formData.companyId,
-          supplier_id: formData.supplierId || null,
-          payment_type: formData.paymentType,
-          subtotal,
-          tax_amount: taxAmount,
-          total_amount: totalAmount,
-          notes: formData.notes,
-          created_by: user?.id,
-          status: 'completed'
-        })
-        .select()
-        .single();
+      const isEditing = !!selectedInvoice;
 
-      if (invoiceError) throw invoiceError;
+      let invoice: any;
+
+      if (isEditing) {
+        // Update existing invoice
+        const { data: updatedInvoice, error: invoiceError } = await supabase
+          .from('load_invoices')
+          .update({
+            date: formData.date,
+            company_id: formData.companyId,
+            supplier_id: formData.supplierId || null,
+            payment_type: formData.paymentType,
+            subtotal,
+            tax_amount: taxAmount,
+            total_amount: totalAmount,
+            notes: formData.notes,
+          })
+          .eq('id', selectedInvoice.id)
+          .select()
+          .single();
+
+        if (invoiceError) throw invoiceError;
+        invoice = updatedInvoice;
+
+        // Delete old items and re-insert
+        await supabase
+          .from('load_invoice_items')
+          .delete()
+          .eq('invoice_id', selectedInvoice.id);
+
+      } else {
+        // Create new invoice
+        const invoiceNumber = `${Date.now().toString().slice(-6)}`;
+
+        const { data: newInvoice, error: invoiceError } = await supabase
+          .from('load_invoices')
+          .insert({
+            invoice_number: invoiceNumber,
+            date: formData.date,
+            company_id: formData.companyId,
+            supplier_id: formData.supplierId || null,
+            payment_type: formData.paymentType,
+            subtotal,
+            tax_amount: taxAmount,
+            total_amount: totalAmount,
+            notes: formData.notes,
+            created_by: user?.id,
+            status: 'completed'
+          })
+          .select()
+          .single();
+
+        if (invoiceError) throw invoiceError;
+        invoice = newInvoice;
+      }
 
       // Insert invoice items - filter out items with zero quantity
       const itemsToInsert = items
@@ -296,131 +330,135 @@ const LoadInvoices = () => {
 
       if (itemsError) throw itemsError;
 
-      // Create automatic journal entry: Debit Accrued Revenue -> Credit Revenue
-      try {
-        const selectedCompany = companies.find(c => c.id === formData.companyId);
-        const companyName = selectedCompany?.name || '';
-        const organizationId = selectedCompany?.organization_id || null;
+      // Create automatic journal entry only for NEW invoices
+      if (!isEditing) {
+        try {
+          const selectedCompany = companies.find(c => c.id === formData.companyId);
+          const companyName = selectedCompany?.name || '';
+          const organizationId = selectedCompany?.organization_id || null;
 
-        const entryYear = formData.date.substring(0, 4);
-        const { data: lastEntries, error: lastEntryError } = await supabase
-          .from('journal_entries')
-          .select('entry_number')
-          .like('entry_number', `JE-${entryYear}%`)
-          .order('entry_number', { ascending: false })
-          .limit(1);
+          const entryYear = formData.date.substring(0, 4);
+          const { data: lastEntries, error: lastEntryError } = await supabase
+            .from('journal_entries')
+            .select('entry_number')
+            .like('entry_number', `JE-${entryYear}%`)
+            .order('entry_number', { ascending: false })
+            .limit(1);
 
-        if (lastEntryError) throw lastEntryError;
+          if (lastEntryError) throw lastEntryError;
 
-        let nextNum = 1;
-        if (lastEntries && lastEntries.length > 0 && lastEntries[0].entry_number) {
-          const match = lastEntries[0].entry_number.match(/JE-\d{4}(\d{6})$/);
-          if (match) nextNum = parseInt(match[1], 10) + 1;
+          let nextNum = 1;
+          if (lastEntries && lastEntries.length > 0 && lastEntries[0].entry_number) {
+            const match = lastEntries[0].entry_number.match(/JE-\d{4}(\d{6})$/);
+            if (match) nextNum = parseInt(match[1], 10) + 1;
+          }
+          const entryNumber = `JE-${entryYear}${nextNum.toString().padStart(6, '0')}`;
+
+          const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'LI' });
+          const universalSerial = serialData as string;
+
+          const { data: journalEntry, error: journalError } = await supabase
+            .from('journal_entries')
+            .insert({
+              entry_number: entryNumber,
+              date: formData.date,
+              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
+              reference: `load_invoice_${invoice.id}`,
+              created_by: user?.id,
+              universal_serial: universalSerial,
+              organization_id: organizationId,
+            })
+            .select()
+            .single();
+
+          if (journalError) throw journalError;
+          if (!journalEntry) throw new Error('لم يتم إنشاء قيد اليومية');
+
+          createdJournalEntryId = journalEntry.id;
+
+          const accruedRevenueAccountId = '47318eed-a653-447a-ab60-bfef7922b809';
+          const revenueAccountId = 'c278c8b2-5b02-4c99-ba19-26dc8f59d050';
+
+          const { error: linesError } = await supabase.from('journal_entry_lines').insert([
+            {
+              journal_entry_id: journalEntry.id,
+              account_id: accruedRevenueAccountId,
+              debit: totalAmount,
+              credit: 0,
+              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
+            },
+            {
+              journal_entry_id: journalEntry.id,
+              account_id: revenueAccountId,
+              debit: 0,
+              credit: totalAmount,
+              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
+            }
+          ]);
+
+          if (linesError) throw linesError;
+
+          const { error: ledgerError } = await supabase.from('ledger_entries').insert([
+            {
+              account_id: accruedRevenueAccountId,
+              entry_date: formData.date,
+              debit: totalAmount,
+              credit: 0,
+              balance: totalAmount,
+              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
+              reference: `load_invoice_${invoice.id}`,
+              journal_entry_id: journalEntry.id,
+              created_by: user?.id,
+              organization_id: organizationId,
+            },
+            {
+              account_id: revenueAccountId,
+              entry_date: formData.date,
+              debit: 0,
+              credit: totalAmount,
+              balance: -totalAmount,
+              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
+              reference: `load_invoice_${invoice.id}`,
+              journal_entry_id: journalEntry.id,
+              created_by: user?.id,
+              organization_id: organizationId,
+            }
+          ]);
+
+          if (ledgerError) throw ledgerError;
+        } catch (journalError) {
+          console.error('Error creating journal entry:', journalError);
         }
-        const entryNumber = `JE-${entryYear}${nextNum.toString().padStart(6, '0')}`;
 
-        const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'LI' });
-        const universalSerial = serialData as string;
-
-        const { data: journalEntry, error: journalError } = await supabase
-          .from('journal_entries')
-          .insert({
-            entry_number: entryNumber,
-            date: formData.date,
-            description: `فاتورة نقل رقم ${invoiceNumber} - ${companyName}`,
-            reference: `load_invoice_${invoice.id}`,
-            created_by: user?.id,
-            universal_serial: universalSerial,
-            organization_id: organizationId,
-          })
-          .select()
+        // Deduct quantities from company balance only for new invoices
+        const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+        const { data: company } = await supabase
+          .from('companies')
+          .select('total_quantity')
+          .eq('id', formData.companyId)
           .single();
 
-        if (journalError) throw journalError;
-        if (!journalEntry) throw new Error('لم يتم إنشاء قيد اليومية');
-
-        createdJournalEntryId = journalEntry.id;
-
-        // Debit: الايرادات المستحقة (111401) / Credit: ايرادات النشاط (41)
-        const accruedRevenueAccountId = '47318eed-a653-447a-ab60-bfef7922b809';
-        const revenueAccountId = 'c278c8b2-5b02-4c99-ba19-26dc8f59d050';
-
-        const { error: linesError } = await supabase.from('journal_entry_lines').insert([
-          {
-            journal_entry_id: journalEntry.id,
-            account_id: accruedRevenueAccountId,
-            debit: totalAmount,
-            credit: 0,
-            description: `فاتورة نقل رقم ${invoiceNumber} - ${companyName}`,
-          },
-          {
-            journal_entry_id: journalEntry.id,
-            account_id: revenueAccountId,
-            debit: 0,
-            credit: totalAmount,
-            description: `فاتورة نقل رقم ${invoiceNumber} - ${companyName}`,
-          }
-        ]);
-
-        if (linesError) throw linesError;
-
-        const { error: ledgerError } = await supabase.from('ledger_entries').insert([
-          {
-            account_id: accruedRevenueAccountId,
-            entry_date: formData.date,
-            debit: totalAmount,
-            credit: 0,
-            balance: totalAmount,
-            description: `فاتورة نقل رقم ${invoiceNumber} - ${companyName}`,
-            reference: `load_invoice_${invoice.id}`,
-            journal_entry_id: journalEntry.id,
-            created_by: user?.id,
-            organization_id: organizationId,
-          },
-          {
-            account_id: revenueAccountId,
-            entry_date: formData.date,
-            debit: 0,
-            credit: totalAmount,
-            balance: -totalAmount,
-            description: `فاتورة نقل رقم ${invoiceNumber} - ${companyName}`,
-            reference: `load_invoice_${invoice.id}`,
-            journal_entry_id: journalEntry.id,
-            created_by: user?.id,
-            organization_id: organizationId,
-          }
-        ]);
-
-        if (ledgerError) throw ledgerError;
-      } catch (journalError) {
-        console.error('Error creating journal entry:', journalError);
-      }
-
-      // Deduct quantities from company balance
-      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-      const { data: company } = await supabase
-        .from('companies')
-        .select('total_quantity')
-        .eq('id', formData.companyId)
-        .single();
-
-      if (company) {
-        await supabase
-          .from('companies')
-          .update({ 
-            total_quantity: Math.max(0, (company.total_quantity || 0) - totalQuantity)
-          })
-          .eq('id', formData.companyId);
+        if (company) {
+          await supabase
+            .from('companies')
+            .update({ 
+              total_quantity: Math.max(0, (company.total_quantity || 0) - totalQuantity)
+            })
+            .eq('id', formData.companyId);
+        }
       }
 
       toast({
-        title: "تم الحفظ",
-        description: createdJournalEntryId
-          ? "تم إنشاء الفاتورة والقيد اليومي بنجاح"
-          : "تم إنشاء الفاتورة وخصم الكميات بنجاح"
+        title: isEditing ? "تم التعديل" : "تم الحفظ",
+        description: isEditing 
+          ? "تم تعديل الفاتورة بنجاح"
+          : (createdJournalEntryId
+            ? "تم إنشاء الفاتورة والقيد اليومي بنجاح"
+            : "تم إنشاء الفاتورة وخصم الكميات بنجاح")
       });
 
       setDialogOpen(false);
+      setSelectedInvoice(null);
       setFormData({
         date: new Date().toISOString().split('T')[0],
         issueDate: new Date().toISOString().split('T')[0],
@@ -432,13 +470,6 @@ const LoadInvoices = () => {
       });
       setItems([]);
       loadData();
-
-      if (createdJournalEntryId) {
-        toast({
-          title: "تم إنشاء القيد",
-          description: "تم إنشاء القيد المحاسبي المرتبط بالفاتورة بنجاح",
-        });
-      }
     } catch (error: any) {
       toast({
         title: "خطأ",
