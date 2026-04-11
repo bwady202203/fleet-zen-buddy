@@ -434,7 +434,10 @@ const LoadInvoices = () => {
       loadData();
 
       if (createdJournalEntryId) {
-        navigate(`/accounting/journal-entries?id=${createdJournalEntryId}`);
+        toast({
+          title: "تم إنشاء القيد",
+          description: "تم إنشاء القيد المحاسبي المرتبط بالفاتورة بنجاح",
+        });
       }
     } catch (error: any) {
       toast({
