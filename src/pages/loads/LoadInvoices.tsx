@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, Plus, Save, Printer, Eye, X, Download, Settings, RotateCcw, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ZATCAQRCode from "@/components/ZATCAQRCode";
 import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
@@ -21,7 +21,7 @@ import * as XLSX from "xlsx";
 
 const LoadInvoices = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
+  
   const printRef = useRef<HTMLDivElement>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
