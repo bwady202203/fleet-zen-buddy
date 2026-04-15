@@ -1301,43 +1301,64 @@ const [newDateValue, setNewDateValue] = useState('');
                  </Button>
                </div>
              </CardHeader>
-             <CardContent className="pt-6">
-               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                 <div className="lg:col-span-3 space-y-3">
-                   <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
-                     <Info className="h-4 w-4 text-primary" />
-                     وصف التحويل
-                   </Label>
-                   <Textarea
-                     id="description"
-                     value={description}
-                     onChange={(e) => setDescription(e.target.value)}
-                     placeholder="اكتب شرحًا واضحًا ومختصرًا..."
-                     rows={2}
-                     className="resize-none text-base border-2 focus:border-primary/50 transition-colors"
-                   />
-                 </div>
-                 <div className="space-y-3">
-                   <Label htmlFor="amount" className="flex items-center gap-2 text-base font-medium">
-                     <Wallet className="h-4 w-4 text-primary" />
-                     المبلغ
-                   </Label>
-                   <Input
-                     id="amount"
-                     type="number"
-                     step="0.01"
-                     value={amount}
-                     onChange={(e) => setAmount(e.target.value)}
-                     placeholder="0.00"
-                     className="text-xl font-mono h-14 text-center border-2 focus:border-primary/50 transition-colors"
-                   />
-                 </div>
-               </div>
- 
-               <Button onClick={handleAddItem} variant="outline" className="gap-2 mb-6">
-                 <Plus className="h-4 w-4" />
-                 إضافة بند
-               </Button>
+            <CardContent className="pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <div className="lg:col-span-2 space-y-3">
+                    <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
+                      <Info className="h-4 w-4 text-primary" />
+                      وصف التحويل
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="اكتب شرحًا واضحًا ومختصرًا..."
+                      rows={2}
+                      className="resize-none text-base border-2 focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-base font-medium">
+                      <Plus className="h-4 w-4 text-primary" />
+                      اختيار حسابات
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-14 border-2 border-dashed hover:border-primary/50 transition-colors gap-2"
+                      onClick={() => {
+                        setMultiAccountMode('new');
+                        setMultiSelectedAccounts([]);
+                        setMultiAccountSearch('');
+                        setMultiAccountLetter(null);
+                        setShowMultiAccountDialog(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      اختيار حسابات متعددة
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="amount" className="flex items-center gap-2 text-base font-medium">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      المبلغ
+                    </Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="text-xl font-mono h-14 text-center border-2 focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                </div>
+  
+                <Button onClick={handleAddItem} variant="outline" className="gap-2 mb-6">
+                  <Plus className="h-4 w-4" />
+                  إضافة بند
+                </Button>
  
                {/* جدول البنود المضافة */}
                {newItems.length > 0 && (
