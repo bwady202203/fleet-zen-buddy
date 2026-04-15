@@ -1545,7 +1545,7 @@ const [newDateValue, setNewDateValue] = useState('');
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                  <div className="lg:col-span-3 space-y-3">
+                  <div className="lg:col-span-2 space-y-3">
                     <Label htmlFor="editDescription" className="flex items-center gap-2 text-base font-medium">
                       <Info className="h-4 w-4 text-amber-600" />
                       وصف التحويل
@@ -1558,6 +1558,27 @@ const [newDateValue, setNewDateValue] = useState('');
                       rows={2}
                       className="resize-none text-base border-2 focus:border-amber-500/50 transition-colors"
                     />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-base font-medium">
+                      <Plus className="h-4 w-4 text-amber-600" />
+                      اختيار حسابات
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-14 border-2 border-dashed border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/10 transition-colors gap-2"
+                      onClick={() => {
+                        setMultiAccountMode('edit');
+                        setMultiSelectedAccounts([]);
+                        setMultiAccountSearch('');
+                        setMultiAccountLetter(null);
+                        setShowMultiAccountDialog(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      اختيار حسابات متعددة
+                    </Button>
                   </div>
                   <div className="space-y-3">
                     <Label htmlFor="editAmountInput" className="flex items-center gap-2 text-base font-medium">
