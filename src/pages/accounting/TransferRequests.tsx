@@ -1447,10 +1447,25 @@ const [newDateValue, setNewDateValue] = useState('');
                                {item.serial_number}
                              </span>
                            </TableCell>
-                           <TableCell className={cn("font-medium", item.is_tax_row && "text-emerald-700 dark:text-emerald-400")}>
-                             {item.is_tax_row && <span className="ml-2">📋</span>}
-                             {item.description}
-                           </TableCell>
+                            <TableCell className={cn("font-medium", item.is_tax_row && "text-emerald-700 dark:text-emerald-400")}>
+                              {item.is_tax_row ? (
+                                <>
+                                  <span className="ml-2">📋</span>
+                                  {item.description}
+                                </>
+                              ) : (
+                                <Input
+                                  value={item.description}
+                                  onChange={(e) => {
+                                    const updated = [...newItems];
+                                    updated[index] = { ...updated[index], description: e.target.value };
+                                    setNewItems(updated);
+                                  }}
+                                  className="h-8 text-sm border-transparent hover:border-border focus:border-primary/50"
+                                  placeholder="وصف البند..."
+                                />
+                              )}
+                            </TableCell>
                            <TableCell className={cn(
                              "text-left font-mono font-semibold",
                              item.is_tax_row ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
