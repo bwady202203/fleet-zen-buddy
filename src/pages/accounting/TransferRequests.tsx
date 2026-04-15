@@ -91,6 +91,13 @@ const [newDateValue, setNewDateValue] = useState('');
   const [printScale, setPrintScale] = useState(1);
   const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
+  // Multi-account selection dialog state
+  const [showMultiAccountDialog, setShowMultiAccountDialog] = useState(false);
+  const [multiAccountSearch, setMultiAccountSearch] = useState('');
+  const [multiSelectedAccounts, setMultiSelectedAccounts] = useState<string[]>([]);
+  const [multiAccountMode, setMultiAccountMode] = useState<'new' | 'edit'>('new');
+  const [multiAccountLetter, setMultiAccountLetter] = useState<string | null>(null);
+  
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
   const [editItems, setEditItems] = useState<TransferRequestItem[]>([]);
@@ -1207,6 +1214,69 @@ const [newDateValue, setNewDateValue] = useState('');
     }
   };
 
+  // Handle multi-account selection confirmation - creates rows for each selected account
+  const handleConfirmMultiAccountSelection = () => {
+    if (multiSelectedAccounts.length === 0) {
+      toast.error('الرجاء اختيار حساب واحد على الأقل');
+      return;
+    }
+
+    const parsedAmount = amount ? parseFloat(amount) : 0;
+    const currentDescription = description.trim();
+
+    if (multiAccountMode === 'new') {
+      const newAccountItems: Omit<TransferRequestItem, 'id'>[] = multiSelectedAccounts.map((accountId, idx) => {
+        const account = accounts.find(a => a.id === accountId);
+        return {
+          serial_number: newItems.length + idx + 1,
+          description: currentDescription || (account ? account.name_ar : ''),
+          amount: parsedAmount,
+          account_id: accountId,
+        };
+      });
+
+      const updatedItems = [...newItems, ...newAccountItems].map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1,
+      }));
+      setNewItems(updatedItems);
+    } else {
+      // edit mode
+      const newAccountItems: TransferRequestItem[] = multiSelectedAccounts.map((accountId, idx) => {
+        const account = accounts.find(a => a.id === accountId);
+        return {
+          id: `multi-${Date.now()}-${idx}`,
+          serial_number: editItems.length + idx + 1,
+          description: editDescription.trim() || (account ? account.name_ar : ''),
+          amount: editAmount ? parseFloat(editAmount) : 0,
+          account_id: accountId,
+        };
+      });
+
+      const updatedItems = [...editItems, ...newAccountItems].map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1,
+      }));
+      setEditItems(updatedItems);
+    }
+
+    setShowMultiAccountDialog(false);
+    setMultiSelectedAccounts([]);
+    setMultiAccountSearch('');
+    setDescription('');
+    setAmount('');
+    toast.success(`تم إضافة ${multiSelectedAccounts.length} بند`);
+  };
+
+  const filteredMultiAccounts = accounts.filter(account => {
+    const matchesSearch = multiAccountSearch === '' || 
+      account.name_ar.includes(multiAccountSearch) || 
+      account.code.includes(multiAccountSearch);
+    const matchesLetter = multiAccountLetter === null || 
+      account.name_ar.startsWith(multiAccountLetter);
+    return matchesSearch && matchesLetter;
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'draft':
@@ -1294,43 +1364,64 @@ const [newDateValue, setNewDateValue] = useState('');
                  </Button>
                </div>
              </CardHeader>
-             <CardContent className="pt-6">
-               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                 <div className="lg:col-span-3 space-y-3">
-                   <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
-                     <Info className="h-4 w-4 text-primary" />
-                     وصف التحويل
-                   </Label>
-                   <Textarea
-                     id="description"
-                     value={description}
-                     onChange={(e) => setDescription(e.target.value)}
-                     placeholder="اكتب شرحًا واضحًا ومختصرًا..."
-                     rows={2}
-                     className="resize-none text-base border-2 focus:border-primary/50 transition-colors"
-                   />
-                 </div>
-                 <div className="space-y-3">
-                   <Label htmlFor="amount" className="flex items-center gap-2 text-base font-medium">
-                     <Wallet className="h-4 w-4 text-primary" />
-                     المبلغ
-                   </Label>
-                   <Input
-                     id="amount"
-                     type="number"
-                     step="0.01"
-                     value={amount}
-                     onChange={(e) => setAmount(e.target.value)}
-                     placeholder="0.00"
-                     className="text-xl font-mono h-14 text-center border-2 focus:border-primary/50 transition-colors"
-                   />
-                 </div>
-               </div>
- 
-               <Button onClick={handleAddItem} variant="outline" className="gap-2 mb-6">
-                 <Plus className="h-4 w-4" />
-                 إضافة بند
-               </Button>
+            <CardContent className="pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                  <div className="lg:col-span-2 space-y-3">
+                    <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
+                      <Info className="h-4 w-4 text-primary" />
+                      وصف التحويل
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="اكتب شرحًا واضحًا ومختصرًا..."
+                      rows={2}
+                      className="resize-none text-base border-2 focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-base font-medium">
+                      <Plus className="h-4 w-4 text-primary" />
+                      اختيار حسابات
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-14 border-2 border-dashed hover:border-primary/50 transition-colors gap-2"
+                      onClick={() => {
+                        setMultiAccountMode('new');
+                        setMultiSelectedAccounts([]);
+                        setMultiAccountSearch('');
+                        setMultiAccountLetter(null);
+                        setShowMultiAccountDialog(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      اختيار حسابات متعددة
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="amount" className="flex items-center gap-2 text-base font-medium">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      المبلغ
+                    </Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="text-xl font-mono h-14 text-center border-2 focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                </div>
+  
+                <Button onClick={handleAddItem} variant="outline" className="gap-2 mb-6">
+                  <Plus className="h-4 w-4" />
+                  إضافة بند
+                </Button>
  
                {/* جدول البنود المضافة */}
                {newItems.length > 0 && (
@@ -1454,7 +1545,7 @@ const [newDateValue, setNewDateValue] = useState('');
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                  <div className="lg:col-span-3 space-y-3">
+                  <div className="lg:col-span-2 space-y-3">
                     <Label htmlFor="editDescription" className="flex items-center gap-2 text-base font-medium">
                       <Info className="h-4 w-4 text-amber-600" />
                       وصف التحويل
@@ -1467,6 +1558,27 @@ const [newDateValue, setNewDateValue] = useState('');
                       rows={2}
                       className="resize-none text-base border-2 focus:border-amber-500/50 transition-colors"
                     />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2 text-base font-medium">
+                      <Plus className="h-4 w-4 text-amber-600" />
+                      اختيار حسابات
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-14 border-2 border-dashed border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/10 transition-colors gap-2"
+                      onClick={() => {
+                        setMultiAccountMode('edit');
+                        setMultiSelectedAccounts([]);
+                        setMultiAccountSearch('');
+                        setMultiAccountLetter(null);
+                        setShowMultiAccountDialog(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      اختيار حسابات متعددة
+                    </Button>
                   </div>
                   <div className="space-y-3">
                     <Label htmlFor="editAmountInput" className="flex items-center gap-2 text-base font-medium">
@@ -2278,6 +2390,145 @@ const [newDateValue, setNewDateValue] = useState('');
              </Button>
            </DialogFooter>
          </DialogContent>
+      </Dialog>
+
+      {/* Multi-Account Selection Dialog */}
+      <Dialog open={showMultiAccountDialog} onOpenChange={setShowMultiAccountDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              اختيار حسابات متعددة
+              {multiSelectedAccounts.length > 0 && (
+                <Badge className="mr-2">{multiSelectedAccounts.length} محدد</Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="relative mb-4">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="ابحث بالاسم أو الكود..."
+                value={multiAccountSearch}
+                onChange={(e) => {
+                  setMultiAccountSearch(e.target.value);
+                  setMultiAccountLetter(null);
+                }}
+                className="pr-10 text-lg h-12"
+                autoFocus
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <div className="flex flex-col gap-1 bg-muted/50 rounded-lg p-2 max-h-[55vh] overflow-y-auto">
+                <button
+                  onClick={() => {
+                    setMultiAccountLetter(null);
+                    setMultiAccountSearch('');
+                  }}
+                  className={cn(
+                    "w-8 h-8 rounded-lg text-sm font-bold transition-all",
+                    multiAccountLetter === null && multiAccountSearch === ''
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-primary/20 text-muted-foreground"
+                  )}
+                >
+                  الكل
+                </button>
+                {arabicLetters.map((letter) => (
+                  <button
+                    key={letter}
+                    onClick={() => {
+                      setMultiAccountLetter(letter);
+                      setMultiAccountSearch('');
+                    }}
+                    className={cn(
+                      "w-8 h-8 rounded-lg text-base font-bold transition-all",
+                      multiAccountLetter === letter
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-primary/20 text-foreground"
+                    )}
+                  >
+                    {letter}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex-1 max-h-[55vh] overflow-y-auto pr-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  {filteredMultiAccounts.length} حساب من أصل {accounts.length} — اضغط لتحديد أو إلغاء التحديد
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {filteredMultiAccounts.map((account) => {
+                    const isSelected = multiSelectedAccounts.includes(account.id);
+                    return (
+                      <div
+                        key={account.id}
+                        onClick={() => {
+                          setMultiSelectedAccounts(prev =>
+                            isSelected
+                              ? prev.filter(id => id !== account.id)
+                              : [...prev, account.id]
+                          );
+                        }}
+                        className={cn(
+                          "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                          "hover:shadow-md",
+                          "flex flex-col items-center justify-center text-center gap-2 min-h-[100px] relative",
+                          isSelected
+                            ? "border-primary bg-primary/10 shadow-md"
+                            : "border-border bg-card hover:border-primary hover:bg-primary/5"
+                        )}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                            <CheckCircle className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        )}
+                        <span className="font-mono text-sm font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                          {account.code}
+                        </span>
+                        <span className="text-sm font-medium leading-tight">
+                          {account.name_ar}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {account.type === 'asset' && 'أصول'}
+                          {account.type === 'liability' && 'خصوم'}
+                          {account.type === 'equity' && 'حقوق ملكية'}
+                          {account.type === 'revenue' && 'إيرادات'}
+                          {account.type === 'expense' && 'مصروفات'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {filteredMultiAccounts.length === 0 && (
+                    <div className="col-span-full text-center py-12 text-muted-foreground">
+                      لا توجد حسابات مطابقة للبحث
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowMultiAccountDialog(false);
+              setMultiSelectedAccounts([]);
+              setMultiAccountSearch('');
+              setMultiAccountLetter(null);
+            }}>
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleConfirmMultiAccountSelection} 
+              disabled={multiSelectedAccounts.length === 0}
+              className="gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              تأكيد ({multiSelectedAccounts.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
 
       {/* Edit Description Dialog */}
