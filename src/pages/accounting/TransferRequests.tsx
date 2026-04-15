@@ -1214,6 +1214,69 @@ const [newDateValue, setNewDateValue] = useState('');
     }
   };
 
+  // Handle multi-account selection confirmation - creates rows for each selected account
+  const handleConfirmMultiAccountSelection = () => {
+    if (multiSelectedAccounts.length === 0) {
+      toast.error('الرجاء اختيار حساب واحد على الأقل');
+      return;
+    }
+
+    const parsedAmount = amount ? parseFloat(amount) : 0;
+    const currentDescription = description.trim();
+
+    if (multiAccountMode === 'new') {
+      const newAccountItems: Omit<TransferRequestItem, 'id'>[] = multiSelectedAccounts.map((accountId, idx) => {
+        const account = accounts.find(a => a.id === accountId);
+        return {
+          serial_number: newItems.length + idx + 1,
+          description: currentDescription || (account ? account.name_ar : ''),
+          amount: parsedAmount,
+          account_id: accountId,
+        };
+      });
+
+      const updatedItems = [...newItems, ...newAccountItems].map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1,
+      }));
+      setNewItems(updatedItems);
+    } else {
+      // edit mode
+      const newAccountItems: TransferRequestItem[] = multiSelectedAccounts.map((accountId, idx) => {
+        const account = accounts.find(a => a.id === accountId);
+        return {
+          id: `multi-${Date.now()}-${idx}`,
+          serial_number: editItems.length + idx + 1,
+          description: editDescription.trim() || (account ? account.name_ar : ''),
+          amount: editAmount ? parseFloat(editAmount) : 0,
+          account_id: accountId,
+        };
+      });
+
+      const updatedItems = [...editItems, ...newAccountItems].map((item, idx) => ({
+        ...item,
+        serial_number: idx + 1,
+      }));
+      setEditItems(updatedItems);
+    }
+
+    setShowMultiAccountDialog(false);
+    setMultiSelectedAccounts([]);
+    setMultiAccountSearch('');
+    setDescription('');
+    setAmount('');
+    toast.success(`تم إضافة ${multiSelectedAccounts.length} بند`);
+  };
+
+  const filteredMultiAccounts = accounts.filter(account => {
+    const matchesSearch = multiAccountSearch === '' || 
+      account.name_ar.includes(multiAccountSearch) || 
+      account.code.includes(multiAccountSearch);
+    const matchesLetter = multiAccountLetter === null || 
+      account.name_ar.startsWith(multiAccountLetter);
+    return matchesSearch && matchesLetter;
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'draft':
