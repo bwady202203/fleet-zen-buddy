@@ -1466,12 +1466,25 @@ const [newDateValue, setNewDateValue] = useState('');
                                 />
                               )}
                             </TableCell>
-                           <TableCell className={cn(
-                             "text-left font-mono font-semibold",
-                             item.is_tax_row ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
-                           )}>
-                             {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                           </TableCell>
+                            <TableCell className="text-left">
+                              {item.is_tax_row ? (
+                                <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                                  {item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                              ) : (
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.amount}
+                                  onChange={(e) => {
+                                    const updated = [...newItems];
+                                    updated[index] = { ...updated[index], amount: parseFloat(e.target.value) || 0 };
+                                    setNewItems(updated);
+                                  }}
+                                  className="h-8 text-sm font-mono font-semibold text-primary w-28 text-center border-transparent hover:border-border focus:border-primary/50"
+                                />
+                              )}
+                            </TableCell>
                            <TableCell className="text-center">
                              {!item.is_tax_row && (
                                <Button
