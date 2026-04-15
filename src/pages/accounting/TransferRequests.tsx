@@ -91,6 +91,13 @@ const [newDateValue, setNewDateValue] = useState('');
   const [printScale, setPrintScale] = useState(1);
   const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
+  // Multi-account selection dialog state
+  const [showMultiAccountDialog, setShowMultiAccountDialog] = useState(false);
+  const [multiAccountSearch, setMultiAccountSearch] = useState('');
+  const [multiSelectedAccounts, setMultiSelectedAccounts] = useState<string[]>([]);
+  const [multiAccountMode, setMultiAccountMode] = useState<'new' | 'edit'>('new');
+  const [multiAccountLetter, setMultiAccountLetter] = useState<string | null>(null);
+  
   // Edit mode state
   const [editingRequest, setEditingRequest] = useState<TransferRequest | null>(null);
   const [editItems, setEditItems] = useState<TransferRequestItem[]>([]);
