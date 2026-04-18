@@ -10,6 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Table,
   TableBody,
   TableCell,
@@ -91,6 +96,30 @@ const JournalEntries = () => {
     lines: [],
   });
   
+  const [inlineDateEditId, setInlineDateEditId] = useState<string | null>(null);
+  const [inlineDateValue, setInlineDateValue] = useState<string>("");
+  const [isSavingInlineDate, setIsSavingInlineDate] = useState(false);
+
+  const handleInlineDateSave = async (entryId: string) => {
+    if (!inlineDateValue) return;
+    setIsSavingInlineDate(true);
+    try {
+      const { error } = await supabase
+        .from('journal_entries')
+        .update({ date: inlineDateValue })
+        .eq('id', entryId);
+      if (error) throw error;
+      toast({ title: "تم تحديث التاريخ بنجاح" });
+      setInlineDateEditId(null);
+      fetchJournalEntries();
+    } catch (error) {
+      console.error('Error updating date:', error);
+      toast({ title: "خطأ", description: "فشل في تحديث التاريخ", variant: "destructive" });
+    } finally {
+      setIsSavingInlineDate(false);
+    }
+  };
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -1878,7 +1907,54 @@ const JournalEntries = () => {
                           <TableCell className="font-medium">{filteredEntries.length - index}</TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground">{entry.universalSerial || '—'}</TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
-                          <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>
+                            <Popover
+                              open={inlineDateEditId === entry.id}
+                              onOpenChange={(open) => {
+                                if (open) {
+                                  setInlineDateEditId(entry.id);
+                                  setInlineDateValue(entry.date);
+                                } else {
+                                  setInlineDateEditId(null);
+                                }
+                              }}
+                            >
+                              <PopoverTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="text-right hover:bg-muted/60 px-2 py-1 rounded transition-colors cursor-pointer underline-offset-4 hover:underline"
+                                  title="انقر لتعديل التاريخ"
+                                >
+                                  {format(new Date(entry.date), 'dd/MM/yyyy')}
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-3 space-y-2" align="start">
+                                <Label className="text-xs">تعديل تاريخ القيد</Label>
+                                <Input
+                                  type="date"
+                                  value={inlineDateValue}
+                                  onChange={(e) => setInlineDateValue(e.target.value)}
+                                  className="h-9"
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setInlineDateEditId(null)}
+                                  >
+                                    إلغاء
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleInlineDateSave(entry.id)}
+                                    disabled={isSavingInlineDate || !inlineDateValue || inlineDateValue === entry.date}
+                                  >
+                                    حفظ
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
                           <TableCell>{entry.description}</TableCell>
                           <TableCell className="text-red-600 font-bold">
                             {entry.totalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
