@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -56,6 +56,15 @@ const Dashboard = () => {
       link: "/custody",
       features: ["المندوبين", "سندات التحويل", "العهد المستلمة", "القيود اليومية"],
       module: "custody"
+    },
+    {
+      title: "فواتير الزكاة المعتمدة",
+      description: "الفوترة الإلكترونية والربط مع هيئة الزكاة (ZATCA)",
+      icon: ShieldCheck,
+      color: "from-indigo-500 to-indigo-600",
+      link: "/zatca",
+      features: ["فواتير معتمدة بـ QR", "الربط مع الهيئة", "الشهادات الرقمية", "تقارير VAT"],
+      module: "accounting"
     }
   ];
 
