@@ -87,7 +87,16 @@ const ZatcaCertificates = () => {
   const [form, setForm] = useState<typeof emptyForm>({ ...emptyForm });
   const [revealId, setRevealId] = useState<string | null>(null);
 
+  // OTP onboarding state
+  const [otp, setOtp] = useState("");
+  const [otpEnv, setOtpEnv] = useState<"sandbox" | "simulation" | "production">("sandbox");
+  const [otpLabel, setOtpLabel] = useState("EGS-Device-001");
+  const [onboarding, setOnboarding] = useState(false);
+  const [onboardStep, setOnboardStep] = useState<string>("");
+
   useEffect(() => {
+    load();
+  }, []);
     load();
   }, []);
 
