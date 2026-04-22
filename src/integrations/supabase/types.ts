@@ -3365,6 +3365,129 @@ export type Database = {
           },
         ]
       }
+      zatca_invoices: {
+        Row: {
+          buyer_address: Json | null
+          buyer_name: string | null
+          buyer_vat: string | null
+          cleared_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          discount_amount: number
+          environment: string
+          icv: number
+          id: string
+          invoice_hash: string | null
+          invoice_number: string
+          invoice_subtype: string
+          invoice_type: string
+          invoice_uuid: string
+          issue_date: string
+          issue_time: string
+          items: Json
+          notes: string | null
+          organization_id: string | null
+          pih: string | null
+          qr_base64: string | null
+          rejection_reason: string | null
+          reported_at: string | null
+          seller_address: Json | null
+          seller_crn: string | null
+          seller_name: string
+          seller_vat: string
+          signed_xml: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_with_tax: number
+          updated_at: string
+          xml_content: string | null
+          zatca_response: Json | null
+          zatca_uuid: string | null
+        }
+        Insert: {
+          buyer_address?: Json | null
+          buyer_name?: string | null
+          buyer_vat?: string | null
+          cleared_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_amount?: number
+          environment?: string
+          icv?: number
+          id?: string
+          invoice_hash?: string | null
+          invoice_number: string
+          invoice_subtype?: string
+          invoice_type?: string
+          invoice_uuid?: string
+          issue_date?: string
+          issue_time?: string
+          items?: Json
+          notes?: string | null
+          organization_id?: string | null
+          pih?: string | null
+          qr_base64?: string | null
+          rejection_reason?: string | null
+          reported_at?: string | null
+          seller_address?: Json | null
+          seller_crn?: string | null
+          seller_name: string
+          seller_vat: string
+          signed_xml?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_with_tax?: number
+          updated_at?: string
+          xml_content?: string | null
+          zatca_response?: Json | null
+          zatca_uuid?: string | null
+        }
+        Update: {
+          buyer_address?: Json | null
+          buyer_name?: string | null
+          buyer_vat?: string | null
+          cleared_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_amount?: number
+          environment?: string
+          icv?: number
+          id?: string
+          invoice_hash?: string | null
+          invoice_number?: string
+          invoice_subtype?: string
+          invoice_type?: string
+          invoice_uuid?: string
+          issue_date?: string
+          issue_time?: string
+          items?: Json
+          notes?: string | null
+          organization_id?: string | null
+          pih?: string | null
+          qr_base64?: string | null
+          rejection_reason?: string | null
+          reported_at?: string | null
+          seller_address?: Json | null
+          seller_crn?: string | null
+          seller_name?: string
+          seller_vat?: string
+          signed_xml?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_with_tax?: number
+          updated_at?: string
+          xml_content?: string | null
+          zatca_response?: Json | null
+          zatca_uuid?: string | null
+        }
+        Relationships: []
+      }
       zatca_settings: {
         Row: {
           additional_number: string | null
@@ -3445,6 +3568,77 @@ export type Database = {
           vat_number?: string | null
         }
         Relationships: []
+      }
+      zatca_submissions: {
+        Row: {
+          cleared_invoice: string | null
+          created_at: string
+          created_by: string | null
+          duration_ms: number | null
+          environment: string
+          errors: Json | null
+          id: string
+          invoice_id: string | null
+          message: string | null
+          organization_id: string | null
+          qr_code: string | null
+          request_payload: Json | null
+          response_payload: Json | null
+          result: string | null
+          status_code: number | null
+          submission_type: string
+          warnings: Json | null
+          zatca_uuid: string | null
+        }
+        Insert: {
+          cleared_invoice?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_ms?: number | null
+          environment?: string
+          errors?: Json | null
+          id?: string
+          invoice_id?: string | null
+          message?: string | null
+          organization_id?: string | null
+          qr_code?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          result?: string | null
+          status_code?: number | null
+          submission_type: string
+          warnings?: Json | null
+          zatca_uuid?: string | null
+        }
+        Update: {
+          cleared_invoice?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_ms?: number | null
+          environment?: string
+          errors?: Json | null
+          id?: string
+          invoice_id?: string | null
+          message?: string | null
+          organization_id?: string | null
+          qr_code?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          result?: string | null
+          status_code?: number | null
+          submission_type?: string
+          warnings?: Json | null
+          zatca_uuid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zatca_submissions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "zatca_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
