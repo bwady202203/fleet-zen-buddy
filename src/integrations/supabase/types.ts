@@ -3365,6 +3365,66 @@ export type Database = {
           },
         ]
       }
+      zatca_certificates: {
+        Row: {
+          binary_security_token: string
+          certificate_type: string
+          common_name: string | null
+          created_at: string
+          created_by: string | null
+          csr_pem: string | null
+          environment: string
+          id: string
+          is_active: boolean
+          label: string
+          notes: string | null
+          organization_id: string | null
+          private_key_pem: string
+          secret: string
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          binary_security_token: string
+          certificate_type?: string
+          common_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          csr_pem?: string | null
+          environment?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          notes?: string | null
+          organization_id?: string | null
+          private_key_pem: string
+          secret: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          binary_security_token?: string
+          certificate_type?: string
+          common_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          csr_pem?: string | null
+          environment?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          notes?: string | null
+          organization_id?: string | null
+          private_key_pem?: string
+          secret?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
       zatca_invoices: {
         Row: {
           buyer_address: Json | null
