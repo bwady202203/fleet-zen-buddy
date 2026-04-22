@@ -344,6 +344,94 @@ const ZatcaCertificates = () => {
           </div>
         </div>
 
+        {/* OTP Device Onboarding */}
+        <Card className="mb-4 border-emerald-300 bg-gradient-to-br from-emerald-50/70 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-emerald-500/15">
+                <Smartphone className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base">تفعيل الجهاز بكود OTP — Fatoora Onboarding</CardTitle>
+                <CardDescription className="text-xs mt-1">
+                  أدخل رمز OTP المكوّن من 6 أرقام من بوابة Fatoora لتوليد CSR وطلب CCSID ثم استبداله بـ PCSID تلقائياً.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">اسم الجهاز / EGS</Label>
+                <Input
+                  value={otpLabel}
+                  onChange={(e) => setOtpLabel(e.target.value)}
+                  placeholder="EGS-Device-001"
+                  dir="ltr"
+                  disabled={onboarding}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">البيئة</Label>
+                <Select
+                  value={otpEnv}
+                  onValueChange={(v: any) => setOtpEnv(v)}
+                  disabled={onboarding}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sandbox">Sandbox (تجريبي)</SelectItem>
+                    <SelectItem value="simulation">Simulation (محاكاة)</SelectItem>
+                    <SelectItem value="production">Production (إنتاج)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">رمز OTP (6 أرقام)</Label>
+                <Input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="123456"
+                  className="font-mono text-lg tracking-widest text-center"
+                  dir="ltr"
+                  maxLength={6}
+                  disabled={onboarding}
+                />
+              </div>
+            </div>
+
+            {onboarding && onboardStep && (
+              <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/30 rounded-md px-3 py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{onboardStep}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                💡 يتم توليد المفتاح الخاص محلياً ولا يُرسل أبداً للهيئة. يُستبدل OTP بـ CCSID صالح لمدة سنة، ثم يتم إصدار PCSID للإنتاج تلقائياً.
+              </p>
+              <Button
+                onClick={handleOtpOnboard}
+                disabled={onboarding || otp.length !== 6}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+              >
+                {onboarding ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" /> جارِ التفعيل...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4 ml-2" /> تفعيل الجهاز
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Security warning */}
         <Card className="mb-4 border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="p-4 flex gap-3">
