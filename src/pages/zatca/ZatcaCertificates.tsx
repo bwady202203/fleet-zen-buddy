@@ -8,7 +8,6 @@ import {
   Upload,
   ShieldCheck,
   AlertTriangle,
-  CheckCircle2,
   Eye,
   EyeOff,
 } from "lucide-react";
