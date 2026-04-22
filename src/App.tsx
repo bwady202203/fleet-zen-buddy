@@ -91,6 +91,16 @@ import VehicleCostReport from "./pages/VehicleCostReport";
 import MaintenancePurchaseInvoices from "./pages/MaintenancePurchaseInvoices";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
+import ZatcaHome from "./pages/zatca/ZatcaHome";
+import ZatcaInvoices from "./pages/zatca/ZatcaInvoices";
+import ZatcaSubmission from "./pages/zatca/ZatcaSubmission";
+import ZatcaCompliance from "./pages/zatca/ZatcaCompliance";
+import ZatcaXml from "./pages/zatca/ZatcaXml";
+import ZatcaCertificates from "./pages/zatca/ZatcaCertificates";
+import ZatcaSettings from "./pages/zatca/ZatcaSettings";
+import ZatcaAuditLog from "./pages/zatca/ZatcaAuditLog";
+import ZatcaReports from "./pages/zatca/ZatcaReports";
+import ZatcaAiAssistant from "./pages/zatca/ZatcaAiAssistant";
 
 const queryClient = new QueryClient();
 
@@ -197,6 +207,17 @@ const App = () => {
                                   <Route path="/custody/smart-journal" element={<CustodySmartJournal />} />
                                   <Route path="/accounting/transfer-requests" element={<TransferRequests />} />
                                   <Route path="/accounting/important-balances" element={<ImportantBalances />} />
+                                  {/* ZATCA - الفوترة الإلكترونية */}
+                                  <Route path="/zatca" element={<ZatcaHome />} />
+                                  <Route path="/zatca/invoices" element={<ZatcaInvoices />} />
+                                  <Route path="/zatca/submission" element={<ZatcaSubmission />} />
+                                  <Route path="/zatca/compliance" element={<ZatcaCompliance />} />
+                                  <Route path="/zatca/xml" element={<ZatcaXml />} />
+                                  <Route path="/zatca/certificates" element={<ZatcaCertificates />} />
+                                  <Route path="/zatca/settings" element={<ZatcaSettings />} />
+                                  <Route path="/zatca/audit-log" element={<ZatcaAuditLog />} />
+                                  <Route path="/zatca/reports" element={<ZatcaReports />} />
+                                  <Route path="/zatca/ai-assistant" element={<ZatcaAiAssistant />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
                               </ProtectedRoute>
