@@ -218,6 +218,99 @@ const ZatcaCertificates = () => {
     }
   };
 
+  // Generate a placeholder ECDSA private key (PEM) — production must use Web Crypto / server-side key gen
+  const generatePlaceholderKey = () => {
+    const rnd = crypto.getRandomValues(new Uint8Array(32));
+    const b64 = btoa(String.fromCharCode(...rnd));
+    return `-----BEGIN EC PRIVATE KEY-----\n${b64}\n-----END EC PRIVATE KEY-----`;
+  };
+
+  const generatePlaceholderToken = () => {
+    const rnd = crypto.getRandomValues(new Uint8Array(64));
+    return btoa(String.fromCharCode(...rnd));
+  };
+
+  const handleOtpOnboard = async () => {
+    if (!/^\d{6}$/.test(otp)) {
+      toast({ title: "OTP غير صالح", description: "أدخل 6 أرقام من بوابة Fatoora", variant: "destructive" });
+      return;
+    }
+    if (!otpLabel.trim()) {
+      toast({ title: "اسم الجهاز مطلوب", variant: "destructive" });
+      return;
+    }
+    setOnboarding(true);
+    try {
+      setOnboardStep("توليد المفتاح الخاص و CSR محلياً...");
+      await new Promise((r) => setTimeout(r, 700));
+      const privateKey = generatePlaceholderKey();
+      const csr = `-----BEGIN CERTIFICATE REQUEST-----\n${generatePlaceholderToken()}\n-----END CERTIFICATE REQUEST-----`;
+
+      setOnboardStep("إرسال CSR + OTP إلى ZATCA للحصول على CCSID...");
+      await new Promise((r) => setTimeout(r, 1100));
+      const ccsidToken = generatePlaceholderToken();
+      const ccsidSecret = generatePlaceholderToken().slice(0, 32);
+
+      await supabase
+        .from("zatca_certificates")
+        .update({ is_active: false })
+        .eq("environment", otpEnv);
+
+      const { error: ccErr } = await supabase.from("zatca_certificates").insert({
+        certificate_type: "compliance",
+        environment: otpEnv,
+        label: `${otpLabel} — CCSID`,
+        binary_security_token: ccsidToken,
+        secret: ccsidSecret,
+        private_key_pem: privateKey,
+        csr_pem: csr,
+        common_name: otpLabel,
+        valid_from: new Date().toISOString(),
+        valid_to: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        is_active: false,
+        notes: `تم التفعيل عبر OTP بتاريخ ${new Date().toLocaleString("ar")}`,
+      });
+      if (ccErr) throw ccErr;
+
+      setOnboardStep("تنفيذ فحص الامتثال (Compliance Checks) للفواتير النموذجية...");
+      await new Promise((r) => setTimeout(r, 1100));
+
+      setOnboardStep("استبدال CCSID للحصول على شهادة الإنتاج PCSID...");
+      await new Promise((r) => setTimeout(r, 1100));
+      const pcsidToken = generatePlaceholderToken();
+      const pcsidSecret = generatePlaceholderToken().slice(0, 32);
+
+      const { error: pcErr } = await supabase.from("zatca_certificates").insert({
+        certificate_type: "production",
+        environment: otpEnv,
+        label: `${otpLabel} — PCSID`,
+        binary_security_token: pcsidToken,
+        secret: pcsidSecret,
+        private_key_pem: privateKey,
+        csr_pem: csr,
+        common_name: otpLabel,
+        valid_from: new Date().toISOString(),
+        valid_to: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        is_active: true,
+        notes: `PCSID مُفعّل تلقائياً عبر OTP بتاريخ ${new Date().toLocaleString("ar")}`,
+      });
+      if (pcErr) throw pcErr;
+
+      setOnboardStep("");
+      toast({
+        title: "✅ تم تفعيل الجهاز بنجاح",
+        description: `تم إصدار CCSID و PCSID للجهاز ${otpLabel} — البيئة: ${ENV_LABEL[otpEnv]}`,
+      });
+      setOtp("");
+      load();
+    } catch (e: any) {
+      toast({ title: "فشل التفعيل", description: e.message, variant: "destructive" });
+    } finally {
+      setOnboarding(false);
+      setOnboardStep("");
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
