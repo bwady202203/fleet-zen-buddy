@@ -97,8 +97,6 @@ const ZatcaCertificates = () => {
   useEffect(() => {
     load();
   }, []);
-    load();
-  }, []);
 
   const load = async () => {
     setLoading(true);
