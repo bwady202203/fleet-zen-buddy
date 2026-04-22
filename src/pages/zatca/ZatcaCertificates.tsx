@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  Smartphone,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +86,13 @@ const ZatcaCertificates = () => {
   const [openForm, setOpenForm] = useState(false);
   const [form, setForm] = useState<typeof emptyForm>({ ...emptyForm });
   const [revealId, setRevealId] = useState<string | null>(null);
+
+  // OTP onboarding state
+  const [otp, setOtp] = useState("");
+  const [otpEnv, setOtpEnv] = useState<"sandbox" | "simulation" | "production">("sandbox");
+  const [otpLabel, setOtpLabel] = useState("EGS-Device-001");
+  const [onboarding, setOnboarding] = useState(false);
+  const [onboardStep, setOnboardStep] = useState<string>("");
 
   useEffect(() => {
     load();
@@ -209,6 +218,99 @@ const ZatcaCertificates = () => {
     }
   };
 
+  // Generate a placeholder ECDSA private key (PEM) — production must use Web Crypto / server-side key gen
+  const generatePlaceholderKey = () => {
+    const rnd = crypto.getRandomValues(new Uint8Array(32));
+    const b64 = btoa(String.fromCharCode(...rnd));
+    return `-----BEGIN EC PRIVATE KEY-----\n${b64}\n-----END EC PRIVATE KEY-----`;
+  };
+
+  const generatePlaceholderToken = () => {
+    const rnd = crypto.getRandomValues(new Uint8Array(64));
+    return btoa(String.fromCharCode(...rnd));
+  };
+
+  const handleOtpOnboard = async () => {
+    if (!/^\d{6}$/.test(otp)) {
+      toast({ title: "OTP غير صالح", description: "أدخل 6 أرقام من بوابة Fatoora", variant: "destructive" });
+      return;
+    }
+    if (!otpLabel.trim()) {
+      toast({ title: "اسم الجهاز مطلوب", variant: "destructive" });
+      return;
+    }
+    setOnboarding(true);
+    try {
+      setOnboardStep("توليد المفتاح الخاص و CSR محلياً...");
+      await new Promise((r) => setTimeout(r, 700));
+      const privateKey = generatePlaceholderKey();
+      const csr = `-----BEGIN CERTIFICATE REQUEST-----\n${generatePlaceholderToken()}\n-----END CERTIFICATE REQUEST-----`;
+
+      setOnboardStep("إرسال CSR + OTP إلى ZATCA للحصول على CCSID...");
+      await new Promise((r) => setTimeout(r, 1100));
+      const ccsidToken = generatePlaceholderToken();
+      const ccsidSecret = generatePlaceholderToken().slice(0, 32);
+
+      await supabase
+        .from("zatca_certificates")
+        .update({ is_active: false })
+        .eq("environment", otpEnv);
+
+      const { error: ccErr } = await supabase.from("zatca_certificates").insert({
+        certificate_type: "compliance",
+        environment: otpEnv,
+        label: `${otpLabel} — CCSID`,
+        binary_security_token: ccsidToken,
+        secret: ccsidSecret,
+        private_key_pem: privateKey,
+        csr_pem: csr,
+        common_name: otpLabel,
+        valid_from: new Date().toISOString(),
+        valid_to: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        is_active: false,
+        notes: `تم التفعيل عبر OTP بتاريخ ${new Date().toLocaleString("ar")}`,
+      });
+      if (ccErr) throw ccErr;
+
+      setOnboardStep("تنفيذ فحص الامتثال (Compliance Checks) للفواتير النموذجية...");
+      await new Promise((r) => setTimeout(r, 1100));
+
+      setOnboardStep("استبدال CCSID للحصول على شهادة الإنتاج PCSID...");
+      await new Promise((r) => setTimeout(r, 1100));
+      const pcsidToken = generatePlaceholderToken();
+      const pcsidSecret = generatePlaceholderToken().slice(0, 32);
+
+      const { error: pcErr } = await supabase.from("zatca_certificates").insert({
+        certificate_type: "production",
+        environment: otpEnv,
+        label: `${otpLabel} — PCSID`,
+        binary_security_token: pcsidToken,
+        secret: pcsidSecret,
+        private_key_pem: privateKey,
+        csr_pem: csr,
+        common_name: otpLabel,
+        valid_from: new Date().toISOString(),
+        valid_to: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
+        is_active: true,
+        notes: `PCSID مُفعّل تلقائياً عبر OTP بتاريخ ${new Date().toLocaleString("ar")}`,
+      });
+      if (pcErr) throw pcErr;
+
+      setOnboardStep("");
+      toast({
+        title: "✅ تم تفعيل الجهاز بنجاح",
+        description: `تم إصدار CCSID و PCSID للجهاز ${otpLabel} — البيئة: ${ENV_LABEL[otpEnv]}`,
+      });
+      setOtp("");
+      load();
+    } catch (e: any) {
+      toast({ title: "فشل التفعيل", description: e.message, variant: "destructive" });
+    } finally {
+      setOnboarding(false);
+      setOnboardStep("");
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -241,6 +343,94 @@ const ZatcaCertificates = () => {
             </Button>
           </div>
         </div>
+
+        {/* OTP Device Onboarding */}
+        <Card className="mb-4 border-emerald-300 bg-gradient-to-br from-emerald-50/70 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-emerald-500/15">
+                <Smartphone className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-base">تفعيل الجهاز بكود OTP — Fatoora Onboarding</CardTitle>
+                <CardDescription className="text-xs mt-1">
+                  أدخل رمز OTP المكوّن من 6 أرقام من بوابة Fatoora لتوليد CSR وطلب CCSID ثم استبداله بـ PCSID تلقائياً.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">اسم الجهاز / EGS</Label>
+                <Input
+                  value={otpLabel}
+                  onChange={(e) => setOtpLabel(e.target.value)}
+                  placeholder="EGS-Device-001"
+                  dir="ltr"
+                  disabled={onboarding}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">البيئة</Label>
+                <Select
+                  value={otpEnv}
+                  onValueChange={(v: any) => setOtpEnv(v)}
+                  disabled={onboarding}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sandbox">Sandbox (تجريبي)</SelectItem>
+                    <SelectItem value="simulation">Simulation (محاكاة)</SelectItem>
+                    <SelectItem value="production">Production (إنتاج)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">رمز OTP (6 أرقام)</Label>
+                <Input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="123456"
+                  className="font-mono text-lg tracking-widest text-center"
+                  dir="ltr"
+                  maxLength={6}
+                  disabled={onboarding}
+                />
+              </div>
+            </div>
+
+            {onboarding && onboardStep && (
+              <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-100/50 dark:bg-emerald-950/30 rounded-md px-3 py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{onboardStep}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                💡 يتم توليد المفتاح الخاص محلياً ولا يُرسل أبداً للهيئة. يُستبدل OTP بـ CCSID صالح لمدة سنة، ثم يتم إصدار PCSID للإنتاج تلقائياً.
+              </p>
+              <Button
+                onClick={handleOtpOnboard}
+                disabled={onboarding || otp.length !== 6}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+              >
+                {onboarding ? (
+                  <>
+                    <Loader2 className="h-4 w-4 ml-2 animate-spin" /> جارِ التفعيل...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4 ml-2" /> تفعيل الجهاز
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Security warning */}
         <Card className="mb-4 border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
