@@ -3365,6 +3365,87 @@ export type Database = {
           },
         ]
       }
+      zatca_settings: {
+        Row: {
+          additional_number: string | null
+          building_number: string | null
+          city: string | null
+          country_code: string | null
+          created_at: string
+          crn: string | null
+          device_common_name: string | null
+          device_serial_number: string | null
+          district: string | null
+          egs_model: string | null
+          environment: string
+          id: string
+          invoice_counter: number
+          invoice_prefix: string | null
+          is_active: boolean
+          logo_url: string | null
+          organization_id: string | null
+          plot_identification: string | null
+          postal_code: string | null
+          seller_name_ar: string | null
+          seller_name_en: string | null
+          street_name: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          additional_number?: string | null
+          building_number?: string | null
+          city?: string | null
+          country_code?: string | null
+          created_at?: string
+          crn?: string | null
+          device_common_name?: string | null
+          device_serial_number?: string | null
+          district?: string | null
+          egs_model?: string | null
+          environment?: string
+          id?: string
+          invoice_counter?: number
+          invoice_prefix?: string | null
+          is_active?: boolean
+          logo_url?: string | null
+          organization_id?: string | null
+          plot_identification?: string | null
+          postal_code?: string | null
+          seller_name_ar?: string | null
+          seller_name_en?: string | null
+          street_name?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          additional_number?: string | null
+          building_number?: string | null
+          city?: string | null
+          country_code?: string | null
+          created_at?: string
+          crn?: string | null
+          device_common_name?: string | null
+          device_serial_number?: string | null
+          district?: string | null
+          egs_model?: string | null
+          environment?: string
+          id?: string
+          invoice_counter?: number
+          invoice_prefix?: string | null
+          is_active?: boolean
+          logo_url?: string | null
+          organization_id?: string | null
+          plot_identification?: string | null
+          postal_code?: string | null
+          seller_name_ar?: string | null
+          seller_name_en?: string | null
+          street_name?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
