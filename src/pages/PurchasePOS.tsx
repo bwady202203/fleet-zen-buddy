@@ -442,6 +442,16 @@ export default function PurchasePOS() {
           </div>
         </div>
       </div>
+
+      <NumericKeypadDialog
+        open={!!keypadFor}
+        onOpenChange={(o) => !o && setKeypadFor(null)}
+        initialValue={keypadFor?.quantity ?? 0}
+        title={keypadFor ? `الكمية: ${keypadFor.name}` : "أدخل الكمية"}
+        onConfirm={(val) => {
+          if (keypadFor) setQuantity(keypadFor.id, val);
+        }}
+      />
     </div>
   );
 }
