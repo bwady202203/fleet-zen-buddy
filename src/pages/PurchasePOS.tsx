@@ -366,6 +366,21 @@ export default function PurchasePOS() {
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 border-amber-400 text-amber-500 hover:bg-amber-50 hover:text-amber-600"
+                                title="إدخال الكمية بلوحة الأرقام"
+                                onClick={() =>
+                                  setKeypadFor({
+                                    id: item.id,
+                                    name: item.name,
+                                    quantity: item.quantity,
+                                  })
+                                }
+                              >
+                                <Star className="h-3.5 w-3.5 fill-current" />
+                              </Button>
                             </div>
                             <div className="text-left">
                               <div className="flex items-center gap-1">
