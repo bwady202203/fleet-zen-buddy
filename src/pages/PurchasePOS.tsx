@@ -25,6 +25,7 @@ export default function PurchasePOS() {
   const [supplierName, setSupplierName] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const filteredParts = spareParts.filter(
     (part) =>
@@ -94,6 +95,8 @@ export default function PurchasePOS() {
   );
 
   const handleCompletePurchase = async () => {
+    if (isProcessing) return;
+
     if (cart.length === 0) {
       toast.error("السلة فارغة");
       return;
@@ -103,6 +106,8 @@ export default function PurchasePOS() {
       toast.error("يرجى إدخال اسم المورد");
       return;
     }
+
+    setIsProcessing(true);
 
     console.log("Attempting purchase with data:", {
       date: purchaseDate,
@@ -133,6 +138,8 @@ export default function PurchasePOS() {
     } catch (error) {
       console.error("Purchase error:", error);
       toast.error(`حدث خطأ أثناء عملية الشراء: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -384,11 +391,11 @@ export default function PurchasePOS() {
 
                   <Button
                     className="w-full h-12 text-lg"
-                    disabled={cart.length === 0 || !supplierName.trim()}
+                    disabled={cart.length === 0 || !supplierName.trim() || isProcessing}
                     onClick={handleCompletePurchase}
                   >
                     <Save className="ml-2 h-5 w-5" />
-                    إتمام عملية الشراء
+                    {isProcessing ? "جاري إنشاء الفاتورة..." : "إتمام عملية الشراء"}
                   </Button>
                   {cart.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center mt-2">
