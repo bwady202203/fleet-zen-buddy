@@ -91,6 +91,7 @@ import VehicleMaintenanceCosts from "./pages/VehicleMaintenanceCosts";
 import VehicleCostReport from "./pages/VehicleCostReport";
 import MaintenancePurchaseInvoices from "./pages/MaintenancePurchaseInvoices";
 import NewMaintenanceOrder from "./pages/NewMaintenanceOrder";
+import MaintenanceOrdersReport from "./pages/MaintenanceOrdersReport";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import ZatcaHome from "./pages/zatca/ZatcaHome";
@@ -191,6 +192,7 @@ const App = () => {
                                   <Route path="/vehicle-cost-report" element={<VehicleCostReport />} />
                                   <Route path="/maintenance-purchase-invoices" element={<MaintenancePurchaseInvoices />} />
                                   <Route path="/new-maintenance-order" element={<NewMaintenanceOrder />} />
+                                  <Route path="/maintenance-orders-report" element={<MaintenanceOrdersReport />} />
                                   <Route path="/spare-parts" element={<SpareParts />} />
                                   <Route path="/bulk-spare-parts" element={<BulkSpareParts />} />
                                   <Route path="/low-stock-alerts" element={<LowStockAlerts />} />
