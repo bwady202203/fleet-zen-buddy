@@ -78,6 +78,18 @@ export default function PurchasePOS() {
     );
   };
 
+  const setQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCart(cart.filter((item) => item.id !== id));
+      return;
+    }
+    setCart(
+      cart.map((item) =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
+
   const removeFromCart = (id: string) => {
     setCart(cart.filter((item) => item.id !== id));
     toast.success("تم حذف المنتج من السلة");
