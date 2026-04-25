@@ -78,7 +78,6 @@ export default function NewMaintenanceOrder() {
       return;
     }
     addSparePart({
-      id: `part-${Date.now()}`,
       code: `SP-${Date.now()}`,
       name: newPartForm.name,
       price: parseFloat(newPartForm.price),
