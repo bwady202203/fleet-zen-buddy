@@ -67,20 +67,34 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
     return account ? `${account.code} - ${account.name_ar}` : '—';
   };
 
-  const pages: TransferRequestItem[][] = [];
+  // Always render all items on a single page
   const items = request.items;
-  if (items.length <= ITEMS_PER_FIRST_PAGE) {
-    pages.push(items);
-  } else {
-    pages.push(items.slice(0, ITEMS_PER_FIRST_PAGE));
-    let remaining = items.slice(ITEMS_PER_FIRST_PAGE);
-    while (remaining.length > 0) {
-      pages.push(remaining.slice(0, ITEMS_PER_OTHER_PAGE));
-      remaining = remaining.slice(ITEMS_PER_OTHER_PAGE);
-    }
-  }
+  const pages: TransferRequestItem[][] = [items];
+  const totalPages = 1;
 
-  const totalPages = pages.length;
+  // Dynamically shrink row height when there are many items so everything fits on one A4 page
+  const itemCount = items.length;
+  const baseRowHeight = 17.6; // mm
+  const baseHeaderHeight = 27.5; // mm
+  const baseFontSize = 16; // px
+  const baseHeaderFontSize = 16; // px
+  const baseCellPadY = 8; // px
+  const baseHeaderPadY = 10; // px
+
+  // Approx vertical budget for the rows area on A4 (after header/footer/total/signatures): ~190mm
+  const rowsBudgetMm = 190;
+  const naturalRowsHeight = baseHeaderHeight + itemCount * baseRowHeight;
+  const densityFactor = naturalRowsHeight > rowsBudgetMm
+    ? Math.max(0.5, rowsBudgetMm / naturalRowsHeight)
+    : 1;
+
+  const rowHeight = baseRowHeight * densityFactor;
+  const headerHeight = baseHeaderHeight * densityFactor;
+  const cellFontSize = Math.max(9, baseFontSize * densityFactor);
+  const headerFontSize = Math.max(10, baseHeaderFontSize * densityFactor);
+  const cellPadY = Math.max(2, baseCellPadY * densityFactor);
+  const headerPadY = Math.max(3, baseHeaderPadY * densityFactor);
+
 
   // Colors
   const PRIMARY = '#1F3A5F';
