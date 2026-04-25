@@ -25,6 +25,7 @@ export default function PurchasePOS() {
   const [supplierName, setSupplierName] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const filteredParts = spareParts.filter(
     (part) =>
