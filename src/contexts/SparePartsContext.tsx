@@ -278,17 +278,29 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
       if (purchaseError) throw purchaseError;
 
-      // تحديث الكميات وإضافة حركات المخزون
+      // تحديث الكميات وإجمالي المشتريات وإضافة حركات المخزون
       for (const item of purchase.spareParts) {
         const part = spareParts.find(p => p.id === item.sparePartId);
         if (!part) continue;
 
         const newQuantity = part.quantity + item.quantity;
 
-        // تحديث الكمية
+        // جلب القيمة التراكمية الحالية للمشتريات من قاعدة البيانات
+        const { data: currentPart } = await supabase
+          .from('spare_parts')
+          .select('total_purchased')
+          .eq('id', item.sparePartId)
+          .single();
+
+        const newTotalPurchased = (currentPart?.total_purchased || 0) + item.quantity;
+
+        // تحديث الكمية الحالية وإجمالي المشتريات التراكمي
         await supabase
           .from('spare_parts')
-          .update({ quantity: newQuantity })
+          .update({
+            quantity: newQuantity,
+            total_purchased: newTotalPurchased,
+          })
           .eq('id', item.sparePartId);
 
         // إضافة حركة المخزون
@@ -331,10 +343,22 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
       const newQuantity = part.quantity - quantity;
 
-      // تحديث الكمية
+      // جلب القيمة التراكمية الحالية للصيانة من قاعدة البيانات
+      const { data: currentPart } = await supabase
+        .from('spare_parts')
+        .select('total_maintenance_used')
+        .eq('id', sparePartId)
+        .single();
+
+      const newTotalMaintenance = (currentPart?.total_maintenance_used || 0) + quantity;
+
+      // تحديث الكمية الحالية وإجمالي المخصوم من الصيانة
       const { error: updateError } = await supabase
         .from('spare_parts')
-        .update({ quantity: newQuantity })
+        .update({
+          quantity: newQuantity,
+          total_maintenance_used: newTotalMaintenance,
+        })
         .eq('id', sparePartId);
 
       if (updateError) throw updateError;
