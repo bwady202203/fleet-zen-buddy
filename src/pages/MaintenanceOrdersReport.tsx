@@ -163,6 +163,42 @@ const MaintenanceOrdersReport = () => {
     await loadOrderItems(order.id);
   };
 
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const updates: Record<string, any> = { status: newStatus };
+      if (newStatus === "completed") {
+        updates.completed_date = new Date().toISOString();
+      } else {
+        updates.completed_date = null;
+      }
+      const { error } = await supabase
+        .from("maintenance_requests")
+        .update(updates)
+        .eq("id", orderId);
+      if (error) throw error;
+
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === orderId
+            ? { ...o, status: newStatus, completed_date: updates.completed_date }
+            : o
+        )
+      );
+
+      toast({
+        title: "تم التحديث",
+        description: `تم تغيير حالة أمر الصيانة إلى ${statusLabels[newStatus]?.label || newStatus}`,
+      });
+    } catch (e: any) {
+      console.error(e);
+      toast({
+        title: "خطأ",
+        description: "تعذر تحديث حالة أمر الصيانة",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b print:hidden">
