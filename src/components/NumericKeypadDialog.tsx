@@ -34,20 +34,51 @@ export const NumericKeypadDialog = ({
     onOpenChange(next);
   };
 
-  const append = (digit: string) => {
-    if (digit === "." && value.includes(".")) return;
-    setValue((prev) => (prev === "0" && digit !== "." ? digit : prev + digit));
-  };
+  const append = useCallback((digit: string) => {
+    setValue((prev) => {
+      if (digit === "." && prev.includes(".")) return prev;
+      return prev === "0" && digit !== "." ? digit : prev + digit;
+    });
+  }, []);
 
-  const backspace = () => setValue((prev) => prev.slice(0, -1));
-  const clearAll = () => setValue("");
+  const backspace = useCallback(() => setValue((prev) => prev.slice(0, -1)), []);
+  const clearAll = useCallback(() => setValue(""), []);
 
-  const confirm = () => {
+  const confirm = useCallback(() => {
     const num = parseFloat(value);
     if (isNaN(num) || num <= 0) return;
     onConfirm(num);
     onOpenChange(false);
-  };
+  }, [value, onConfirm, onOpenChange]);
+
+  // ربط لوحة المفاتيح: أرقام، فاصلة، Backspace، Enter، Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      const k = e.key;
+      if (/^[0-9]$/.test(k)) {
+        e.preventDefault();
+        append(k);
+      } else if (k === "." || k === ",") {
+        e.preventDefault();
+        append(".");
+      } else if (k === "Backspace") {
+        e.preventDefault();
+        backspace();
+      } else if (k === "Delete") {
+        e.preventDefault();
+        clearAll();
+      } else if (k === "Enter") {
+        e.preventDefault();
+        confirm();
+      } else if (k === "Escape") {
+        e.preventDefault();
+        onOpenChange(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, append, backspace, clearAll, confirm, onOpenChange]);
 
   const keys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "back"];
 
