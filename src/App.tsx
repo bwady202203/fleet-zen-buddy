@@ -79,6 +79,7 @@ import BulkEmployees from "./pages/BulkEmployees";
 import BulkSpareParts from "./pages/BulkSpareParts";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
+import LowStockAlerts from "./pages/LowStockAlerts";
 import Purchases from "./pages/Purchases";
 import PurchasePOS from "./pages/PurchasePOS";
 import StockMovement from "./pages/StockMovement";
@@ -190,6 +191,7 @@ const App = () => {
                                   <Route path="/maintenance-purchase-invoices" element={<MaintenancePurchaseInvoices />} />
                                   <Route path="/spare-parts" element={<SpareParts />} />
                                   <Route path="/bulk-spare-parts" element={<BulkSpareParts />} />
+                                  <Route path="/low-stock-alerts" element={<LowStockAlerts />} />
                                   <Route path="/purchases" element={<Purchases />} />
                                   <Route path="/purchases/pos" element={<PurchasePOS />} />
                                   <Route path="/stock-movement" element={<StockMovement />} />
