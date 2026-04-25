@@ -82,67 +82,51 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b">
+      <header className="border-b bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* العنوان على اليمين */}
+            <div className="flex items-center gap-3 order-1">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-md">
                 <Truck className="h-6 w-6 text-primary-foreground" />
               </div>
-              <h1 className="text-lg sm:text-2xl font-bold">نظام تتبع صيانة الأسطول</h1>
+              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-l from-primary to-primary/60 bg-clip-text text-transparent">
+                نظام تتبع صيانة الأسطول
+              </h1>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap gap-2">
-              <Link to="/spare-parts">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <Package className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">قطع الغيار</span>
-                </Button>
-              </Link>
-              <Link to="/purchases">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <ShoppingCart className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">المشتريات</span>
-                </Button>
-              </Link>
-              <Link to="/maintenance-purchase-invoices">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <Receipt className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">فواتير المشتريات</span>
-                </Button>
-              </Link>
-              <Link to="/reports">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <FileText className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">تقرير الصيانة</span>
-                </Button>
-              </Link>
-              <Link to="/vehicle-cost-report">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <Receipt className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">تقرير التكاليف</span>
-                </Button>
-              </Link>
-              <Link to="/vehicle-mileage">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <Gauge className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">تقرير الكيلومترات</span>
-                </Button>
-              </Link>
-              <Link to="/bulk-vehicles">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <List className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">تسجيل عدة مركبات</span>
-                </Button>
-              </Link>
-              <Link to="/edit-vehicles">
-                <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
-                  <Edit className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                  <span className="truncate">تعديل الأسماء</span>
-                </Button>
-              </Link>
-              <Button variant="outline" size="sm" onClick={exportToExcel} title="تصدير إلى Excel" className="text-xs sm:text-sm">
-                <FileSpreadsheet className="h-4 w-4 ml-1 sm:ml-2 shrink-0" />
-                <span className="truncate">تصدير Excel</span>
+
+            {/* الأيقونات على اليسار في الشاشات الكبيرة، أسفل في الصغيرة */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:flex lg:flex-wrap lg:justify-end gap-2 order-2">
+              {[
+                { to: "/spare-parts", icon: Package, label: "قطع الغيار", color: "from-blue-500/10 to-blue-500/5 hover:from-blue-500/20 hover:to-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30" },
+                { to: "/purchases", icon: ShoppingCart, label: "المشتريات", color: "from-emerald-500/10 to-emerald-500/5 hover:from-emerald-500/20 hover:to-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
+                { to: "/maintenance-purchase-invoices", icon: Receipt, label: "فواتير المشتريات", color: "from-amber-500/10 to-amber-500/5 hover:from-amber-500/20 hover:to-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
+                { to: "/reports", icon: FileText, label: "تقرير الصيانة", color: "from-indigo-500/10 to-indigo-500/5 hover:from-indigo-500/20 hover:to-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30" },
+                { to: "/vehicle-cost-report", icon: Receipt, label: "تقرير التكاليف", color: "from-rose-500/10 to-rose-500/5 hover:from-rose-500/20 hover:to-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30" },
+                { to: "/vehicle-mileage", icon: Gauge, label: "تقرير الكيلومترات", color: "from-cyan-500/10 to-cyan-500/5 hover:from-cyan-500/20 hover:to-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30" },
+                { to: "/bulk-vehicles", icon: List, label: "تسجيل عدة مركبات", color: "from-violet-500/10 to-violet-500/5 hover:from-violet-500/20 hover:to-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/30" },
+                { to: "/edit-vehicles", icon: Edit, label: "تعديل الأسماء", color: "from-orange-500/10 to-orange-500/5 hover:from-orange-500/20 hover:to-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30" },
+              ].map(({ to, icon: Icon, label, color }) => (
+                <Link key={to} to={to}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`w-full h-9 text-xs sm:text-sm bg-gradient-to-br ${color} border transition-all hover:shadow-md hover:-translate-y-0.5`}
+                  >
+                    <Icon className="h-4 w-4 ml-1.5 shrink-0" />
+                    <span className="truncate font-medium">{label}</span>
+                  </Button>
+                </Link>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportToExcel}
+                title="تصدير إلى Excel"
+                className="h-9 text-xs sm:text-sm bg-gradient-to-br from-green-500/10 to-green-500/5 hover:from-green-500/20 hover:to-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 transition-all hover:shadow-md hover:-translate-y-0.5"
+              >
+                <FileSpreadsheet className="h-4 w-4 ml-1.5 shrink-0" />
+                <span className="truncate font-medium">تصدير Excel</span>
               </Button>
               <AddVehicleDialog />
             </div>
