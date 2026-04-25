@@ -21,6 +21,7 @@ const items = [
   { to: "/maintenance-orders-report", icon: ClipboardList, label: "سجل أوامر الصيانة", color: "text-teal-600 dark:text-teal-400" },
   { to: "/spare-parts", icon: Package, label: "قطع الغيار", color: "text-blue-600 dark:text-blue-400" },
   { to: "/purchases", icon: ShoppingCart, label: "المشتريات", color: "text-emerald-600 dark:text-emerald-400" },
+  { to: "/purchases/pos", icon: Store, label: "نقطة بيع قطع غيار", color: "text-fuchsia-600 dark:text-fuchsia-400" },
   { to: "/maintenance-purchase-invoices", icon: Receipt, label: "فواتير المشتريات", color: "text-amber-600 dark:text-amber-400" },
   { to: "/reports", icon: FileText, label: "تقرير الصيانة", color: "text-indigo-600 dark:text-indigo-400" },
   { to: "/vehicle-cost-report", icon: Receipt, label: "تقرير التكاليف", color: "text-rose-600 dark:text-rose-400" },
