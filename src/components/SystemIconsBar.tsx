@@ -1,7 +1,8 @@
-import { LogOut, Download, Clock, User } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import * as HijriDate from "hijri-converter";
@@ -10,6 +11,9 @@ import { toast } from "sonner";
 
 export const SystemIconsBar = () => {
   const { signOut, user, userRole } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sessionStartTime] = useState(new Date());
   const [sessionDuration, setSessionDuration] = useState("00:00:00");
@@ -124,6 +128,18 @@ export const SystemIconsBar = () => {
         {/* Date, Time and Logout Section */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-sm text-muted-foreground" dir="rtl">
           <div className="flex items-center gap-2 sm:gap-6 flex-wrap justify-center">
+            {!isHome && (
+              <Button
+                onClick={() => navigate(-1)}
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 hover:bg-primary/10 border-primary/30"
+                title="رجوع"
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span className="text-xs sm:text-sm font-medium">رجوع</span>
+              </Button>
+            )}
             <div className="flex items-center gap-1 sm:gap-2">
               <span className="font-semibold text-xs sm:text-sm">الهجري:</span>
               <span className="text-xs sm:text-sm">{hijriDateStr}</span>
