@@ -304,29 +304,30 @@ const SpareParts = () => {
           </Card>
         </div>
 
-        {/* تنبيه المخزون المنخفض */}
+        {/* رابط لصفحة تنبيهات المخزون المنخفض */}
         {lowStockParts.length > 0 && (
-          <Card className="mb-6 border-yellow-500/50 bg-yellow-500/5">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-yellow-500 mb-2">تنبيه: مخزون منخفض</h3>
-                  <p className="text-sm text-muted-foreground">
-                    لديك {lowStockParts.length} من قطع الغيار تحتاج إلى إعادة طلب:
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {lowStockParts.map((part) => (
-                      <Badge key={part.id} variant="outline" className="border-yellow-500 text-yellow-500">
-                        {part.name} ({part.quantity} {part.unit})
-                      </Badge>
-                    ))}
+          <Link to="/low-stock-alerts" className="block mb-6">
+            <Card className="border-yellow-500/50 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors cursor-pointer">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-500" />
+                    <div>
+                      <h3 className="font-semibold text-yellow-500">
+                        تنبيه: لديك {lowStockParts.length} من قطع الغيار تحتاج إعادة طلب
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        اضغط لعرض التفاصيل في شاشة التنبيهات
+                      </p>
+                    </div>
                   </div>
+                  <ArrowRight className="h-5 w-5 text-yellow-500" />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         )}
+
 
         {/* قائمة قطع الغيار */}
         <Card>
