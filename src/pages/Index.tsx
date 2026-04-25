@@ -6,7 +6,7 @@ import { Truck, Calendar, Wrench, AlertCircle, Search } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import {
   Select,
   SelectContent,
