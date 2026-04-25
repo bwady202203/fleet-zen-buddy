@@ -46,13 +46,13 @@ export function FleetSidebar({ onExportExcel }: FleetSidebarProps) {
                 const active = location.pathname === to;
                 return (
                   <SidebarMenuItem key={to}>
-                    <SidebarMenuButton asChild tooltip={label}>
+                    <SidebarMenuButton asChild tooltip={label} size="lg" className="h-12 text-base">
                       <NavLink
                         to={to}
-                        className={`flex items-center gap-2 ${active ? "bg-muted text-primary font-semibold" : "hover:bg-muted/50"}`}
+                        className={`flex items-center gap-3 ${active ? "bg-muted text-primary font-semibold" : "hover:bg-muted/50"}`}
                       >
-                        <Icon className={`h-4 w-4 shrink-0 ${color}`} />
-                        {!collapsed && <span className="truncate">{label}</span>}
+                        <Icon className={`!h-6 !w-6 shrink-0 ${color}`} />
+                        {!collapsed && <span className="truncate text-base">{label}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
