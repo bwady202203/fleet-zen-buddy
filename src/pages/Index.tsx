@@ -1,11 +1,9 @@
 import { VehicleCard } from "@/components/VehicleCard";
 import { StatsCard } from "@/components/StatsCard";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Truck, Calendar, Wrench, AlertCircle, Search, FileText, Package, ShoppingCart, Gauge, List, Download, FileSpreadsheet, Receipt, Edit } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertCircle, Search } from "lucide-react";
 import * as XLSX from 'xlsx';
-import { Link } from "react-router-dom";
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useMemo } from "react";
@@ -16,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { FleetSidebar } from "@/components/FleetSidebar";
 
 const Index = () => {
   const { vehicles } = useVehicles();
