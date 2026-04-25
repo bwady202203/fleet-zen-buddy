@@ -95,6 +95,8 @@ export default function PurchasePOS() {
   );
 
   const handleCompletePurchase = async () => {
+    if (isProcessing) return;
+
     if (cart.length === 0) {
       toast.error("السلة فارغة");
       return;
@@ -104,6 +106,8 @@ export default function PurchasePOS() {
       toast.error("يرجى إدخال اسم المورد");
       return;
     }
+
+    setIsProcessing(true);
 
     console.log("Attempting purchase with data:", {
       date: purchaseDate,
@@ -134,6 +138,8 @@ export default function PurchasePOS() {
     } catch (error) {
       console.error("Purchase error:", error);
       toast.error(`حدث خطأ أثناء عملية الشراء: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
