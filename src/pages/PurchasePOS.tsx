@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Search, ShoppingCart, Trash2, Plus, Minus, Save, X } from "lucide-react";
+import { ArrowRight, Search, ShoppingCart, Trash2, Plus, Minus, Save, X, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { NumericKeypadDialog } from "@/components/NumericKeypadDialog";
 
 interface CartItem {
   id: string;
@@ -26,6 +27,7 @@ export default function PurchasePOS() {
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [keypadFor, setKeypadFor] = useState<{ id: string; name: string; quantity: number } | null>(null);
 
   const filteredParts = spareParts.filter(
     (part) =>
@@ -72,6 +74,18 @@ export default function PurchasePOS() {
     setCart(
       cart.map((item) =>
         item.id === id ? { ...item, price: newPrice } : item
+      )
+    );
+  };
+
+  const setQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCart(cart.filter((item) => item.id !== id));
+      return;
+    }
+    setCart(
+      cart.map((item) =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
       )
     );
   };
@@ -352,6 +366,21 @@ export default function PurchasePOS() {
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 border-amber-400 text-amber-500 hover:bg-amber-50 hover:text-amber-600"
+                                title="إدخال الكمية بلوحة الأرقام"
+                                onClick={() =>
+                                  setKeypadFor({
+                                    id: item.id,
+                                    name: item.name,
+                                    quantity: item.quantity,
+                                  })
+                                }
+                              >
+                                <Star className="h-3.5 w-3.5 fill-current" />
+                              </Button>
                             </div>
                             <div className="text-left">
                               <div className="flex items-center gap-1">
@@ -413,6 +442,16 @@ export default function PurchasePOS() {
           </div>
         </div>
       </div>
+
+      <NumericKeypadDialog
+        open={!!keypadFor}
+        onOpenChange={(o) => !o && setKeypadFor(null)}
+        initialValue={keypadFor?.quantity ?? 0}
+        title={keypadFor ? `الكمية: ${keypadFor.name}` : "أدخل الكمية"}
+        onConfirm={(val) => {
+          if (keypadFor) setQuantity(keypadFor.id, val);
+        }}
+      />
     </div>
   );
 }
