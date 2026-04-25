@@ -15,6 +15,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
+import Vehicles from "./pages/Vehicles";
 import Auth from "./pages/Auth";
 import UsersManagement from "./pages/UsersManagement";
 import OrganizationsManagement from "./pages/OrganizationsManagement";
@@ -137,6 +138,7 @@ const App = () => {
                                   <Route path="/users" element={<UsersManagement />} />
                                   <Route path="/organizations" element={<OrganizationsManagement />} />
                                   <Route path="/fleet" element={<Index />} />
+                                  <Route path="/fleet/vehicles" element={<Vehicles />} />
                                   <Route path="/accounting" element={<Accounting />} />
                                   <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                                   <Route path="/accounting/journal-entries" element={<JournalEntries />} />
