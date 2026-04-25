@@ -12,7 +12,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { SystemIconsBar } from "@/components/SystemIconsBar";
+import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -131,7 +131,7 @@ const App = () => {
                             {/* Protected Routes with Icons Bar */}
                             <Route path="/*" element={
                               <ProtectedRoute>
-                                <SystemIconsBar />
+                                <AppLayout>
                                 <Routes>
                                   <Route path="/" element={<Dashboard />} />
                                   <Route path="/users" element={<UsersManagement />} />
@@ -226,6 +226,7 @@ const App = () => {
                                   <Route path="/zatca/ai-assistant" element={<ZatcaAiAssistant />} />
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
+                                </AppLayout>
                               </ProtectedRoute>
                             } />
                           </Routes>

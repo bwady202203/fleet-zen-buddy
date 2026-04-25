@@ -1,5 +1,6 @@
 import { LogOut, Download, Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -128,6 +129,7 @@ export const SystemIconsBar = () => {
         {/* Date, Time and Logout Section */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-sm text-muted-foreground" dir="rtl">
           <div className="flex items-center gap-2 sm:gap-6 flex-wrap justify-center">
+            <SidebarTrigger className="h-8 w-8 hover:bg-primary/10" />
             {!isHome && (
               <Button
                 onClick={() => navigate(-1)}
