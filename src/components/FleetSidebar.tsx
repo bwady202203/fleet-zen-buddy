@@ -67,9 +67,9 @@ export function FleetSidebar({ onExportExcel }: FleetSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={onExportExcel} tooltip="تصدير Excel">
-                  <FileSpreadsheet className="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
-                  {!collapsed && <span className="truncate">تصدير Excel</span>}
+                <SidebarMenuButton onClick={onExportExcel} tooltip="تصدير Excel" size="lg" className="h-12 text-base">
+                  <FileSpreadsheet className="!h-6 !w-6 shrink-0 text-green-600 dark:text-green-400" />
+                  {!collapsed && <span className="truncate text-base">تصدير Excel</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
