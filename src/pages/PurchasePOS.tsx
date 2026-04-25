@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,26 @@ export default function PurchasePOS() {
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
   const [isProcessing, setIsProcessing] = useState(false);
   const [keypadFor, setKeypadFor] = useState<{ id: string; name: string; quantity: number } | null>(null);
+
+  // اختصار: الضغط على * في لوحة المفاتيح يفتح نافذة إدخال الكمية لآخر منتج في السلة
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "*") return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      // تجاهل لو المستخدم يكتب في حقل إدخال
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      if (cart.length === 0) {
+        toast.info("السلة فارغة - أضف منتجاً أولاً");
+        return;
+      }
+      e.preventDefault();
+      const last = cart[cart.length - 1];
+      setKeypadFor({ id: last.id, name: last.name, quantity: last.quantity });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [cart]);
 
   const filteredParts = spareParts.filter(
     (part) =>
