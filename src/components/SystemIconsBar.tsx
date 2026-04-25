@@ -1,6 +1,5 @@
-import { LogOut, Download, Clock, User, ArrowRight, PanelLeft } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
