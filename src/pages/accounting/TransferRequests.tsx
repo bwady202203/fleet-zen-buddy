@@ -2199,6 +2199,64 @@ const [newDateValue, setNewDateValue] = useState('');
         </>
       )}
 
+      {/* Print Preview Dialog - in-page full preview */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-[230mm] w-[95vw] max-h-[95vh] overflow-hidden flex flex-col p-0 print:hidden">
+          <DialogHeader className="px-6 py-3 border-b bg-card">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-lg">
+                معاينة طباعة طلب التحويل {printingRequest ? `#${printingRequest.request_number}` : ''}
+              </DialogTitle>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border">
+                  <ZoomOut className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Slider
+                    value={[printScale * 100]}
+                    onValueChange={(val) => setPrintScale(val[0] / 100)}
+                    min={40}
+                    max={130}
+                    step={5}
+                    className="w-32"
+                  />
+                  <ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium min-w-[2.5rem] text-center">
+                    {Math.round(printScale * 100)}%
+                  </span>
+                </div>
+                <Button onClick={handlePrintFromPreview} size="sm" className="gap-2">
+                  <Printer className="h-4 w-4" />
+                  طباعة
+                </Button>
+                {printingRequest && (
+                  <Button
+                    onClick={() => handleDownloadPDF(printingRequest)}
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    PDF
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/30 p-6">
+            <div className="mx-auto bg-white shadow-2xl" style={{ width: 'fit-content' }}>
+              {printingRequest && (
+                <div style={{ transform: `scale(${printScale})`, transformOrigin: 'top center' }}>
+                  <TransferRequestPrintView
+                    request={printingRequest}
+                    accounts={accounts}
+                    scale={1}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Print Styles */}
       <style>{`
         /* PDF Generation Mode */
