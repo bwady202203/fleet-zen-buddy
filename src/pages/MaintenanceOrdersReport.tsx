@@ -350,7 +350,22 @@ const MaintenanceOrdersReport = () => {
                         <TableCell className="font-medium">{o.vehicle_name}</TableCell>
                         <TableCell className="max-w-xs truncate">{o.description}</TableCell>
                         <TableCell><Badge variant="outline" className={pr.className}>{pr.label}</Badge></TableCell>
-                        <TableCell><Badge variant="outline" className={st.className}>{st.label}</Badge></TableCell>
+                        <TableCell>
+                          <div className="print:hidden">
+                            <Select value={o.status} onValueChange={(v) => handleStatusChange(o.id, v)}>
+                              <SelectTrigger className={`h-8 w-[140px] ${st.className}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">قيد الانتظار</SelectItem>
+                                <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                                <SelectItem value="completed">مكتمل</SelectItem>
+                                <SelectItem value="cancelled">ملغي</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Badge variant="outline" className={`${st.className} hidden print:inline-flex`}>{st.label}</Badge>
+                        </TableCell>
                         <TableCell className="text-center">{o.items_count}</TableCell>
                         <TableCell className="font-semibold text-primary">{o.cost.toLocaleString()} ر.س</TableCell>
                         <TableCell className="print:hidden">
