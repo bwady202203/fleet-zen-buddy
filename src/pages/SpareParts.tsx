@@ -551,10 +551,10 @@ const SpareParts = () => {
                       {part.minQuantity} {part.unit}
                     </TableCell>
                     <TableCell className="text-green-600 font-medium">
-                      {stats.totalPurchased} {part.unit}
+                      {(part.totalPurchased ?? stats.totalPurchased)} {part.unit}
                     </TableCell>
                     <TableCell className="text-red-600 font-medium">
-                      {stats.totalUsed} {part.unit}
+                      {(part.totalMaintenanceUsed ?? stats.totalUsed)} {part.unit}
                     </TableCell>
                     <TableCell>
                       {part.quantity <= part.minQuantity ? (
