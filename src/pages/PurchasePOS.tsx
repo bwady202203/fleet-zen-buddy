@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Search, ShoppingCart, Trash2, Plus, Minus, Save, X } from "lucide-react";
+import { ArrowRight, Search, ShoppingCart, Trash2, Plus, Minus, Save, X, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { NumericKeypadDialog } from "@/components/NumericKeypadDialog";
 
 interface CartItem {
   id: string;
