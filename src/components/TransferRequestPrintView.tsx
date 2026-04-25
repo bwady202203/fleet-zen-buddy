@@ -193,22 +193,22 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
 
   const thStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
     border: `1.5px solid ${BORDER}`,
-    padding: `${s(10)}px ${s(12)}px`,
+    padding: `${s(headerPadY)}px ${s(12)}px`,
     backgroundColor: PRIMARY,
     color: '#FFFFFF',
     fontWeight: '700',
     textAlign: 'center',
-    fontSize: sPx(16),
-    height: sMm(27.5),
+    fontSize: sPx(headerFontSize),
+    height: sMm(headerHeight),
     verticalAlign: 'middle',
     ...extra,
   });
 
   const tdStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
     border: `1px solid ${BORDER}`,
-    padding: `${s(8)}px ${s(12)}px`,
-    fontSize: sPx(16),
-    height: sMm(17.6),
+    padding: `${s(cellPadY)}px ${s(12)}px`,
+    fontSize: sPx(cellFontSize),
+    height: sMm(rowHeight),
     verticalAlign: 'middle',
     ...extra,
   });
