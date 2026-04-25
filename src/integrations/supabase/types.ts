@@ -2760,6 +2760,8 @@ export type Database = {
           name: string
           organization_id: string | null
           quantity: number | null
+          total_maintenance_used: number
+          total_purchased: number
           unit_price: number | null
           updated_at: string | null
         }
@@ -2774,6 +2776,8 @@ export type Database = {
           name: string
           organization_id?: string | null
           quantity?: number | null
+          total_maintenance_used?: number
+          total_purchased?: number
           unit_price?: number | null
           updated_at?: string | null
         }
@@ -2788,6 +2792,8 @@ export type Database = {
           name?: string
           organization_id?: string | null
           quantity?: number | null
+          total_maintenance_used?: number
+          total_purchased?: number
           unit_price?: number | null
           updated_at?: string | null
         }

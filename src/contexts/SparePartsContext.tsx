@@ -10,6 +10,8 @@ export interface SparePart {
   quantity: number;
   minQuantity: number;
   unit: string;
+  totalPurchased: number;
+  totalMaintenanceUsed: number;
 }
 
 export interface Purchase {
@@ -36,7 +38,7 @@ interface SparePartsContextType {
   spareParts: SparePart[];
   purchases: Purchase[];
   stockTransactions: StockTransaction[];
-  addSparePart: (part: Omit<SparePart, "id">) => Promise<void>;
+  addSparePart: (part: Omit<SparePart, "id" | "totalPurchased" | "totalMaintenanceUsed"> & { totalPurchased?: number; totalMaintenanceUsed?: number }) => Promise<void>;
   updateSparePart: (id: string, part: Partial<SparePart>) => Promise<void>;
   deleteSparePart: (id: string) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, "id">) => Promise<void>;
@@ -69,7 +71,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       if (data) {
-        const mapped: SparePart[] = data.map(p => ({
+        const mapped: SparePart[] = data.map((p: any) => ({
           id: p.id,
           code: p.code || '',
           name: p.name,
@@ -77,6 +79,8 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           quantity: p.quantity || 0,
           minQuantity: p.min_quantity || 0,
           unit: 'قطعة',
+          totalPurchased: p.total_purchased || 0,
+          totalMaintenanceUsed: p.total_maintenance_used || 0,
         }));
         setSpareParts(mapped);
       }
@@ -180,6 +184,8 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           quantity: data.quantity,
           minQuantity: data.min_quantity,
           unit: part.unit,
+          totalPurchased: (data as any).total_purchased || 0,
+          totalMaintenanceUsed: (data as any).total_maintenance_used || 0,
         };
         setSpareParts((prev) => [...prev, newPart]);
         
@@ -278,17 +284,29 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
       if (purchaseError) throw purchaseError;
 
-      // تحديث الكميات وإضافة حركات المخزون
+      // تحديث الكميات وإجمالي المشتريات وإضافة حركات المخزون
       for (const item of purchase.spareParts) {
         const part = spareParts.find(p => p.id === item.sparePartId);
         if (!part) continue;
 
         const newQuantity = part.quantity + item.quantity;
 
-        // تحديث الكمية
+        // جلب القيمة التراكمية الحالية للمشتريات من قاعدة البيانات
+        const { data: currentPart } = await supabase
+          .from('spare_parts')
+          .select('total_purchased')
+          .eq('id', item.sparePartId)
+          .single();
+
+        const newTotalPurchased = (currentPart?.total_purchased || 0) + item.quantity;
+
+        // تحديث الكمية الحالية وإجمالي المشتريات التراكمي
         await supabase
           .from('spare_parts')
-          .update({ quantity: newQuantity })
+          .update({
+            quantity: newQuantity,
+            total_purchased: newTotalPurchased,
+          })
           .eq('id', item.sparePartId);
 
         // إضافة حركة المخزون
@@ -331,10 +349,22 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
       const newQuantity = part.quantity - quantity;
 
-      // تحديث الكمية
+      // جلب القيمة التراكمية الحالية للصيانة من قاعدة البيانات
+      const { data: currentPart } = await supabase
+        .from('spare_parts')
+        .select('total_maintenance_used')
+        .eq('id', sparePartId)
+        .single();
+
+      const newTotalMaintenance = (currentPart?.total_maintenance_used || 0) + quantity;
+
+      // تحديث الكمية الحالية وإجمالي المخصوم من الصيانة
       const { error: updateError } = await supabase
         .from('spare_parts')
-        .update({ quantity: newQuantity })
+        .update({
+          quantity: newQuantity,
+          total_maintenance_used: newTotalMaintenance,
+        })
         .eq('id', sparePartId);
 
       if (updateError) throw updateError;
