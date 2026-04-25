@@ -797,12 +797,14 @@ const [newDateValue, setNewDateValue] = useState('');
  
   const handlePrint = (request: TransferRequest) => {
     setPrintingRequest(request);
-    // Use requestAnimationFrame to ensure DOM is updated before printing
+    setShowPrintPreview(true);
+  };
+
+  const handlePrintFromPreview = () => {
+    // Print directly from current page without opening a new window
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         window.print();
-        // Clear printing state after print dialog closes
-        setTimeout(() => setPrintingRequest(null), 500);
       });
     });
   };
