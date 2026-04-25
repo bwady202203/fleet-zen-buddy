@@ -10,6 +10,8 @@ export interface SparePart {
   quantity: number;
   minQuantity: number;
   unit: string;
+  totalPurchased: number;
+  totalMaintenanceUsed: number;
 }
 
 export interface Purchase {
@@ -69,7 +71,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       if (data) {
-        const mapped: SparePart[] = data.map(p => ({
+        const mapped: SparePart[] = data.map((p: any) => ({
           id: p.id,
           code: p.code || '',
           name: p.name,
@@ -77,6 +79,8 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           quantity: p.quantity || 0,
           minQuantity: p.min_quantity || 0,
           unit: 'قطعة',
+          totalPurchased: p.total_purchased || 0,
+          totalMaintenanceUsed: p.total_maintenance_used || 0,
         }));
         setSpareParts(mapped);
       }
@@ -180,6 +184,8 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           quantity: data.quantity,
           minQuantity: data.min_quantity,
           unit: part.unit,
+          totalPurchased: (data as any).total_purchased || 0,
+          totalMaintenanceUsed: (data as any).total_maintenance_used || 0,
         };
         setSpareParts((prev) => [...prev, newPart]);
         
