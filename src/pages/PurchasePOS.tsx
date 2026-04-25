@@ -27,6 +27,7 @@ export default function PurchasePOS() {
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [keypadFor, setKeypadFor] = useState<{ id: string; name: string; quantity: number } | null>(null);
 
   const filteredParts = spareParts.filter(
     (part) =>
