@@ -79,6 +79,7 @@ import BulkEmployees from "./pages/BulkEmployees";
 import BulkSpareParts from "./pages/BulkSpareParts";
 import MaintenanceReports from "./pages/MaintenanceReports";
 import SpareParts from "./pages/SpareParts";
+import LowStockAlerts from "./pages/LowStockAlerts";
 import Purchases from "./pages/Purchases";
 import PurchasePOS from "./pages/PurchasePOS";
 import StockMovement from "./pages/StockMovement";
