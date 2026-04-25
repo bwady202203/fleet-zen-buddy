@@ -73,7 +73,8 @@ interface TransferRequest {
   // Dialog for account selection
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<{requestId: string, itemId: string, currentAccountId: string | null} | null>(null);
- const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
+  const [printingRequest, setPrintingRequest] = useState<TransferRequest | null>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
  const [accountSearch, setAccountSearch] = useState('');
  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
  
