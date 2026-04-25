@@ -84,9 +84,9 @@ const Index = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* العنوان على اليمين */}
-            <div className="flex items-center gap-3 order-1">
+          <div className="flex flex-col gap-4 text-right">
+            {/* العنوان محاذٍ لليمين */}
+            <div className="flex items-center justify-start gap-3">
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-md">
                 <Truck className="h-6 w-6 text-primary-foreground" />
               </div>
@@ -95,8 +95,8 @@ const Index = () => {
               </h1>
             </div>
 
-            {/* الأيقونات على اليسار في الشاشات الكبيرة، أسفل في الصغيرة */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:flex lg:flex-wrap lg:justify-end gap-2 order-2">
+            {/* الأيقونات: نفس الشبكة في الشاشات الصغيرة، وفي الكبيرة صفّ مرن يحاذي اليمين (justify-start مع dir=rtl) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:flex lg:flex-wrap lg:justify-start gap-2">
               {[
                 { to: "/spare-parts", icon: Package, label: "قطع الغيار", color: "from-blue-500/10 to-blue-500/5 hover:from-blue-500/20 hover:to-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30" },
                 { to: "/purchases", icon: ShoppingCart, label: "المشتريات", color: "from-emerald-500/10 to-emerald-500/5 hover:from-emerald-500/20 hover:to-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
