@@ -6,7 +6,7 @@ import { Truck, Calendar, Wrench, AlertCircle, Search } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import {
   Select,
   SelectContent,
@@ -81,7 +81,7 @@ const Index = () => {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ "--sidebar-width": "18rem", "--sidebar-width-icon": "4rem" } as CSSProperties}>
       <div className="min-h-screen flex w-full bg-background" dir="rtl">
         <FleetSidebar onExportExcel={exportToExcel} />
 
