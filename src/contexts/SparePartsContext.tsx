@@ -38,7 +38,7 @@ interface SparePartsContextType {
   spareParts: SparePart[];
   purchases: Purchase[];
   stockTransactions: StockTransaction[];
-  addSparePart: (part: Omit<SparePart, "id">) => Promise<void>;
+  addSparePart: (part: Omit<SparePart, "id" | "totalPurchased" | "totalMaintenanceUsed"> & { totalPurchased?: number; totalMaintenanceUsed?: number }) => Promise<void>;
   updateSparePart: (id: string, part: Partial<SparePart>) => Promise<void>;
   deleteSparePart: (id: string) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, "id">) => Promise<void>;
