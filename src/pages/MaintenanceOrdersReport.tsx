@@ -27,6 +27,7 @@ import {
 import { ClipboardList, ArrowRight, Printer, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface MaintenanceOrder {
   id: string;
@@ -160,6 +161,42 @@ const MaintenanceOrdersReport = () => {
   const handleViewDetails = async (order: MaintenanceOrder) => {
     setSelectedOrder(order);
     await loadOrderItems(order.id);
+  };
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const updates: Record<string, any> = { status: newStatus };
+      if (newStatus === "completed") {
+        updates.completed_date = new Date().toISOString();
+      } else {
+        updates.completed_date = null;
+      }
+      const { error } = await supabase
+        .from("maintenance_requests")
+        .update(updates)
+        .eq("id", orderId);
+      if (error) throw error;
+
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === orderId
+            ? { ...o, status: newStatus, completed_date: updates.completed_date }
+            : o
+        )
+      );
+
+      toast({
+        title: "تم التحديث",
+        description: `تم تغيير حالة أمر الصيانة إلى ${statusLabels[newStatus]?.label || newStatus}`,
+      });
+    } catch (e: any) {
+      console.error(e);
+      toast({
+        title: "خطأ",
+        description: "تعذر تحديث حالة أمر الصيانة",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -313,7 +350,22 @@ const MaintenanceOrdersReport = () => {
                         <TableCell className="font-medium">{o.vehicle_name}</TableCell>
                         <TableCell className="max-w-xs truncate">{o.description}</TableCell>
                         <TableCell><Badge variant="outline" className={pr.className}>{pr.label}</Badge></TableCell>
-                        <TableCell><Badge variant="outline" className={st.className}>{st.label}</Badge></TableCell>
+                        <TableCell>
+                          <div className="print:hidden">
+                            <Select value={o.status} onValueChange={(v) => handleStatusChange(o.id, v)}>
+                              <SelectTrigger className={`h-8 w-[140px] ${st.className}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">قيد الانتظار</SelectItem>
+                                <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                                <SelectItem value="completed">مكتمل</SelectItem>
+                                <SelectItem value="cancelled">ملغي</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Badge variant="outline" className={`${st.className} hidden print:inline-flex`}>{st.label}</Badge>
+                        </TableCell>
                         <TableCell className="text-center">{o.items_count}</TableCell>
                         <TableCell className="font-semibold text-primary">{o.cost.toLocaleString()} ر.س</TableCell>
                         <TableCell className="print:hidden">
