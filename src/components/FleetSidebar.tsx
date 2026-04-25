@@ -1,4 +1,4 @@
-import { Package, ShoppingCart, Receipt, FileText, Gauge, List, Edit, FileSpreadsheet, Truck, Wrench } from "lucide-react";
+import { Package, ShoppingCart, Receipt, FileText, Gauge, List, Edit, FileSpreadsheet, Truck, Wrench, ClipboardList } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ interface FleetSidebarProps {
 
 const items = [
   { to: "/new-maintenance-order", icon: Wrench, label: "أمر صيانة جديد", color: "text-red-600 dark:text-red-400" },
+  { to: "/maintenance-orders-report", icon: ClipboardList, label: "سجل أوامر الصيانة", color: "text-teal-600 dark:text-teal-400" },
   { to: "/spare-parts", icon: Package, label: "قطع الغيار", color: "text-blue-600 dark:text-blue-400" },
   { to: "/purchases", icon: ShoppingCart, label: "المشتريات", color: "text-emerald-600 dark:text-emerald-400" },
   { to: "/maintenance-purchase-invoices", icon: Receipt, label: "فواتير المشتريات", color: "text-amber-600 dark:text-amber-400" },
