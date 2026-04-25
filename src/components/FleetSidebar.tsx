@@ -34,7 +34,7 @@ export function FleetSidebar({ onExportExcel }: FleetSidebarProps) {
 
   return (
     <Sidebar collapsible="icon" side="right">
-      <SidebarContent>
+      <SidebarContent className="pt-4">
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-2">
             <Truck className="h-4 w-4 text-primary" />
