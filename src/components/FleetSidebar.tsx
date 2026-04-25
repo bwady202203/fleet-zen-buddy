@@ -1,4 +1,4 @@
-import { Package, ShoppingCart, Receipt, FileText, Gauge, List, Edit, FileSpreadsheet, Truck, Wrench, ClipboardList } from "lucide-react";
+import { Package, ShoppingCart, Receipt, FileText, Gauge, List, Edit, FileSpreadsheet, Truck, Wrench, ClipboardList, Store } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
