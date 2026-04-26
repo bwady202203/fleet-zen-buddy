@@ -78,6 +78,15 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     }
   };
 
+  if (!showFleetSidebar) {
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-background" dir="rtl">
+        <SystemIconsBar />
+        <div className="flex-1">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider
       style={{ "--sidebar-width": "18rem", "--sidebar-width-icon": "4rem" } as CSSProperties}
