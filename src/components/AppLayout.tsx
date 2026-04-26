@@ -1,4 +1,5 @@
 import { ReactNode, type CSSProperties } from "react";
+import { useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { FleetSidebar } from "@/components/FleetSidebar";
 import { SystemIconsBar } from "@/components/SystemIconsBar";
@@ -9,7 +10,32 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+// مسارات قسم الأسطول التي تعرض القائمة الجانبية
+const FLEET_PATHS = [
+  "/fleet",
+  "/new-maintenance-order",
+  "/maintenance-orders-report",
+  "/spare-parts",
+  "/bulk-spare-parts",
+  "/low-stock-alerts",
+  "/purchases",
+  "/maintenance-purchase-invoices",
+  "/reports",
+  "/maintenance-costs",
+  "/vehicle-cost-report",
+  "/vehicle-mileage",
+  "/bulk-vehicles",
+  "/edit-vehicles",
+  "/stock-movement",
+  "/price-history",
+];
+
+const isFleetRoute = (pathname: string) =>
+  FLEET_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
 export const AppLayout = ({ children }: AppLayoutProps) => {
+  const location = useLocation();
+  const showFleetSidebar = isFleetRoute(location.pathname);
   const exportToExcel = async () => {
     try {
       const { data: vehiclesData } = await supabase
@@ -51,6 +77,15 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       console.error("Error exporting to Excel:", error);
     }
   };
+
+  if (!showFleetSidebar) {
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-background" dir="rtl">
+        <SystemIconsBar />
+        <div className="flex-1">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider
