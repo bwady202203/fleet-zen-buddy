@@ -2242,9 +2242,15 @@ const [newDateValue, setNewDateValue] = useState('');
             </div>
           </DialogHeader>
           <div className="flex-1 overflow-auto bg-muted/30 p-6">
-            <div className="mx-auto bg-white shadow-2xl" style={{ width: 'fit-content' }}>
+            <div className="mx-auto" style={{ width: 'fit-content' }}>
               {printingRequest && (
-                <div style={{ transform: `scale(${printScale})`, transformOrigin: 'top center' }}>
+                <div
+                  className="print-preview-pages"
+                  style={{
+                    transform: `scale(${printScale})`,
+                    transformOrigin: 'top center',
+                  }}
+                >
                   <TransferRequestPrintView
                     request={printingRequest}
                     accounts={accounts}
