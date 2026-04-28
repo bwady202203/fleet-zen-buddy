@@ -2265,6 +2265,18 @@ const [newDateValue, setNewDateValue] = useState('');
 
       {/* Print Styles */}
       <style>{`
+        /* Preview: render each A4 page as a distinct sheet with shadow + spacing */
+        .print-preview-pages #print-content {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .print-preview-pages .print-page {
+          background: #fff;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+          margin: 0 !important;
+        }
+
         /* PDF Generation Mode */
         .pdf-generating #print-wrapper {
           display: block !important;
