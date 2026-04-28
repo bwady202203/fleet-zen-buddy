@@ -84,12 +84,12 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   const totalPages = pages.length;
 
   // Fixed dimensions — no shrinking; multi-page handles overflow
-  const rowHeight = 17.6; // mm
-  const headerHeight = 27.5; // mm
+  const rowHeight = 21; // mm (زيادة الارتفاع لتعبئة الصفحة)
+  const headerHeight = 30; // mm
   const cellFontSize = 16; // px
   const headerFontSize = 16; // px
-  const cellPadY = 8; // px
-  const headerPadY = 10; // px
+  const cellPadY = 12; // px
+  const headerPadY = 12; // px
 
 
   // Colors
