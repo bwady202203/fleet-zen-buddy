@@ -88,8 +88,6 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
   const headerFontSize = 16; // px
   const cellPadY = 12; // px
   const headerPadY = 12; // px
-  const cellPadY = 12; // px
-  const headerPadY = 12; // px
 
 
   // Colors
