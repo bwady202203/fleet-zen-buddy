@@ -89,7 +89,7 @@ const [newAmountValue, setNewAmountValue] = useState('');
 // Edit date dialog state
 const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
 const [newDateValue, setNewDateValue] = useState('');
-  const [printScale, setPrintScale] = useState(1);
+  const [printScale, setPrintScale] = useState(0.8);
   const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
   // Multi-account selection dialog state
