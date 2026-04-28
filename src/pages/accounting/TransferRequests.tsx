@@ -89,7 +89,7 @@ const [newAmountValue, setNewAmountValue] = useState('');
 // Edit date dialog state
 const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
 const [newDateValue, setNewDateValue] = useState('');
-  const [printScale, setPrintScale] = useState(1);
+  const [printScale, setPrintScale] = useState(0.8);
   const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
   // Multi-account selection dialog state
@@ -2269,12 +2269,22 @@ const [newDateValue, setNewDateValue] = useState('');
         .print-preview-pages #print-content {
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 40px;
         }
         .print-preview-pages .print-page {
           background: #fff;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+          box-shadow: 0 6px 24px rgba(0,0,0,0.22);
           margin: 0 !important;
+          position: relative;
+        }
+        .print-preview-pages .print-page + .print-page::before {
+          content: '';
+          position: absolute;
+          top: -22px;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: repeating-linear-gradient(90deg, hsl(var(--muted-foreground) / 0.4) 0 8px, transparent 8px 16px);
         }
 
         /* PDF Generation Mode */
