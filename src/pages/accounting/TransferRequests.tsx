@@ -2242,9 +2242,15 @@ const [newDateValue, setNewDateValue] = useState('');
             </div>
           </DialogHeader>
           <div className="flex-1 overflow-auto bg-muted/30 p-6">
-            <div className="mx-auto bg-white shadow-2xl" style={{ width: 'fit-content' }}>
+            <div className="mx-auto" style={{ width: 'fit-content' }}>
               {printingRequest && (
-                <div style={{ transform: `scale(${printScale})`, transformOrigin: 'top center' }}>
+                <div
+                  className="print-preview-pages"
+                  style={{
+                    transform: `scale(${printScale})`,
+                    transformOrigin: 'top center',
+                  }}
+                >
                   <TransferRequestPrintView
                     request={printingRequest}
                     accounts={accounts}
@@ -2259,6 +2265,18 @@ const [newDateValue, setNewDateValue] = useState('');
 
       {/* Print Styles */}
       <style>{`
+        /* Preview: render each A4 page as a distinct sheet with shadow + spacing */
+        .print-preview-pages #print-content {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .print-preview-pages .print-page {
+          background: #fff;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+          margin: 0 !important;
+        }
+
         /* PDF Generation Mode */
         .pdf-generating #print-wrapper {
           display: block !important;

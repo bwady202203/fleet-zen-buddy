@@ -67,33 +67,29 @@ const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة �
     return account ? `${account.code} - ${account.name_ar}` : '—';
   };
 
-  // Always render all items on a single page
+  // Paginate items across multiple A4 pages
   const items = request.items;
-  const pages: TransferRequestItem[][] = [items];
-  const totalPages = 1;
+  const pages: TransferRequestItem[][] = [];
+  if (items.length === 0) {
+    pages.push([]);
+  } else {
+    const firstPageCount = Math.min(items.length, ITEMS_PER_FIRST_PAGE);
+    pages.push(items.slice(0, firstPageCount));
+    let idx = firstPageCount;
+    while (idx < items.length) {
+      pages.push(items.slice(idx, idx + ITEMS_PER_OTHER_PAGE));
+      idx += ITEMS_PER_OTHER_PAGE;
+    }
+  }
+  const totalPages = pages.length;
 
-  // Dynamically shrink row height when there are many items so everything fits on one A4 page
-  const itemCount = items.length;
-  const baseRowHeight = 17.6; // mm
-  const baseHeaderHeight = 27.5; // mm
-  const baseFontSize = 16; // px
-  const baseHeaderFontSize = 16; // px
-  const baseCellPadY = 8; // px
-  const baseHeaderPadY = 10; // px
-
-  // Approx vertical budget for the rows area on A4 (after header/footer/total/signatures): ~190mm
-  const rowsBudgetMm = 190;
-  const naturalRowsHeight = baseHeaderHeight + itemCount * baseRowHeight;
-  const densityFactor = naturalRowsHeight > rowsBudgetMm
-    ? Math.max(0.5, rowsBudgetMm / naturalRowsHeight)
-    : 1;
-
-  const rowHeight = baseRowHeight * densityFactor;
-  const headerHeight = baseHeaderHeight * densityFactor;
-  const cellFontSize = Math.max(9, baseFontSize * densityFactor);
-  const headerFontSize = Math.max(10, baseHeaderFontSize * densityFactor);
-  const cellPadY = Math.max(2, baseCellPadY * densityFactor);
-  const headerPadY = Math.max(3, baseHeaderPadY * densityFactor);
+  // Fixed dimensions — no shrinking; multi-page handles overflow
+  const rowHeight = 17.6; // mm
+  const headerHeight = 27.5; // mm
+  const cellFontSize = 16; // px
+  const headerFontSize = 16; // px
+  const cellPadY = 8; // px
+  const headerPadY = 10; // px
 
 
   // Colors
