@@ -32,7 +32,7 @@ interface Props {
   scale?: number;
 }
 
-const ITEMS_PER_FIRST_PAGE = 11;
+const ITEMS_PER_FIRST_PAGE = 10;
 const ITEMS_PER_OTHER_PAGE = 16;
 
 const TransferRequestPrintView = ({ request, accounts, companyName = 'شركة الرمال الناعمة', scale = 1 }: Props) => {
