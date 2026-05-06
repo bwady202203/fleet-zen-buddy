@@ -835,6 +835,17 @@ const CustodyExpenses = () => {
           withTax={withTax}
           expenseTypeName={selectedExpenseTypeName}
         />
+
+        {/* Combined Expense Statement Dialog */}
+        <CombinedExpenseStatementDialog
+          open={combinedDialogOpen}
+          onOpenChange={setCombinedDialogOpen}
+          representativeName={selectedRep?.name_ar || ''}
+          representativeCode={selectedRep?.code}
+          date={date}
+          expenseTypes={expenseTypes}
+          onSave={handleSaveCombined}
+        />
       </main>
     </div>
   );
