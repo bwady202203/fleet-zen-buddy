@@ -68,6 +68,7 @@ const CustodyExpenses = () => {
   const [taxOptionDialogOpen, setTaxOptionDialogOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
   const [withTax, setWithTax] = useState(true);
+  const [combinedDialogOpen, setCombinedDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchRepresentatives();
