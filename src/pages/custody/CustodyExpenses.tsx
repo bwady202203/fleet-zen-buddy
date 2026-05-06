@@ -19,6 +19,9 @@ import ExpenseTypeSelectorDialog from '@/components/ExpenseTypeSelectorDialog';
 import RepresentativeSelectorDialog from '@/components/RepresentativeSelectorDialog';
 import TaxOptionDialog from '@/components/TaxOptionDialog';
 import CalculatorAmountDialog from '@/components/CalculatorAmountDialog';
+import CombinedExpenseStatementDialog from '@/components/CombinedExpenseStatementDialog';
+import type { StatementItem } from '@/components/CustodyStatementPrintView';
+import { FileText } from 'lucide-react';
 
 interface Representative {
   id: string;
