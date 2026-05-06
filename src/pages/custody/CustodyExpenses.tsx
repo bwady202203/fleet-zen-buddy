@@ -726,6 +726,18 @@ const CustodyExpenses = () => {
                 إضافة مصروف جديد
               </Button>
 
+              {/* Combined statement button */}
+              <Button
+                type="button"
+                size="lg"
+                variant="secondary"
+                className="w-full h-14 text-lg"
+                onClick={() => setCombinedDialogOpen(true)}
+              >
+                <FileText className="ml-3 h-5 w-5" />
+                بيان مصروفات مجمّع (عدة بنود في قيد واحد)
+              </Button>
+
               {/* Optional Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">ملاحظات (اختياري)</Label>
