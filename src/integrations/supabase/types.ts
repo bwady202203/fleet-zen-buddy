@@ -3755,6 +3755,10 @@ export type Database = {
         Returns: undefined
       }
       is_org_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_in_org: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       verify_delivery_system_user: {
         Args: { p_password: string; p_username: string }
         Returns: boolean
