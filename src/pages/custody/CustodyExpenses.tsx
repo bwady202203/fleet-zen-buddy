@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +51,7 @@ interface ExpenseType {
 }
 
 const CustodyExpenses = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
@@ -732,7 +734,7 @@ const CustodyExpenses = () => {
                 size="lg"
                 variant="secondary"
                 className="w-full h-14 text-lg"
-                onClick={() => setCombinedDialogOpen(true)}
+                onClick={() => navigate(`/custody/combined-statement${selectedRepId ? `?rep=${selectedRepId}` : ''}`)}
               >
                 <FileText className="ml-3 h-5 w-5" />
                 بيان مصروفات مجمّع (عدة بنود في قيد واحد)
@@ -836,16 +838,6 @@ const CustodyExpenses = () => {
           expenseTypeName={selectedExpenseTypeName}
         />
 
-        {/* Combined Expense Statement Dialog */}
-        <CombinedExpenseStatementDialog
-          open={combinedDialogOpen}
-          onOpenChange={setCombinedDialogOpen}
-          representativeName={selectedRep?.name_ar || ''}
-          representativeCode={selectedRep?.code}
-          date={date}
-          expenseTypes={expenseTypes}
-          onSave={handleSaveCombined}
-        />
       </main>
     </div>
   );
