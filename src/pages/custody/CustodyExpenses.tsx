@@ -19,6 +19,9 @@ import ExpenseTypeSelectorDialog from '@/components/ExpenseTypeSelectorDialog';
 import RepresentativeSelectorDialog from '@/components/RepresentativeSelectorDialog';
 import TaxOptionDialog from '@/components/TaxOptionDialog';
 import CalculatorAmountDialog from '@/components/CalculatorAmountDialog';
+import CombinedExpenseStatementDialog from '@/components/CombinedExpenseStatementDialog';
+import type { StatementItem } from '@/components/CustodyStatementPrintView';
+import { FileText } from 'lucide-react';
 
 interface Representative {
   id: string;
@@ -65,6 +68,7 @@ const CustodyExpenses = () => {
   const [taxOptionDialogOpen, setTaxOptionDialogOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
   const [withTax, setWithTax] = useState(true);
+  const [combinedDialogOpen, setCombinedDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchRepresentatives();
@@ -502,6 +506,117 @@ const CustodyExpenses = () => {
     }
   };
 
+  // Save combined statement: multiple expenses → ONE journal entry
+  const handleSaveCombined = async (
+    items: StatementItem[],
+    notes: string
+  ): Promise<{ ok: boolean; statementNumber?: string }> => {
+    if (!selectedRepId || items.length === 0) return { ok: false };
+    try {
+      const repAccount = representatives.find((r) => r.id === selectedRepId);
+      if (!repAccount) {
+        toast.error('المندوب غير موجود');
+        return { ok: false };
+      }
+
+      const expenseDateStr = format(date, 'yyyy-MM-dd');
+      const grandTotal = items.reduce((s, i) => s + i.total, 0);
+      const totalTax = items.reduce((s, i) => s + i.tax, 0);
+
+      const { data: taxAccounts } = await supabase
+        .from('chart_of_accounts')
+        .select('id')
+        .eq('code', '110801')
+        .limit(1);
+      const taxAccountId = taxAccounts && taxAccounts.length > 0 ? taxAccounts[0].id : null;
+
+      const expenseRows = items.map((it) => ({
+        representative_id: selectedRepId,
+        expense_date: expenseDateStr,
+        expense_type: it.expense_type_id,
+        amount: it.total,
+        description: it.description || notes || '',
+        created_by: user?.id,
+      }));
+      const { data: insertedExpenses, error: expErr } = await supabase
+        .from('custody_expenses')
+        .insert(expenseRows)
+        .select();
+      if (expErr) throw expErr;
+
+      const timestamp = Date.now();
+      const entryNumber = `JE-${timestamp}-${Math.floor(Math.random() * 1000)}`;
+      const { data: serialData } = await supabase.rpc('generate_universal_serial', { prefix: 'CD' });
+      const universalSerial = serialData as string;
+
+      const { data: journalEntry, error: journalError } = await supabase
+        .from('journal_entries')
+        .insert([{
+          entry_number: entryNumber,
+          date: expenseDateStr,
+          description: `بيان مصروفات ${repAccount.name_ar} - ${expenseDateStr}${notes ? ' - ' + notes : ''}`,
+          reference: `custody_statement_${selectedRepId}_${timestamp}`,
+          created_by: user?.id,
+          universal_serial: universalSerial,
+        }])
+        .select()
+        .single();
+      if (journalError) throw journalError;
+
+      const lines: any[] = items.map((it) => ({
+        journal_entry_id: journalEntry.id,
+        account_id: it.expense_type_id,
+        debit: it.amount,
+        credit: 0,
+        description: it.description || it.expense_type_name,
+      }));
+      if (taxAccountId && totalTax > 0) {
+        lines.push({
+          journal_entry_id: journalEntry.id,
+          account_id: taxAccountId,
+          debit: totalTax,
+          credit: 0,
+          description: 'ضريبة القيمة المضافة 15%',
+        });
+      }
+      lines.push({
+        journal_entry_id: journalEntry.id,
+        account_id: repAccount.id,
+        debit: 0,
+        credit: grandTotal,
+        description: `بيان مصروفات ${repAccount.name_ar}`,
+      });
+
+      const { error: linesError } = await supabase
+        .from('journal_entry_lines')
+        .insert(lines);
+      if (linesError) throw linesError;
+
+      const interRows = items.map((it, idx) => ({
+        custody_expense_id: insertedExpenses?.[idx]?.id,
+        journal_entry_id: journalEntry.id,
+        debit_account_id: it.expense_type_id,
+        debit_account_name: it.expense_type_name,
+        credit_account_id: repAccount.id,
+        credit_account_name: repAccount.name_ar,
+        amount: it.amount,
+        tax_amount: it.tax,
+        total_amount: it.total,
+        description: it.description || it.expense_type_name,
+        entry_date: expenseDateStr,
+      }));
+      await supabase.from('custody_journal_entries').insert(interRows);
+
+      fetchRepresentatives();
+      fetchExpenses(selectedRepId);
+      return { ok: true, statementNumber: entryNumber };
+    } catch (e) {
+      console.error(e);
+      toast.error('حدث خطأ أثناء حفظ البيان');
+      return { ok: false };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
@@ -611,6 +726,18 @@ const CustodyExpenses = () => {
                 إضافة مصروف جديد
               </Button>
 
+              {/* Combined statement button */}
+              <Button
+                type="button"
+                size="lg"
+                variant="secondary"
+                className="w-full h-14 text-lg"
+                onClick={() => setCombinedDialogOpen(true)}
+              >
+                <FileText className="ml-3 h-5 w-5" />
+                بيان مصروفات مجمّع (عدة بنود في قيد واحد)
+              </Button>
+
               {/* Optional Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">ملاحظات (اختياري)</Label>
@@ -707,6 +834,17 @@ const CustodyExpenses = () => {
           onConfirmAndNew={handleConfirmAndNew}
           withTax={withTax}
           expenseTypeName={selectedExpenseTypeName}
+        />
+
+        {/* Combined Expense Statement Dialog */}
+        <CombinedExpenseStatementDialog
+          open={combinedDialogOpen}
+          onOpenChange={setCombinedDialogOpen}
+          representativeName={selectedRep?.name_ar || ''}
+          representativeCode={selectedRep?.code}
+          date={date}
+          expenseTypes={expenseTypes}
+          onSave={handleSaveCombined}
         />
       </main>
     </div>
