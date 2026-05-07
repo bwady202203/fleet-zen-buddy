@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { ArrowRight, Plus, Star, Printer, Eye, Trash2, Building2, Landmark } from "lucide-react";
+import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landmark, Settings2, RotateCcw, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { numberToWords } from "@/lib/numberToWords";
 
