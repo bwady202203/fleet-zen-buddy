@@ -654,7 +654,7 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
       style={{
         width: "210mm",
         height: "297mm",
-        padding: "14mm 14mm 14mm 14mm",
+        padding: "4mm 14mm 14mm 14mm",
         margin: "0 auto",
         background: "#fff",
         color: "#0a0a0a",
@@ -666,13 +666,13 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
       }}
     >
       {/* Decorative top band */}
-      <div style={{ height: "8px", background: "linear-gradient(90deg,#0a4a8a,#0c7a5f)", borderRadius: "2px", marginBottom: "10px" }} />
+      <div style={{ height: "6px", background: "linear-gradient(90deg,#0a4a8a,#0c7a5f)", borderRadius: "2px", marginBottom: "6px" }} />
 
       {/* Centered Header */}
-      <div style={{ textAlign: "center", borderBottom: "2px solid #0a4a8a", paddingBottom: "10px", marginBottom: "14px" }}>
-        <h1 style={{ fontSize: "30pt", fontWeight: 800, margin: 0, color: "#0a4a8a", letterSpacing: "-0.5px" }}>شركة الرمال</h1>
-        <div style={{ fontSize: "18pt", fontWeight: 700, color: "#0c7a5f", marginTop: "4px" }}>سند صرف</div>
-        <div style={{ fontSize: "10pt", color: "#666", marginTop: "2px" }}>{bank.name} — المملكة العربية السعودية</div>
+      <div style={{ textAlign: "center", borderBottom: "2px solid #0a4a8a", paddingBottom: "6px", marginBottom: "10px" }}>
+        <h1 style={{ fontSize: "20pt", fontWeight: 800, margin: 0, color: "#0a4a8a", letterSpacing: "-0.3px" }}>شركة الرمال الناعمة الصناعية</h1>
+        <div style={{ fontSize: "15pt", fontWeight: 700, color: "#0c7a5f", marginTop: "2px" }}>سند صرف</div>
+        <div style={{ fontSize: "9pt", color: "#666", marginTop: "1px" }}>{bank.name} — المملكة العربية السعودية</div>
       </div>
 
       {/* Voucher meta */}
