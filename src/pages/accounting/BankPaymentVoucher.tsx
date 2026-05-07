@@ -343,8 +343,23 @@ export default function BankPaymentVoucher() {
                 <Input type="date" value={formData.voucher_date} onChange={(e) => setFormData({ ...formData, voucher_date: e.target.value })} required />
               </div>
               <div>
-                <Label>المبلغ</Label>
-                <Input type="text" inputMode="decimal" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+                <Label>المبلغ (اضغط Enter لاختيار الحساب)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const amt = parseFloat(formData.amount);
+                      if (!amt || amt <= 0) { toast.error("أدخل مبلغاً صحيحاً أولاً"); return; }
+                      setShowAccountDialog(true);
+                    }
+                  }}
+                  required
+                  autoFocus
+                />
               </div>
             </div>
 
@@ -408,16 +423,16 @@ export default function BankPaymentVoucher() {
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col" dir="rtl">
           <DialogHeader><DialogTitle>اختر الحساب المدين</DialogTitle></DialogHeader>
           <Input placeholder="ابحث..." value={dialogSearch} onChange={(e) => setDialogSearch(e.target.value)} autoFocus />
-          <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+          <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2">
             {filteredDialog.map((acc) => (
               <button
                 key={acc.id}
                 type="button"
                 onClick={() => { setDebitAccount(acc); setShowAccountDialog(false); setDialogSearch(""); }}
-                className="p-3 rounded-lg border-2 text-right hover:border-primary hover:bg-accent transition-all"
+                className="p-2 rounded-md border text-right hover:border-primary hover:bg-accent transition-all"
               >
-                <div className="text-xs font-mono text-muted-foreground">{acc.code}</div>
-                <div className="text-sm font-semibold truncate">{acc.name_ar}</div>
+                <div className="text-[10px] font-mono text-muted-foreground">{acc.code}</div>
+                <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
               </button>
             ))}
           </div>
