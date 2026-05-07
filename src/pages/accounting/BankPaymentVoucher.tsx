@@ -429,10 +429,10 @@ export default function BankPaymentVoucher() {
                 key={acc.id}
                 type="button"
                 onClick={() => { setDebitAccount(acc); setShowAccountDialog(false); setDialogSearch(""); }}
-                className="p-3 rounded-lg border-2 text-right hover:border-primary hover:bg-accent transition-all"
+                className="p-2 rounded-md border text-right hover:border-primary hover:bg-accent transition-all"
               >
-                <div className="text-xs font-mono text-muted-foreground">{acc.code}</div>
-                <div className="text-sm font-semibold truncate">{acc.name_ar}</div>
+                <div className="text-[10px] font-mono text-muted-foreground">{acc.code}</div>
+                <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
               </button>
             ))}
           </div>
