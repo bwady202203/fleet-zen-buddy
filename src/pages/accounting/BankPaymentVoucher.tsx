@@ -456,21 +456,78 @@ export default function BankPaymentVoucher() {
 
       {/* Account Picker Dialog */}
       <Dialog open={showAccountDialog} onOpenChange={setShowAccountDialog}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col" dir="rtl">
-          <DialogHeader><DialogTitle>اختر الحساب المدين</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>اختر الحساب المدين</span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={customizeMode ? "default" : "outline"}
+                  onClick={() => setCustomizeMode((v) => !v)}
+                >
+                  <Settings2 className="h-4 w-4 ml-1" />
+                  {customizeMode ? "إنهاء التخصيص" : "تخصيص"}
+                </Button>
+                {customizeMode && (
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setHiddenIds([]); setOrderIds([]); }}>
+                    <RotateCcw className="h-4 w-4 ml-1" /> استعادة
+                  </Button>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
           <Input placeholder="ابحث..." value={dialogSearch} onChange={(e) => setDialogSearch(e.target.value)} autoFocus />
-          <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2">
-            {filteredDialog.map((acc) => (
-              <button
-                key={acc.id}
-                type="button"
-                onClick={() => { setDebitAccount(acc); setShowAccountDialog(false); setDialogSearch(""); }}
-                className="p-2 rounded-md border text-right hover:border-primary hover:bg-accent transition-all"
-              >
-                <div className="text-[10px] font-mono text-muted-foreground">{acc.code}</div>
-                <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
-              </button>
-            ))}
+          {customizeMode && (
+            <p className="text-xs text-muted-foreground mt-1">
+              اسحب المربع لتغيير ترتيبه — اضغط على أيقونة العين لإخفاء/إظهار الحساب
+            </p>
+          )}
+          <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2 p-1">
+            {filteredDialog.map((acc) => {
+              const hidden = hiddenIds.includes(acc.id);
+              return (
+                <div
+                  key={acc.id}
+                  draggable={customizeMode}
+                  onDragStart={() => setDragId(acc.id)}
+                  onDragOver={(e) => { if (customizeMode) e.preventDefault(); }}
+                  onDrop={() => { if (customizeMode && dragId) { moveAccount(dragId, acc.id); setDragId(null); } }}
+                  onClick={() => {
+                    if (customizeMode) return;
+                    setDebitAccount(acc);
+                    setShowAccountDialog(false);
+                    setDialogSearch("");
+                  }}
+                  className={cn(
+                    "relative p-2 rounded-md border text-right transition-all duration-300 ease-out cursor-pointer",
+                    "hover:border-primary hover:bg-accent hover:scale-105",
+                    "animate-in fade-in zoom-in-95",
+                    hidden && "opacity-40 border-dashed",
+                    customizeMode && "cursor-move ring-1 ring-border"
+                  )}
+                >
+                  {customizeMode && (
+                    <>
+                      <GripVertical className="absolute top-1 right-1 h-3 w-3 text-muted-foreground" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHiddenIds((prev) => prev.includes(acc.id) ? prev.filter((i) => i !== acc.id) : [...prev, acc.id]);
+                        }}
+                        className="absolute top-1 left-1 p-0.5 rounded hover:bg-background"
+                      >
+                        {hidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      </button>
+                    </>
+                  )}
+                  <div className="text-[10px] font-mono text-muted-foreground mt-2">{acc.code}</div>
+                  <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
