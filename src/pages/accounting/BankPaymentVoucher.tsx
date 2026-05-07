@@ -153,6 +153,19 @@ export default function BankPaymentVoucher() {
     return base.filter((a) => a.code.includes(dialogSearch) || a.name_ar.toLowerCase().includes(q));
   }, [dialogSearch, orderedAccounts, hiddenIds, customizeMode]);
 
+  const filteredVouchers = useMemo(() => {
+    const q = vouchersSearch.trim().toLowerCase();
+    if (!q) return vouchers;
+    return vouchers.filter((v) =>
+      v.voucher_number?.toLowerCase().includes(q) ||
+      (v.description || "").toLowerCase().includes(q) ||
+      (v.debit_account?.name_ar || "").toLowerCase().includes(q) ||
+      (v.debit_account?.code || "").includes(q) ||
+      String(v.amount).includes(q) ||
+      format(new Date(v.voucher_date), "dd/MM/yyyy").includes(q)
+    );
+  }, [vouchers, vouchersSearch]);
+
   const moveAccount = (fromId: string, toId: string) => {
     if (fromId === toId) return;
     const ids = orderedAccounts.map((a) => a.id);
