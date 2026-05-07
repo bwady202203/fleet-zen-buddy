@@ -58,6 +58,22 @@ export default function BankPaymentVoucher() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [dialogSearch, setDialogSearch] = useState("");
+  const [customizeMode, setCustomizeMode] = useState(false);
+  const STORAGE_KEY = `bpv_accounts_${bankKey}`;
+  const [hiddenIds, setHiddenIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_hidden`) || "[]"); } catch { return []; }
+  });
+  const [orderIds, setOrderIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_order`) || "[]"); } catch { return []; }
+  });
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_hidden`, JSON.stringify(hiddenIds));
+  }, [hiddenIds, STORAGE_KEY]);
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_order`, JSON.stringify(orderIds));
+  }, [orderIds, STORAGE_KEY]);
 
   const [formData, setFormData] = useState({
     voucher_date: format(new Date(), "yyyy-MM-dd"),
