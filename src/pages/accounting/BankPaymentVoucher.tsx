@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { ArrowRight, Plus, Star, Printer, Eye, Trash2, Building2, Landmark } from "lucide-react";
+import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landmark, Settings2, RotateCcw, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { numberToWords } from "@/lib/numberToWords";
 
@@ -58,6 +58,22 @@ export default function BankPaymentVoucher() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [dialogSearch, setDialogSearch] = useState("");
+  const [customizeMode, setCustomizeMode] = useState(false);
+  const STORAGE_KEY = `bpv_accounts_${bankKey}`;
+  const [hiddenIds, setHiddenIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_hidden`) || "[]"); } catch { return []; }
+  });
+  const [orderIds, setOrderIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_order`) || "[]"); } catch { return []; }
+  });
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_hidden`, JSON.stringify(hiddenIds));
+  }, [hiddenIds, STORAGE_KEY]);
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_order`, JSON.stringify(orderIds));
+  }, [orderIds, STORAGE_KEY]);
 
   const [formData, setFormData] = useState({
     voucher_date: format(new Date(), "yyyy-MM-dd"),
@@ -122,11 +138,31 @@ export default function BankPaymentVoucher() {
       .slice(0, 8);
   }, [searchQuery, accounts]);
 
+  const orderedAccounts = useMemo(() => {
+    const map = new Map(accounts.map((a) => [a.id, a]));
+    const ordered: Account[] = [];
+    orderIds.forEach((id) => { const a = map.get(id); if (a) { ordered.push(a); map.delete(id); } });
+    return [...ordered, ...Array.from(map.values())];
+  }, [accounts, orderIds]);
+
   const filteredDialog = useMemo(() => {
     const q = dialogSearch.toLowerCase();
-    if (!q) return accounts;
-    return accounts.filter((a) => a.code.includes(dialogSearch) || a.name_ar.toLowerCase().includes(q));
-  }, [dialogSearch, accounts]);
+    const base = customizeMode ? orderedAccounts : orderedAccounts.filter((a) => !hiddenIds.includes(a.id));
+    if (!q) return base;
+    return base.filter((a) => a.code.includes(dialogSearch) || a.name_ar.toLowerCase().includes(q));
+  }, [dialogSearch, orderedAccounts, hiddenIds, customizeMode]);
+
+  const moveAccount = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const ids = orderedAccounts.map((a) => a.id);
+    const from = ids.indexOf(fromId);
+    const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) return;
+    const next = [...ids];
+    const [m] = next.splice(from, 1);
+    next.splice(to, 0, m);
+    setOrderIds(next);
+  };
 
   const generateVoucherNumber = async () => {
     const prefix = `PV-${bankKey.toUpperCase()}-`;
@@ -420,21 +456,78 @@ export default function BankPaymentVoucher() {
 
       {/* Account Picker Dialog */}
       <Dialog open={showAccountDialog} onOpenChange={setShowAccountDialog}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col" dir="rtl">
-          <DialogHeader><DialogTitle>اختر الحساب المدين</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>اختر الحساب المدين</span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={customizeMode ? "default" : "outline"}
+                  onClick={() => setCustomizeMode((v) => !v)}
+                >
+                  <Settings2 className="h-4 w-4 ml-1" />
+                  {customizeMode ? "إنهاء التخصيص" : "تخصيص"}
+                </Button>
+                {customizeMode && (
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setHiddenIds([]); setOrderIds([]); }}>
+                    <RotateCcw className="h-4 w-4 ml-1" /> استعادة
+                  </Button>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
           <Input placeholder="ابحث..." value={dialogSearch} onChange={(e) => setDialogSearch(e.target.value)} autoFocus />
-          <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2">
-            {filteredDialog.map((acc) => (
-              <button
-                key={acc.id}
-                type="button"
-                onClick={() => { setDebitAccount(acc); setShowAccountDialog(false); setDialogSearch(""); }}
-                className="p-2 rounded-md border text-right hover:border-primary hover:bg-accent transition-all"
-              >
-                <div className="text-[10px] font-mono text-muted-foreground">{acc.code}</div>
-                <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
-              </button>
-            ))}
+          {customizeMode && (
+            <p className="text-xs text-muted-foreground mt-1">
+              اسحب المربع لتغيير ترتيبه — اضغط على أيقونة العين لإخفاء/إظهار الحساب
+            </p>
+          )}
+          <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2 p-1">
+            {filteredDialog.map((acc) => {
+              const hidden = hiddenIds.includes(acc.id);
+              return (
+                <div
+                  key={acc.id}
+                  draggable={customizeMode}
+                  onDragStart={() => setDragId(acc.id)}
+                  onDragOver={(e) => { if (customizeMode) e.preventDefault(); }}
+                  onDrop={() => { if (customizeMode && dragId) { moveAccount(dragId, acc.id); setDragId(null); } }}
+                  onClick={() => {
+                    if (customizeMode) return;
+                    setDebitAccount(acc);
+                    setShowAccountDialog(false);
+                    setDialogSearch("");
+                  }}
+                  className={cn(
+                    "relative p-2 rounded-md border text-right transition-all duration-300 ease-out cursor-pointer",
+                    "hover:border-primary hover:bg-accent hover:scale-105",
+                    "animate-in fade-in zoom-in-95",
+                    hidden && "opacity-40 border-dashed",
+                    customizeMode && "cursor-move ring-1 ring-border"
+                  )}
+                >
+                  {customizeMode && (
+                    <>
+                      <GripVertical className="absolute top-1 right-1 h-3 w-3 text-muted-foreground" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHiddenIds((prev) => prev.includes(acc.id) ? prev.filter((i) => i !== acc.id) : [...prev, acc.id]);
+                        }}
+                        className="absolute top-1 left-1 p-0.5 rounded hover:bg-background"
+                      >
+                        {hidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      </button>
+                    </>
+                  )}
+                  <div className="text-[10px] font-mono text-muted-foreground mt-2">{acc.code}</div>
+                  <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
