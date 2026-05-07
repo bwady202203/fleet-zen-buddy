@@ -333,8 +333,16 @@ export default function BankPaymentVoucher() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <CardTitle>سجل سندات الصرف</CardTitle>
+            <div className="relative w-72">
+              <Input
+                placeholder="بحث برقم السند، البيان، الحساب، المبلغ..."
+                value={vouchersSearch}
+                onChange={(e) => setVouchersSearch(e.target.value)}
+                className="pr-3"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -351,10 +359,10 @@ export default function BankPaymentVoucher() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
-                ) : vouchers.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">لا توجد سندات</TableCell></TableRow>
+                ) : filteredVouchers.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{vouchersSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات"}</TableCell></TableRow>
                 ) : (
-                  vouchers.map((v) => (
+                  filteredVouchers.map((v) => (
                     <TableRow key={v.id}>
                       <TableCell className="font-bold">{v.voucher_number}</TableCell>
                       <TableCell>{format(new Date(v.voucher_date), "dd/MM/yyyy", { locale: ar })}</TableCell>
