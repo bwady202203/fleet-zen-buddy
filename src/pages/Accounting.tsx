@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send, Building2, Landmark } from "lucide-react";
  import { SendHorizontal } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -272,6 +272,20 @@ const Accounting = () => {
       icon: Sparkles,
       link: "/accounting/smart-journal",
       color: "from-gradient-start to-gradient-end"
+    },
+    {
+      title: "سند صرف - بنك الرياض",
+      description: "سندات الصرف من بنك الرياض مع قيد تلقائي",
+      icon: Building2,
+      link: "/accounting/bank-payment-voucher?bank=riyadh",
+      color: "from-blue-700 to-sky-600"
+    },
+    {
+      title: "سند صرف - بنك الراجحي",
+      description: "سندات الصرف من بنك الراجحي مع قيد تلقائي",
+      icon: Landmark,
+      link: "/accounting/bank-payment-voucher?bank=rajhi",
+      color: "from-emerald-700 to-green-600"
     },
     {
       title: "استيراد كشف بنكي",

@@ -52,6 +52,7 @@ import PurchaseOrder from "./pages/accounting/PurchaseOrder";
 import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
+import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
@@ -164,6 +165,7 @@ const App = () => {
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
+                                  <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />
                                   <Route path="/hr/payroll" element={<Payroll />} />
