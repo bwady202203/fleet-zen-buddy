@@ -57,6 +57,7 @@ export default function BankPaymentVoucher() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [vouchersSearch, setVouchersSearch] = useState("");
   const [dialogSearch, setDialogSearch] = useState("");
   const [customizeMode, setCustomizeMode] = useState(false);
   const STORAGE_KEY = `bpv_accounts_${bankKey}`;
