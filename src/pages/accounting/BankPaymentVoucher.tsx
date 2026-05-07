@@ -484,9 +484,32 @@ export default function BankPaymentVoucher() {
               اسحب المربع لتغيير ترتيبه — اضغط على أيقونة العين لإخفاء/إظهار الحساب
             </p>
           )}
+          {/* Category Legend */}
+          <div className="flex flex-wrap gap-2 mt-2 text-[11px]">
+            <span className="px-2 py-0.5 rounded border bg-blue-100 border-blue-300 text-blue-900 dark:bg-blue-950 dark:text-blue-200">1 - الأصول</span>
+            <span className="px-2 py-0.5 rounded border bg-rose-100 border-rose-300 text-rose-900 dark:bg-rose-950 dark:text-rose-200">2 - الخصوم</span>
+            <span className="px-2 py-0.5 rounded border bg-violet-100 border-violet-300 text-violet-900 dark:bg-violet-950 dark:text-violet-200">3 - حقوق الملكية</span>
+            <span className="px-2 py-0.5 rounded border bg-emerald-100 border-emerald-300 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">4 - الإيرادات</span>
+            <span className="px-2 py-0.5 rounded border bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-950 dark:text-amber-200">5 - المصروفات</span>
+          </div>
           <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2 p-1">
             {filteredDialog.map((acc) => {
               const hidden = hiddenIds.includes(acc.id);
+              const cat = acc.code.charAt(0);
+              const catClass =
+                cat === "1" ? "bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-400 dark:bg-blue-950/40 dark:border-blue-900 dark:hover:bg-blue-900/40" :
+                cat === "2" ? "bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-400 dark:bg-rose-950/40 dark:border-rose-900 dark:hover:bg-rose-900/40" :
+                cat === "3" ? "bg-violet-50 border-violet-200 hover:bg-violet-100 hover:border-violet-400 dark:bg-violet-950/40 dark:border-violet-900 dark:hover:bg-violet-900/40" :
+                cat === "4" ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-900 dark:hover:bg-emerald-900/40" :
+                cat === "5" ? "bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-400 dark:bg-amber-950/40 dark:border-amber-900 dark:hover:bg-amber-900/40" :
+                "bg-card border-border hover:bg-accent";
+              const codeColor =
+                cat === "1" ? "text-blue-700 dark:text-blue-300" :
+                cat === "2" ? "text-rose-700 dark:text-rose-300" :
+                cat === "3" ? "text-violet-700 dark:text-violet-300" :
+                cat === "4" ? "text-emerald-700 dark:text-emerald-300" :
+                cat === "5" ? "text-amber-700 dark:text-amber-300" :
+                "text-muted-foreground";
               return (
                 <div
                   key={acc.id}
@@ -502,7 +525,8 @@ export default function BankPaymentVoucher() {
                   }}
                   className={cn(
                     "relative p-2 rounded-md border text-right transition-all duration-300 ease-out cursor-pointer",
-                    "hover:border-primary hover:bg-accent hover:scale-105",
+                    catClass,
+                    "hover:scale-105 hover:shadow-md",
                     "animate-in fade-in zoom-in-95",
                     hidden && "opacity-40 border-dashed",
                     customizeMode && "cursor-move ring-1 ring-border"
@@ -523,7 +547,7 @@ export default function BankPaymentVoucher() {
                       </button>
                     </>
                   )}
-                  <div className="text-[10px] font-mono text-muted-foreground mt-2">{acc.code}</div>
+                  <div className={cn("text-[10px] font-mono mt-2", codeColor)}>{acc.code}</div>
                   <div className="text-xs font-semibold truncate">{acc.name_ar}</div>
                 </div>
               );
