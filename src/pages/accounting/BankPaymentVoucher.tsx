@@ -773,8 +773,11 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
         </table>
       </div>
 
-      {/* Signatures */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginTop: "20mm", textAlign: "center", fontSize: "10.5pt" }}>
+      {/* Spacer pushes signatures to bottom of first page */}
+      <div style={{ flex: 1, minHeight: "10mm" }} />
+
+      {/* Signatures - always at bottom of first page */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "10mm", textAlign: "center", fontSize: "10.5pt" }}>
         {["المحاسب", "المدير المالي", "المستلم"].map((label) => (
           <div key={label}>
             <div style={{ borderTop: "1.5px solid #0a4a8a", paddingTop: "6px", fontWeight: 700, color: "#0a4a8a" }}>{label}</div>
