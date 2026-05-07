@@ -57,6 +57,7 @@ export default function BankPaymentVoucher() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [vouchersSearch, setVouchersSearch] = useState("");
   const [dialogSearch, setDialogSearch] = useState("");
   const [customizeMode, setCustomizeMode] = useState(false);
   const STORAGE_KEY = `bpv_accounts_${bankKey}`;
@@ -151,6 +152,19 @@ export default function BankPaymentVoucher() {
     if (!q) return base;
     return base.filter((a) => a.code.includes(dialogSearch) || a.name_ar.toLowerCase().includes(q));
   }, [dialogSearch, orderedAccounts, hiddenIds, customizeMode]);
+
+  const filteredVouchers = useMemo(() => {
+    const q = vouchersSearch.trim().toLowerCase();
+    if (!q) return vouchers;
+    return vouchers.filter((v) =>
+      v.voucher_number?.toLowerCase().includes(q) ||
+      (v.description || "").toLowerCase().includes(q) ||
+      (v.debit_account?.name_ar || "").toLowerCase().includes(q) ||
+      (v.debit_account?.code || "").includes(q) ||
+      String(v.amount).includes(q) ||
+      format(new Date(v.voucher_date), "dd/MM/yyyy").includes(q)
+    );
+  }, [vouchers, vouchersSearch]);
 
   const moveAccount = (fromId: string, toId: string) => {
     if (fromId === toId) return;
@@ -319,8 +333,16 @@ export default function BankPaymentVoucher() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <CardTitle>سجل سندات الصرف</CardTitle>
+            <div className="relative w-72">
+              <Input
+                placeholder="بحث برقم السند، البيان، الحساب، المبلغ..."
+                value={vouchersSearch}
+                onChange={(e) => setVouchersSearch(e.target.value)}
+                className="pr-3"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -337,10 +359,10 @@ export default function BankPaymentVoucher() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
-                ) : vouchers.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">لا توجد سندات</TableCell></TableRow>
+                ) : filteredVouchers.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{vouchersSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات"}</TableCell></TableRow>
                 ) : (
-                  vouchers.map((v) => (
+                  filteredVouchers.map((v) => (
                     <TableRow key={v.id}>
                       <TableCell className="font-bold">{v.voucher_number}</TableCell>
                       <TableCell>{format(new Date(v.voucher_date), "dd/MM/yyyy", { locale: ar })}</TableCell>
