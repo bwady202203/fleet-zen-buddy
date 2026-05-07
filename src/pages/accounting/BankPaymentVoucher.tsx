@@ -138,11 +138,31 @@ export default function BankPaymentVoucher() {
       .slice(0, 8);
   }, [searchQuery, accounts]);
 
+  const orderedAccounts = useMemo(() => {
+    const map = new Map(accounts.map((a) => [a.id, a]));
+    const ordered: Account[] = [];
+    orderIds.forEach((id) => { const a = map.get(id); if (a) { ordered.push(a); map.delete(id); } });
+    return [...ordered, ...Array.from(map.values())];
+  }, [accounts, orderIds]);
+
   const filteredDialog = useMemo(() => {
     const q = dialogSearch.toLowerCase();
-    if (!q) return accounts;
-    return accounts.filter((a) => a.code.includes(dialogSearch) || a.name_ar.toLowerCase().includes(q));
-  }, [dialogSearch, accounts]);
+    const base = customizeMode ? orderedAccounts : orderedAccounts.filter((a) => !hiddenIds.includes(a.id));
+    if (!q) return base;
+    return base.filter((a) => a.code.includes(dialogSearch) || a.name_ar.toLowerCase().includes(q));
+  }, [dialogSearch, orderedAccounts, hiddenIds, customizeMode]);
+
+  const moveAccount = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const ids = orderedAccounts.map((a) => a.id);
+    const from = ids.indexOf(fromId);
+    const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) return;
+    const next = [...ids];
+    const [m] = next.splice(from, 1);
+    next.splice(to, 0, m);
+    setOrderIds(next);
+  };
 
   const generateVoucherNumber = async () => {
     const prefix = `PV-${bankKey.toUpperCase()}-`;
