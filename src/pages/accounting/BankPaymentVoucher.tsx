@@ -653,7 +653,7 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
       className="voucher-page"
       style={{
         width: "210mm",
-        minHeight: "297mm",
+        height: "297mm",
         padding: "14mm 14mm 14mm 14mm",
         margin: "0 auto",
         background: "#fff",
@@ -661,22 +661,18 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
         fontFamily: "'Cairo', sans-serif",
         position: "relative",
         boxShadow: "0 0 0 1px #e5e7eb",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Decorative top band */}
       <div style={{ height: "8px", background: "linear-gradient(90deg,#0a4a8a,#0c7a5f)", borderRadius: "2px", marginBottom: "10px" }} />
 
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #0a4a8a", paddingBottom: "10px", marginBottom: "14px" }}>
-        <div>
-          <h1 style={{ fontSize: "26pt", fontWeight: 800, margin: 0, color: "#0a4a8a", letterSpacing: "-0.5px" }}>شركة الرمال</h1>
-          <p style={{ fontSize: "10pt", margin: "2px 0 0", color: "#555" }}>المملكة العربية السعودية</p>
-        </div>
-        <div style={{ textAlign: "left" }}>
-          <div style={{ fontSize: "11pt", color: "#666" }}>Payment Voucher</div>
-          <div style={{ fontSize: "16pt", fontWeight: 700, color: "#0a4a8a" }}>سند صرف</div>
-          <div style={{ fontSize: "10pt", color: "#666", marginTop: "2px" }}>{bank.name}</div>
-        </div>
+      {/* Centered Header */}
+      <div style={{ textAlign: "center", borderBottom: "2px solid #0a4a8a", paddingBottom: "10px", marginBottom: "14px" }}>
+        <h1 style={{ fontSize: "30pt", fontWeight: 800, margin: 0, color: "#0a4a8a", letterSpacing: "-0.5px" }}>شركة الرمال</h1>
+        <div style={{ fontSize: "18pt", fontWeight: 700, color: "#0c7a5f", marginTop: "4px" }}>سند صرف</div>
+        <div style={{ fontSize: "10pt", color: "#666", marginTop: "2px" }}>{bank.name} — المملكة العربية السعودية</div>
       </div>
 
       {/* Voucher meta */}
@@ -777,8 +773,11 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
         </table>
       </div>
 
-      {/* Signatures */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginTop: "20mm", textAlign: "center", fontSize: "10.5pt" }}>
+      {/* Spacer pushes signatures to bottom of first page */}
+      <div style={{ flex: 1, minHeight: "10mm" }} />
+
+      {/* Signatures - always at bottom of first page */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "10mm", textAlign: "center", fontSize: "10.5pt" }}>
         {["المحاسب", "المدير المالي", "المستلم"].map((label) => (
           <div key={label}>
             <div style={{ borderTop: "1.5px solid #0a4a8a", paddingTop: "6px", fontWeight: 700, color: "#0a4a8a" }}>{label}</div>
