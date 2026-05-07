@@ -423,7 +423,7 @@ export default function BankPaymentVoucher() {
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col" dir="rtl">
           <DialogHeader><DialogTitle>اختر الحساب المدين</DialogTitle></DialogHeader>
           <Input placeholder="ابحث..." value={dialogSearch} onChange={(e) => setDialogSearch(e.target.value)} autoFocus />
-          <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+          <div className="flex-1 overflow-y-auto grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-1.5 mt-2">
             {filteredDialog.map((acc) => (
               <button
                 key={acc.id}
