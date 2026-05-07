@@ -343,8 +343,23 @@ export default function BankPaymentVoucher() {
                 <Input type="date" value={formData.voucher_date} onChange={(e) => setFormData({ ...formData, voucher_date: e.target.value })} required />
               </div>
               <div>
-                <Label>المبلغ</Label>
-                <Input type="text" inputMode="decimal" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+                <Label>المبلغ (اضغط Enter لاختيار الحساب)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const amt = parseFloat(formData.amount);
+                      if (!amt || amt <= 0) { toast.error("أدخل مبلغاً صحيحاً أولاً"); return; }
+                      setShowAccountDialog(true);
+                    }
+                  }}
+                  required
+                  autoFocus
+                />
               </div>
             </div>
 
