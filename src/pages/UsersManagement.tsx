@@ -36,6 +36,7 @@ const MODULES = [
   { id: 'loads', name: 'إدارة الحمولات' },
   { id: 'spare_parts', name: 'قطع الغيار' },
   { id: 'custody', name: 'العهد' },
+  { id: 'vouchers', name: 'السندات' },
 ];
 
 const UsersManagement = () => {
