@@ -22,6 +22,15 @@ const Dashboard = () => {
       module: "accounting"
     },
     {
+      title: "السندات",
+      description: "سندات الصرف البنكية ومصروفات العهد",
+      icon: Receipt,
+      color: "from-rose-500 to-pink-600",
+      link: "/vouchers",
+      features: ["سند صرف بنك الرياض", "سند صرف بنك الراجحي", "مصروفات العهد"],
+      module: "vouchers"
+    },
+    {
       title: "الموارد البشرية",
       description: "إدارة الموظفين والرواتب",
       icon: Users,
