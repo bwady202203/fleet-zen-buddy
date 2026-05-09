@@ -54,16 +54,8 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    if (typeof newPassword !== 'string' || newPassword.length < 12) {
-      throw new Error('Password must be at least 12 characters');
-    }
-    if (
-      !/[A-Z]/.test(newPassword) ||
-      !/[a-z]/.test(newPassword) ||
-      !/[0-9]/.test(newPassword) ||
-      !/[^A-Za-z0-9]/.test(newPassword)
-    ) {
-      throw new Error('Password must contain uppercase, lowercase, number, and special character');
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      throw new Error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
     }
 
     // Update user password
