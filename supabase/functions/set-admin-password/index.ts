@@ -16,16 +16,26 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Find admin user by email
+    let email = 'remalcompany056@gmail.com';
+    let password = '363636';
+    try {
+      const body = await req.json();
+      if (body?.email) email = body.email;
+      if (body?.password) password = body.password;
+    } catch (_) {}
+
     const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     if (listErr) throw listErr;
-    const adminUser = list.users.find(u => u.email === 'remalcompany056@gmail.com');
-    if (!adminUser) throw new Error('Admin user not found');
+    const user = list.users.find(u => u.email === email);
+    if (!user) throw new Error(`User not found: ${email}`);
 
-    const { error } = await admin.auth.admin.updateUserById(adminUser.id, { password: '363636' });
+    const { error } = await admin.auth.admin.updateUserById(user.id, {
+      password,
+      email_confirm: true,
+    });
     if (error) throw error;
 
-    return new Response(JSON.stringify({ success: true, email: adminUser.email }), {
+    return new Response(JSON.stringify({ success: true, email: user.email, id: user.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
