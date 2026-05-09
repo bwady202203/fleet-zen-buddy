@@ -20,13 +20,6 @@ const CustodyHome = () => {
       link: "/custody/transfers"
     },
     {
-      title: "المصروفات",
-      description: "تسجيل وإدارة مصروفات المندوبين",
-      icon: Banknote,
-      color: "from-red-500 to-red-600",
-      link: "/custody/expenses"
-    },
-    {
       title: "العهد المستلمة",
       description: "عرض وإدارة سجل العهد المستلمة",
       icon: List,
