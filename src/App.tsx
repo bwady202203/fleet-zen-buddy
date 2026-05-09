@@ -138,6 +138,7 @@ const App = () => {
                                 <AppLayout>
                                 <Routes>
                                   <Route path="/" element={<Dashboard />} />
+                                  <Route path="/vouchers" element={<Vouchers />} />
                                   <Route path="/users" element={<UsersManagement />} />
                                   <Route path="/organizations" element={<OrganizationsManagement />} />
                                   <Route path="/fleet" element={<Index />} />
