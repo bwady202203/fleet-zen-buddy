@@ -216,7 +216,7 @@ export const SystemIconsBar = () => {
           </div>
         </div>
       </div>
-      <AccountReportDialog open={reportOpen} onOpenChange={setReportOpen} />
+      
     </div>
   );
 };
