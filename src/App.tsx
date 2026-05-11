@@ -14,6 +14,7 @@ import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "./pages/Dashboard";
+import AccountReport from "./pages/AccountReport";
 import Index from "./pages/Index";
 import Vehicles from "./pages/Vehicles";
 import Auth from "./pages/Auth";
@@ -138,6 +139,7 @@ const App = () => {
                                 <AppLayout>
                                 <Routes>
                                   <Route path="/" element={<Dashboard />} />
+                                  <Route path="/account-report" element={<AccountReport />} />
                                   <Route path="/vouchers" element={<Vouchers />} />
                                   <Route path="/users" element={<UsersManagement />} />
                                   <Route path="/organizations" element={<OrganizationsManagement />} />
