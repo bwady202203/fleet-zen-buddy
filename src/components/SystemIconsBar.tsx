@@ -18,7 +18,7 @@ export const SystemIconsBar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sessionStartTime] = useState(new Date());
   const [sessionDuration, setSessionDuration] = useState("00:00:00");
-  const [reportOpen, setReportOpen] = useState(false);
+  
 
   useEffect(() => {
     const timer = setInterval(() => {
