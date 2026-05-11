@@ -167,6 +167,17 @@ export const SystemIconsBar = () => {
                 <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             )}
+            {userRole === 'admin' && (
+              <Button
+                onClick={() => setReportOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-primary/10 text-primary"
+                title="تقرير الحساب الشامل"
+              >
+                <PieChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+            )}
           </div>
           
           {/* معلومات المستخدم وعداد الجلسة */}
