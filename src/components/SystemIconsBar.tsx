@@ -1,7 +1,8 @@
-import { LogOut, Download, Clock, User, ArrowRight } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
+import { AccountReportDialog } from "@/components/AccountReportDialog";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
@@ -18,6 +19,7 @@ export const SystemIconsBar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sessionStartTime] = useState(new Date());
   const [sessionDuration, setSessionDuration] = useState("00:00:00");
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -165,6 +167,17 @@ export const SystemIconsBar = () => {
                 <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             )}
+            {userRole === 'admin' && (
+              <Button
+                onClick={() => setReportOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-primary/10 text-primary"
+                title="تقرير الحساب الشامل"
+              >
+                <PieChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+            )}
           </div>
           
           {/* معلومات المستخدم وعداد الجلسة */}
@@ -203,6 +216,7 @@ export const SystemIconsBar = () => {
           </div>
         </div>
       </div>
+      <AccountReportDialog open={reportOpen} onOpenChange={setReportOpen} />
     </div>
   );
 };
