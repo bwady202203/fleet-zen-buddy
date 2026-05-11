@@ -1,7 +1,8 @@
-import { LogOut, Download, Clock, User, ArrowRight } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
+import { AccountReportDialog } from "@/components/AccountReportDialog";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
