@@ -169,7 +169,7 @@ export const SystemIconsBar = () => {
             )}
             {(userRole === 'admin' || userRole === 'manager') && (
               <Button
-                onClick={() => setReportOpen(true)}
+                onClick={() => navigate('/account-report')}
                 variant="default"
                 size="sm"
                 className="h-8 gap-1.5 bg-gradient-to-r from-primary to-primary/70 text-primary-foreground hover:opacity-90 shadow-md"
