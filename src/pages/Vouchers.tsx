@@ -282,12 +282,13 @@ const ArtMap = {
 
 const Vouchers = () => {
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
+    <div className="min-h-screen relative" dir="rtl">
+      <AnimatedBackground />
+      <header className="border-b bg-card/60 backdrop-blur-md">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-fuchsia-500 via-sky-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_200%]">
                 إدارة السندات
               </h1>
               <p className="text-muted-foreground mt-1">سندات الصرف البنكية ومصروفات العهد</p>
