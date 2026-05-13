@@ -310,19 +310,156 @@ const Vouchers = () => {
             return (
               <Link key={s.title} to={s.link} className="group">
                 <Card className="relative overflow-hidden h-full border-2 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-2xl hover:bg-card/90 transition-all duration-500 hover:-translate-y-1.5">
-                  <CardContent className="p-6">
-                    {/* Artistic icon tile */}
+                  <CardContent className="p-6 flex flex-col items-center text-center">
+                    {/* === Islamic Decorative Door === */}
                     <div
-                      className={`relative mb-5 h-32 w-32 rounded-3xl bg-gradient-to-br ${s.gradient} text-white shadow-xl ring-4 ${s.ring} flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:rotate-[-3deg] transition-transform duration-500`}
+                      className="islamic-door relative mb-5 h-44 w-36"
+                      style={{ perspective: "900px" }}
                     >
-                      {/* decorative blobs */}
-                      <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white/15 blur-xl" />
-                      <div className="absolute -bottom-8 -right-4 w-24 h-24 rounded-full bg-black/20 blur-2xl" />
-                      <div className="relative w-20 h-20 drop-shadow-lg">
-                        <Art />
+                      {/* Outer arched frame */}
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-b ${s.gradient} shadow-2xl ring-4 ${s.ring}`}
+                        style={{
+                          clipPath:
+                            "path('M18 170 L18 60 Q18 0 72 0 Q126 0 126 60 L126 170 Z')",
+                        }}
+                      />
+                      {/* Decorative outer border line */}
+                      <svg
+                        viewBox="0 0 144 180"
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                      >
+                        <path
+                          d="M22 174 L22 62 Q22 6 72 6 Q122 6 122 62 L122 174"
+                          fill="none"
+                          stroke="rgba(255,255,255,0.55)"
+                          strokeWidth="1.2"
+                          strokeDasharray="2 3"
+                        />
+                        {/* keystone star */}
+                        <g transform="translate(72 18)">
+                          <path
+                            d="M0 -7 L2 -2 L7 -2 L3 1 L4.5 6 L0 3 L-4.5 6 L-3 1 L-7 -2 L-2 -2 Z"
+                            fill="#fff"
+                            opacity="0.9"
+                          />
+                        </g>
+                      </svg>
+
+                      {/* Inner room — revealed when doors open */}
+                      <div
+                        className="absolute bg-gradient-to-b from-amber-50 via-yellow-100 to-amber-200 dark:from-amber-900 dark:via-amber-800 dark:to-amber-950 overflow-hidden flex items-center justify-center"
+                        style={{
+                          left: "22px",
+                          right: "22px",
+                          top: "6px",
+                          bottom: "6px",
+                          clipPath:
+                            "path('M0 168 L0 56 Q0 0 50 0 Q100 0 100 56 L100 168 Z')",
+                          boxShadow: "inset 0 0 30px rgba(0,0,0,0.4)",
+                        }}
+                      >
+                        {/* warm glow */}
+                        <div className="absolute inset-0 bg-radial-glow opacity-90" />
+                        {/* the icon emblem inside */}
+                        <div
+                          className={`relative w-20 h-20 text-white drop-shadow-2xl bg-gradient-to-br ${s.gradient} rounded-full p-3 shadow-2xl ring-2 ring-white/60 transition-transform duration-700 group-hover:scale-110`}
+                        >
+                          <Art />
+                        </div>
                       </div>
-                      {/* shine sweep */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+
+                      {/* === LEFT door leaf === */}
+                      <div
+                        className="door-leaf door-leaf-left absolute"
+                        style={{
+                          left: "18px",
+                          top: "0",
+                          width: "54px",
+                          height: "170px",
+                          transformOrigin: "left center",
+                          transformStyle: "preserve-3d",
+                        }}
+                      >
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-br ${s.gradient}`}
+                          style={{
+                            clipPath:
+                              "path('M0 170 L0 60 Q0 0 54 0 L54 170 Z')",
+                            boxShadow: "inset -4px 0 8px rgba(0,0,0,0.35)",
+                          }}
+                        />
+                        <svg
+                          viewBox="0 0 54 170"
+                          className="absolute inset-0 w-full h-full pointer-events-none"
+                        >
+                          {/* arabesque panel */}
+                          <path
+                            d="M8 162 L8 60 Q8 10 46 10 L46 162 Z"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.7)"
+                            strokeWidth="1.4"
+                          />
+                          {/* 8-point star pattern */}
+                          {[40, 80, 120].map((cy) => (
+                            <g key={cy} transform={`translate(28 ${cy})`}>
+                              <path
+                                d="M0 -10 L3 -3 L10 -3 L4 2 L7 9 L0 4 L-7 9 L-4 2 L-10 -3 L-3 -3 Z"
+                                fill="rgba(255,255,255,0.55)"
+                              />
+                              <circle cx="0" cy="0" r="2" fill="rgba(255,255,255,0.9)" />
+                            </g>
+                          ))}
+                          {/* door knob */}
+                          <circle cx="6" cy="100" r="2.6" fill="#fde68a" stroke="#92400e" strokeWidth="0.6" />
+                        </svg>
+                      </div>
+
+                      {/* === RIGHT door leaf === */}
+                      <div
+                        className="door-leaf door-leaf-right absolute"
+                        style={{
+                          left: "72px",
+                          top: "0",
+                          width: "54px",
+                          height: "170px",
+                          transformOrigin: "right center",
+                          transformStyle: "preserve-3d",
+                        }}
+                      >
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-bl ${s.gradient}`}
+                          style={{
+                            clipPath:
+                              "path('M54 170 L54 60 Q54 0 0 0 L0 170 Z')",
+                            boxShadow: "inset 4px 0 8px rgba(0,0,0,0.35)",
+                          }}
+                        />
+                        <svg
+                          viewBox="0 0 54 170"
+                          className="absolute inset-0 w-full h-full pointer-events-none"
+                        >
+                          <path
+                            d="M46 162 L46 60 Q46 10 8 10 L8 162 Z"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.7)"
+                            strokeWidth="1.4"
+                          />
+                          {[40, 80, 120].map((cy) => (
+                            <g key={cy} transform={`translate(26 ${cy})`}>
+                              <path
+                                d="M0 -10 L3 -3 L10 -3 L4 2 L7 9 L0 4 L-7 9 L-4 2 L-10 -3 L-3 -3 Z"
+                                fill="rgba(255,255,255,0.55)"
+                              />
+                              <circle cx="0" cy="0" r="2" fill="rgba(255,255,255,0.9)" />
+                            </g>
+                          ))}
+                          <circle cx="48" cy="100" r="2.6" fill="#fde68a" stroke="#92400e" strokeWidth="0.6" />
+                        </svg>
+                      </div>
+
+                      {/* base step */}
+                      <div className="absolute -bottom-1 left-2 right-2 h-2 rounded-b-md bg-gradient-to-b from-stone-400 to-stone-600 shadow-md" />
                     </div>
 
                     <h2 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
