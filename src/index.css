@@ -223,3 +223,27 @@ All colors MUST be HSL.
 .group:active .islamic-door .door-leaf-right {
   transform: perspective(800px) rotateY(95deg);
 }
+
+/* === Car driving animation === */
+@keyframes car-drive {
+  0% { transform: translateX(-180px); }
+  100% { transform: translateX(calc(100vw + 50px)); }
+}
+@keyframes wheel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+@keyframes road-dash {
+  from { background-position: 0 0; }
+  to { background-position: -120px 0; }
+}
+.animate-car-drive {
+  animation: car-drive 9s linear infinite;
+}
+.animate-wheel-spin {
+  animation: wheel-spin 0.4s linear infinite;
+  transform-box: fill-box;
+}
+.animate-road-dash {
+  animation: road-dash 0.6s linear infinite;
+}

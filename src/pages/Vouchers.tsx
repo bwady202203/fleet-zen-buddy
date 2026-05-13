@@ -474,6 +474,73 @@ const Vouchers = () => {
           })}
         </div>
       </main>
+
+      {/* === Animated Road & Car === */}
+      <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-30 h-28 overflow-hidden" dir="ltr">
+        {/* sky glow */}
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-900/60 via-slate-800/30 to-transparent" />
+
+        {/* buildings silhouette */}
+        <svg viewBox="0 0 1600 80" preserveAspectRatio="none" className="absolute bottom-12 left-0 w-full h-12 opacity-40">
+          <path d="M0 80 L0 50 L60 50 L60 30 L120 30 L120 55 L180 55 L180 20 L240 20 L240 45 L320 45 L320 25 L380 25 L380 50 L460 50 L460 35 L540 35 L540 55 L620 55 L620 28 L700 28 L700 48 L780 48 L780 32 L860 32 L860 52 L940 52 L940 22 L1020 22 L1020 45 L1100 45 L1100 30 L1180 30 L1180 55 L1260 55 L1260 35 L1340 35 L1340 50 L1420 50 L1420 25 L1500 25 L1500 48 L1600 48 L1600 80 Z" fill="#1e293b" />
+        </svg>
+
+        {/* road */}
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-b from-slate-700 to-slate-900 border-t-2 border-slate-600">
+          {/* lane dashes */}
+          <div className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2 animate-road-dash"
+               style={{
+                 backgroundImage: "repeating-linear-gradient(to right, #fbbf24 0 30px, transparent 30px 60px)",
+               }} />
+        </div>
+
+        {/* the car */}
+        <div className="absolute bottom-3 animate-car-drive">
+          <svg viewBox="0 0 140 60" className="w-32 h-14 drop-shadow-2xl">
+            {/* body shadow */}
+            <ellipse cx="70" cy="55" rx="55" ry="3" fill="rgba(0,0,0,0.4)" />
+            {/* main body */}
+            <path d="M10 42 L20 28 Q24 22 32 22 L60 22 L72 12 Q76 8 84 8 L104 8 Q112 8 116 14 L126 28 L132 30 Q136 31 136 35 L136 42 Z"
+                  fill="url(#carBody)" stroke="#1e3a8a" strokeWidth="1" />
+            <defs>
+              <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="60%" stopColor="#1d4ed8" />
+                <stop offset="100%" stopColor="#1e3a8a" />
+              </linearGradient>
+            </defs>
+            {/* windows */}
+            <path d="M62 22 L74 14 Q78 11 84 11 L92 11 L92 22 Z" fill="#bae6fd" opacity="0.8" />
+            <path d="M94 11 L102 11 Q108 11 112 16 L118 22 L94 22 Z" fill="#bae6fd" opacity="0.8" />
+            <line x1="93" y1="11" x2="93" y2="22" stroke="#1e3a8a" strokeWidth="1" />
+            {/* door line */}
+            <line x1="70" y1="22" x2="68" y2="42" stroke="#1e3a8a" strokeWidth="0.8" opacity="0.6" />
+            {/* headlight */}
+            <circle cx="130" cy="34" r="2.5" fill="#fef08a" />
+            <circle cx="130" cy="34" r="5" fill="#fef08a" opacity="0.4" />
+            {/* taillight */}
+            <rect x="10" y="32" width="4" height="6" rx="1" fill="#ef4444" />
+            {/* wheels */}
+            <g className="animate-wheel-spin" style={{ transformOrigin: "30px 44px" }}>
+              <circle cx="30" cy="44" r="9" fill="#0f172a" />
+              <circle cx="30" cy="44" r="5" fill="#475569" />
+              <line x1="30" y1="39" x2="30" y2="49" stroke="#cbd5e1" strokeWidth="1.2" />
+              <line x1="25" y1="44" x2="35" y2="44" stroke="#cbd5e1" strokeWidth="1.2" />
+            </g>
+            <g className="animate-wheel-spin" style={{ transformOrigin: "110px 44px" }}>
+              <circle cx="110" cy="44" r="9" fill="#0f172a" />
+              <circle cx="110" cy="44" r="5" fill="#475569" />
+              <line x1="110" y1="39" x2="110" y2="49" stroke="#cbd5e1" strokeWidth="1.2" />
+              <line x1="105" y1="44" x2="115" y2="44" stroke="#cbd5e1" strokeWidth="1.2" />
+            </g>
+          </svg>
+        </div>
+
+        {/* small clouds of dust */}
+        <div className="absolute bottom-10 animate-car-drive opacity-60" style={{ animationDelay: "-0.2s" }}>
+          <div className="w-3 h-3 rounded-full bg-slate-400/60 blur-sm" />
+        </div>
+      </div>
     </div>
   );
 };
