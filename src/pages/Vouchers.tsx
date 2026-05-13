@@ -468,10 +468,10 @@ const Vouchers = () => {
                       <div className="absolute -bottom-1 left-2 right-2 h-2 rounded-b-md bg-gradient-to-b from-stone-400 to-stone-600 shadow-md" />
                     </div>
 
-                    <h2 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                    <h2 className="text-xl font-bold mb-2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] group-hover:text-amber-200 transition-colors">
                       {s.title}
                     </h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{s.description}</p>
+                    <p className="text-sm text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] leading-relaxed">{s.description}</p>
                   </CardContent>
 
                   {/* corner accent */}
