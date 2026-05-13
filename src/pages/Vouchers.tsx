@@ -319,7 +319,7 @@ const Vouchers = () => {
                   <CardContent className="p-6 flex flex-col items-center text-center">
                     {/* === Islamic Decorative Door === */}
                     <div
-                      className="islamic-door relative mb-5 h-44 w-36"
+                      className="islamic-door relative mb-5 h-44 w-36 animate-float-soft drop-shadow-[0_25px_25px_rgba(0,0,0,0.45)]"
                       style={{ perspective: "900px" }}
                     >
                       {/* Outer arched frame */}
