@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
 
 // Canvas animated background — floating colorful particles connected by lines
