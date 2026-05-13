@@ -309,7 +309,7 @@ const Vouchers = () => {
             const Art = ArtMap[s.art];
             return (
               <Link key={s.title} to={s.link} className="group">
-                <Card className="relative overflow-hidden h-full border-2 hover:border-primary/40 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5">
+                <Card className="relative overflow-hidden h-full border-2 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-2xl hover:bg-card/90 transition-all duration-500 hover:-translate-y-1.5">
                   <CardContent className="p-6">
                     {/* Artistic icon tile */}
                     <div
