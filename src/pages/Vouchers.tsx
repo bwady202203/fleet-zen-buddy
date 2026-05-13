@@ -121,6 +121,7 @@ const AnimatedBackground = () => {
 
 type Section = {
   title: string;
+  englishTitle: string;
   description: string;
   link: string;
   gradient: string; // tailwind gradient classes
