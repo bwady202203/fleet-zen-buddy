@@ -80,10 +80,37 @@ export default {
             height: "0",
           },
         },
+        "gradient-shift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "blob-1": {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(80px, -60px) scale(1.15)" },
+          "66%": { transform: "translate(-60px, 90px) scale(0.9)" },
+        },
+        "blob-2": {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(-100px, 70px) scale(1.1)" },
+          "66%": { transform: "translate(70px, -50px) scale(0.95)" },
+        },
+        "blob-3": {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "50%": { transform: "translate(60px, -80px) scale(1.2)" },
+        },
+        "blob-4": {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "50%": { transform: "translate(-90px, 60px) scale(1.1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "gradient-shift": "gradient-shift 12s ease infinite",
+        "blob-1": "blob-1 18s ease-in-out infinite",
+        "blob-2": "blob-2 22s ease-in-out infinite",
+        "blob-3": "blob-3 26s ease-in-out infinite",
+        "blob-4": "blob-4 20s ease-in-out infinite",
       },
     },
   },
