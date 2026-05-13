@@ -659,7 +659,7 @@ function PrintTemplate({ receipt, bank, lines }: { receipt: Receipt; bank: { nam
           <BadgeCheck color={A} size={28} />
           <h1 style={{ fontSize: "22pt", fontWeight: 800, margin: 0, color: P, letterSpacing: "-0.3px" }}>شركة الرمال الناعمة الصناعية</h1>
         </div>
-        <div style={{ fontSize: "9pt", color: "#666", marginTop: "2px" }}>سجل تجاري رقم 2020147243 — المملكة العربية السعودية</div>
+        <div style={{ fontSize: "9pt", color: "#666", marginTop: "2px" }}>سجل تجاري رقم 2050147243 — المملكة العربية السعودية</div>
         <div style={{
           display: "inline-block",
           marginTop: "6px",
@@ -783,40 +783,46 @@ function PrintTemplate({ receipt, bank, lines }: { receipt: Receipt; bank: { nam
 
       {/* Signatures (3) + Stamp */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "8mm", textAlign: "center", fontSize: "10.5pt", alignItems: "end" }}>
-        {["المحاسب", "المدير المالي", "المدير العام"].map((label) => (
-          <div key={label}>
-            <div style={{ height: "18mm" }} />
-            <div style={{ borderTop: `1.5px solid ${P}`, paddingTop: "6px", fontWeight: 700, color: P }}>{label}</div>
-            <div style={{ marginTop: "4px", color: "#666", fontSize: "9pt" }}>التوقيع: ____________</div>
+        {[
+          { label: "المحاسب", sub: "Accountant" },
+          { label: "المدير المالي", sub: "Finance Manager" },
+          { label: "المدير العام", sub: "General Manager" },
+        ].map((s) => (
+          <div key={s.label} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: "90%", height: "16mm", borderBottom: `1px dashed ${P}`, marginBottom: "4px" }} />
+            <div style={{ fontWeight: 700, color: P, fontSize: "10.5pt" }}>{s.label}</div>
+            <div style={{ marginTop: "2px", color: "#888", fontSize: "8pt", fontStyle: "italic" }}>{s.sub}</div>
           </div>
         ))}
         {/* Stamp */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }}>
           <div style={{
-            width: "32mm",
-            height: "32mm",
-            borderRadius: "50%",
-            border: `2.5px solid ${P}`,
+            width: "36mm",
+            height: "24mm",
+            borderRadius: "3px",
+            border: "2.5px solid #1e40af",
             position: "relative",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            transform: "rotate(-8deg)",
-            background: `radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%)`,
+            background: "#f8fafc",
+            boxShadow: "0 0 0 1.5px #1e40af, 0 0 0 4px #e0e7ff, 0 0 0 5.5px #1e40af",
+            overflow: "hidden",
           }}>
+            {/* Inner dashed accent */}
             <div style={{
               position: "absolute",
-              inset: "3mm",
-              borderRadius: "50%",
-              border: `1.2px dashed ${P}`,
+              inset: "2mm",
+              borderRadius: "1.5px",
+              border: "1px dashed #1e40af",
+              opacity: 0.4,
             }} />
-            <div style={{ textAlign: "center", color: P, lineHeight: 1.15, padding: "2mm" }}>
-              <div style={{ fontSize: "8pt", fontWeight: 800 }}>الرمال الناعمة</div>
-              <div style={{ fontSize: "6.5pt", fontWeight: 700, marginTop: "1px" }}>الصناعية</div>
-              <div style={{ fontSize: "6pt", marginTop: "1px", borderTop: `1px solid ${P}`, paddingTop: "1px" }}>س.ت 2020147243</div>
+            <div style={{ textAlign: "center", color: "#1e40af", lineHeight: 1.2, padding: "1mm" }}>
+              <div style={{ fontSize: "8pt", fontWeight: 800, letterSpacing: "0.3px" }}>شركة الرمال الناعمة الصناعية</div>
+              <div style={{ fontSize: "7pt", fontWeight: 600, marginTop: "3px", paddingTop: "2px", borderTop: "1px solid #1e40af", opacity: 0.9 }}>سجل تجاري 2050147243</div>
             </div>
           </div>
-          <div style={{ fontSize: "8.5pt", color: "#666", marginTop: "3px", fontWeight: 700 }}>الختم</div>
+          <div style={{ fontSize: "8.5pt", color: "#666", marginTop: "4px", fontWeight: 700 }}>الختم</div>
         </div>
       </div>
 
