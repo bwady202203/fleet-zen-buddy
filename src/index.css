@@ -195,3 +195,31 @@ All colors MUST be HSL.
 .animate-steam-3 {
   animation: steam-3 1.8s ease-in-out infinite 0.6s;
 }
+
+/* === Islamic decorative door animations === */
+.bg-radial-glow {
+  background: radial-gradient(ellipse at center, rgba(255, 220, 130, 0.55) 0%, rgba(255, 180, 80, 0.15) 60%, transparent 100%);
+}
+
+.islamic-door .door-leaf {
+  transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
+}
+.islamic-door .door-leaf-left {
+  transform: perspective(800px) rotateY(0deg);
+}
+.islamic-door .door-leaf-right {
+  transform: perspective(800px) rotateY(0deg);
+}
+.group:hover .islamic-door .door-leaf-left {
+  transform: perspective(800px) rotateY(-78deg);
+}
+.group:hover .islamic-door .door-leaf-right {
+  transform: perspective(800px) rotateY(78deg);
+}
+.group:active .islamic-door .door-leaf-left {
+  transform: perspective(800px) rotateY(-95deg);
+}
+.group:active .islamic-door .door-leaf-right {
+  transform: perspective(800px) rotateY(95deg);
+}
