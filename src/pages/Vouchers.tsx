@@ -582,7 +582,7 @@ const Vouchers = () => {
         </div>
 
         {/* === Bicycle === */}
-        <div className="absolute bottom-2 animate-car-drive-rtl" style={{ animationDelay: "4.5s" }}>
+        <div className="absolute bottom-2 animate-car-drive-rtl" style={{ animationDelay: "7.5s" }}>
           <svg viewBox="0 0 100 52" className="w-24 h-[3.25rem]" style={{ direction: "ltr" }}>
             <ellipse cx="16" cy="44" rx="12" ry="2" fill="rgba(0,0,0,0.3)" />
             <ellipse cx="76" cy="44" rx="12" ry="2" fill="rgba(0,0,0,0.3)" />
