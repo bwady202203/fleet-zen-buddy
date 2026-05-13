@@ -54,6 +54,7 @@ import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
+import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
 import Vouchers from "./pages/Vouchers";
 import HR from "./pages/HR";
