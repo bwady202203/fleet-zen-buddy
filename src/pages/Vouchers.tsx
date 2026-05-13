@@ -2,6 +2,114 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
+
+// Canvas animated background — floating colorful particles connected by lines
+const AnimatedBackground = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let w = (canvas.width = window.innerWidth);
+    let h = (canvas.height = window.innerHeight);
+
+    const colors = [
+      "#60a5fa", "#34d399", "#f472b6", "#fbbf24",
+      "#a78bfa", "#22d3ee", "#fb7185", "#4ade80",
+    ];
+
+    type P = { x: number; y: number; vx: number; vy: number; r: number; c: string };
+    const count = Math.min(70, Math.floor((w * h) / 22000));
+    const particles: P[] = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 3 + 1.5,
+      c: colors[Math.floor(Math.random() * colors.length)],
+    }));
+
+    const onResize = () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", onResize);
+
+    let raf = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+
+      // soft connection lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 130) {
+            ctx.strokeStyle = `rgba(148,163,184,${(1 - dist / 130) * 0.25})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // particles
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
+        grad.addColorStop(0, p.c);
+        grad.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = p.c;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* shifting gradient base */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900" />
+      <div className="absolute inset-0 bg-[length:400%_400%] animate-gradient-shift bg-gradient-to-tr from-fuchsia-300/30 via-sky-300/30 to-amber-300/30 dark:from-fuchsia-900/20 dark:via-sky-900/20 dark:to-amber-900/20" />
+
+      {/* floating blobs */}
+      <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] rounded-full bg-pink-400/30 blur-3xl animate-blob-1" />
+      <div className="absolute top-[20%] right-[-10%] w-[36rem] h-[36rem] rounded-full bg-sky-400/30 blur-3xl animate-blob-2" />
+      <div className="absolute bottom-[-15%] left-[20%] w-[44rem] h-[44rem] rounded-full bg-emerald-400/25 blur-3xl animate-blob-3" />
+      <div className="absolute top-[40%] left-[40%] w-[28rem] h-[28rem] rounded-full bg-amber-300/25 blur-3xl animate-blob-4" />
+
+      {/* particles canvas */}
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
+    </div>
+  );
+};
 
 type Section = {
   title: string;
