@@ -293,7 +293,7 @@ const Vouchers = () => {
   return (
     <div className="min-h-screen relative" dir="rtl">
       <AnimatedBackground />
-      <header className="border-b bg-card/60 backdrop-blur-md">
+      <header className="border-b border-white/20 bg-white/10 backdrop-blur-md text-slate-900 dark:text-slate-100 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div>
