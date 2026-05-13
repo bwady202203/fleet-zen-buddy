@@ -4,109 +4,117 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
 
-// Canvas animated background — floating colorful particles connected by lines
+// Layered nature scene with parallax (scroll + mouse)
 const AnimatedBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sunRef = useRef<HTMLDivElement>(null);
+  const farRef = useRef<HTMLDivElement>(null);
+  const midRef = useRef<HTMLDivElement>(null);
+  const nearRef = useRef<HTMLDivElement>(null);
+  const cloudsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-
-    const colors = [
-      "#60a5fa", "#34d399", "#f472b6", "#fbbf24",
-      "#a78bfa", "#22d3ee", "#fb7185", "#4ade80",
-    ];
-
-    type P = { x: number; y: number; vx: number; vy: number; r: number; c: string };
-    const count = Math.min(70, Math.floor((w * h) / 22000));
-    const particles: P[] = Array.from({ length: count }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      r: Math.random() * 3 + 1.5,
-      c: colors[Math.floor(Math.random() * colors.length)],
-    }));
-
-    const onResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
+    let mx = 0, my = 0, sy = 0;
+    const apply = () => {
+      if (sunRef.current) sunRef.current.style.transform = `translate(${mx * -8}px, ${sy * -0.05 + my * -6}px)`;
+      if (cloudsRef.current) cloudsRef.current.style.transform = `translate(${mx * -14}px, ${sy * -0.08}px)`;
+      if (farRef.current) farRef.current.style.transform = `translate(${mx * -10}px, ${sy * 0.1}px)`;
+      if (midRef.current) midRef.current.style.transform = `translate(${mx * -20}px, ${sy * 0.18}px)`;
+      if (nearRef.current) nearRef.current.style.transform = `translate(${mx * -32}px, ${sy * 0.28}px)`;
     };
-    window.addEventListener("resize", onResize);
-
-    let raf = 0;
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-
-      // soft connection lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i];
-          const b = particles[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 130) {
-            ctx.strokeStyle = `rgba(148,163,184,${(1 - dist / 130) * 0.25})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // particles
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > w) p.vx *= -1;
-        if (p.y < 0 || p.y > h) p.vy *= -1;
-
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
-        grad.addColorStop(0, p.c);
-        grad.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = p.c;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      raf = requestAnimationFrame(draw);
+    const onMove = (e: MouseEvent) => {
+      mx = (e.clientX / window.innerWidth - 0.5) * 2;
+      my = (e.clientY / window.innerHeight - 0.5) * 2;
+      apply();
     };
-    draw();
-
+    const onScroll = () => { sy = window.scrollY; apply(); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      {/* shifting gradient base */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900" />
-      <div className="absolute inset-0 bg-[length:400%_400%] animate-gradient-shift bg-gradient-to-tr from-fuchsia-300/30 via-sky-300/30 to-amber-300/30 dark:from-fuchsia-900/20 dark:via-sky-900/20 dark:to-amber-900/20" />
+      {/* SKY — sunrise gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#fde8c4] via-[#f9c79e] to-[#a7d8f0] dark:from-[#1a1a3e] dark:via-[#2d1b4e] dark:to-[#0f1729]" />
 
-      {/* floating blobs */}
-      <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] rounded-full bg-pink-400/30 blur-3xl animate-blob-1" />
-      <div className="absolute top-[20%] right-[-10%] w-[36rem] h-[36rem] rounded-full bg-sky-400/30 blur-3xl animate-blob-2" />
-      <div className="absolute bottom-[-15%] left-[20%] w-[44rem] h-[44rem] rounded-full bg-emerald-400/25 blur-3xl animate-blob-3" />
-      <div className="absolute top-[40%] left-[40%] w-[28rem] h-[28rem] rounded-full bg-amber-300/25 blur-3xl animate-blob-4" />
+      {/* SUN */}
+      <div ref={sunRef} className="absolute top-[10%] right-[15%] will-change-transform">
+        <div className="relative w-44 h-44">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-200 via-amber-300 to-orange-400 shadow-[0_0_140px_70px_rgba(251,191,36,0.55)] animate-pulse" />
+          <div className="absolute inset-5 rounded-full bg-gradient-to-br from-yellow-100 to-amber-200 opacity-90" />
+        </div>
+      </div>
 
-      {/* particles canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
+      {/* CLOUDS */}
+      <div ref={cloudsRef} className="absolute inset-0 will-change-transform">
+        {[
+          { top: "8%",  left: "8%",  w: 220, op: 0.85, d: "0s",   dur: "55s" },
+          { top: "14%", left: "55%", w: 180, op: 0.7,  d: "-20s", dur: "70s" },
+          { top: "22%", left: "30%", w: 150, op: 0.6,  d: "-35s", dur: "60s" },
+          { top: "5%",  left: "78%", w: 240, op: 0.8,  d: "-10s", dur: "80s" },
+        ].map((c, i) => (
+          <svg key={i} viewBox="0 0 200 60" className="absolute animate-cloud-drift"
+               style={{ top: c.top, left: c.left, width: c.w, opacity: c.op, animationDelay: c.d, animationDuration: c.dur }}>
+            <ellipse cx="50"  cy="40" rx="38" ry="18" fill="white" />
+            <ellipse cx="90"  cy="32" rx="46" ry="22" fill="white" />
+            <ellipse cx="135" cy="38" rx="38" ry="20" fill="white" />
+            <ellipse cx="160" cy="44" rx="28" ry="14" fill="white" />
+          </svg>
+        ))}
+      </div>
+
+      {/* FAR mountains */}
+      <div ref={farRef} className="absolute bottom-[34%] left-0 right-0 will-change-transform">
+        <svg viewBox="0 0 1600 240" preserveAspectRatio="none" className="w-full h-56">
+          <defs>
+            <linearGradient id="farMt" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#9ca3c4" />
+              <stop offset="100%" stopColor="#6b7da8" />
+            </linearGradient>
+          </defs>
+          <path d="M0 240 L0 140 L120 80 L220 130 L340 60 L460 120 L600 50 L740 110 L880 70 L1020 130 L1160 80 L1300 140 L1440 90 L1600 130 L1600 240 Z" fill="url(#farMt)" opacity="0.75" />
+          <path d="M340 60 L360 80 L320 80 Z M600 50 L622 70 L580 70 Z M880 70 L902 90 L860 90 Z M1440 90 L1460 108 L1420 108 Z" fill="white" opacity="0.85" />
+        </svg>
+      </div>
+
+      {/* MID hills */}
+      <div ref={midRef} className="absolute bottom-[22%] left-0 right-0 will-change-transform">
+        <svg viewBox="0 0 1600 280" preserveAspectRatio="none" className="w-full h-64">
+          <defs>
+            <linearGradient id="midMt" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#5e7553" />
+              <stop offset="100%" stopColor="#3d5439" />
+            </linearGradient>
+          </defs>
+          <path d="M0 280 L0 180 L160 100 L320 170 L500 80 L680 160 L860 90 L1040 170 L1220 110 L1400 180 L1600 120 L1600 280 Z" fill="url(#midMt)" />
+        </svg>
+      </div>
+
+      {/* NEAR forest hills + trees */}
+      <div ref={nearRef} className="absolute bottom-[10%] left-0 right-0 will-change-transform">
+        <svg viewBox="0 0 1600 260" preserveAspectRatio="none" className="w-full h-60">
+          <defs>
+            <linearGradient id="nearHill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4d7c4f" />
+              <stop offset="100%" stopColor="#2d5a32" />
+            </linearGradient>
+          </defs>
+          <path d="M0 260 L0 160 Q120 90 260 140 Q420 200 580 130 Q740 80 900 150 Q1060 210 1240 140 Q1400 90 1600 150 L1600 260 Z" fill="url(#nearHill)" />
+          {[[80,150],[150,165],[240,150],[380,175],[520,155],[690,165],[860,158],[1010,175],[1180,155],[1340,168],[1490,160]].map(([cx,cy], i) => (
+            <g key={i} transform={`translate(${cx} ${cy})`}>
+              <rect x="-3" y="0" width="6" height="14" fill="#5a3a22" />
+              <path d="M0 -28 L-14 6 L14 6 Z" fill="#2d5f3a" />
+              <path d="M0 -18 L-10 4 L10 4 Z" fill="#3a7048" />
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      {/* meadow ground */}
+      <div className="absolute bottom-0 left-0 right-0 h-[10%] bg-gradient-to-b from-[#3d6b3a] to-[#1e3d22]" />
     </div>
   );
 };
@@ -285,7 +293,7 @@ const Vouchers = () => {
   return (
     <div className="min-h-screen relative" dir="rtl">
       <AnimatedBackground />
-      <header className="border-b bg-card/60 backdrop-blur-md">
+      <header className="border-b border-white/20 bg-white/10 backdrop-blur-md text-slate-900 dark:text-slate-100 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div>
@@ -307,11 +315,11 @@ const Vouchers = () => {
             const Art = ArtMap[s.art];
             return (
               <Link key={s.title} to={s.link} className="group">
-                <Card className="relative overflow-hidden h-full border-2 bg-card/70 backdrop-blur-md hover:border-primary/40 hover:shadow-2xl hover:bg-card/90 transition-all duration-500 hover:-translate-y-1.5">
+                <Card className="relative overflow-visible h-full border-0 bg-transparent shadow-none hover:shadow-none transition-all duration-500 hover:-translate-y-2 group/card">
                   <CardContent className="p-6 flex flex-col items-center text-center">
                     {/* === Islamic Decorative Door === */}
                     <div
-                      className="islamic-door relative mb-5 h-44 w-36"
+                      className="islamic-door relative mb-5 h-44 w-36 animate-float-soft drop-shadow-[0_25px_25px_rgba(0,0,0,0.45)]"
                       style={{ perspective: "900px" }}
                     >
                       {/* Outer arched frame */}
@@ -460,10 +468,10 @@ const Vouchers = () => {
                       <div className="absolute -bottom-1 left-2 right-2 h-2 rounded-b-md bg-gradient-to-b from-stone-400 to-stone-600 shadow-md" />
                     </div>
 
-                    <h2 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                    <h2 className="text-xl font-bold mb-2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] group-hover:text-amber-200 transition-colors">
                       {s.title}
                     </h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{s.description}</p>
+                    <p className="text-sm text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] leading-relaxed">{s.description}</p>
                   </CardContent>
 
                   {/* corner accent */}
