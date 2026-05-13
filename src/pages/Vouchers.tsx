@@ -293,12 +293,9 @@ const Vouchers = () => {
               </h1>
               <p className="text-muted-foreground mt-1">سندات الصرف البنكية ومصروفات العهد</p>
             </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowRight className="ml-2 h-4 w-4" />
-                العودة للرئيسية
+              <Button variant="outline" size="icon" className="rounded-full border-primary/30 hover:bg-primary/10 hover:border-primary/60 transition-all" onClick={() => navigate(-1)}>
+                <ArrowLeft className="h-5 w-5" />
               </Button>
-            </Link>
           </div>
         </div>
       </header>
