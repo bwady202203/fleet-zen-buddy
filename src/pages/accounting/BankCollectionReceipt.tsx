@@ -523,9 +523,9 @@ export default function BankCollectionReceipt() {
                   <Settings2 className="h-4 w-4 ml-1" />
                   {customizeMode ? "إنهاء التخصيص" : "تخصيص"}
                 </Button>
-                {customizeMode && (
-                  <Button type="button" size="sm" variant="ghost" onClick={() => { setHiddenIds([]); setOrderIds([]); }}>
-                    <RotateCcw className="h-4 w-4 ml-1" /> استعادة
+                {hiddenIds.length > 0 && (
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setHiddenIds([]); setOrderIds([]); }} title="إظهار جميع الحسابات المخفية">
+                    <RotateCcw className="h-4 w-4 ml-1" /> إظهار الكل ({hiddenIds.length})
                   </Button>
                 )}
               </div>
