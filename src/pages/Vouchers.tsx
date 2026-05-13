@@ -1,10 +1,24 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, Landmark, Banknote, ArrowRight } from "lucide-react";
+import { Building2, Landmark, Banknote, ArrowRight, Wallet, ReceiptText } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Vouchers = () => {
   const sections = [
+    {
+      title: "سند قبض - بنك الرياض",
+      description: "سندات قبض إلى بنك الرياض مع قيد تلقائي",
+      icon: Wallet,
+      color: "from-blue-700 to-sky-600",
+      link: "/accounting/bank-collection-receipt?bank=riyadh",
+    },
+    {
+      title: "سند قبض - بنك الراجحي",
+      description: "سندات قبض إلى بنك الراجحي مع قيد تلقائي",
+      icon: ReceiptText,
+      color: "from-emerald-700 to-green-600",
+      link: "/accounting/bank-collection-receipt?bank=rajhi",
+    },
     {
       title: "سند صرف - بنك الرياض",
       description: "سندات الصرف من بنك الرياض مع قيد تلقائي",
