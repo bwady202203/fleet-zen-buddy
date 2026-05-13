@@ -225,9 +225,9 @@ All colors MUST be HSL.
 }
 
 /* === Car driving animation === */
-@keyframes car-drive {
-  0% { transform: translateX(-180px); }
-  100% { transform: translateX(calc(100vw + 50px)); }
+@keyframes car-drive-rtl {
+  0% { transform: translateX(calc(100vw + 200px)); }
+  100% { transform: translateX(-220px); }
 }
 @keyframes wheel-spin {
   from { transform: rotate(0deg); }
@@ -237,8 +237,8 @@ All colors MUST be HSL.
   from { background-position: 0 0; }
   to { background-position: -120px 0; }
 }
-.animate-car-drive {
-  animation: car-drive 9s linear infinite;
+.animate-car-drive-rtl {
+  animation: car-drive-rtl 9s linear infinite;
 }
 .animate-wheel-spin {
   animation: wheel-spin 0.4s linear infinite;

@@ -494,51 +494,91 @@ const Vouchers = () => {
                }} />
         </div>
 
-        {/* the car */}
-        <div className="absolute bottom-3 animate-car-drive">
-          <svg viewBox="0 0 140 60" className="w-32 h-14 drop-shadow-2xl">
-            {/* body shadow */}
-            <ellipse cx="70" cy="55" rx="55" ry="3" fill="rgba(0,0,0,0.4)" />
+        {/* the car — mirrored for RTL, larger, improved sedan design */}
+        <div className="absolute bottom-3 animate-car-drive-rtl">
+          <svg viewBox="0 0 180 72" className="w-44 h-[4.5rem] drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" style={{ direction: "ltr" }}>
+            {/* shadow */}
+            <ellipse cx="90" cy="66" rx="72" ry="3.5" fill="rgba(0,0,0,0.45)" />
+
+            {/* bumper / underbody */}
+            <rect x="12" y="58" width="156" height="6" rx="3" fill="#1e293b" />
+
             {/* main body */}
-            <path d="M10 42 L20 28 Q24 22 32 22 L60 22 L72 12 Q76 8 84 8 L104 8 Q112 8 116 14 L126 28 L132 30 Q136 31 136 35 L136 42 Z"
-                  fill="url(#carBody)" stroke="#1e3a8a" strokeWidth="1" />
+            <path d="M10 58 L14 42 Q16 34 24 32 L52 30 L64 18 Q68 12 78 10 L116 10 Q128 10 136 18 L156 30 L164 34 Q170 36 172 40 L176 56 Q178 60 174 62 L10 62 Z"
+                  fill="url(#carBody2)" stroke="#0f172a" strokeWidth="1.2" />
+
+            {/* hood highlight */}
+            <path d="M24 34 L52 32 L58 28 L58 30 Z" fill="rgba(255,255,255,0.18)" />
+
             <defs>
-              <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="60%" stopColor="#1d4ed8" />
+              <linearGradient id="carBody2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="35%" stopColor="#2563eb" />
                 <stop offset="100%" stopColor="#1e3a8a" />
               </linearGradient>
             </defs>
-            {/* windows */}
-            <path d="M62 22 L74 14 Q78 11 84 11 L92 11 L92 22 Z" fill="#bae6fd" opacity="0.8" />
-            <path d="M94 11 L102 11 Q108 11 112 16 L118 22 L94 22 Z" fill="#bae6fd" opacity="0.8" />
-            <line x1="93" y1="11" x2="93" y2="22" stroke="#1e3a8a" strokeWidth="1" />
-            {/* door line */}
-            <line x1="70" y1="22" x2="68" y2="42" stroke="#1e3a8a" strokeWidth="0.8" opacity="0.6" />
-            {/* headlight */}
-            <circle cx="130" cy="34" r="2.5" fill="#fef08a" />
-            <circle cx="130" cy="34" r="5" fill="#fef08a" opacity="0.4" />
+
+            {/* windshield */}
+            <path d="M66 18 L78 12 Q84 10 90 10 L106 10 Q114 10 120 14 L130 26 L64 26 Z" fill="#e0f2fe" opacity="0.85" />
+            <path d="M66 18 L78 12 Q84 10 90 10 L106 10 Q114 10 120 14 L130 26 L64 26 Z" fill="none" stroke="#1e3a8a" strokeWidth="1" />
+
+            {/* rear window */}
+            <path d="M24 32 L56 30 L60 26 L28 30 Z" fill="#bae6fd" opacity="0.75" />
+            <path d="M24 32 L56 30 L60 26 L28 30 Z" fill="none" stroke="#1e3a8a" strokeWidth="0.8" />
+
+            {/* side windows / door gap */}
+            <path d="M64 26 L130 26 L132 42 L62 42 Z" fill="#bae6fd" opacity="0.65" />
+            <line x1="98" y1="26" x2="96" y2="42" stroke="#1e3a8a" strokeWidth="1" />
+            {/* door handle */}
+            <rect x="104" y="38" width="10" height="2.5" rx="1" fill="#94a3b8" />
+
+            {/* front headlight */}
+            <path d="M166 38 Q172 40 174 44 L174 50 Q174 52 170 52 L162 50 Q160 48 160 44 Z" fill="#fef08a" />
+            <ellipse cx="170" cy="44" rx="6" ry="10" fill="#fef08a" opacity="0.35" />
+            <circle cx="172" cy="44" r="2" fill="#fff" opacity="0.9" />
+
             {/* taillight */}
-            <rect x="10" y="32" width="4" height="6" rx="1" fill="#ef4444" />
-            {/* wheels */}
-            <g className="animate-wheel-spin" style={{ transformOrigin: "30px 44px" }}>
-              <circle cx="30" cy="44" r="9" fill="#0f172a" />
-              <circle cx="30" cy="44" r="5" fill="#475569" />
-              <line x1="30" y1="39" x2="30" y2="49" stroke="#cbd5e1" strokeWidth="1.2" />
-              <line x1="25" y1="44" x2="35" y2="44" stroke="#cbd5e1" strokeWidth="1.2" />
+            <path d="M10 38 Q6 40 6 46 L6 52 Q6 56 10 56 L14 54 Q16 52 16 46 Z" fill="#ef4444" />
+            <ellipse cx="10" cy="46" rx="4" ry="10" fill="#ef4444" opacity="0.3" />
+
+            {/* side mirror */}
+            <rect x="60" y="28" width="8" height="5" rx="2" fill="#1e3a8a" />
+
+            {/* grille front */}
+            <path d="M174 52 L172 58 Q172 60 168 60" fill="none" stroke="#0f172a" strokeWidth="1.5" />
+
+            {/* === front wheel (right side since flipped) === */}
+            <g className="animate-wheel-spin" style={{ transformOrigin: "146px 58px" }}>
+              <circle cx="146" cy="58" r="12" fill="#0f172a" />
+              <circle cx="146" cy="58" r="7.5" fill="#334155" />
+              <circle cx="146" cy="58" r="4" fill="#94a3b8" />
+              {/* spokes */}
+              <line x1="146" y1="46" x2="146" y2="70" stroke="#cbd5e1" strokeWidth="1.6" strokeLinecap="round" />
+              <line x1="134" y1="58" x2="158" y2="58" stroke="#cbd5e1" strokeWidth="1.6" strokeLinecap="round" />
+              <line x1="137.5" y1="49.5" x2="154.5" y2="66.5" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" />
+              <line x1="154.5" y1="49.5" x2="137.5" y2="66.5" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" />
             </g>
-            <g className="animate-wheel-spin" style={{ transformOrigin: "110px 44px" }}>
-              <circle cx="110" cy="44" r="9" fill="#0f172a" />
-              <circle cx="110" cy="44" r="5" fill="#475569" />
-              <line x1="110" y1="39" x2="110" y2="49" stroke="#cbd5e1" strokeWidth="1.2" />
-              <line x1="105" y1="44" x2="115" y2="44" stroke="#cbd5e1" strokeWidth="1.2" />
+
+            {/* === rear wheel === */}
+            <g className="animate-wheel-spin" style={{ transformOrigin: "34px 58px" }}>
+              <circle cx="34" cy="58" r="12" fill="#0f172a" />
+              <circle cx="34" cy="58" r="7.5" fill="#334155" />
+              <circle cx="34" cy="58" r="4" fill="#94a3b8" />
+              <line x1="34" y1="46" x2="34" y2="70" stroke="#cbd5e1" strokeWidth="1.6" strokeLinecap="round" />
+              <line x1="22" y1="58" x2="46" y2="58" stroke="#cbd5e1" strokeWidth="1.6" strokeLinecap="round" />
+              <line x1="25.5" y1="49.5" x2="42.5" y2="66.5" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" />
+              <line x1="42.5" y1="49.5" x2="25.5" y2="66.5" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" />
             </g>
           </svg>
         </div>
 
-        {/* small clouds of dust */}
-        <div className="absolute bottom-10 animate-car-drive opacity-60" style={{ animationDelay: "-0.2s" }}>
-          <div className="w-3 h-3 rounded-full bg-slate-400/60 blur-sm" />
+        {/* dust clouds behind car */}
+        <div className="absolute bottom-10 animate-car-drive-rtl opacity-50" style={{ animationDelay: "-0.15s" }}>
+          <div className="flex items-center gap-1">
+            <div className="w-3.5 h-3.5 rounded-full bg-slate-400/50 blur-sm" />
+            <div className="w-2.5 h-2.5 rounded-full bg-slate-400/40 blur-sm" />
+            <div className="w-2 h-2 rounded-full bg-slate-400/30 blur-sm" />
+          </div>
         </div>
       </div>
     </div>
