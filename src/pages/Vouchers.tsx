@@ -609,27 +609,35 @@ const Vouchers = () => {
           </svg>
         </div>
 
-        {/* === Small Airplane === */}
-        <div className="absolute bottom-14 animate-plane-fly" style={{ animationDelay: "7.2s" }}>
-          <svg viewBox="0 0 90 44" className="w-24 h-[3.75rem]" style={{ direction: "ltr" }}>
-            {/* fuselage */}
-            <path d="M8 24 Q10 20 16 18 L56 14 Q64 14 72 18 L82 22 Q86 24 82 26 L72 28 Q64 30 56 30 L16 28 Q10 27 8 24 Z" fill="#f8fafc" stroke="#334155" strokeWidth="1" />
-            {/* cockpit window */}
-            <path d="M54 16 L60 14 Q66 14 68 18 L56 18 Z" fill="#38bdf8" opacity="0.8" />
-            {/* wings */}
-            <path d="M46 28 L56 44 L62 44 L52 28 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.8" />
-            <path d="M44 16 L36 2 L42 2 L50 16 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.8" />
-            {/* tail */}
-            <path d="M16 20 L8 10 L12 10 L18 19 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.8" />
-            {/* engine nacelle */}
-            <rect x="52" y="26" width="16" height="5" rx="2" fill="#94a3b8" />
-            {/* propeller blur */}
-            <ellipse cx="82" cy="24" rx="3" ry="8" fill="#cbd5e1" opacity="0.5" />
-            {/* trail cloud */}
-            <circle cx="6" cy="24" r="2.5" fill="#94a3b8" opacity="0.4" />
-            <circle cx="2" cy="26" r="1.5" fill="#94a3b8" opacity="0.3" />
-          </svg>
-        </div>
+        {/* === Planes formation === */}
+        {[/* delay, bottom, size-class, wingColor, tailColor, opacity */
+          { delay: "7.2s",  bottom: "bottom-14", size: "w-28 h-[4.4rem]", body: "#f8fafc", wing: "#e2e8f0", opacity: "1" },
+          { delay: "8.0s",  bottom: "bottom-20", size: "w-20 h-14",       body: "#f1f5f9", wing: "#cbd5e1", opacity: "0.85" },
+          { delay: "5.5s",  bottom: "bottom-8",  size: "w-24 h-[3.8rem]", body: "#fff1f2", wing: "#fecdd3", opacity: "0.95" },
+          { delay: "8.8s",  bottom: "bottom-24", size: "w-16 h-10",       body: "#f0f9ff", wing: "#bae6fd", opacity: "0.7" },
+          { delay: "9.5s",  bottom: "bottom-4",  size: "w-32 h-20",       body: "#f8fafc", wing: "#e2e8f0", opacity: "0.9" },
+        ].map((p, i) => (
+          <div key={i} className={`absolute ${p.bottom} animate-plane-fly`} style={{ animationDelay: p.delay, opacity: p.opacity }}>
+            <svg viewBox="0 0 90 44" className={p.size} style={{ direction: "ltr" }}>
+              {/* fuselage */}
+              <path d="M8 24 Q10 20 16 18 L56 14 Q64 14 72 18 L82 22 Q86 24 82 26 L72 28 Q64 30 56 30 L16 28 Q10 27 8 24 Z" fill={p.body} stroke="#334155" strokeWidth="1" />
+              {/* cockpit window */}
+              <path d="M54 16 L60 14 Q66 14 68 18 L56 18 Z" fill="#38bdf8" opacity="0.8" />
+              {/* wings */}
+              <path d="M46 28 L56 44 L62 44 L52 28 Z" fill={p.wing} stroke="#64748b" strokeWidth="0.8" />
+              <path d="M44 16 L36 2 L42 2 L50 16 Z" fill={p.wing} stroke="#64748b" strokeWidth="0.8" />
+              {/* tail */}
+              <path d="M16 20 L8 10 L12 10 L18 19 Z" fill={p.wing} stroke="#64748b" strokeWidth="0.8" />
+              {/* engine nacelle */}
+              <rect x="52" y="26" width="16" height="5" rx="2" fill="#94a3b8" />
+              {/* propeller blur */}
+              <ellipse cx="82" cy="24" rx="3" ry="8" fill="#cbd5e1" opacity="0.5" />
+              {/* trail cloud */}
+              <circle cx="6" cy="24" r="2.5" fill="#94a3b8" opacity="0.4" />
+              <circle cx="2" cy="26" r="1.5" fill="#94a3b8" opacity="0.3" />
+            </svg>
+          </div>
+        ))}
       </div>
     </div>
   );
