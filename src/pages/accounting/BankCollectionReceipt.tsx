@@ -659,7 +659,7 @@ function PrintTemplate({ receipt, bank, lines }: { receipt: Receipt; bank: { nam
           <BadgeCheck color={A} size={28} />
           <h1 style={{ fontSize: "22pt", fontWeight: 800, margin: 0, color: P, letterSpacing: "-0.3px" }}>شركة الرمال الناعمة الصناعية</h1>
         </div>
-        <div style={{ fontSize: "9pt", color: "#666", marginTop: "2px" }}>سجل تجاري رقم 2020147243 — المملكة العربية السعودية</div>
+        <div style={{ fontSize: "9pt", color: "#666", marginTop: "2px" }}>سجل تجاري رقم 2050147243 — المملكة العربية السعودية</div>
         <div style={{
           display: "inline-block",
           marginTop: "6px",
