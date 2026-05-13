@@ -580,6 +580,56 @@ const Vouchers = () => {
             <div className="w-2 h-2 rounded-full bg-slate-400/30 blur-sm" />
           </div>
         </div>
+
+        {/* === Bicycle === */}
+        <div className="absolute bottom-2 animate-car-drive-rtl" style={{ animationDelay: "4.5s" }}>
+          <svg viewBox="0 0 100 52" className="w-24 h-[3.25rem]" style={{ direction: "ltr" }}>
+            <ellipse cx="16" cy="44" rx="12" ry="2" fill="rgba(0,0,0,0.3)" />
+            <ellipse cx="76" cy="44" rx="12" ry="2" fill="rgba(0,0,0,0.3)" />
+            {/* frame */}
+            <path d="M76 44 L64 24 L56 44 L16 44 L26 22 L56 44" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="26" y1="22" x2="64" y2="24" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
+            {/* seat */}
+            <path d="M22 22 L30 22 Q34 22 34 19" fill="none" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
+            {/* handlebars */}
+            <path d="M64 24 L66 14 L72 14" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" />
+            {/* wheels */}
+            <g className="animate-wheel-spin" style={{ transformOrigin: "16px 44px" }}>
+              <circle cx="16" cy="44" r="10" fill="none" stroke="#1f2937" strokeWidth="2" />
+              <circle cx="16" cy="44" r="2" fill="#94a3b8" />
+              <line x1="16" y1="34" x2="16" y2="54" stroke="#cbd5e1" strokeWidth="1.2" />
+              <line x1="6" y1="44" x2="26" y2="44" stroke="#cbd5e1" strokeWidth="1.2" />
+            </g>
+            <g className="animate-wheel-spin" style={{ transformOrigin: "76px 44px" }}>
+              <circle cx="76" cy="44" r="10" fill="none" stroke="#1f2937" strokeWidth="2" />
+              <circle cx="76" cy="44" r="2" fill="#94a3b8" />
+              <line x1="76" y1="34" x2="76" y2="54" stroke="#cbd5e1" strokeWidth="1.2" />
+              <line x1="66" y1="44" x2="86" y2="44" stroke="#cbd5e1" strokeWidth="1.2" />
+            </g>
+          </svg>
+        </div>
+
+        {/* === Small Airplane === */}
+        <div className="absolute bottom-14 animate-plane-fly" style={{ animationDelay: "7.2s" }}>
+          <svg viewBox="0 0 90 44" className="w-24 h-[3.75rem]" style={{ direction: "ltr" }}>
+            {/* fuselage */}
+            <path d="M8 24 Q10 20 16 18 L56 14 Q64 14 72 18 L82 22 Q86 24 82 26 L72 28 Q64 30 56 30 L16 28 Q10 27 8 24 Z" fill="#f8fafc" stroke="#334155" strokeWidth="1" />
+            {/* cockpit window */}
+            <path d="M54 16 L60 14 Q66 14 68 18 L56 18 Z" fill="#38bdf8" opacity="0.8" />
+            {/* wings */}
+            <path d="M46 28 L56 44 L62 44 L52 28 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.8" />
+            <path d="M44 16 L36 2 L42 2 L50 16 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.8" />
+            {/* tail */}
+            <path d="M16 20 L8 10 L12 10 L18 19 Z" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.8" />
+            {/* engine nacelle */}
+            <rect x="52" y="26" width="16" height="5" rx="2" fill="#94a3b8" />
+            {/* propeller blur */}
+            <ellipse cx="82" cy="24" rx="3" ry="8" fill="#cbd5e1" opacity="0.5" />
+            {/* trail cloud */}
+            <circle cx="6" cy="24" r="2.5" fill="#94a3b8" opacity="0.4" />
+            <circle cx="2" cy="26" r="1.5" fill="#94a3b8" opacity="0.3" />
+          </svg>
+        </div>
       </div>
     </div>
   );
