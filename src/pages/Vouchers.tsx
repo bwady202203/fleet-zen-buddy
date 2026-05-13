@@ -281,6 +281,7 @@ const ArtMap = {
 };
 
 const Vouchers = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen relative" dir="rtl">
       <AnimatedBackground />
