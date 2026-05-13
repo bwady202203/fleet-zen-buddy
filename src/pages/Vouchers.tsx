@@ -121,6 +121,7 @@ const AnimatedBackground = () => {
 
 type Section = {
   title: string;
+  englishTitle: string;
   description: string;
   link: string;
   gradient: string; // tailwind gradient classes
@@ -131,6 +132,7 @@ type Section = {
 const sections: Section[] = [
   {
     title: "سند قبض - بنك الرياض",
+    englishTitle: "Collection Receipt – Riyadh Bank",
     description: "سندات قبض إلى بنك الرياض مع قيد تلقائي",
     link: "/accounting/bank-collection-receipt?bank=riyadh",
     gradient: "from-sky-500 via-blue-600 to-indigo-700",
@@ -139,6 +141,7 @@ const sections: Section[] = [
   },
   {
     title: "سند قبض - بنك الراجحي",
+    englishTitle: "Collection Receipt – Rajhi Bank",
     description: "سندات قبض إلى بنك الراجحي مع قيد تلقائي",
     link: "/accounting/bank-collection-receipt?bank=rajhi",
     gradient: "from-emerald-500 via-green-600 to-teal-700",
@@ -147,6 +150,7 @@ const sections: Section[] = [
   },
   {
     title: "سند صرف - بنك الرياض",
+    englishTitle: "Payment Voucher – Riyadh Bank",
     description: "سندات الصرف من بنك الرياض مع قيد تلقائي",
     link: "/accounting/bank-payment-voucher?bank=riyadh",
     gradient: "from-blue-600 via-indigo-700 to-slate-900",
@@ -155,6 +159,7 @@ const sections: Section[] = [
   },
   {
     title: "سند صرف - بنك الراجحي",
+    englishTitle: "Payment Voucher – Rajhi Bank",
     description: "سندات الصرف من بنك الراجحي مع قيد تلقائي",
     link: "/accounting/bank-payment-voucher?bank=rajhi",
     gradient: "from-teal-600 via-emerald-700 to-green-900",
@@ -163,6 +168,7 @@ const sections: Section[] = [
   },
   {
     title: "مصروفات العهد",
+    englishTitle: "Custody Expenses",
     description: "تسجيل وإدارة مصروفات المندوبين",
     link: "/custody/expenses",
     gradient: "from-rose-500 via-red-600 to-orange-600",
@@ -468,10 +474,11 @@ const Vouchers = () => {
                       <div className="absolute -bottom-1 left-2 right-2 h-2 rounded-b-md bg-gradient-to-b from-stone-400 to-stone-600 shadow-md" />
                     </div>
 
-                    <h2 className="text-xl font-bold mb-2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] group-hover:text-amber-200 transition-colors">
+                    <h2 className="text-xl font-bold mb-1 text-blue-700 drop-shadow-[0_1px_4px_rgba(255,255,255,0.8)] group-hover:text-blue-500 transition-colors">
                       {s.title}
                     </h2>
-                    <p className="text-sm text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] leading-relaxed">{s.description}</p>
+                    <span className="text-xs font-medium text-sky-800/80 tracking-wide mb-1.5 block">{s.englishTitle}</span>
+                    <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{s.description}</p>
                   </CardContent>
 
                   {/* corner accent */}
