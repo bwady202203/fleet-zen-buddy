@@ -376,7 +376,8 @@ const LoadInvoices = () => {
 
           createdJournalEntryId = journalEntry.id;
 
-          const accruedRevenueAccountId = '47318eed-a653-447a-ab60-bfef7922b809';
+          const defaultAccruedRevenueAccountId = '47318eed-a653-447a-ab60-bfef7922b809';
+          const accruedRevenueAccountId = selectedCompany?.account_id || defaultAccruedRevenueAccountId;
           const revenueAccountId = 'c278c8b2-5b02-4c99-ba19-26dc8f59d050';
 
           const { error: linesError } = await supabase.from('journal_entry_lines').insert([
