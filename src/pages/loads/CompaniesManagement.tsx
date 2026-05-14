@@ -74,17 +74,19 @@ const CompaniesManagement = () => {
     setLoading(true);
 
     try {
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        tax_number: formData.tax_number,
+        commercial_registration: formData.commercial_registration,
+        address: formData.address,
+        account_id: formData.account_id || null,
+      };
       if (editingCompany) {
         const { error } = await supabase
           .from('companies')
-          .update({
-            name: formData.name,
-            phone: formData.phone,
-            email: formData.email,
-            tax_number: formData.tax_number,
-            commercial_registration: formData.commercial_registration,
-            address: formData.address
-          })
+          .update(payload)
           .eq('id', editingCompany.id);
 
         if (error) throw error;
@@ -94,14 +96,7 @@ const CompaniesManagement = () => {
           description: "تم تحديث بيانات الشركة بنجاح"
         });
       } else {
-        const { error } = await supabase.from('companies').insert({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          tax_number: formData.tax_number,
-          commercial_registration: formData.commercial_registration,
-          address: formData.address
-        });
+        const { error } = await supabase.from('companies').insert(payload);
 
         if (error) throw error;
 
@@ -111,7 +106,8 @@ const CompaniesManagement = () => {
         });
       }
 
-      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '' });
+      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' });
+      setAccountSearch('');
       setEditingCompany(null);
       setDialogOpen(false);
       loadCompanies();
