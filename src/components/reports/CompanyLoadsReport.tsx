@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { escapeHtml as esc } from "@/lib/escapeHtml";
 
 interface CompanyLoadsReportProps {
   startDate: string;
@@ -175,7 +176,7 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
           <tbody>
             ${aggregatedData.map((item, index) => `
               <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f8f9fa"};">
-                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; word-wrap: break-word;">${item.company_name}</td>
+                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; word-wrap: break-word;">${esc(item.company_name)}</td>
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
@@ -205,7 +206,7 @@ const CompanyLoadsReport = ({ startDate, endDate }: CompanyLoadsReportProps) => 
             ${dailyData.map((item, index) => `
               <tr style="background: ${index % 2 === 0 ? "#ffffff" : "#f8f9fa"};">
                 <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6;">${format(new Date(item.report_date), "dd/MM/yyyy")}</td>
-                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; word-wrap: break-word;">${item.company_name}</td>
+                <td style="padding: 6px 8px; text-align: right; border: 1px solid #dee2e6; word-wrap: break-word;">${esc(item.company_name)}</td>
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_loads}</td>
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6;">${item.total_quantity.toLocaleString()}</td>
                 <td style="padding: 6px 8px; text-align: center; border: 1px solid #dee2e6; font-weight: bold;">${item.total_amount.toLocaleString()} ر.س</td>
