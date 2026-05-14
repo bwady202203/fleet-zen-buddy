@@ -10,9 +10,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { CompanyDriverCommissionsDialog } from "@/components/CompanyDriverCommissionsDialog";
 
+interface AccountOption {
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string | null;
+}
+
 const CompaniesManagement = () => {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<AccountOption[]>([]);
+  const [accountSearch, setAccountSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
@@ -22,7 +31,8 @@ const CompaniesManagement = () => {
     email: '',
     tax_number: '',
     commercial_registration: '',
-    address: ''
+    address: '',
+    account_id: '' as string | ''
   });
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
