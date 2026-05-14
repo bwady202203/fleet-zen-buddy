@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
+import { escapeHtml as esc } from "@/lib/escapeHtml";
 
 interface DeliveryReceipt {
   id: string;
@@ -173,7 +174,7 @@ export default function DeliveryReceipts() {
       <html dir="rtl">
         <head>
           <meta charset="utf-8">
-          <title>سند تسليم ${receipt.receipt_number}</title>
+          <title>سند تسليم ${esc(receipt.receipt_number)}</title>
           <style>
             body { font-family: Arial, sans-serif; direction: rtl; padding: 20px; }
             .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
@@ -188,32 +189,32 @@ export default function DeliveryReceipts() {
         <body>
           <div class="header">
             <h1>سند تسليم</h1>
-            <h2>رقم السند: ${receipt.receipt_number}</h2>
+            <h2>رقم السند: ${esc(receipt.receipt_number)}</h2>
           </div>
           <div class="info-grid">
-            <div class="info-item"><span class="label">وقت الدخول:</span> ${receipt.entry_time ? new Date(receipt.entry_time).toLocaleString("ar-SA") : "-"}</div>
-            <div class="info-item"><span class="label">وقت الخروج:</span> ${receipt.exit_time ? new Date(receipt.exit_time).toLocaleString("ar-SA") : "-"}</div>
-            <div class="info-item"><span class="label">نوع المواد:</span> ${receipt.material_type || "-"}</div>
-            <div class="info-item"><span class="label">اسم العميل:</span> ${receipt.customer_name || "-"}</div>
-            <div class="info-item"><span class="label">اسم السائق:</span> ${driver?.name || "-"}</div>
-            <div class="info-item"><span class="label">رقم الشاحنة:</span> ${receipt.truck_number || "-"}</div>
-            <div class="info-item"><span class="label">اسم الشركة المورد:</span> ${receipt.supplier_company || "-"}</div>
-            <div class="info-item"><span class="label">وزن الشاحنة فارغة:</span> ${receipt.empty_weight} كجم</div>
-            <div class="info-item"><span class="label">وزن الشاحنة كاملة:</span> ${receipt.full_weight} كجم</div>
-            <div class="info-item"><span class="label">وزن الشاحنة صافي:</span> ${receipt.net_weight} كجم</div>
+            <div class="info-item"><span class="label">وقت الدخول:</span> ${esc(receipt.entry_time ? new Date(receipt.entry_time).toLocaleString("ar-SA") : "-")}</div>
+            <div class="info-item"><span class="label">وقت الخروج:</span> ${esc(receipt.exit_time ? new Date(receipt.exit_time).toLocaleString("ar-SA") : "-")}</div>
+            <div class="info-item"><span class="label">نوع المواد:</span> ${esc(receipt.material_type || "-")}</div>
+            <div class="info-item"><span class="label">اسم العميل:</span> ${esc(receipt.customer_name || "-")}</div>
+            <div class="info-item"><span class="label">اسم السائق:</span> ${esc(driver?.name || "-")}</div>
+            <div class="info-item"><span class="label">رقم الشاحنة:</span> ${esc(receipt.truck_number || "-")}</div>
+            <div class="info-item"><span class="label">اسم الشركة المورد:</span> ${esc(receipt.supplier_company || "-")}</div>
+            <div class="info-item"><span class="label">وزن الشاحنة فارغة:</span> ${esc(receipt.empty_weight)} كجم</div>
+            <div class="info-item"><span class="label">وزن الشاحنة كاملة:</span> ${esc(receipt.full_weight)} كجم</div>
+            <div class="info-item"><span class="label">وزن الشاحنة صافي:</span> ${esc(receipt.net_weight)} كجم</div>
           </div>
           <div class="signatures">
             <div class="signature-box">
               <p><strong>توقيع السائق</strong></p>
-              <p>${receipt.driver_signature || ""}</p>
+              <p>${esc(receipt.driver_signature || "")}</p>
             </div>
             <div class="signature-box">
               <p><strong>توقيع المستلم</strong></p>
-              <p>${receipt.receiver_signature || ""}</p>
+              <p>${esc(receipt.receiver_signature || "")}</p>
             </div>
             <div class="signature-box">
               <p><strong>توقيع المسؤول</strong></p>
-              <p>${receipt.supervisor_signature || ""}</p>
+              <p>${esc(receipt.supervisor_signature || "")}</p>
             </div>
           </div>
         </body>
