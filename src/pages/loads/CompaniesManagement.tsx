@@ -10,9 +10,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { CompanyDriverCommissionsDialog } from "@/components/CompanyDriverCommissionsDialog";
 
+interface AccountOption {
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string | null;
+}
+
 const CompaniesManagement = () => {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<AccountOption[]>([]);
+  const [accountSearch, setAccountSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
@@ -22,19 +31,31 @@ const CompaniesManagement = () => {
     email: '',
     tax_number: '',
     commercial_registration: '',
-    address: ''
+    address: '',
+    account_id: '' as string | ''
   });
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
 
   useEffect(() => {
     loadCompanies();
+    loadAccounts();
   }, []);
+
+  const loadAccounts = async () => {
+    const { data, error } = await supabase
+      .from('chart_of_accounts')
+      .select('id, code, name_ar, name_en, level, is_active')
+      .eq('is_active', true)
+      .gte('level', 3)
+      .order('code');
+    if (!error) setAccounts((data || []) as any);
+  };
 
   const loadCompanies = async () => {
     const { data, error } = await supabase
       .from('companies')
-      .select('*')
+      .select('*, account:chart_of_accounts!companies_account_id_fkey(id, code, name_ar)')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -53,17 +74,19 @@ const CompaniesManagement = () => {
     setLoading(true);
 
     try {
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        tax_number: formData.tax_number,
+        commercial_registration: formData.commercial_registration,
+        address: formData.address,
+        account_id: formData.account_id || null,
+      };
       if (editingCompany) {
         const { error } = await supabase
           .from('companies')
-          .update({
-            name: formData.name,
-            phone: formData.phone,
-            email: formData.email,
-            tax_number: formData.tax_number,
-            commercial_registration: formData.commercial_registration,
-            address: formData.address
-          })
+          .update(payload)
           .eq('id', editingCompany.id);
 
         if (error) throw error;
@@ -73,14 +96,7 @@ const CompaniesManagement = () => {
           description: "تم تحديث بيانات الشركة بنجاح"
         });
       } else {
-        const { error } = await supabase.from('companies').insert({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          tax_number: formData.tax_number,
-          commercial_registration: formData.commercial_registration,
-          address: formData.address
-        });
+        const { error } = await supabase.from('companies').insert(payload);
 
         if (error) throw error;
 
@@ -90,7 +106,8 @@ const CompaniesManagement = () => {
         });
       }
 
-      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '' });
+      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' });
+      setAccountSearch('');
       setEditingCompany(null);
       setDialogOpen(false);
       loadCompanies();
@@ -113,8 +130,11 @@ const CompaniesManagement = () => {
       email: company.email || '',
       tax_number: company.tax_number || '',
       commercial_registration: company.commercial_registration || '',
-      address: company.address || ''
+      address: company.address || '',
+      account_id: company.account_id || ''
     });
+    const acc = accounts.find(a => a.id === company.account_id);
+    setAccountSearch(acc ? `${acc.code} - ${acc.name_ar}` : '');
     setDialogOpen(true);
   };
 
@@ -161,7 +181,7 @@ const CompaniesManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '' }); }}>
+              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' }); setAccountSearch(''); }}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة شركة / Add Company
               </Button>
@@ -227,6 +247,46 @@ const CompaniesManagement = () => {
                     placeholder="أدخل العنوان / Enter address"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="account">الحساب المحاسبي / Linked Account</Label>
+                  <Input
+                    id="account"
+                    value={accountSearch}
+                    onChange={(e) => {
+                      setAccountSearch(e.target.value);
+                      setFormData({ ...formData, account_id: '' });
+                    }}
+                    placeholder="ابحث برقم أو اسم الحساب..."
+                    autoComplete="off"
+                  />
+                  {accountSearch && !formData.account_id && (
+                    <div className="max-h-48 overflow-y-auto border rounded-md bg-popover">
+                      {accounts
+                        .filter(a => {
+                          const q = accountSearch.toLowerCase();
+                          return a.code.includes(accountSearch) ||
+                                 a.name_ar.toLowerCase().includes(q) ||
+                                 (a.name_en || '').toLowerCase().includes(q);
+                        })
+                        .slice(0, 30)
+                        .map(a => (
+                          <div
+                            key={a.id}
+                            className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
+                            onClick={() => {
+                              setFormData({ ...formData, account_id: a.id });
+                              setAccountSearch(`${a.code} - ${a.name_ar}`);
+                            }}
+                          >
+                            <span className="font-mono text-muted-foreground">{a.code}</span> - {a.name_ar}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                  {formData.account_id && (
+                    <p className="text-xs text-muted-foreground">سيتم استخدام هذا الحساب في القيود المحاسبية للفواتير</p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
                     {editingCompany ? 'تحديث / Update' : 'إضافة / Add'}
@@ -291,6 +351,12 @@ const CompaniesManagement = () => {
                   {company.address && (
                     <p className="text-sm">
                       <span className="font-semibold">العنوان:</span> {company.address}
+                    </p>
+                  )}
+                  {company.account && (
+                    <p className="text-sm">
+                      <span className="font-semibold">الحساب المحاسبي:</span>{' '}
+                      <span className="font-mono">{company.account.code}</span> - {company.account.name_ar}
                     </p>
                   )}
                   <div className="flex gap-2 mt-4 flex-wrap">
