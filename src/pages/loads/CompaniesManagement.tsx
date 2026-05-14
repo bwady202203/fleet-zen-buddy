@@ -181,7 +181,7 @@ const CompaniesManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '' }); }}>
+              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' }); setAccountSearch(''); }}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة شركة / Add Company
               </Button>
