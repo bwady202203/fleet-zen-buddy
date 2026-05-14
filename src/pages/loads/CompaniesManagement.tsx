@@ -353,6 +353,12 @@ const CompaniesManagement = () => {
                       <span className="font-semibold">العنوان:</span> {company.address}
                     </p>
                   )}
+                  {company.account && (
+                    <p className="text-sm">
+                      <span className="font-semibold">الحساب المحاسبي:</span>{' '}
+                      <span className="font-mono">{company.account.code}</span> - {company.account.name_ar}
+                    </p>
+                  )}
                   <div className="flex gap-2 mt-4 flex-wrap">
                     <Button 
                       size="sm" 
