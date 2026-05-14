@@ -339,6 +339,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          account_id: string | null
           address: string | null
           commercial_registration: string | null
           created_at: string | null
@@ -354,6 +355,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          account_id?: string | null
           address?: string | null
           commercial_registration?: string | null
           created_at?: string | null
@@ -369,6 +371,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          account_id?: string | null
           address?: string | null
           commercial_registration?: string | null
           created_at?: string | null
@@ -384,6 +387,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "companies_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "companies_organization_id_fkey"
             columns: ["organization_id"]
