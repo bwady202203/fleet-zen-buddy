@@ -247,6 +247,46 @@ const CompaniesManagement = () => {
                     placeholder="أدخل العنوان / Enter address"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="account">الحساب المحاسبي / Linked Account</Label>
+                  <Input
+                    id="account"
+                    value={accountSearch}
+                    onChange={(e) => {
+                      setAccountSearch(e.target.value);
+                      setFormData({ ...formData, account_id: '' });
+                    }}
+                    placeholder="ابحث برقم أو اسم الحساب..."
+                    autoComplete="off"
+                  />
+                  {accountSearch && !formData.account_id && (
+                    <div className="max-h-48 overflow-y-auto border rounded-md bg-popover">
+                      {accounts
+                        .filter(a => {
+                          const q = accountSearch.toLowerCase();
+                          return a.code.includes(accountSearch) ||
+                                 a.name_ar.toLowerCase().includes(q) ||
+                                 (a.name_en || '').toLowerCase().includes(q);
+                        })
+                        .slice(0, 30)
+                        .map(a => (
+                          <div
+                            key={a.id}
+                            className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
+                            onClick={() => {
+                              setFormData({ ...formData, account_id: a.id });
+                              setAccountSearch(`${a.code} - ${a.name_ar}`);
+                            }}
+                          >
+                            <span className="font-mono text-muted-foreground">{a.code}</span> - {a.name_ar}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                  {formData.account_id && (
+                    <p className="text-xs text-muted-foreground">سيتم استخدام هذا الحساب في القيود المحاسبية للفواتير</p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
                     {editingCompany ? 'تحديث / Update' : 'إضافة / Add'}
