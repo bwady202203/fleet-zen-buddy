@@ -39,12 +39,23 @@ const CompaniesManagement = () => {
 
   useEffect(() => {
     loadCompanies();
+    loadAccounts();
   }, []);
+
+  const loadAccounts = async () => {
+    const { data, error } = await supabase
+      .from('chart_of_accounts')
+      .select('id, code, name_ar, name_en, level, is_active')
+      .eq('is_active', true)
+      .gte('level', 3)
+      .order('code');
+    if (!error) setAccounts((data || []) as any);
+  };
 
   const loadCompanies = async () => {
     const { data, error } = await supabase
       .from('companies')
-      .select('*')
+      .select('*, account:chart_of_accounts!companies_account_id_fkey(id, code, name_ar)')
       .order('created_at', { ascending: false });
 
     if (error) {
