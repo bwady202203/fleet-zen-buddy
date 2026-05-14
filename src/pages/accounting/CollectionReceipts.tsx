@@ -324,8 +324,8 @@ export default function CollectionReceipts() {
       <body>
         <div class="receipt-container">
           <div class="header">
-            <h1>${companySettings?.company_name || 'اسم الشركة'}</h1>
-            <p>${companySettings?.address || 'عنوان الشركة'}</p>
+            <h1>${esc(companySettings?.company_name || 'اسم الشركة')}</h1>
+            <p>${esc(companySettings?.address || 'عنوان الشركة')}</p>
           </div>
           
           <div class="receipt-title">
@@ -335,11 +335,11 @@ export default function CollectionReceipts() {
           <div class="receipt-info">
             <div class="info-item">
               <div class="info-label">التاريخ</div>
-              <div class="info-value">${new Date(receipt.receipt_date).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })}</div>
+              <div class="info-value">${esc(new Date(receipt.receipt_date).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' }))}</div>
             </div>
             <div class="info-item">
               <div class="info-label">رقم السند</div>
-              <div class="info-value">${receipt.receipt_number}</div>
+              <div class="info-value">${esc(receipt.receipt_number)}</div>
             </div>
           </div>
           
@@ -347,7 +347,7 @@ export default function CollectionReceipts() {
           <div class="received-from-section">
             <div class="received-from-box">
               <div class="received-from-label">📥 استلمنا من:</div>
-              <div class="received-from-value">${receipt.received_from}</div>
+              <div class="received-from-value">${esc(receipt.received_from)}</div>
             </div>
           </div>
           ` : ''}
@@ -356,7 +356,7 @@ export default function CollectionReceipts() {
           <div class="received-from-section">
             <div class="received-from-box">
               <div class="received-from-label">👤 اسم المستلم:</div>
-              <div class="received-from-value">${(receipt as any).recipient_name}</div>
+              <div class="received-from-value">${esc((receipt as any).recipient_name)}</div>
             </div>
           </div>
           ` : ''}
@@ -364,12 +364,12 @@ export default function CollectionReceipts() {
           <div class="amount-section">
             <div class="amount-box">
               <div class="amount-label">💵 المبلغ المستحق</div>
-              <div class="amount-value">${receipt.amount.toLocaleString('ar-SA')} ريال</div>
+              <div class="amount-value">${esc(receipt.amount.toLocaleString('ar-SA'))} ريال</div>
             </div>
             
             <div class="amount-words-box">
               <div class="amount-words-label">📝 المبلغ بالحروف:</div>
-              <div class="amount-words-value">${receipt.amount_in_words || ''}</div>
+              <div class="amount-words-value">${esc(receipt.amount_in_words || '')}</div>
             </div>
           </div>
           
@@ -377,7 +377,7 @@ export default function CollectionReceipts() {
           <div class="description-section">
             <div class="description-box">
               <div class="description-label">الوصف:</div>
-              <div class="description-value">${receipt.description}</div>
+              <div class="description-value">${esc(receipt.description)}</div>
             </div>
           </div>
           ` : ''}
@@ -385,7 +385,7 @@ export default function CollectionReceipts() {
           <div class="signature-section">
             <div class="signature-label">توقيع المستلم</div>
             <div class="signature-line">
-              ${receipt.recipient_name ? `<div class="signature-name">${receipt.recipient_name}</div>` : ''}
+              ${receipt.recipient_name ? `<div class="signature-name">${esc(receipt.recipient_name)}</div>` : ''}
             </div>
           </div>
         </div>
