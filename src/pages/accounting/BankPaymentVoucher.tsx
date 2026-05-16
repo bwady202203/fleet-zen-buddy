@@ -528,7 +528,7 @@ export default function BankPaymentVoucher() {
       <Dialog open={showForm} onOpenChange={(o) => { if (!o) resetForm(); else setShowForm(true); }}>
         <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
-            <DialogTitle>سند صرف جديد - {bank.name}</DialogTitle>
+            <DialogTitle>{editingVoucher ? `تعديل سند ${editingVoucher.voucher_number}` : `سند صرف جديد - ${bank.name}`}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
