@@ -622,7 +622,7 @@ export default function BankPaymentVoucher() {
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={resetForm}>إلغاء</Button>
-              <Button type="submit" className={cn("bg-gradient-to-r", bank.theme)}>حفظ السند والقيد</Button>
+              <Button type="submit" className={cn("bg-gradient-to-r", bank.theme)}>{editingVoucher ? "تحديث السند والقيد" : "حفظ السند والقيد"}</Button>
             </div>
           </form>
         </DialogContent>
