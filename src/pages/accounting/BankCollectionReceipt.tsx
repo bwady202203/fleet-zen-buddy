@@ -712,8 +712,9 @@ function PrintTemplate({ receipt, bank, lines }: { receipt: Receipt; bank: { nam
       </div>
 
       {/* Receipt meta */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
         <MetaBox label="رقم السند" value={receipt.receipt_number} highlight color={P} />
+        <MetaBox label="رقم القيد" value={receipt.journal_entry_number || "-"} color={P} />
         <MetaBox label="التاريخ" value={format(new Date(receipt.receipt_date), "dd / MM / yyyy")} color={P} />
         <MetaBox label="مورد التحصيل" value={`${bank.name} (${bank.code})`} color={P} />
       </div>
