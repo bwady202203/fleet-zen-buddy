@@ -223,26 +223,52 @@ export default function BankPaymentVoucher() {
     if (validLines.length === 0) return toast.error("أضف بنداً واحداً على الأقل بحساب ومبلغ");
 
     try {
-      const voucherNumber = await generateVoucherNumber();
+      const isEdit = !!editingVoucher;
+      const voucherNumber = isEdit ? editingVoucher!.voucher_number : await generateVoucherNumber();
       const total = validLines.reduce((s, l) => s + parseFloat(l.amount), 0);
       const summary = validLines
         .map((l) => `${l.account!.name_ar}: ${parseFloat(l.amount).toLocaleString("ar-SA")}${l.description ? ` (${l.description})` : ""}`)
         .join(" | ");
       const fullDescription = (generalNote ? `${generalNote} — ` : "") + (beneficiary ? `المستفيد: ${beneficiary} — ` : "") + summary;
 
-      const { data: voucher, error } = await supabase
-        .from("payment_vouchers")
-        .insert([{
-          voucher_number: voucherNumber,
-          voucher_date: voucherDate,
-          debit_account_id: validLines[0].account!.id,
-          credit_account_id: bankAccount.id,
-          amount: total,
-          description: fullDescription,
-          created_by: user?.id,
-        }])
-        .select().single();
-      if (error) throw error;
+      let voucherId: string;
+      if (isEdit) {
+        const { error } = await supabase
+          .from("payment_vouchers")
+          .update({
+            voucher_date: voucherDate,
+            debit_account_id: validLines[0].account!.id,
+            credit_account_id: bankAccount.id,
+            amount: total,
+            description: fullDescription,
+          })
+          .eq("id", editingVoucher!.id);
+        if (error) throw error;
+        voucherId = editingVoucher!.id;
+        // Remove old journal entry + lines
+        const { data: oldJE } = await supabase
+          .from("journal_entries").select("id")
+          .eq("reference", `payment_voucher_${voucherId}`).maybeSingle();
+        if (oldJE) {
+          await supabase.from("journal_entry_lines").delete().eq("journal_entry_id", oldJE.id);
+          await supabase.from("journal_entries").delete().eq("id", oldJE.id);
+        }
+      } else {
+        const { data: voucher, error } = await supabase
+          .from("payment_vouchers")
+          .insert([{
+            voucher_number: voucherNumber,
+            voucher_date: voucherDate,
+            debit_account_id: validLines[0].account!.id,
+            credit_account_id: bankAccount.id,
+            amount: total,
+            description: fullDescription,
+            created_by: user?.id,
+          }])
+          .select().single();
+        if (error) throw error;
+        voucherId = voucher.id;
+      }
 
       const year = new Date(voucherDate).getFullYear();
       const { data: lastJE } = await supabase
@@ -259,7 +285,7 @@ export default function BankPaymentVoucher() {
           entry_number: entryNumber,
           date: voucherDate,
           description: `سند صرف ${voucherNumber} - ${bank.name}`,
-          reference: `payment_voucher_${voucher.id}`,
+          reference: `payment_voucher_${voucherId}`,
           created_by: user?.id,
         }]).select().single();
 
@@ -281,7 +307,7 @@ export default function BankPaymentVoucher() {
         await supabase.from("journal_entry_lines").insert(jeLines);
       }
 
-      toast.success("تم حفظ السند والقيد بنجاح");
+      toast.success(isEdit ? "تم تحديث السند والقيد" : "تم حفظ السند والقيد بنجاح");
       resetForm();
       fetchVouchers();
     } catch (err: any) {
@@ -294,7 +320,51 @@ export default function BankPaymentVoucher() {
     setBeneficiary("");
     setGeneralNote("");
     setLines([newLine()]);
+    setEditingVoucher(null);
     setShowForm(false);
+  };
+
+  const handleEdit = async (v: Voucher) => {
+    const { data: je } = await supabase
+      .from("journal_entries").select("id")
+      .eq("reference", `payment_voucher_${v.id}`).maybeSingle();
+    let editLines: VoucherLine[] = [];
+    if (je) {
+      const { data: jls } = await supabase
+        .from("journal_entry_lines")
+        .select("account_id, debit, credit, description")
+        .eq("journal_entry_id", je.id);
+      if (jls) {
+        const debits = jls.filter((l) => Number(l.debit) > 0);
+        const ids = Array.from(new Set(debits.map((l) => l.account_id)));
+        const { data: accs } = await supabase
+          .from("chart_of_accounts").select("id, code, name_ar").in("id", ids);
+        const accMap = new Map((accs || []).map((a) => [a.id, a as Account]));
+        editLines = debits.map((l) => ({
+          id: crypto.randomUUID(),
+          account: accMap.get(l.account_id) || null,
+          amount: String(l.debit),
+          description: l.description || "",
+        }));
+      }
+    }
+    if (editLines.length === 0) {
+      editLines = [{ id: crypto.randomUUID(), account: v.debit_account || null, amount: String(v.amount), description: "" }];
+    }
+    // Parse beneficiary / general note from description
+    const desc = v.description || "";
+    let gen = ""; let ben = "";
+    const benMatch = desc.match(/المستفيد:\s*([^—|]+)/);
+    if (benMatch) ben = benMatch[1].trim();
+    const genMatch = desc.match(/^([^—]+)—/);
+    if (genMatch && !genMatch[1].includes("المستفيد:")) gen = genMatch[1].trim();
+
+    setEditingVoucher(v);
+    setVoucherDate(v.voucher_date);
+    setBeneficiary(ben);
+    setGeneralNote(gen);
+    setLines(editLines);
+    setShowForm(true);
   };
 
   const handleDelete = async (v: Voucher) => {
