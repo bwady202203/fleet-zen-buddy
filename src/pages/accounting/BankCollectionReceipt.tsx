@@ -103,12 +103,15 @@ export default function BankCollectionReceipt() {
   const fetchReceipts = async () => {
     if (!bankAccount) return;
     setLoading(true);
+    setHasFetched(true);
     const { data } = await supabase
       .from("collection_receipts")
       .select("*")
       .eq("debit_account_id", bankAccount.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .gte("receipt_date", dateFrom)
+      .lte("receipt_date", dateTo)
+      .order("receipt_date", { ascending: false })
+      .order("created_at", { ascending: false });
     const enriched = await Promise.all(
       (data || []).map(async (v) => {
         const { data: acc } = await supabase
