@@ -507,6 +507,9 @@ export default function BankPaymentVoucher() {
                           <Button size="sm" variant="outline" onClick={() => openPreview(v)}>
                             <Eye className="h-4 w-4" />
                           </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(v)}>
+                            <Pencil className="h-4 w-4 text-blue-600" />
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleDelete(v)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
