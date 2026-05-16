@@ -789,8 +789,9 @@ function PrintTemplate({ voucher, bank, lines }: { voucher: Voucher; bank: { nam
       </div>
 
       {/* Voucher meta */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
         <MetaBox label="رقم السند" value={voucher.voucher_number} highlight />
+        <MetaBox label="رقم القيد" value={voucher.journal_entry_number || "-"} />
         <MetaBox label="التاريخ" value={format(new Date(voucher.voucher_date), "dd / MM / yyyy")} />
         <MetaBox label="مصدر الصرف" value={`${bank.name} (${bank.code})`} />
       </div>
