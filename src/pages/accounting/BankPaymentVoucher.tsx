@@ -94,6 +94,7 @@ export default function BankPaymentVoucher() {
 
   const [previewVoucher, setPreviewVoucher] = useState<Voucher | null>(null);
   const [previewLines, setPreviewLines] = useState<JELine[]>([]);
+  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const [dateFrom, setDateFrom] = useState(format(new Date(), "yyyy-MM-dd"));
