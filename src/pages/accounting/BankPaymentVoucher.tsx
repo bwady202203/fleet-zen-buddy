@@ -44,6 +44,7 @@ interface Voucher {
   credit_account_id: string;
   amount: number;
   description: string | null;
+  journal_entry_number?: string | null;
   debit_account?: Account;
 }
 
@@ -305,6 +306,12 @@ export default function BankPaymentVoucher() {
           description: beneficiary ? `صرف لـ ${beneficiary}` : `سند صرف ${voucherNumber}`,
         });
         await supabase.from("journal_entry_lines").insert(jeLines);
+
+        // Save journal entry reference on voucher
+        await supabase
+          .from("payment_vouchers")
+          .update({ journal_entry_id: je.id, journal_entry_number: je.entry_number })
+          .eq("id", voucherId);
       }
 
       toast.success(isEdit ? "تم تحديث السند والقيد" : "تم حفظ السند والقيد بنجاح");
@@ -480,6 +487,7 @@ export default function BankPaymentVoucher() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">رقم السند</TableHead>
+                  <TableHead className="text-right">رقم القيد</TableHead>
                   <TableHead className="text-right">التاريخ</TableHead>
                   <TableHead className="text-right">الحساب المدين (الأول)</TableHead>
                   <TableHead className="text-right">البيان</TableHead>
@@ -489,15 +497,16 @@ export default function BankPaymentVoucher() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
                 ) : !hasFetched ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">اختر الفترة ثم اضغط "عرض السندات"</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">اختر الفترة ثم اضغط "عرض السندات"</TableCell></TableRow>
                 ) : filteredVouchers.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{vouchersSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات في هذه الفترة"}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{vouchersSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات في هذه الفترة"}</TableCell></TableRow>
                 ) : (
                   filteredVouchers.map((v) => (
                     <TableRow key={v.id}>
                       <TableCell className="font-bold">{v.voucher_number}</TableCell>
+                      <TableCell className="font-mono text-xs text-emerald-700">{v.journal_entry_number || "-"}</TableCell>
                       <TableCell>{format(new Date(v.voucher_date), "dd/MM/yyyy", { locale: ar })}</TableCell>
                       <TableCell>{v.debit_account?.name_ar || "-"}</TableCell>
                       <TableCell className="max-w-xs truncate">{v.description}</TableCell>
