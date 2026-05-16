@@ -96,8 +96,11 @@ export default function BankPaymentVoucher() {
   const [previewLines, setPreviewLines] = useState<JELine[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
+  const [dateFrom, setDateFrom] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [dateTo, setDateTo] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [hasFetched, setHasFetched] = useState(false);
+
   useEffect(() => { fetchAccounts(); }, [bankKey]);
-  useEffect(() => { if (bankAccount) fetchVouchers(); }, [bankAccount]);
 
   const fetchAccounts = async () => {
     const { data } = await supabase
@@ -116,12 +119,15 @@ export default function BankPaymentVoucher() {
   const fetchVouchers = async () => {
     if (!bankAccount) return;
     setLoading(true);
+    setHasFetched(true);
     const { data } = await supabase
       .from("payment_vouchers")
       .select("*")
       .eq("credit_account_id", bankAccount.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .gte("voucher_date", dateFrom)
+      .lte("voucher_date", dateTo)
+      .order("voucher_date", { ascending: false })
+      .order("created_at", { ascending: false });
     const enriched = await Promise.all(
       (data || []).map(async (v) => {
         const { data: acc } = await supabase
@@ -366,14 +372,36 @@ export default function BankPaymentVoucher() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-            <CardTitle>سجل سندات الصرف</CardTitle>
-            <div className="relative w-72">
-              <Input
-                placeholder="بحث برقم السند، البيان، الحساب، المبلغ..."
-                value={vouchersSearch}
-                onChange={(e) => setVouchersSearch(e.target.value)}
-              />
+          <CardHeader className="flex flex-col gap-3 space-y-0">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle>سجل سندات الصرف</CardTitle>
+              <div className="relative w-72">
+                <Input
+                  placeholder="بحث برقم السند، البيان، الحساب، المبلغ..."
+                  value={vouchersSearch}
+                  onChange={(e) => setVouchersSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex items-end gap-2 flex-wrap">
+              <div>
+                <Label className="text-xs">من تاريخ</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
+              </div>
+              <div>
+                <Label className="text-xs">إلى تاريخ</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
+              </div>
+              <Button onClick={fetchVouchers} disabled={!bankAccount || loading} className={cn("bg-gradient-to-r", bank.theme)}>
+                عرض السندات
+              </Button>
+              <Button variant="outline" onClick={() => {
+                const today = format(new Date(), "yyyy-MM-dd");
+                setDateFrom(today); setDateTo(today); setVouchers([]); setHasFetched(false);
+              }}>
+                <RotateCcw className="h-4 w-4 ml-1" /> إعادة تعيين
+              </Button>
+              {hasFetched && <span className="text-sm text-muted-foreground mr-auto">عدد النتائج: {filteredVouchers.length}</span>}
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -391,8 +419,10 @@ export default function BankPaymentVoucher() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
+                ) : !hasFetched ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">اختر الفترة ثم اضغط "عرض السندات"</TableCell></TableRow>
                 ) : filteredVouchers.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{vouchersSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات"}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{vouchersSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات في هذه الفترة"}</TableCell></TableRow>
                 ) : (
                   filteredVouchers.map((v) => (
                     <TableRow key={v.id}>
