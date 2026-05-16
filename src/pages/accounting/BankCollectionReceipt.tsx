@@ -407,8 +407,10 @@ export default function BankCollectionReceipt() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-8">جاري التحميل...</TableCell></TableRow>
+                ) : !hasFetched ? (
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">اختر الفترة ثم اضغط "عرض السندات"</TableCell></TableRow>
                 ) : filteredReceipts.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{receiptsSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات"}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{receiptsSearch ? "لا توجد نتائج مطابقة" : "لا توجد سندات في هذه الفترة"}</TableCell></TableRow>
                 ) : (
                   filteredReceipts.map((v) => (
                     <TableRow key={v.id}>
