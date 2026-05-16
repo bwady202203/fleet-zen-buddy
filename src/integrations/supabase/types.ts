@@ -274,6 +274,8 @@ export type Database = {
           debit_account_id: string
           description: string | null
           id: string
+          journal_entry_id: string | null
+          journal_entry_number: string | null
           organization_id: string | null
           receipt_date: string
           receipt_number: string
@@ -290,6 +292,8 @@ export type Database = {
           debit_account_id: string
           description?: string | null
           id?: string
+          journal_entry_id?: string | null
+          journal_entry_number?: string | null
           organization_id?: string | null
           receipt_date: string
           receipt_number: string
@@ -306,6 +310,8 @@ export type Database = {
           debit_account_id?: string
           description?: string | null
           id?: string
+          journal_entry_id?: string | null
+          journal_entry_number?: string | null
           organization_id?: string | null
           receipt_date?: string
           receipt_number?: string
@@ -326,6 +332,13 @@ export type Database = {
             columns: ["debit_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_receipts_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
           {
@@ -2423,6 +2436,8 @@ export type Database = {
           debit_account_id: string
           description: string | null
           id: string
+          journal_entry_id: string | null
+          journal_entry_number: string | null
           organization_id: string | null
           updated_at: string | null
           voucher_date: string
@@ -2436,6 +2451,8 @@ export type Database = {
           debit_account_id: string
           description?: string | null
           id?: string
+          journal_entry_id?: string | null
+          journal_entry_number?: string | null
           organization_id?: string | null
           updated_at?: string | null
           voucher_date: string
@@ -2449,6 +2466,8 @@ export type Database = {
           debit_account_id?: string
           description?: string | null
           id?: string
+          journal_entry_id?: string | null
+          journal_entry_number?: string | null
           organization_id?: string | null
           updated_at?: string | null
           voucher_date?: string
@@ -2467,6 +2486,13 @@ export type Database = {
             columns: ["debit_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_vouchers_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
