@@ -119,12 +119,15 @@ export default function BankPaymentVoucher() {
   const fetchVouchers = async () => {
     if (!bankAccount) return;
     setLoading(true);
+    setHasFetched(true);
     const { data } = await supabase
       .from("payment_vouchers")
       .select("*")
       .eq("credit_account_id", bankAccount.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .gte("voucher_date", dateFrom)
+      .lte("voucher_date", dateTo)
+      .order("voucher_date", { ascending: false })
+      .order("created_at", { ascending: false });
     const enriched = await Promise.all(
       (data || []).map(async (v) => {
         const { data: acc } = await supabase
