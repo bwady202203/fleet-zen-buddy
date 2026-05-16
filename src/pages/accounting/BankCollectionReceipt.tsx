@@ -80,8 +80,11 @@ export default function BankCollectionReceipt() {
   const [previewLines, setPreviewLines] = useState<JELine[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
+  const [dateFrom, setDateFrom] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [dateTo, setDateTo] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [hasFetched, setHasFetched] = useState(false);
+
   useEffect(() => { fetchAccounts(); }, [bankKey]);
-  useEffect(() => { if (bankAccount) fetchReceipts(); }, [bankAccount]);
 
   const fetchAccounts = async () => {
     const { data } = await supabase
