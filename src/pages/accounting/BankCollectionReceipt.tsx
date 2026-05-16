@@ -360,14 +360,36 @@ export default function BankCollectionReceipt() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-            <CardTitle>سجل سندات القبض</CardTitle>
-            <div className="relative w-72">
-              <Input
-                placeholder="بحث برقم السند، البيان، الحساب، المبلغ..."
-                value={receiptsSearch}
-                onChange={(e) => setReceiptsSearch(e.target.value)}
-              />
+          <CardHeader className="flex flex-col gap-3 space-y-0">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle>سجل سندات القبض</CardTitle>
+              <div className="relative w-72">
+                <Input
+                  placeholder="بحث برقم السند، البيان، الحساب، المبلغ..."
+                  value={receiptsSearch}
+                  onChange={(e) => setReceiptsSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex items-end gap-2 flex-wrap">
+              <div>
+                <Label className="text-xs">من تاريخ</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
+              </div>
+              <div>
+                <Label className="text-xs">إلى تاريخ</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
+              </div>
+              <Button onClick={fetchReceipts} disabled={!bankAccount || loading} className={cn("bg-gradient-to-r", bank.theme)}>
+                عرض السندات
+              </Button>
+              <Button variant="outline" onClick={() => {
+                const today = format(new Date(), "yyyy-MM-dd");
+                setDateFrom(today); setDateTo(today); setReceipts([]); setHasFetched(false);
+              }}>
+                <RotateCcw className="h-4 w-4 ml-1" /> إعادة تعيين
+              </Button>
+              {hasFetched && <span className="text-sm text-muted-foreground mr-auto">عدد النتائج: {filteredReceipts.length}</span>}
             </div>
           </CardHeader>
           <CardContent className="p-0">
