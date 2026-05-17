@@ -387,9 +387,19 @@ export default function BankPaymentVoucher() {
     setPreviewVoucher(v);
     setPreviewLines([]);
     const { data: je } = await supabase
-      .from("journal_entries").select("id")
+      .from("journal_entries").select("id, entry_number")
       .eq("reference", `payment_voucher_${v.id}`).maybeSingle();
     if (!je) return;
+    // Ensure preview shows the journal entry number even if voucher row wasn't backfilled
+    if (je.entry_number && v.journal_entry_number !== je.entry_number) {
+      setPreviewVoucher({ ...v, journal_entry_number: je.entry_number });
+      // Backfill the voucher row so the list and future opens show it too
+      supabase
+        .from("payment_vouchers")
+        .update({ journal_entry_id: je.id, journal_entry_number: je.entry_number })
+        .eq("id", v.id)
+        .then(() => fetchVouchers());
+    }
     const { data: jls } = await supabase
       .from("journal_entry_lines")
       .select("account_id, debit, credit, description")

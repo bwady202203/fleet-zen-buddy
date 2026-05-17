@@ -303,9 +303,17 @@ export default function BankCollectionReceipt() {
     setPreviewReceipt(v);
     setPreviewLines([]);
     const { data: je } = await supabase
-      .from("journal_entries").select("id")
+      .from("journal_entries").select("id, entry_number")
       .eq("reference", `collection_receipt_${v.id}`).maybeSingle();
     if (!je) return;
+    if (je.entry_number && v.journal_entry_number !== je.entry_number) {
+      setPreviewReceipt({ ...v, journal_entry_number: je.entry_number });
+      supabase
+        .from("collection_receipts")
+        .update({ journal_entry_id: je.id, journal_entry_number: je.entry_number })
+        .eq("id", v.id)
+        .then(() => fetchReceipts());
+    }
     const { data: jls } = await supabase
       .from("journal_entry_lines")
       .select("account_id, debit, credit, description")
