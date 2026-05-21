@@ -68,7 +68,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("driver_id, quantity, drivers(name), load_types(name)")
+          .select("driver_id, quantity, commission_amount, total_amount, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -85,6 +85,8 @@ const DriverLoadsSummary = () => {
         const name = (r as any).drivers?.name || "بدون سائق";
         const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
+        const com = Number(r.commission_amount || 0);
+        const sale = Number(r.total_amount || 0);
         let existing = map.get(id);
         if (!existing) {
           existing = {
@@ -92,6 +94,8 @@ const DriverLoadsSummary = () => {
             driverName: name,
             loadsCount: 0,
             totalQuantity: 0,
+            totalCommission: 0,
+            totalSales: 0,
             breakdown: [],
             _types: new Map(),
           };
@@ -99,12 +103,22 @@ const DriverLoadsSummary = () => {
         }
         existing.loadsCount += 1;
         existing.totalQuantity += qty;
+        existing.totalCommission += com;
+        existing.totalSales += sale;
         const t = existing._types.get(typeName);
         if (t) {
           t.loadsCount += 1;
           t.totalQuantity += qty;
+          t.totalCommission += com;
+          t.totalSales += sale;
         } else {
-          existing._types.set(typeName, { typeName, loadsCount: 1, totalQuantity: qty });
+          existing._types.set(typeName, {
+            typeName,
+            loadsCount: 1,
+            totalQuantity: qty,
+            totalCommission: com,
+            totalSales: sale,
+          });
         }
       }
       const result: DriverRow[] = Array.from(map.values())
@@ -113,6 +127,8 @@ const DriverLoadsSummary = () => {
           driverName: d.driverName,
           loadsCount: d.loadsCount,
           totalQuantity: d.totalQuantity,
+          totalCommission: d.totalCommission,
+          totalSales: d.totalSales,
           breakdown: Array.from(d._types.values()).sort(
             (a, b) => b.totalQuantity - a.totalQuantity,
           ),
