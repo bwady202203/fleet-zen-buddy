@@ -28,6 +28,8 @@ interface TypeBreakdown {
   typeName: string;
   loadsCount: number;
   totalQuantity: number;
+  totalCommission: number;
+  totalSales: number;
 }
 
 interface DriverRow {
@@ -35,6 +37,8 @@ interface DriverRow {
   driverName: string;
   loadsCount: number;
   totalQuantity: number;
+  totalCommission: number;
+  totalSales: number;
   breakdown: TypeBreakdown[];
 }
 
@@ -64,7 +68,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("driver_id, quantity, drivers(name), load_types(name)")
+          .select("driver_id, quantity, commission_amount, total_amount, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -81,6 +85,8 @@ const DriverLoadsSummary = () => {
         const name = (r as any).drivers?.name || "بدون سائق";
         const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
+        const com = Number(r.commission_amount || 0);
+        const sale = Number(r.total_amount || 0);
         let existing = map.get(id);
         if (!existing) {
           existing = {
@@ -88,6 +94,8 @@ const DriverLoadsSummary = () => {
             driverName: name,
             loadsCount: 0,
             totalQuantity: 0,
+            totalCommission: 0,
+            totalSales: 0,
             breakdown: [],
             _types: new Map(),
           };
@@ -95,12 +103,22 @@ const DriverLoadsSummary = () => {
         }
         existing.loadsCount += 1;
         existing.totalQuantity += qty;
+        existing.totalCommission += com;
+        existing.totalSales += sale;
         const t = existing._types.get(typeName);
         if (t) {
           t.loadsCount += 1;
           t.totalQuantity += qty;
+          t.totalCommission += com;
+          t.totalSales += sale;
         } else {
-          existing._types.set(typeName, { typeName, loadsCount: 1, totalQuantity: qty });
+          existing._types.set(typeName, {
+            typeName,
+            loadsCount: 1,
+            totalQuantity: qty,
+            totalCommission: com,
+            totalSales: sale,
+          });
         }
       }
       const result: DriverRow[] = Array.from(map.values())
@@ -109,6 +127,8 @@ const DriverLoadsSummary = () => {
           driverName: d.driverName,
           loadsCount: d.loadsCount,
           totalQuantity: d.totalQuantity,
+          totalCommission: d.totalCommission,
+          totalSales: d.totalSales,
           breakdown: Array.from(d._types.values()).sort(
             (a, b) => b.totalQuantity - a.totalQuantity,
           ),
@@ -135,6 +155,8 @@ const DriverLoadsSummary = () => {
     () => ({
       loads: rows.reduce((s, r) => s + r.loadsCount, 0),
       qty: rows.reduce((s, r) => s + r.totalQuantity, 0),
+      commission: rows.reduce((s, r) => s + r.totalCommission, 0),
+      sales: rows.reduce((s, r) => s + r.totalSales, 0),
     }),
     [rows],
   );
@@ -459,7 +481,9 @@ const DriverLoadsSummary = () => {
                     <TableHead className="text-right">اسم السائق</TableHead>
                     <TableHead className="text-center">عدد الشحنات</TableHead>
                     <TableHead className="text-center">إجمالي الأطنان</TableHead>
-                    <TableHead className="text-center w-32">طباعة</TableHead>
+                    <TableHead className="text-center">إجمالي العمولات</TableHead>
+                    <TableHead className="text-center">إجمالي البيع للعملاء</TableHead>
+                    <TableHead className="text-center w-24">طباعة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -476,6 +500,18 @@ const DriverLoadsSummary = () => {
                       <TableCell className="text-center">{r.loadsCount}</TableCell>
                       <TableCell className="text-center">
                         {r.totalQuantity.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-emerald-600">
+                        {r.totalCommission.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-blue-600">
+                        {r.totalSales.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -499,6 +535,18 @@ const DriverLoadsSummary = () => {
                     <TableCell className="text-center">{totals.loads}</TableCell>
                     <TableCell className="text-center">
                       {totals.qty.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-center text-emerald-700">
+                      {totals.commission.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-center text-blue-700">
+                      {totals.sales.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -608,7 +656,7 @@ const DriverLoadsSummary = () => {
       )}
 
       <Dialog open={!!selectedDriver} onOpenChange={(o) => !o && setSelectedDriver(null)}>
-        <DialogContent className="max-w-2xl" dir="rtl">
+        <DialogContent className="max-w-4xl" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-primary" />
@@ -617,17 +665,35 @@ const DriverLoadsSummary = () => {
           </DialogHeader>
           {selectedDriver && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div className="rounded-lg border bg-muted/40 p-3 text-center">
                   <div className="text-xs text-muted-foreground">إجمالي الشحنات</div>
-                  <div className="text-2xl font-extrabold text-primary">
+                  <div className="text-xl font-extrabold text-primary">
                     {selectedDriver.loadsCount}
                   </div>
                 </div>
                 <div className="rounded-lg border bg-muted/40 p-3 text-center">
                   <div className="text-xs text-muted-foreground">إجمالي الأطنان</div>
-                  <div className="text-2xl font-extrabold text-primary">
+                  <div className="text-xl font-extrabold text-primary">
                     {selectedDriver.totalQuantity.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-emerald-50 p-3 text-center">
+                  <div className="text-xs text-muted-foreground">إجمالي العمولات</div>
+                  <div className="text-xl font-extrabold text-emerald-600">
+                    {selectedDriver.totalCommission.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-blue-50 p-3 text-center">
+                  <div className="text-xs text-muted-foreground">إجمالي البيع للعملاء</div>
+                  <div className="text-xl font-extrabold text-blue-600">
+                    {selectedDriver.totalSales.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -642,6 +708,8 @@ const DriverLoadsSummary = () => {
                       <TableHead className="text-right">نوع الشحنة</TableHead>
                       <TableHead className="text-center">عدد الشحنات</TableHead>
                       <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                      <TableHead className="text-center">إجمالي العمولات</TableHead>
+                      <TableHead className="text-center">إجمالي البيع</TableHead>
                       <TableHead className="text-center">النسبة</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -660,6 +728,18 @@ const DriverLoadsSummary = () => {
                               maximumFractionDigits: 2,
                             })}
                           </TableCell>
+                          <TableCell className="text-center font-semibold text-emerald-600">
+                            {b.totalCommission.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold text-blue-600">
+                            {b.totalSales.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </TableCell>
                           <TableCell className="text-center">
                             {pct.toFixed(1)}%
                           </TableCell>
@@ -671,6 +751,18 @@ const DriverLoadsSummary = () => {
                       <TableCell className="text-center">{selectedDriver.loadsCount}</TableCell>
                       <TableCell className="text-center">
                         {selectedDriver.totalQuantity.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center text-emerald-700">
+                        {selectedDriver.totalCommission.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center text-blue-700">
+                        {selectedDriver.totalSales.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
