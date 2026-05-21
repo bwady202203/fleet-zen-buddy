@@ -1452,64 +1452,222 @@ const LoadInvoices = () => {
 
       {/* Print Preview Dialog */}
       <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>معاينة الطباعة</DialogTitle>
+        <DialogContent className="max-w-[230mm] max-h-[95vh] overflow-y-auto p-0 bg-neutral-200 print:bg-white print:max-w-none print:max-h-none print:overflow-visible print:p-0 print:shadow-none print:border-0">
+          <DialogHeader className="px-6 pt-4 print:hidden">
+            <DialogTitle>معاينة الطباعة — A4</DialogTitle>
           </DialogHeader>
-          <div ref={printPreviewRef} className="p-6 bg-white" dir="rtl">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold mb-2">تقرير فواتير المبيعات</h2>
-              {(filterStartDate || filterEndDate) && (
-                <p className="text-sm text-muted-foreground">
-                  {filterStartDate && `من ${new Date(filterStartDate).toLocaleDateString('ar-SA')}`}
-                  {filterEndDate && ` إلى ${new Date(filterEndDate).toLocaleDateString('ar-SA')}`}
-                </p>
-              )}
-            </div>
 
-            {/* Statistics Summary */}
-            <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">إجمالي الفواتير</p>
-                <p className="text-xl font-bold">{statsData.totalInvoices}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">إجمالي المبالغ</p>
-                <p className="text-xl font-bold">{statsData.totalAmount.toFixed(2)} ر.س</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-600">إجمالي الضرائب</p>
-                <p className="text-xl font-bold">{statsData.totalTax.toFixed(2)} ر.س</p>
+          {/* Print styles + A4 sheet */}
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+            .a4-sheet {
+              width: 210mm;
+              min-height: 297mm;
+              margin: 0 auto;
+              background: #ffffff;
+              font-family: 'Cairo', sans-serif;
+              color: #1a1a1a;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+              position: relative;
+              overflow: hidden;
+            }
+            .a4-sheet * { font-family: 'Cairo', sans-serif !important; }
+            .a4-deco-1 {
+              position: absolute; top: -120px; left: -120px; width: 320px; height: 320px;
+              background: radial-gradient(circle, rgba(16,185,129,0.18), transparent 70%);
+              border-radius: 50%; pointer-events: none;
+            }
+            .a4-deco-2 {
+              position: absolute; bottom: -140px; right: -140px; width: 360px; height: 360px;
+              background: radial-gradient(circle, rgba(59,130,246,0.14), transparent 70%);
+              border-radius: 50%; pointer-events: none;
+            }
+            .a4-inner { padding: 14mm 12mm 18mm; position: relative; z-index: 1; }
+            .a4-header {
+              background: linear-gradient(135deg, #0f766e 0%, #115e59 55%, #0c4a6e 100%);
+              color: #fff; border-radius: 14px; padding: 18px 22px;
+              display: flex; justify-content: space-between; align-items: center;
+              box-shadow: 0 8px 20px rgba(15,118,110,0.25);
+              position: relative; overflow: hidden;
+            }
+            .a4-header::after {
+              content: ''; position: absolute; inset: 0;
+              background: radial-gradient(circle at 90% 20%, rgba(255,255,255,0.18), transparent 50%);
+            }
+            .a4-header h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.5px; }
+            .a4-header p { margin: 4px 0 0; opacity: 0.92; font-size: 13px; }
+            .a4-header .badge {
+              background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+              border-radius: 10px; padding: 8px 14px; font-size: 12px; backdrop-filter: blur(4px);
+            }
+            .a4-meta {
+              display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+              margin-top: 14px;
+            }
+            .a4-meta .cell {
+              background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+              padding: 10px 12px; text-align: center;
+            }
+            .a4-meta .cell .lbl { font-size: 11px; color: #64748b; }
+            .a4-meta .cell .val { font-size: 14px; font-weight: 700; color: #0f172a; margin-top: 2px; }
+            .a4-stats {
+              display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px;
+            }
+            .a4-stat {
+              border-radius: 12px; padding: 14px; color: #fff; position: relative; overflow: hidden;
+              box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+            }
+            .a4-stat.s1 { background: linear-gradient(135deg,#6366f1,#4338ca); }
+            .a4-stat.s2 { background: linear-gradient(135deg,#10b981,#047857); }
+            .a4-stat.s3 { background: linear-gradient(135deg,#f59e0b,#b45309); }
+            .a4-stat .lbl { font-size: 12px; opacity: 0.9; }
+            .a4-stat .val { font-size: 20px; font-weight: 800; margin-top: 4px; }
+            .a4-stat::after {
+              content:''; position:absolute; top:-30px; left:-30px; width:100px; height:100px;
+              background: rgba(255,255,255,0.15); border-radius:50%;
+            }
+            .a4-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 16px; font-size: 12px; }
+            .a4-table thead th {
+              background: linear-gradient(180deg,#0f172a,#1e293b); color: #fff; padding: 10px 8px;
+              font-weight: 700; text-align: right; font-size: 12px;
+            }
+            .a4-table thead th:first-child { border-top-right-radius: 8px; }
+            .a4-table thead th:last-child { border-top-left-radius: 8px; }
+            .a4-table tbody td { padding: 9px 8px; border-bottom: 1px solid #e5e7eb; text-align: right; }
+            .a4-table tbody tr:nth-child(even) td { background: #f8fafc; }
+            .a4-table tbody tr:hover td { background: #ecfdf5; }
+            .a4-table .num { font-weight: 700; color: #065f46; }
+            .a4-totals-row td {
+              background: linear-gradient(90deg,#ecfdf5,#f0fdfa) !important;
+              font-weight: 800; color: #064e3b; border-top: 2px solid #10b981;
+            }
+            .a4-footer {
+              margin-top: 22px; display: flex; justify-content: space-between; align-items: center;
+              padding-top: 12px; border-top: 2px dashed #cbd5e1; font-size: 11px; color: #475569;
+            }
+            .a4-sign {
+              display: grid; grid-template-columns: repeat(3,1fr); gap: 30px; margin-top: 30px;
+            }
+            .a4-sign div { text-align: center; padding-top: 30px; border-top: 1px solid #94a3b8; font-size: 12px; color: #334155; }
+
+            @media print {
+              @page { size: A4 portrait; margin: 0; }
+              html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+              body * { visibility: hidden !important; }
+              .a4-print-root, .a4-print-root * { visibility: visible !important; }
+              .a4-print-root {
+                position: absolute !important; inset: 0 !important;
+                background: #fff !important; box-shadow: none !important;
+              }
+              .a4-sheet { box-shadow: none !important; margin: 0 !important; }
+              .a4-table thead { display: table-header-group; }
+              .a4-table tr { page-break-inside: avoid; }
+            }
+          `}</style>
+
+          <div className="a4-print-root py-4 print:py-0">
+            <div ref={printPreviewRef} className="a4-sheet" dir="rtl">
+              <div className="a4-deco-1" />
+              <div className="a4-deco-2" />
+              <div className="a4-inner">
+                {/* Header */}
+                <div className="a4-header">
+                  <div>
+                    <h1>{companySettings?.company_name || 'تقرير فواتير المبيعات'}</h1>
+                    <p>تقرير فواتير المبيعات — Sales Invoices Report</p>
+                  </div>
+                  <div className="badge">
+                    {new Date().toLocaleDateString('ar-SA')}
+                  </div>
+                </div>
+
+                {/* Meta */}
+                <div className="a4-meta">
+                  <div className="cell">
+                    <div className="lbl">من تاريخ</div>
+                    <div className="val">{filterStartDate ? new Date(filterStartDate).toLocaleDateString('ar-SA') : '—'}</div>
+                  </div>
+                  <div className="cell">
+                    <div className="lbl">إلى تاريخ</div>
+                    <div className="val">{filterEndDate ? new Date(filterEndDate).toLocaleDateString('ar-SA') : '—'}</div>
+                  </div>
+                  <div className="cell">
+                    <div className="lbl">الشركة</div>
+                    <div className="val">
+                      {filterCompanyId && filterCompanyId !== 'all'
+                        ? (companies.find(c => c.id === filterCompanyId)?.name || '—')
+                        : 'كل الشركات'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="a4-stats">
+                  <div className="a4-stat s1">
+                    <div className="lbl">إجمالي الفواتير</div>
+                    <div className="val">{statsData.totalInvoices}</div>
+                  </div>
+                  <div className="a4-stat s2">
+                    <div className="lbl">إجمالي المبالغ</div>
+                    <div className="val">{statsData.totalAmount.toFixed(2)} ر.س</div>
+                  </div>
+                  <div className="a4-stat s3">
+                    <div className="lbl">إجمالي الضرائب</div>
+                    <div className="val">{statsData.totalTax.toFixed(2)} ر.س</div>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <table className="a4-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>رقم الفاتورة</th>
+                      <th>التاريخ</th>
+                      <th>العميل</th>
+                      <th>قبل الضريبة</th>
+                      <th>الضريبة</th>
+                      <th>الإجمالي</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredInvoices.map((invoice, idx) => (
+                      <tr key={invoice.id}>
+                        <td>{idx + 1}</td>
+                        <td>{invoice.invoice_number}</td>
+                        <td>{new Date(invoice.date).toLocaleDateString('ar-SA')}</td>
+                        <td>{invoice.companies?.name}</td>
+                        <td>{(invoice.subtotal || 0).toFixed(2)}</td>
+                        <td>{(invoice.tax_amount || 0).toFixed(2)}</td>
+                        <td className="num">{(invoice.total_amount || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="a4-totals-row">
+                      <td colSpan={4} style={{ textAlign: 'left' }}>الإجماليات</td>
+                      <td>{statsData.totalAmount.toFixed(2) > 0 ? (statsData.totalAmount - statsData.totalTax).toFixed(2) : '0.00'}</td>
+                      <td>{statsData.totalTax.toFixed(2)}</td>
+                      <td>{statsData.totalAmount.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Signatures */}
+                <div className="a4-sign">
+                  <div>المحاسب</div>
+                  <div>المدير المالي</div>
+                  <div>المدير العام</div>
+                </div>
+
+                {/* Footer */}
+                <div className="a4-footer">
+                  <div>تم الإنشاء بواسطة النظام المحاسبي</div>
+                  <div>{new Date().toLocaleString('ar-SA')}</div>
+                </div>
               </div>
             </div>
-
-            {/* Invoices Table */}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">رقم الفاتورة</TableHead>
-                  <TableHead className="text-right">التاريخ</TableHead>
-                  <TableHead className="text-right">العميل</TableHead>
-                  <TableHead className="text-right">المبلغ قبل الضريبة</TableHead>
-                  <TableHead className="text-right">الضريبة</TableHead>
-                  <TableHead className="text-right">المبلغ الإجمالي</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="text-right">{invoice.invoice_number}</TableCell>
-                    <TableCell className="text-right">{new Date(invoice.date).toLocaleDateString('ar-SA')}</TableCell>
-                    <TableCell className="text-right">{invoice.companies?.name}</TableCell>
-                    <TableCell className="text-right">{(invoice.subtotal || 0).toFixed(2)} ر.س</TableCell>
-                    <TableCell className="text-right">{(invoice.tax_amount || 0).toFixed(2)} ر.س</TableCell>
-                    <TableCell className="text-right font-semibold">{invoice.total_amount.toFixed(2)} ر.س</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           </div>
-          <div className="flex gap-2 justify-end pt-4 border-t">
+
+          <div className="flex gap-2 justify-end p-4 border-t bg-background print:hidden">
             <Button onClick={handlePrintFromPreview}>
               <Printer className="h-4 w-4 ml-2" />
               طباعة
