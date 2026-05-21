@@ -28,6 +28,8 @@ interface TypeBreakdown {
   typeName: string;
   loadsCount: number;
   totalQuantity: number;
+  totalCommission: number;
+  totalSales: number;
 }
 
 interface DriverRow {
@@ -35,6 +37,8 @@ interface DriverRow {
   driverName: string;
   loadsCount: number;
   totalQuantity: number;
+  totalCommission: number;
+  totalSales: number;
   breakdown: TypeBreakdown[];
 }
 
