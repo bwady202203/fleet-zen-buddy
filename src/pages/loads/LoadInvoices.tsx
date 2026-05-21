@@ -624,6 +624,45 @@ const LoadInvoices = () => {
     window.print();
   };
 
+  const handleDownloadReportPDF = async () => {
+    if (!printPreviewRef.current) return;
+    try {
+      const element = printPreviewRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+      } else {
+        let heightLeft = imgHeight;
+        let position = 0;
+        pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight);
+        heightLeft -= pageHeight;
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pageWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+      }
+      pdf.save(`تقرير_فواتير_المبيعات_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast({ title: "تم التحميل", description: "تم تحميل التقرير بصيغة PDF بنجاح" });
+    } catch (e) {
+      toast({ title: "خطأ", description: "تعذر إنشاء ملف PDF", variant: "destructive" });
+    }
+  };
+
   const handleExportToExcel = () => {
     const exportData = filteredInvoices.map(invoice => ({
       'رقم الفاتورة': invoice.invoice_number,
@@ -1482,7 +1521,7 @@ const LoadInvoices = () => {
               background: radial-gradient(circle, rgba(59,130,246,0.14), transparent 70%);
               border-radius: 50%; pointer-events: none;
             }
-            .a4-inner { padding: 14mm 12mm 18mm; position: relative; z-index: 1; }
+            .a4-inner { padding: 6mm 12mm 14mm; position: relative; z-index: 1; }
             .a4-header {
               background: linear-gradient(135deg, #0f766e 0%, #115e59 55%, #0c4a6e 100%);
               color: #fff; border-radius: 14px; padding: 18px 22px;
@@ -1556,10 +1595,12 @@ const LoadInvoices = () => {
               body * { visibility: hidden !important; }
               .a4-print-root, .a4-print-root * { visibility: visible !important; }
               .a4-print-root {
-                position: absolute !important; inset: 0 !important;
+                position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important;
+                margin: 0 !important; padding: 0 !important;
                 background: #fff !important; box-shadow: none !important;
               }
-              .a4-sheet { box-shadow: none !important; margin: 0 !important; }
+              .a4-sheet { box-shadow: none !important; margin: 0 !important; min-height: auto !important; }
+              .a4-inner { padding-top: 4mm !important; }
               .a4-table thead { display: table-header-group; }
               .a4-table tr { page-break-inside: avoid; }
             }
@@ -1671,6 +1712,10 @@ const LoadInvoices = () => {
             <Button onClick={handlePrintFromPreview}>
               <Printer className="h-4 w-4 ml-2" />
               طباعة
+            </Button>
+            <Button variant="secondary" onClick={handleDownloadReportPDF}>
+              <Download className="h-4 w-4 ml-2" />
+              تحميل PDF
             </Button>
             <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
               إغلاق
