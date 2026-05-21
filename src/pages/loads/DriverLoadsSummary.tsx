@@ -396,8 +396,26 @@ const DriverLoadsSummary = () => {
             </div>
           </div>
 
-          <div className="print-band rounded px-4 py-2 mb-4 text-white">
-            <h2 className="text-base font-bold m-0">ملخص أداء السائقين</h2>
+          {/* Summary stats at top */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="border border-gray-300 rounded p-3 text-center" style={{ background: "#f3f6fb" }}>
+              <div className="text-[9pt] text-gray-600 mb-1">إجمالي السائقين</div>
+              <div className="text-xl font-extrabold text-[#0a4a8a]">{rows.length}</div>
+            </div>
+            <div className="border border-gray-300 rounded p-3 text-center" style={{ background: "#f3f6fb" }}>
+              <div className="text-[9pt] text-gray-600 mb-1">إجمالي الشحنات</div>
+              <div className="text-xl font-extrabold text-[#0a4a8a]">{totals.loads}</div>
+            </div>
+            <div className="border border-gray-300 rounded p-3 text-center" style={{ background: "#f3f6fb" }}>
+              <div className="text-[9pt] text-gray-600 mb-1">إجمالي الأطنان</div>
+              <div className="text-xl font-extrabold text-[#0a4a8a]">
+                {totals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+
+          <div className="print-band rounded px-4 py-2 mb-3 text-white">
+            <h2 className="text-base font-bold m-0">تفاصيل أداء السائقين</h2>
           </div>
 
           <table className="print-table w-full border-collapse text-[11pt]">
