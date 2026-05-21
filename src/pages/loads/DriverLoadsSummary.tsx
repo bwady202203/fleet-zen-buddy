@@ -188,6 +188,26 @@ const DriverLoadsSummary = () => {
     [rows],
   );
 
+  // تجميع عام حسب نوع الشحنة عبر كل السائقين
+  const typeSummary = useMemo(() => {
+    const map = new Map<string, TypeBreakdown>();
+    rows.forEach((r) =>
+      r.breakdown.forEach((b) => {
+        const existing = map.get(b.typeName);
+        if (existing) {
+          existing.loadsCount += b.loadsCount;
+          existing.totalQuantity += b.totalQuantity;
+          existing.totalCommission += b.totalCommission;
+          existing.totalSales += b.totalSales;
+        } else {
+          map.set(b.typeName, { ...b });
+        }
+      }),
+    );
+    return Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
+  }, [rows]);
+
+
   const handlePrint = () => {
     const now = new Date();
     setPrintedAt(now);
