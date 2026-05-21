@@ -1491,8 +1491,8 @@ const LoadInvoices = () => {
 
       {/* Print Preview Dialog */}
       <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
-        <DialogContent className="max-w-[230mm] max-h-[95vh] overflow-y-auto p-0 bg-neutral-200 print:bg-white print:max-w-none print:max-h-none print:overflow-visible print:p-0 print:shadow-none print:border-0">
-          <DialogHeader className="px-6 pt-4 print:hidden">
+        <DialogContent className="max-w-[230mm] w-[95vw] max-h-[95vh] overflow-y-auto p-0 gap-0 bg-neutral-200 flex flex-col print:bg-white print:max-w-none print:max-h-none print:w-auto print:overflow-visible print:p-0 print:shadow-none print:border-0 print:block">
+          <DialogHeader className="px-6 pt-4 pb-2 print:hidden">
             <DialogTitle>معاينة الطباعة — A4</DialogTitle>
           </DialogHeader>
 
@@ -1501,7 +1501,6 @@ const LoadInvoices = () => {
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
             .a4-sheet {
               width: 210mm;
-              min-height: 297mm;
               margin: 0 auto;
               background: #ffffff;
               font-family: 'Cairo', sans-serif;
@@ -1521,7 +1520,7 @@ const LoadInvoices = () => {
               background: radial-gradient(circle, rgba(59,130,246,0.14), transparent 70%);
               border-radius: 50%; pointer-events: none;
             }
-            .a4-inner { padding: 6mm 12mm 14mm; position: relative; z-index: 1; }
+            .a4-inner { padding: 8mm 12mm 12mm; position: relative; z-index: 1; }
             .a4-header {
               background: linear-gradient(135deg, #0f766e 0%, #115e59 55%, #0c4a6e 100%);
               color: #fff; border-radius: 14px; padding: 18px 22px;
@@ -1599,14 +1598,14 @@ const LoadInvoices = () => {
                 margin: 0 !important; padding: 0 !important;
                 background: #fff !important; box-shadow: none !important;
               }
-              .a4-sheet { box-shadow: none !important; margin: 0 !important; min-height: auto !important; }
-              .a4-inner { padding-top: 4mm !important; }
+              .a4-sheet { box-shadow: none !important; margin: 0 !important; width: 210mm !important; min-height: 297mm; }
+              .a4-inner { padding: 8mm 12mm 12mm !important; }
               .a4-table thead { display: table-header-group; }
               .a4-table tr { page-break-inside: avoid; }
             }
           `}</style>
 
-          <div className="a4-print-root py-4 print:py-0">
+          <div className="a4-print-root p-4 print:p-0 flex justify-center print:block">
             <div ref={printPreviewRef} className="a4-sheet" dir="rtl">
               <div className="a4-deco-1" />
               <div className="a4-deco-2" />
