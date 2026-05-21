@@ -606,6 +606,84 @@ const DriverLoadsSummary = () => {
           </div>
         </div>
       )}
+
+      <Dialog open={!!selectedDriver} onOpenChange={(o) => !o && setSelectedDriver(null)}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              تفاصيل أداء السائق: {selectedDriver?.driverName}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedDriver && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                  <div className="text-xs text-muted-foreground">إجمالي الشحنات</div>
+                  <div className="text-2xl font-extrabold text-primary">
+                    {selectedDriver.loadsCount}
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                  <div className="text-xs text-muted-foreground">إجمالي الأطنان</div>
+                  <div className="text-2xl font-extrabold text-primary">
+                    {selectedDriver.totalQuantity.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted">
+                      <TableHead className="text-right">نوع الشحنة</TableHead>
+                      <TableHead className="text-center">عدد الشحنات</TableHead>
+                      <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                      <TableHead className="text-center">النسبة</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedDriver.breakdown.map((b) => {
+                      const pct = selectedDriver.totalQuantity > 0
+                        ? (b.totalQuantity / selectedDriver.totalQuantity) * 100
+                        : 0;
+                      return (
+                        <TableRow key={b.typeName}>
+                          <TableCell className="font-semibold">{b.typeName}</TableCell>
+                          <TableCell className="text-center">{b.loadsCount}</TableCell>
+                          <TableCell className="text-center font-semibold text-primary">
+                            {b.totalQuantity.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pct.toFixed(1)}%
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    <TableRow className="bg-muted font-bold">
+                      <TableCell>الإجمالي</TableCell>
+                      <TableCell className="text-center">{selectedDriver.loadsCount}</TableCell>
+                      <TableCell className="text-center">
+                        {selectedDriver.totalQuantity.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center">100%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
