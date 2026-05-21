@@ -63,7 +63,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("driver_id, quantity, drivers(name)")
+          .select("driver_id, quantity, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -74,27 +74,45 @@ const DriverLoadsSummary = () => {
         from += pageSize;
       }
 
-      const map = new Map<string, DriverRow>();
+      const map = new Map<string, DriverRow & { _types: Map<string, TypeBreakdown> }>();
       for (const r of all) {
         const id = r.driver_id || "unknown";
         const name = (r as any).drivers?.name || "بدون سائق";
+        const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
-        const existing = map.get(id);
-        if (existing) {
-          existing.loadsCount += 1;
-          existing.totalQuantity += qty;
-        } else {
-          map.set(id, {
+        let existing = map.get(id);
+        if (!existing) {
+          existing = {
             driverId: id,
             driverName: name,
-            loadsCount: 1,
-            totalQuantity: qty,
-          });
+            loadsCount: 0,
+            totalQuantity: 0,
+            breakdown: [],
+            _types: new Map(),
+          };
+          map.set(id, existing);
+        }
+        existing.loadsCount += 1;
+        existing.totalQuantity += qty;
+        const t = existing._types.get(typeName);
+        if (t) {
+          t.loadsCount += 1;
+          t.totalQuantity += qty;
+        } else {
+          existing._types.set(typeName, { typeName, loadsCount: 1, totalQuantity: qty });
         }
       }
-      const result = Array.from(map.values()).sort(
-        (a, b) => b.totalQuantity - a.totalQuantity,
-      );
+      const result: DriverRow[] = Array.from(map.values())
+        .map((d) => ({
+          driverId: d.driverId,
+          driverName: d.driverName,
+          loadsCount: d.loadsCount,
+          totalQuantity: d.totalQuantity,
+          breakdown: Array.from(d._types.values()).sort(
+            (a, b) => b.totalQuantity - a.totalQuantity,
+          ),
+        }))
+        .sort((a, b) => b.totalQuantity - a.totalQuantity);
       setRows(result);
       toast({
         title: "تم إنشاء التقرير",
