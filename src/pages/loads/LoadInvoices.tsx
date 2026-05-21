@@ -1598,8 +1598,8 @@ const LoadInvoices = () => {
                 margin: 0 !important; padding: 0 !important;
                 background: #fff !important; box-shadow: none !important;
               }
-              .a4-sheet { box-shadow: none !important; margin: 0 !important; min-height: auto !important; }
-              .a4-inner { padding-top: 4mm !important; }
+              .a4-sheet { box-shadow: none !important; margin: 0 !important; width: 210mm !important; min-height: 297mm; }
+              .a4-inner { padding: 8mm 12mm 12mm !important; }
               .a4-table thead { display: table-header-group; }
               .a4-table tr { page-break-inside: avoid; }
             }
