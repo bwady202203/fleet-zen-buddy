@@ -710,6 +710,7 @@ const DriverLoadsSummary = () => {
                       <TableHead className="text-right">نوع الشحنة</TableHead>
                       <TableHead className="text-center">عدد الشحنات</TableHead>
                       <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                      <TableHead className="text-center">سعر الطن</TableHead>
                       <TableHead className="text-center">إجمالي العمولات</TableHead>
                       <TableHead className="text-center">إجمالي البيع</TableHead>
                       <TableHead className="text-center">النسبة</TableHead>
@@ -720,12 +721,21 @@ const DriverLoadsSummary = () => {
                       const pct = selectedDriver.totalQuantity > 0
                         ? (b.totalQuantity / selectedDriver.totalQuantity) * 100
                         : 0;
+                      const pricePerTon = b.totalQuantity > 0
+                        ? b.totalSales / b.totalQuantity
+                        : 0;
                       return (
                         <TableRow key={b.typeName}>
                           <TableCell className="font-semibold">{b.typeName}</TableCell>
                           <TableCell className="text-center">{b.loadsCount}</TableCell>
                           <TableCell className="text-center font-semibold text-primary">
                             {b.totalQuantity.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold text-amber-600">
+                            {pricePerTon.toLocaleString("en-US", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
@@ -753,6 +763,15 @@ const DriverLoadsSummary = () => {
                       <TableCell className="text-center">{selectedDriver.loadsCount}</TableCell>
                       <TableCell className="text-center">
                         {selectedDriver.totalQuantity.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center text-amber-700">
+                        {(selectedDriver.totalQuantity > 0
+                          ? selectedDriver.totalSales / selectedDriver.totalQuantity
+                          : 0
+                        ).toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
