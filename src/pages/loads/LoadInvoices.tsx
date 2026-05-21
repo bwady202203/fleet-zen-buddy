@@ -1605,7 +1605,7 @@ const LoadInvoices = () => {
             }
           `}</style>
 
-          <div className="a4-print-root py-4 print:py-0">
+          <div className="a4-print-root p-4 print:p-0 flex justify-center print:block">
             <div ref={printPreviewRef} className="a4-sheet" dir="rtl">
               <div className="a4-deco-1" />
               <div className="a4-deco-2" />
