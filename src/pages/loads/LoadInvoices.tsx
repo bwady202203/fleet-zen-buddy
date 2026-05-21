@@ -1644,7 +1644,7 @@ const LoadInvoices = () => {
                     ))}
                     <tr className="a4-totals-row">
                       <td colSpan={4} style={{ textAlign: 'left' }}>الإجماليات</td>
-                      <td>{statsData.totalAmount.toFixed(2) > 0 ? (statsData.totalAmount - statsData.totalTax).toFixed(2) : '0.00'}</td>
+                      <td>{(statsData.totalAmount - statsData.totalTax).toFixed(2)}</td>
                       <td>{statsData.totalTax.toFixed(2)}</td>
                       <td>{statsData.totalAmount.toFixed(2)}</td>
                     </tr>
