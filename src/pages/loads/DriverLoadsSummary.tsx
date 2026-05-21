@@ -17,12 +17,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface TypeBreakdown {
+  typeName: string;
+  loadsCount: number;
+  totalQuantity: number;
+}
 
 interface DriverRow {
   driverId: string;
   driverName: string;
   loadsCount: number;
   totalQuantity: number;
+  breakdown: TypeBreakdown[];
 }
 
 const DriverLoadsSummary = () => {
