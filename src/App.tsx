@@ -70,6 +70,7 @@ import LoadInvoices from "./pages/loads/LoadInvoices";
 import PaymentReceipts from "./pages/loads/PaymentReceipts";
 import LoadReports from "./pages/loads/LoadReports";
 import DriversPaymentReport from "./pages/loads/DriversPaymentReport";
+import DriverLoadsSummary from "./pages/loads/DriverLoadsSummary";
 import DailyReports from "./pages/loads/DailyReports";
 import LoadTypes from "./pages/loads/LoadTypes";
 import SuppliersManagement from "./pages/loads/SuppliersManagement";
