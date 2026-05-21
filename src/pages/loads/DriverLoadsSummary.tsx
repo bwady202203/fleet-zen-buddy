@@ -68,7 +68,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("driver_id, quantity, unit_price, commission_amount, total_amount, drivers(name), load_types(name)")
+          .select("id, driver_id, quantity, commission_amount, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -79,6 +79,22 @@ const DriverLoadsSummary = () => {
         from += pageSize;
       }
 
+      // جلب سعر البيع من بنود فواتير العملاء (load_invoice_items) لكل شحنة
+      const loadIds = all.map((r) => r.id).filter(Boolean);
+      const priceMap = new Map<string, number>();
+      const chunkSize = 500;
+      for (let i = 0; i < loadIds.length; i += chunkSize) {
+        const chunk = loadIds.slice(i, i + chunkSize);
+        const { data: items, error: itemsErr } = await supabase
+          .from("load_invoice_items")
+          .select("load_id, unit_price")
+          .in("load_id", chunk);
+        if (itemsErr) throw itemsErr;
+        (items || []).forEach((it: any) => {
+          if (it.load_id) priceMap.set(it.load_id, Number(it.unit_price || 0));
+        });
+      }
+
       const map = new Map<string, DriverRow & { _types: Map<string, TypeBreakdown> }>();
       for (const r of all) {
         const id = r.driver_id || "unknown";
@@ -86,8 +102,8 @@ const DriverLoadsSummary = () => {
         const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
         const com = Number(r.commission_amount || 0);
-        const unitPrice = Number(r.unit_price || 0);
-        // إجمالي البيع = الكمية × سعر الوحدة المسجل في الشحنة (سعر العميل)
+        const unitPrice = priceMap.get(r.id) || 0;
+        // إجمالي البيع = الكمية × سعر البيع من فاتورة العميل
         const sale = qty * unitPrice;
         let existing = map.get(id);
         if (!existing) {
