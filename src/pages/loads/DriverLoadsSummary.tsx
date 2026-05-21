@@ -50,6 +50,7 @@ const DriverLoadsSummary = () => {
   const [rows, setRows] = useState<DriverRow[]>([]);
   const [printedAt, setPrintedAt] = useState<Date | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<DriverRow | null>(null);
+  const [showTypeReport, setShowTypeReport] = useState(false);
 
   const handleGenerate = async () => {
     if (startDate > endDate) {
