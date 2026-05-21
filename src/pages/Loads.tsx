@@ -99,6 +99,15 @@ const Loads = () => {
       color: "from-green-500 to-green-600"
     },
     {
+      title: "ملخص شحنات السائقين",
+      titleEn: "Driver Loads Summary",
+      description: "عدد الشحنات وإجمالي الأطنان لكل سائق",
+      descriptionEn: "Loads count and total tons per driver",
+      icon: Truck,
+      link: "/loads/driver-loads-summary",
+      color: "from-rose-500 to-rose-600"
+    },
+    {
       title: "التقارير اليومية",
       titleEn: "Daily Reports",
       description: "تقارير الشركات والسائقين حسب التاريخ",
