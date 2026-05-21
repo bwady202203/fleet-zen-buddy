@@ -464,9 +464,15 @@ const DriverLoadsSummary = () => {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r, i) => (
-                    <TableRow key={r.driverId}>
+                    <TableRow
+                      key={r.driverId}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => setSelectedDriver(r)}
+                    >
                       <TableCell>{i + 1}</TableCell>
-                      <TableCell className="font-medium">{r.driverName}</TableCell>
+                      <TableCell className="font-medium text-primary underline-offset-2 hover:underline">
+                        {r.driverName}
+                      </TableCell>
                       <TableCell className="text-center">{r.loadsCount}</TableCell>
                       <TableCell className="text-center">
                         {r.totalQuantity.toLocaleString("en-US", {
@@ -474,7 +480,7 @@ const DriverLoadsSummary = () => {
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                         <Button
                           size="sm"
                           variant="ghost"
