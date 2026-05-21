@@ -68,7 +68,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("driver_id, quantity, commission_amount, total_amount, drivers(name), load_types(name)")
+          .select("driver_id, quantity, unit_price, commission_amount, total_amount, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -86,7 +86,9 @@ const DriverLoadsSummary = () => {
         const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
         const com = Number(r.commission_amount || 0);
-        const sale = Number(r.total_amount || 0);
+        const unitPrice = Number(r.unit_price || 0);
+        // إجمالي البيع = الكمية × سعر الوحدة المسجل في الشحنة (سعر العميل)
+        const sale = qty * unitPrice;
         let existing = map.get(id);
         if (!existing) {
           existing = {
