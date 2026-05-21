@@ -108,8 +108,114 @@ const DriverLoadsSummary = () => {
   );
 
   const handlePrint = () => {
-    setPrintedAt(new Date());
-    setTimeout(() => window.print(), 80);
+    const now = new Date();
+    setPrintedAt(now);
+    const dateStr = format(now, "PPP - p", { locale: ar });
+    const fmtNum = (n: number) =>
+      n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const rowsHtml = rows
+      .map(
+        (r, i) => `
+        <tr>
+          <td class="c">${i + 1}</td>
+          <td class="r b">${r.driverName}</td>
+          <td class="c">${r.loadsCount}</td>
+          <td class="c">${fmtNum(r.totalQuantity)}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8" />
+<title>تقرير شحنات السائقين</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 portrait; margin: 10mm 12mm 14mm 12mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; color: #1a1a1a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sheet { width: 186mm; margin: 0 auto; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0a4a8a; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .brand { font-size: 20pt; font-weight: 800; color: #0a4a8a; margin: 0; }
+  .subtitle { font-size: 11pt; color: #555; margin-top: 1mm; }
+  .meta { text-align: left; font-size: 9.5pt; color: #444; line-height: 1.7; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; margin-bottom: 5mm; }
+  .stat { border: 1px solid #d6dde6; border-radius: 4px; padding: 4mm; text-align: center; background: #f3f6fb; }
+  .stat .lbl { font-size: 9.5pt; color: #666; margin-bottom: 2mm; }
+  .stat .num { font-size: 18pt; font-weight: 800; color: #0a4a8a; }
+  .band { background: linear-gradient(135deg, #0a4a8a, #1366b8); color: #fff; padding: 3mm 5mm; border-radius: 4px; margin-bottom: 4mm; font-size: 12pt; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr { page-break-inside: avoid; }
+  th { background: #e8eef7; color: #0a4a8a; border: 1px solid #999; padding: 2mm; font-weight: 700; }
+  td { border: 1px solid #bbb; padding: 2mm; }
+  .c { text-align: center; }
+  .r { text-align: right; }
+  .b { font-weight: 600; }
+  tfoot td { background: #f3f6fb; font-weight: 700; }
+  .footer { margin-top: 6mm; padding-top: 2mm; border-top: 1px solid #ccc; display: flex; justify-content: space-between; font-size: 9pt; color: #666; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="header">
+    <div>
+      <h1 class="brand">شركة الرمال الصناعية</h1>
+      <div class="subtitle">تقرير شحنات السائقين</div>
+    </div>
+    <div class="meta">
+      تاريخ الطباعة: ${dateStr}<br/>
+      الفترة: من ${startDate} إلى ${endDate}<br/>
+      عدد السائقين: ${rows.length}
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="lbl">إجمالي السائقين</div><div class="num">${rows.length}</div></div>
+    <div class="stat"><div class="lbl">إجمالي الشحنات</div><div class="num">${totals.loads}</div></div>
+    <div class="stat"><div class="lbl">إجمالي الأطنان</div><div class="num">${fmtNum(totals.qty)}</div></div>
+  </div>
+
+  <div class="band">تفاصيل أداء السائقين</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:12mm">#</th>
+        <th>اسم السائق</th>
+        <th style="width:30mm">عدد الشحنات</th>
+        <th style="width:35mm">إجمالي الأطنان</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2" class="r">الإجمالي</td>
+        <td class="c">${totals.loads}</td>
+        <td class="c">${fmtNum(totals.qty)}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="footer">
+    <span>شركة الرمال الصناعية © ${new Date().getFullYear()}</span>
+    <span>تم الطباعة في: ${dateStr}</span>
+  </div>
+</div>
+<script>window.onload = () => { setTimeout(() => { window.print(); setTimeout(() => window.close(), 400); }, 250); };</script>
+</body>
+</html>`;
+
+    const w = window.open("", "_blank", "width=900,height=1000");
+    if (!w) {
+      toast({ title: "تعذر فتح نافذة الطباعة", description: "يرجى السماح بالنوافذ المنبثقة", variant: "destructive" });
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
   };
 
   const handlePrintDriver = (driver: DriverRow) => {
