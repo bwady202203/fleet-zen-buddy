@@ -463,10 +463,16 @@ const DriverLoadsSummary = () => {
             </p>
           </div>
           {rows.length > 0 && (
-            <Button onClick={handlePrint} variant="outline">
-              <Printer className="h-4 w-4 ml-2" />
-              طباعة التقرير الكامل
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowTypeReport(true)} variant="outline" title="تقرير عام حسب نوع الشحنة">
+                <Package className="h-4 w-4 ml-2" />
+                تقرير حسب الفئة
+              </Button>
+              <Button onClick={handlePrint} variant="outline">
+                <Printer className="h-4 w-4 ml-2" />
+                طباعة التقرير الكامل
+              </Button>
+            </div>
           )}
         </div>
       </header>
