@@ -155,6 +155,8 @@ const DriverLoadsSummary = () => {
     () => ({
       loads: rows.reduce((s, r) => s + r.loadsCount, 0),
       qty: rows.reduce((s, r) => s + r.totalQuantity, 0),
+      commission: rows.reduce((s, r) => s + r.totalCommission, 0),
+      sales: rows.reduce((s, r) => s + r.totalSales, 0),
     }),
     [rows],
   );
