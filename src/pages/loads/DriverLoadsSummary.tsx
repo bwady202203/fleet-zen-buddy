@@ -82,18 +82,26 @@ const DriverLoadsSummary = () => {
       // جلب سعر البيع من بنود فواتير العملاء (load_invoice_items) لكل شحنة
       const loadIds = all.map((r) => r.id).filter(Boolean);
       const priceMap = new Map<string, number>();
-      const chunkSize = 500;
-      for (let i = 0; i < loadIds.length; i += chunkSize) {
-        const chunk = loadIds.slice(i, i + chunkSize);
-        const { data: items, error: itemsErr } = await supabase
-          .from("load_invoice_items")
-          .select("load_id, unit_price")
-          .in("load_id", chunk);
-        if (itemsErr) throw itemsErr;
-        (items || []).forEach((it: any) => {
-          if (it.load_id) priceMap.set(it.load_id, Number(it.unit_price || 0));
-        });
+      const chunkSize = 200;
+      try {
+        for (let i = 0; i < loadIds.length; i += chunkSize) {
+          const chunk = loadIds.slice(i, i + chunkSize);
+          const { data: items, error: itemsErr } = await supabase
+            .from("load_invoice_items")
+            .select("load_id, unit_price")
+            .in("load_id", chunk);
+          if (itemsErr) {
+            console.warn("load_invoice_items fetch error:", itemsErr);
+            break;
+          }
+          (items || []).forEach((it: any) => {
+            if (it.load_id) priceMap.set(it.load_id, Number(it.unit_price || 0));
+          });
+        }
+      } catch (priceErr) {
+        console.warn("price fetch failed, continuing without sales", priceErr);
       }
+
 
       const map = new Map<string, DriverRow & { _types: Map<string, TypeBreakdown> }>();
       for (const r of all) {
