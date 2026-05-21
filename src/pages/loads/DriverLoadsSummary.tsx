@@ -481,7 +481,9 @@ const DriverLoadsSummary = () => {
                     <TableHead className="text-right">اسم السائق</TableHead>
                     <TableHead className="text-center">عدد الشحنات</TableHead>
                     <TableHead className="text-center">إجمالي الأطنان</TableHead>
-                    <TableHead className="text-center w-32">طباعة</TableHead>
+                    <TableHead className="text-center">إجمالي العمولات</TableHead>
+                    <TableHead className="text-center">إجمالي البيع للعملاء</TableHead>
+                    <TableHead className="text-center w-24">طباعة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -498,6 +500,18 @@ const DriverLoadsSummary = () => {
                       <TableCell className="text-center">{r.loadsCount}</TableCell>
                       <TableCell className="text-center">
                         {r.totalQuantity.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-emerald-600">
+                        {r.totalCommission.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-blue-600">
+                        {r.totalSales.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -521,6 +535,18 @@ const DriverLoadsSummary = () => {
                     <TableCell className="text-center">{totals.loads}</TableCell>
                     <TableCell className="text-center">
                       {totals.qty.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-center text-emerald-700">
+                      {totals.commission.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-center text-blue-700">
+                      {totals.sales.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
