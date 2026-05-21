@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown } from "lucide-react";
+import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,7 @@ const DriverLoadsSummary = () => {
   const [rows, setRows] = useState<DriverRow[]>([]);
   const [printedAt, setPrintedAt] = useState<Date | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<DriverRow | null>(null);
+  const [showTypeReport, setShowTypeReport] = useState(false);
 
   const handleGenerate = async () => {
     if (startDate > endDate) {
@@ -82,18 +83,26 @@ const DriverLoadsSummary = () => {
       // جلب سعر البيع من بنود فواتير العملاء (load_invoice_items) لكل شحنة
       const loadIds = all.map((r) => r.id).filter(Boolean);
       const priceMap = new Map<string, number>();
-      const chunkSize = 500;
-      for (let i = 0; i < loadIds.length; i += chunkSize) {
-        const chunk = loadIds.slice(i, i + chunkSize);
-        const { data: items, error: itemsErr } = await supabase
-          .from("load_invoice_items")
-          .select("load_id, unit_price")
-          .in("load_id", chunk);
-        if (itemsErr) throw itemsErr;
-        (items || []).forEach((it: any) => {
-          if (it.load_id) priceMap.set(it.load_id, Number(it.unit_price || 0));
-        });
+      const chunkSize = 200;
+      try {
+        for (let i = 0; i < loadIds.length; i += chunkSize) {
+          const chunk = loadIds.slice(i, i + chunkSize);
+          const { data: items, error: itemsErr } = await supabase
+            .from("load_invoice_items")
+            .select("load_id, unit_price")
+            .in("load_id", chunk);
+          if (itemsErr) {
+            console.warn("load_invoice_items fetch error:", itemsErr);
+            break;
+          }
+          (items || []).forEach((it: any) => {
+            if (it.load_id) priceMap.set(it.load_id, Number(it.unit_price || 0));
+          });
+        }
+      } catch (priceErr) {
+        console.warn("price fetch failed, continuing without sales", priceErr);
       }
+
 
       const map = new Map<string, DriverRow & { _types: Map<string, TypeBreakdown> }>();
       for (const r of all) {
@@ -178,6 +187,26 @@ const DriverLoadsSummary = () => {
     }),
     [rows],
   );
+
+  // تجميع عام حسب نوع الشحنة عبر كل السائقين
+  const typeSummary = useMemo(() => {
+    const map = new Map<string, TypeBreakdown>();
+    rows.forEach((r) =>
+      r.breakdown.forEach((b) => {
+        const existing = map.get(b.typeName);
+        if (existing) {
+          existing.loadsCount += b.loadsCount;
+          existing.totalQuantity += b.totalQuantity;
+          existing.totalCommission += b.totalCommission;
+          existing.totalSales += b.totalSales;
+        } else {
+          map.set(b.typeName, { ...b });
+        }
+      }),
+    );
+    return Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
+  }, [rows]);
+
 
   const handlePrint = () => {
     const now = new Date();
@@ -434,10 +463,16 @@ const DriverLoadsSummary = () => {
             </p>
           </div>
           {rows.length > 0 && (
-            <Button onClick={handlePrint} variant="outline">
-              <Printer className="h-4 w-4 ml-2" />
-              طباعة التقرير الكامل
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowTypeReport(true)} variant="outline" title="تقرير عام حسب نوع الشحنة">
+                <Package className="h-4 w-4 ml-2" />
+                تقرير حسب الفئة
+              </Button>
+              <Button onClick={handlePrint} variant="outline">
+                <Printer className="h-4 w-4 ml-2" />
+                طباعة التقرير الكامل
+              </Button>
+            </div>
           )}
         </div>
       </header>
@@ -811,6 +846,71 @@ const DriverLoadsSummary = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* تقرير عام حسب نوع الشحنة */}
+      <Dialog open={showTypeReport} onOpenChange={setShowTypeReport}>
+        <DialogContent className="max-w-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              تقرير عام: المبيعات حسب فئة الشحنة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted">
+                  <TableHead className="text-right">نوع الشحنة</TableHead>
+                  <TableHead className="text-center">عدد الشحنات</TableHead>
+                  <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                  <TableHead className="text-center">سعر الطن</TableHead>
+                  <TableHead className="text-center">إجمالي العمولات</TableHead>
+                  <TableHead className="text-center">إجمالي البيع</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {typeSummary.map((t) => {
+                  const ppt = t.totalQuantity > 0 ? t.totalSales / t.totalQuantity : 0;
+                  return (
+                    <TableRow key={t.typeName}>
+                      <TableCell className="font-semibold">{t.typeName}</TableCell>
+                      <TableCell className="text-center">{t.loadsCount}</TableCell>
+                      <TableCell className="text-center font-semibold text-primary">
+                        {t.totalQuantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-amber-600">
+                        {ppt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-emerald-600">
+                        {t.totalCommission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold text-blue-600">
+                        {t.totalSales.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                <TableRow className="bg-muted font-bold">
+                  <TableCell>الإجمالي</TableCell>
+                  <TableCell className="text-center">{totals.loads}</TableCell>
+                  <TableCell className="text-center">
+                    {totals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-center text-amber-700">
+                    {(totals.qty > 0 ? totals.sales / totals.qty : 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-center text-emerald-700">
+                    {totals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-center text-blue-700">
+                    {totals.sales.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
