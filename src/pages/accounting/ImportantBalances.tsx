@@ -641,7 +641,7 @@ const ImportantBalances = () => {
                     const isToday = isSameDay(dateObj, today);
                     const hasMovement = day.debit > 0 || day.credit > 0;
                     return (
-                      <Card key={day.date} className={`overflow-hidden ${isToday ? 'ring-2 ring-primary' : ''} ${!hasMovement ? 'opacity-70' : ''}`}>
+                      <Card key={day.date} className={`overflow-hidden ${isToday ? 'ring-2 ring-primary' : ''} ${!hasMovement ? 'bg-blue-50/70 border-blue-100' : ''}`}>
                         <div className="bg-muted/60 px-3 py-1.5 flex items-center justify-between border-b">
                           <span className="text-xs font-bold">{dayNames[dow]} {dateObj.getDate()}</span>
                           <span className="text-[10px] text-muted-foreground font-mono">{day.date}</span>
