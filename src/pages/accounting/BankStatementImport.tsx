@@ -352,6 +352,21 @@ export default function BankStatementImport() {
       )
     : accounts;
 
+  // Normalize any date string to yyyy-MM-dd; fallback to entryDate
+  const normalizeDate = (raw: string): string => {
+    if (!raw) return entryDate;
+    const s = raw.trim();
+    // yyyy-mm-dd or yyyy/mm/dd
+    let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    // dd-mm-yyyy or dd/mm/yyyy
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return format(d, 'yyyy-MM-dd');
+    return entryDate;
+  };
+
   const handleSaveAsJournalEntry = async () => {
     const rowsWithAccounts = parsedBankStatements.filter(r => r.selectedAccountId);
     
@@ -360,64 +375,82 @@ export default function BankStatementImport() {
       return;
     }
 
-    // Calculate totals for selected rows only
-    const selectedTotalDebit = rowsWithAccounts.reduce((sum, r) => sum + r.debit, 0);
-    const selectedTotalCredit = rowsWithAccounts.reduce((sum, r) => sum + r.credit, 0);
+    // Group rows by normalized date
+    const groups = new Map<string, BankStatementRow[]>();
+    for (const row of rowsWithAccounts) {
+      const d = normalizeDate(row.date);
+      if (!groups.has(d)) groups.set(d, []);
+      groups.get(d)!.push(row);
+    }
 
-    // Check if entry is balanced
-    if (Math.abs(selectedTotalDebit - selectedTotalCredit) > 0.01) {
-      toast.error(`القيد غير متوازن - المدين: ${selectedTotalDebit.toLocaleString()} | الدائن: ${selectedTotalCredit.toLocaleString()}`);
+    // Validate balance per group
+    const unbalanced: string[] = [];
+    for (const [d, rows] of groups) {
+      const td = rows.reduce((s, r) => s + r.debit, 0);
+      const tc = rows.reduce((s, r) => s + r.credit, 0);
+      if (Math.abs(td - tc) > 0.01) {
+        unbalanced.push(`${d} (مدين: ${td.toLocaleString()} | دائن: ${tc.toLocaleString()})`);
+      }
+    }
+    if (unbalanced.length > 0) {
+      toast.error(`قيود غير متوازنة في التواريخ التالية: ${unbalanced.join(' ، ')}`);
       return;
     }
 
     setIsSaving(true);
     try {
-      // Get next entry number
-      const currentYear = new Date().getFullYear();
-      const { data: existingEntries } = await supabase
-        .from("journal_entries")
-        .select("entry_number")
-        .like("entry_number", `JE-${currentYear}%`)
-        .order("entry_number", { ascending: false })
-        .limit(1);
+      const sortedDates = Array.from(groups.keys()).sort();
+      const savedNumbers: string[] = [];
 
-      let nextNumber = 1;
-      if (existingEntries && existingEntries.length > 0) {
-        const lastNumber = parseInt(existingEntries[0].entry_number.slice(-6)) || 0;
-        nextNumber = lastNumber + 1;
+      for (const dateKey of sortedDates) {
+        const rows = groups.get(dateKey)!;
+        const yearOfEntry = new Date(dateKey).getFullYear();
+
+        // Get next entry number for this year
+        const { data: existingEntries } = await supabase
+          .from("journal_entries")
+          .select("entry_number")
+          .like("entry_number", `JE-${yearOfEntry}%`)
+          .order("entry_number", { ascending: false })
+          .limit(1);
+
+        let nextNumber = 1;
+        if (existingEntries && existingEntries.length > 0) {
+          const lastNumber = parseInt(existingEntries[0].entry_number.slice(-6)) || 0;
+          nextNumber = lastNumber + 1;
+        }
+        const entryNumber = `JE-${yearOfEntry}${nextNumber.toString().padStart(6, '0')}`;
+
+        const { data: journalEntry, error: entryError } = await supabase
+          .from("journal_entries")
+          .insert({
+            entry_number: entryNumber,
+            date: dateKey,
+            description: entryDescription || `استيراد كشف حساب بنكي - ${dateKey}`,
+            reference: "bank_statement_import",
+          })
+          .select()
+          .single();
+
+        if (entryError) throw entryError;
+
+        const lines = rows.map(row => ({
+          journal_entry_id: journalEntry.id,
+          account_id: row.selectedAccountId,
+          debit: row.debit,
+          credit: row.credit,
+          description: row.description,
+        }));
+
+        const { error: linesError } = await supabase
+          .from("journal_entry_lines")
+          .insert(lines);
+
+        if (linesError) throw linesError;
+        savedNumbers.push(entryNumber);
       }
-      const entryNumber = `JE-${currentYear}${nextNumber.toString().padStart(6, '0')}`;
 
-      // Create journal entry
-      const { data: journalEntry, error: entryError } = await supabase
-        .from("journal_entries")
-        .insert({
-          entry_number: entryNumber,
-          date: entryDate,
-          description: entryDescription || "استيراد كشف حساب بنكي",
-          reference: "bank_statement_import",
-        })
-        .select()
-        .single();
-
-      if (entryError) throw entryError;
-
-      // Create journal entry lines
-      const lines = rowsWithAccounts.map(row => ({
-        journal_entry_id: journalEntry.id,
-        account_id: row.selectedAccountId,
-        debit: row.debit,
-        credit: row.credit,
-        description: row.description,
-      }));
-
-      const { error: linesError } = await supabase
-        .from("journal_entry_lines")
-        .insert(lines);
-
-      if (linesError) throw linesError;
-
-      toast.success(`تم حفظ القيد رقم ${entryNumber} بنجاح - إجمالي: ${selectedTotalDebit.toLocaleString()} ريال`);
+      toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join('، ')})`);
       
       // Clear form
       setBankStatementData("");
