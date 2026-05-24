@@ -568,8 +568,8 @@ const ImportantBalances = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="monthly" className="mt-0">
-          <div className="container mx-auto px-4 py-4 space-y-4">
+        <TabsContent value="monthly" className="mt-0" dir="rtl">
+          <div className="container mx-auto px-4 py-4 space-y-4" dir="rtl">
             {/* Controls: account select + month nav */}
             <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
               <div className="flex items-center gap-2 flex-1 min-w-[260px]">
