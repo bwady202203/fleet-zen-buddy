@@ -210,6 +210,106 @@ const ImportantBalances = () => {
     setAllAccounts(data || []);
   };
 
+  // Load accounts list for monthly tab selector
+  useEffect(() => {
+    if (activeTab === 'monthly' && allAccountsList.length === 0) {
+      supabase
+        .from('chart_of_accounts')
+        .select('id, code, name_ar')
+        .eq('level', 4)
+        .order('code')
+        .then(({ data }) => setAllAccountsList(data || []));
+    }
+  }, [activeTab]);
+
+  // Default monthly account to first watched if not set
+  useEffect(() => {
+    if (activeTab === 'monthly' && !monthlyAccountId && watchedAccounts.length > 0) {
+      setMonthlyAccountId(watchedAccounts[0].account_id);
+    }
+  }, [activeTab, watchedAccounts]);
+
+  const loadMonthlyView = async () => {
+    if (!monthlyAccountId) return;
+    setMonthlyLoading(true);
+    try {
+      const monthStart = startOfMonth(monthlyDate);
+      const monthEnd = endOfMonth(monthlyDate);
+      const monthStartStr = format(monthStart, 'yyyy-MM-dd');
+      const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
+
+      // 1) Opening balance before the month
+      let openingBalance = 0;
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch } = await supabase
+          .from('journal_entry_lines')
+          .select('debit, credit, journal_entries!inner(date)')
+          .eq('account_id', monthlyAccountId)
+          .lt('journal_entries.date', monthStartStr)
+          .range(from, from + batchSize - 1);
+        if (batch && batch.length > 0) {
+          batch.forEach((l: any) => { openingBalance += (l.debit || 0) - (l.credit || 0); });
+          hasMore = batch.length === batchSize;
+          from += batchSize;
+        } else hasMore = false;
+      }
+
+      // 2) Fetch this month's lines grouped by date
+      const dailyMap = new Map<string, { debit: number; credit: number }>();
+      from = 0; hasMore = true;
+      while (hasMore) {
+        const { data: batch } = await supabase
+          .from('journal_entry_lines')
+          .select('debit, credit, journal_entries!inner(date)')
+          .eq('account_id', monthlyAccountId)
+          .gte('journal_entries.date', monthStartStr)
+          .lte('journal_entries.date', monthEndStr)
+          .range(from, from + batchSize - 1);
+        if (batch && batch.length > 0) {
+          batch.forEach((l: any) => {
+            const d = l.journal_entries?.date;
+            if (!d) return;
+            const cur = dailyMap.get(d) || { debit: 0, credit: 0 };
+            cur.debit += (l.debit || 0);
+            cur.credit += (l.credit || 0);
+            dailyMap.set(d, cur);
+          });
+          hasMore = batch.length === batchSize;
+          from += batchSize;
+        } else hasMore = false;
+      }
+
+      // 3) Build per-day rows
+      const totalDays = getDaysInMonth(monthlyDate);
+      const year = monthlyDate.getFullYear();
+      const month = monthlyDate.getMonth();
+      let running = openingBalance;
+      const rows: Array<{ date: string; opening: number; debit: number; credit: number; closing: number }> = [];
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = format(new Date(year, month, d), 'yyyy-MM-dd');
+        const m = dailyMap.get(dateStr) || { debit: 0, credit: 0 };
+        const opening = running;
+        const closing = opening + m.debit - m.credit;
+        rows.push({ date: dateStr, opening, debit: m.debit, credit: m.credit, closing });
+        running = closing;
+      }
+      setMonthlyDays(rows);
+    } catch (err) {
+      console.error('Error loading monthly view:', err);
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'monthly' && monthlyAccountId) {
+      loadMonthlyView();
+    }
+  }, [activeTab, monthlyAccountId, monthlyDate]);
+
   const handleOpenAdd = () => {
     loadAllAccounts();
     setAccountSearch("");
