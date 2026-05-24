@@ -51,6 +51,14 @@ const ImportantBalances = () => {
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
+  // Monthly view state
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly'>('overview');
+  const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
+  const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [monthlyDays, setMonthlyDays] = useState<Array<{ date: string; opening: number; debit: number; credit: number; closing: number }>>([]);
+  const [allAccountsList, setAllAccountsList] = useState<any[]>([]);
+
   // Generate current month days
   const currentMonthDays = useMemo(() => {
     const now = new Date();
