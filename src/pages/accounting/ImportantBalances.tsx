@@ -4,11 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays, LayoutGrid, CalendarRange, ChevronRight, ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, getDaysInMonth, isSameDay } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, getDaysInMonth, isSameDay, addMonths } from "date-fns";
 import { ar } from "date-fns/locale";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -48,6 +50,14 @@ const ImportantBalances = () => {
   const [ledgerAccount, setLedgerAccount] = useState<WatchedAccount | null>(null);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [ledgerLoading, setLedgerLoading] = useState(false);
+
+  // Monthly view state
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly'>('overview');
+  const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
+  const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [monthlyDays, setMonthlyDays] = useState<Array<{ date: string; opening: number; debit: number; credit: number; closing: number }>>([]);
+  const [allAccountsList, setAllAccountsList] = useState<any[]>([]);
 
   // Generate current month days
   const currentMonthDays = useMemo(() => {
@@ -200,6 +210,106 @@ const ImportantBalances = () => {
     setAllAccounts(data || []);
   };
 
+  // Load accounts list for monthly tab selector
+  useEffect(() => {
+    if (activeTab === 'monthly' && allAccountsList.length === 0) {
+      supabase
+        .from('chart_of_accounts')
+        .select('id, code, name_ar')
+        .eq('level', 4)
+        .order('code')
+        .then(({ data }) => setAllAccountsList(data || []));
+    }
+  }, [activeTab]);
+
+  // Default monthly account to first watched if not set
+  useEffect(() => {
+    if (activeTab === 'monthly' && !monthlyAccountId && watchedAccounts.length > 0) {
+      setMonthlyAccountId(watchedAccounts[0].account_id);
+    }
+  }, [activeTab, watchedAccounts]);
+
+  const loadMonthlyView = async () => {
+    if (!monthlyAccountId) return;
+    setMonthlyLoading(true);
+    try {
+      const monthStart = startOfMonth(monthlyDate);
+      const monthEnd = endOfMonth(monthlyDate);
+      const monthStartStr = format(monthStart, 'yyyy-MM-dd');
+      const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
+
+      // 1) Opening balance before the month
+      let openingBalance = 0;
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: batch } = await supabase
+          .from('journal_entry_lines')
+          .select('debit, credit, journal_entries!inner(date)')
+          .eq('account_id', monthlyAccountId)
+          .lt('journal_entries.date', monthStartStr)
+          .range(from, from + batchSize - 1);
+        if (batch && batch.length > 0) {
+          batch.forEach((l: any) => { openingBalance += (l.debit || 0) - (l.credit || 0); });
+          hasMore = batch.length === batchSize;
+          from += batchSize;
+        } else hasMore = false;
+      }
+
+      // 2) Fetch this month's lines grouped by date
+      const dailyMap = new Map<string, { debit: number; credit: number }>();
+      from = 0; hasMore = true;
+      while (hasMore) {
+        const { data: batch } = await supabase
+          .from('journal_entry_lines')
+          .select('debit, credit, journal_entries!inner(date)')
+          .eq('account_id', monthlyAccountId)
+          .gte('journal_entries.date', monthStartStr)
+          .lte('journal_entries.date', monthEndStr)
+          .range(from, from + batchSize - 1);
+        if (batch && batch.length > 0) {
+          batch.forEach((l: any) => {
+            const d = l.journal_entries?.date;
+            if (!d) return;
+            const cur = dailyMap.get(d) || { debit: 0, credit: 0 };
+            cur.debit += (l.debit || 0);
+            cur.credit += (l.credit || 0);
+            dailyMap.set(d, cur);
+          });
+          hasMore = batch.length === batchSize;
+          from += batchSize;
+        } else hasMore = false;
+      }
+
+      // 3) Build per-day rows
+      const totalDays = getDaysInMonth(monthlyDate);
+      const year = monthlyDate.getFullYear();
+      const month = monthlyDate.getMonth();
+      let running = openingBalance;
+      const rows: Array<{ date: string; opening: number; debit: number; credit: number; closing: number }> = [];
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = format(new Date(year, month, d), 'yyyy-MM-dd');
+        const m = dailyMap.get(dateStr) || { debit: 0, credit: 0 };
+        const opening = running;
+        const closing = opening + m.debit - m.credit;
+        rows.push({ date: dateStr, opening, debit: m.debit, credit: m.credit, closing });
+        running = closing;
+      }
+      setMonthlyDays(rows);
+    } catch (err) {
+      console.error('Error loading monthly view:', err);
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'monthly' && monthlyAccountId) {
+      loadMonthlyView();
+    }
+  }, [activeTab, monthlyAccountId, monthlyDate]);
+
   const handleOpenAdd = () => {
     loadAllAccounts();
     setAccountSearch("");
@@ -321,126 +431,255 @@ const ImportantBalances = () => {
         </div>
       </header>
 
-      {/* Current Month Days Strip */}
-      <div className="border-b bg-card/50 print:hidden">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">
-              أيام {format(today, 'MMMM yyyy', { locale: ar })}
-            </span>
-          </div>
-          <ScrollArea className="w-full" dir="rtl">
-            <div className="flex gap-1.5 pb-2">
-              {currentMonthDays.map((day) => {
-                const isToday = isSameDay(day, today);
-                const isSelected = dateFilter === 'specificDay' && specificDay && isSameDay(day, specificDay);
-                const isFuture = day > today;
-                const dayOfWeek = day.getDay();
-                const isFriday = dayOfWeek === 5;
-                
-                return (
-                  <button
-                    key={day.getDate()}
-                    disabled={isFuture}
-                    onClick={() => handleDayClick(day)}
-                    className={`flex flex-col items-center min-w-[3rem] px-2 py-1.5 rounded-lg border text-xs transition-all ${
-                      isSelected
-                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                        : isToday
-                        ? 'bg-accent text-accent-foreground border-accent font-bold'
-                        : isFuture
-                        ? 'opacity-30 cursor-not-allowed border-border'
-                        : isFriday
-                        ? 'border-border bg-muted/30 hover:bg-muted hover:border-primary/30'
-                        : 'border-border hover:bg-muted hover:border-primary/30 cursor-pointer'
-                    }`}
-                  >
-                    <span className="text-[10px] leading-tight opacity-70">{dayNames[dayOfWeek]}</span>
-                    <span className="text-sm font-bold leading-tight">{day.getDate()}</span>
-                  </button>
-                );
-              })}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly')} className="w-full">
+        <div className="container mx-auto px-4 pt-3 print:hidden">
+          <TabsList>
+            <TabsTrigger value="overview" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              نظرة عامة
+            </TabsTrigger>
+            <TabsTrigger value="monthly" className="gap-2">
+              <CalendarRange className="h-4 w-4" />
+              عرض شهري
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="mt-0">
+          {/* Current Month Days Strip */}
+          <div className="border-b bg-card/50 print:hidden">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center gap-2 mb-2">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">
+                  أيام {format(today, 'MMMM yyyy', { locale: ar })}
+                </span>
+              </div>
+              <ScrollArea className="w-full" dir="rtl">
+                <div className="flex gap-1.5 pb-2">
+                  {currentMonthDays.map((day) => {
+                    const isToday = isSameDay(day, today);
+                    const isSelected = dateFilter === 'specificDay' && specificDay && isSameDay(day, specificDay);
+                    const isFuture = day > today;
+                    const dayOfWeek = day.getDay();
+                    const isFriday = dayOfWeek === 5;
+                    
+                    return (
+                      <button
+                        key={day.getDate()}
+                        disabled={isFuture}
+                        onClick={() => handleDayClick(day)}
+                        className={`flex flex-col items-center min-w-[3rem] px-2 py-1.5 rounded-lg border text-xs transition-all ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            : isToday
+                            ? 'bg-accent text-accent-foreground border-accent font-bold'
+                            : isFuture
+                            ? 'opacity-30 cursor-not-allowed border-border'
+                            : isFriday
+                            ? 'border-border bg-muted/30 hover:bg-muted hover:border-primary/30'
+                            : 'border-border hover:bg-muted hover:border-primary/30 cursor-pointer'
+                        }`}
+                      >
+                        <span className="text-[10px] leading-tight opacity-70">{dayNames[dayOfWeek]}</span>
+                        <span className="text-sm font-bold leading-tight">{day.getDate()}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
-      </div>
-
-      {/* Quick Filters */}
-      <div className="container mx-auto px-4 py-3 print:hidden">
-        <div className="flex flex-wrap gap-2">
-          {filterButtons.map(f => (
-            <Button
-              key={f.key}
-              variant={dateFilter === f.key ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => { setDateFilter(f.key); setSpecificDay(null); }}
-              className="rounded-full"
-            >
-              {f.label}
-            </Button>
-          ))}
-        </div>
-        {dateRange && (
-          <p className="text-xs text-muted-foreground mt-2">
-            {dateFilter === 'specificDay' && specificDay
-              ? `اليوم: ${format(specificDay, 'EEEE yyyy/MM/dd', { locale: ar })}`
-              : `الفترة: ${format(dateRange.start, 'yyyy/MM/dd', { locale: ar })} - ${format(dateRange.end, 'yyyy/MM/dd', { locale: ar })}`
-            }
-          </p>
-        )}
-      </div>
-
-      {/* Accounts Grid */}
-      <div className="container mx-auto px-4 pb-8">
-        {loading ? (
-          <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
-        ) : watchedAccounts.length === 0 ? (
-          <div className="text-center py-20">
-            <Eye className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-lg text-muted-foreground">لا توجد حسابات مراقبة</p>
-            <p className="text-sm text-muted-foreground mb-4">أضف حسابات هامة لمراقبة أرصدتها</p>
-            <Button onClick={handleOpenAdd} className="gap-2">
-              <Plus className="h-4 w-4" />إضافة حساب
-            </Button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {watchedAccounts.map(acc => (
-              <Card key={acc.id} className="relative group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleOpenLedger(acc)}>
+
+          {/* Quick Filters */}
+          <div className="container mx-auto px-4 py-3 print:hidden">
+            <div className="flex flex-wrap gap-2">
+              {filterButtons.map(f => (
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-destructive hover:bg-destructive/10 z-10"
-                  onClick={(e) => { e.stopPropagation(); handleRemove(acc.id); }}
+                  key={f.key}
+                  variant={dateFilter === f.key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setDateFilter(f.key); setSpecificDay(null); }}
+                  className="rounded-full"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  {f.label}
                 </Button>
-                <CardContent className="pt-5 pb-4 px-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{acc.account_code}</span>
-                    <span className="text-sm font-semibold truncate">{acc.account_name}</span>
-                  </div>
-                  
-                  <div className={`text-2xl font-bold mb-3 flex items-center gap-2 ${
-                    acc.balance > 0 ? 'text-emerald-600' : acc.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
-                  }`}>
-                    {acc.balance > 0 ? <TrendingUp className="h-5 w-5" /> : acc.balance < 0 ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-                    {formatNum(Math.abs(acc.balance))}
-                    <span className="text-xs font-normal">{acc.balance > 0 ? 'مدين' : acc.balance < 0 ? 'دائن' : ''}</span>
-                  </div>
-
-                  <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
-                    <span>مدين: {formatNum(acc.totalDebit)}</span>
-                    <span>دائن: {formatNum(acc.totalCredit)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+              ))}
+            </div>
+            {dateRange && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {dateFilter === 'specificDay' && specificDay
+                  ? `اليوم: ${format(specificDay, 'EEEE yyyy/MM/dd', { locale: ar })}`
+                  : `الفترة: ${format(dateRange.start, 'yyyy/MM/dd', { locale: ar })} - ${format(dateRange.end, 'yyyy/MM/dd', { locale: ar })}`
+                }
+              </p>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Accounts Grid */}
+          <div className="container mx-auto px-4 pb-8">
+            {loading ? (
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
+            ) : watchedAccounts.length === 0 ? (
+              <div className="text-center py-20">
+                <Eye className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <p className="text-lg text-muted-foreground">لا توجد حسابات مراقبة</p>
+                <p className="text-sm text-muted-foreground mb-4">أضف حسابات هامة لمراقبة أرصدتها</p>
+                <Button onClick={handleOpenAdd} className="gap-2">
+                  <Plus className="h-4 w-4" />إضافة حساب
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {watchedAccounts.map(acc => (
+                  <Card key={acc.id} className="relative group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleOpenLedger(acc)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-destructive hover:bg-destructive/10 z-10"
+                      onClick={(e) => { e.stopPropagation(); handleRemove(acc.id); }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <CardContent className="pt-5 pb-4 px-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">{acc.account_code}</span>
+                        <span className="text-sm font-semibold truncate">{acc.account_name}</span>
+                      </div>
+                      
+                      <div className={`text-2xl font-bold mb-3 flex items-center gap-2 ${
+                        acc.balance > 0 ? 'text-emerald-600' : acc.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
+                      }`}>
+                        {acc.balance > 0 ? <TrendingUp className="h-5 w-5" /> : acc.balance < 0 ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                        {formatNum(Math.abs(acc.balance))}
+                        <span className="text-xs font-normal">{acc.balance > 0 ? 'مدين' : acc.balance < 0 ? 'دائن' : ''}</span>
+                      </div>
+
+                      <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
+                        <span>مدين: {formatNum(acc.totalDebit)}</span>
+                        <span>دائن: {formatNum(acc.totalCredit)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="monthly" className="mt-0">
+          <div className="container mx-auto px-4 py-4 space-y-4">
+            {/* Controls: account select + month nav */}
+            <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">الحساب:</span>
+                <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="اختر حساباً" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[400px]">
+                    {allAccountsList.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        <span className="font-mono text-xs ml-2">{a.code}</span>
+                        {a.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => subMonths(d, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <div className="min-w-[140px] text-center font-bold">
+                  {format(monthlyDate, 'MMMM yyyy', { locale: ar })}
+                </div>
+                <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => addMonths(d, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
+                  الشهر الحالي
+                </Button>
+              </div>
+            </div>
+
+            {!monthlyAccountId ? (
+              <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب لعرض الأرصدة الشهرية</div>
+            ) : monthlyLoading ? (
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
+            ) : (
+              <>
+                {/* Month summary */}
+                {monthlyDays.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Card><CardContent className="p-3">
+                      <div className="text-xs text-muted-foreground">رصيد أول الشهر</div>
+                      <div className="text-lg font-bold">{formatNum(Math.abs(monthlyDays[0].opening))} <span className="text-xs">{monthlyDays[0].opening >= 0 ? 'مدين' : 'دائن'}</span></div>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-3">
+                      <div className="text-xs text-muted-foreground">إجمالي المدين</div>
+                      <div className="text-lg font-bold text-red-600">{formatNum(monthlyDays.reduce((s, d) => s + d.debit, 0))}</div>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-3">
+                      <div className="text-xs text-muted-foreground">إجمالي الدائن</div>
+                      <div className="text-lg font-bold text-emerald-600">{formatNum(monthlyDays.reduce((s, d) => s + d.credit, 0))}</div>
+                    </CardContent></Card>
+                    <Card><CardContent className="p-3">
+                      <div className="text-xs text-muted-foreground">رصيد نهاية الشهر</div>
+                      <div className="text-lg font-bold">{formatNum(Math.abs(monthlyDays[monthlyDays.length - 1].closing))} <span className="text-xs">{monthlyDays[monthlyDays.length - 1].closing >= 0 ? 'مدين' : 'دائن'}</span></div>
+                    </CardContent></Card>
+                  </div>
+                )}
+
+                {/* Daily boxes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {monthlyDays.map(day => {
+                    const dateObj = new Date(day.date);
+                    const dow = dateObj.getDay();
+                    const isToday = isSameDay(dateObj, today);
+                    const hasMovement = day.debit > 0 || day.credit > 0;
+                    return (
+                      <Card key={day.date} className={`overflow-hidden ${isToday ? 'ring-2 ring-primary' : ''} ${!hasMovement ? 'opacity-70' : ''}`}>
+                        <div className="bg-muted/60 px-3 py-1.5 flex items-center justify-between border-b">
+                          <span className="text-xs font-bold">{dayNames[dow]} {dateObj.getDate()}</span>
+                          <span className="text-[10px] text-muted-foreground font-mono">{day.date}</span>
+                        </div>
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">الرصيد السابق</span>
+                            <span className="font-semibold">
+                              {formatNum(Math.abs(day.opening))}
+                              <span className="text-[10px] mr-1">{day.opening >= 0 ? 'مدين' : 'دائن'}</span>
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs bg-muted/30 rounded px-2 py-1">
+                            <span className="text-muted-foreground">حركة اليوم</span>
+                            <div className="flex flex-col items-end leading-tight">
+                              {day.debit > 0 && <span className="text-red-600 font-semibold">+{formatNum(day.debit)} مدين</span>}
+                              {day.credit > 0 && <span className="text-emerald-600 font-semibold">-{formatNum(day.credit)} دائن</span>}
+                              {!hasMovement && <span className="text-muted-foreground">لا توجد حركة</span>}
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center text-sm pt-1 border-t">
+                            <span className="font-medium">الرصيد الختامي</span>
+                            <span className={`font-bold ${day.closing > 0 ? 'text-red-600' : day.closing < 0 ? 'text-emerald-600' : ''}`}>
+                              {formatNum(Math.abs(day.closing))}
+                              <span className="text-[10px] mr-1">{day.closing > 0 ? 'مدين' : day.closing < 0 ? 'دائن' : '-'}</span>
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
 
       {/* Add Account Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
