@@ -161,6 +161,8 @@ const LoadsRegister = () => {
         unit_price: unitPrice,
         total_amount: totalAmount,
         commission_amount: commissionAmount,
+        driver_commission: parseFloat(formData.driverCommission) || 0,
+        delivery_commission: parseFloat(formData.deliveryCommission) || 0,
         notes: formData.notes || null,
         created_by: user?.id
       });
@@ -183,6 +185,8 @@ const LoadsRegister = () => {
         truckNumber: '',
         quantity: '1',
         unitPrice: '0',
+        driverCommission: '0',
+        deliveryCommission: '0',
         notes: ''
       });
     } catch (error: any) {
