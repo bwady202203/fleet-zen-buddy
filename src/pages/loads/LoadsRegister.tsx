@@ -114,20 +114,38 @@ const LoadsRegister = () => {
     }
   }, [formData.companyId, formData.loadTypeId, formData.quantity]);
 
-  // Auto-load driver/delivery commissions from company data
+  // Auto-load driver/delivery commissions from company data (always fetch latest)
   useEffect(() => {
     if (!formData.companyId) {
       setFormData(prev => ({ ...prev, driverCommission: '0', deliveryCommission: '0' }));
       return;
     }
-    const company = companies.find(c => c.id === formData.companyId);
-    if (company) {
-      setFormData(prev => ({
-        ...prev,
-        driverCommission: (company.driver_commission ?? 0).toString(),
-        deliveryCommission: (company.delivery_commission ?? 0).toString()
-      }));
-    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('driver_commission, delivery_commission')
+        .eq('id', formData.companyId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!error && data) {
+        setFormData(prev => ({
+          ...prev,
+          driverCommission: (data.driver_commission ?? 0).toString(),
+          deliveryCommission: (data.delivery_commission ?? 0).toString()
+        }));
+      } else {
+        const company = companies.find(c => c.id === formData.companyId);
+        if (company) {
+          setFormData(prev => ({
+            ...prev,
+            driverCommission: (company.driver_commission ?? 0).toString(),
+            deliveryCommission: (company.delivery_commission ?? 0).toString()
+          }));
+        }
+      }
+    })();
+    return () => { cancelled = true; };
   }, [formData.companyId, companies]);
 
   const handleSubmit = async (e: React.FormEvent) => {
