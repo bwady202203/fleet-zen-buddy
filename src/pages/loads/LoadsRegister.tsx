@@ -410,6 +410,37 @@ const LoadsRegister = () => {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="driverCommission">عمولة السائق / Driver Commission</Label>
+                  <Input
+                    id="driverCommission"
+                    type="number"
+                    step="0.01"
+                    value={formData.driverCommission}
+                    onChange={(e) => setFormData({ ...formData, driverCommission: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  {formData.companyId && (
+                    <p className="text-xs text-muted-foreground">يتم استدعاؤها تلقائياً من بيانات الشركة</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryCommission">عمولة التوصيل / Delivery Commission</Label>
+                  <Input
+                    id="deliveryCommission"
+                    type="number"
+                    step="0.01"
+                    value={formData.deliveryCommission}
+                    onChange={(e) => setFormData({ ...formData, deliveryCommission: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  {formData.companyId && (
+                    <p className="text-xs text-muted-foreground">يتم استدعاؤها تلقائياً من بيانات الشركة</p>
+                  )}
+                </div>
+
+
                 {/* عرض المبلغ الإجمالي المحسوب */}
                 <div className="space-y-2 md:col-span-2">
                   <Label>المبلغ الإجمالي المحسوب / Calculated Total</Label>
