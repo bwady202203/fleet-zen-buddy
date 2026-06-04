@@ -135,7 +135,9 @@ const CompaniesManagement = () => {
       tax_number: company.tax_number || '',
       commercial_registration: company.commercial_registration || '',
       address: company.address || '',
-      account_id: company.account_id || ''
+      account_id: company.account_id || '',
+      driver_commission: (company.driver_commission ?? 0).toString(),
+      delivery_commission: (company.delivery_commission ?? 0).toString()
     });
     const acc = accounts.find(a => a.id === company.account_id);
     setAccountSearch(acc ? `${acc.code} - ${acc.name_ar}` : '');
