@@ -28,6 +28,8 @@ const LoadsRegister = () => {
     truckNumber: '',
     quantity: '1',
     unitPrice: '0',
+    driverCommission: '0',
+    deliveryCommission: '0',
     notes: ''
   });
   const [isCommissionBased, setIsCommissionBased] = useState(false);
