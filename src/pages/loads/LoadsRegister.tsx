@@ -114,6 +114,22 @@ const LoadsRegister = () => {
     }
   }, [formData.companyId, formData.loadTypeId, formData.quantity]);
 
+  // Auto-load driver/delivery commissions from company data
+  useEffect(() => {
+    if (!formData.companyId) {
+      setFormData(prev => ({ ...prev, driverCommission: '0', deliveryCommission: '0' }));
+      return;
+    }
+    const company = companies.find(c => c.id === formData.companyId);
+    if (company) {
+      setFormData(prev => ({
+        ...prev,
+        driverCommission: (company.driver_commission ?? 0).toString(),
+        deliveryCommission: (company.delivery_commission ?? 0).toString()
+      }));
+    }
+  }, [formData.companyId, companies]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
