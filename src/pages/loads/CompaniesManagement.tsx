@@ -253,6 +253,30 @@ const CompaniesManagement = () => {
                     placeholder="أدخل العنوان / Enter address"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="driver_commission">عمولة السائق / Driver Commission</Label>
+                    <Input
+                      id="driver_commission"
+                      type="number"
+                      step="0.01"
+                      value={formData.driver_commission}
+                      onChange={(e) => setFormData({ ...formData, driver_commission: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery_commission">عمولة التوصيل / Delivery Commission</Label>
+                    <Input
+                      id="delivery_commission"
+                      type="number"
+                      step="0.01"
+                      value={formData.delivery_commission}
+                      onChange={(e) => setFormData({ ...formData, delivery_commission: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="account">الحساب المحاسبي / Linked Account</Label>
                   <Input
