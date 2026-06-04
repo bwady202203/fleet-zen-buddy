@@ -32,7 +32,9 @@ const CompaniesManagement = () => {
     tax_number: '',
     commercial_registration: '',
     address: '',
-    account_id: '' as string | ''
+    account_id: '' as string | '',
+    driver_commission: '0',
+    delivery_commission: '0'
   });
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
