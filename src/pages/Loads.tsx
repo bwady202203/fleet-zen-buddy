@@ -117,6 +117,15 @@ const Loads = () => {
       color: "from-lime-500 to-lime-600"
     },
     {
+      title: "تقرير العمولات",
+      titleEn: "Commissions Report",
+      description: "عمولات السائق والتوصيل بالفلاتر",
+      descriptionEn: "Driver & delivery commissions with filters",
+      icon: BadgeDollarSign,
+      link: "/loads/commissions-report",
+      color: "from-fuchsia-500 to-fuchsia-600"
+    },
+    {
       title: "سندات التسليم",
       titleEn: "Delivery Receipts",
       description: "إدارة سندات التسليم والاستلام",
