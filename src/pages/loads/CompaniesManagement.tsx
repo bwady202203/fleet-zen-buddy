@@ -110,7 +110,7 @@ const CompaniesManagement = () => {
         });
       }
 
-      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' });
+      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '', driver_commission: '0', delivery_commission: '0' });
       setAccountSearch('');
       setEditingCompany(null);
       setDialogOpen(false);
@@ -185,7 +185,7 @@ const CompaniesManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' }); setAccountSearch(''); }}>
+              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '', driver_commission: '0', delivery_commission: '0' }); setAccountSearch(''); }}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة شركة / Add Company
               </Button>
