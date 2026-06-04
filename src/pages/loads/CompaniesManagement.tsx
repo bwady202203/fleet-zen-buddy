@@ -84,6 +84,8 @@ const CompaniesManagement = () => {
         commercial_registration: formData.commercial_registration,
         address: formData.address,
         account_id: formData.account_id || null,
+        driver_commission: parseFloat(formData.driver_commission) || 0,
+        delivery_commission: parseFloat(formData.delivery_commission) || 0,
       };
       if (editingCompany) {
         const { error } = await supabase
