@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList, BadgeDollarSign } from "lucide-react";
 import DeliverySystemAuth from "@/components/DeliverySystemAuth";
 
 const Loads = () => {
@@ -115,6 +115,15 @@ const Loads = () => {
       icon: FileText,
       link: "/loads/daily-reports",
       color: "from-lime-500 to-lime-600"
+    },
+    {
+      title: "تقرير العمولات",
+      titleEn: "Commissions Report",
+      description: "عمولات السائق والتوصيل بالفلاتر",
+      descriptionEn: "Driver & delivery commissions with filters",
+      icon: BadgeDollarSign,
+      link: "/loads/commissions-report",
+      color: "from-fuchsia-500 to-fuchsia-600"
     },
     {
       title: "سندات التسليم",
