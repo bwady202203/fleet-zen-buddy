@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList, BadgeDollarSign } from "lucide-react";
 import DeliverySystemAuth from "@/components/DeliverySystemAuth";
 
 const Loads = () => {
