@@ -356,6 +356,8 @@ export type Database = {
           address: string | null
           commercial_registration: string | null
           created_at: string | null
+          delivery_commission: number
+          driver_commission: number
           email: string | null
           id: string
           is_active: boolean | null
@@ -372,6 +374,8 @@ export type Database = {
           address?: string | null
           commercial_registration?: string | null
           created_at?: string | null
+          delivery_commission?: number
+          driver_commission?: number
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -388,6 +392,8 @@ export type Database = {
           address?: string | null
           commercial_registration?: string | null
           created_at?: string | null
+          delivery_commission?: number
+          driver_commission?: number
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -1818,6 +1824,8 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           date: string
+          delivery_commission: number
+          driver_commission: number
           driver_id: string | null
           id: string
           invoice_date: string | null
@@ -1839,6 +1847,8 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           date?: string
+          delivery_commission?: number
+          driver_commission?: number
           driver_id?: string | null
           id?: string
           invoice_date?: string | null
@@ -1860,6 +1870,8 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           date?: string
+          delivery_commission?: number
+          driver_commission?: number
           driver_id?: string | null
           id?: string
           invoice_date?: string | null

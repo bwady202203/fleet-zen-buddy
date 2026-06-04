@@ -28,6 +28,8 @@ const LoadsRegister = () => {
     truckNumber: '',
     quantity: '1',
     unitPrice: '0',
+    driverCommission: '0',
+    deliveryCommission: '0',
     notes: ''
   });
   const [isCommissionBased, setIsCommissionBased] = useState(false);
@@ -112,6 +114,22 @@ const LoadsRegister = () => {
     }
   }, [formData.companyId, formData.loadTypeId, formData.quantity]);
 
+  // Auto-load driver/delivery commissions from company data
+  useEffect(() => {
+    if (!formData.companyId) {
+      setFormData(prev => ({ ...prev, driverCommission: '0', deliveryCommission: '0' }));
+      return;
+    }
+    const company = companies.find(c => c.id === formData.companyId);
+    if (company) {
+      setFormData(prev => ({
+        ...prev,
+        driverCommission: (company.driver_commission ?? 0).toString(),
+        deliveryCommission: (company.delivery_commission ?? 0).toString()
+      }));
+    }
+  }, [formData.companyId, companies]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -159,6 +177,8 @@ const LoadsRegister = () => {
         unit_price: unitPrice,
         total_amount: totalAmount,
         commission_amount: commissionAmount,
+        driver_commission: parseFloat(formData.driverCommission) || 0,
+        delivery_commission: parseFloat(formData.deliveryCommission) || 0,
         notes: formData.notes || null,
         created_by: user?.id
       });
@@ -181,6 +201,8 @@ const LoadsRegister = () => {
         truckNumber: '',
         quantity: '1',
         unitPrice: '0',
+        driverCommission: '0',
+        deliveryCommission: '0',
         notes: ''
       });
     } catch (error: any) {
@@ -387,6 +409,37 @@ const LoadsRegister = () => {
                     </p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="driverCommission">عمولة السائق / Driver Commission</Label>
+                  <Input
+                    id="driverCommission"
+                    type="number"
+                    step="0.01"
+                    value={formData.driverCommission}
+                    onChange={(e) => setFormData({ ...formData, driverCommission: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  {formData.companyId && (
+                    <p className="text-xs text-muted-foreground">يتم استدعاؤها تلقائياً من بيانات الشركة</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryCommission">عمولة التوصيل / Delivery Commission</Label>
+                  <Input
+                    id="deliveryCommission"
+                    type="number"
+                    step="0.01"
+                    value={formData.deliveryCommission}
+                    onChange={(e) => setFormData({ ...formData, deliveryCommission: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  {formData.companyId && (
+                    <p className="text-xs text-muted-foreground">يتم استدعاؤها تلقائياً من بيانات الشركة</p>
+                  )}
+                </div>
+
 
                 {/* عرض المبلغ الإجمالي المحسوب */}
                 <div className="space-y-2 md:col-span-2">

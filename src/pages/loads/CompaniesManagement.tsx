@@ -32,7 +32,9 @@ const CompaniesManagement = () => {
     tax_number: '',
     commercial_registration: '',
     address: '',
-    account_id: '' as string | ''
+    account_id: '' as string | '',
+    driver_commission: '0',
+    delivery_commission: '0'
   });
   const [commissionsDialogOpen, setCommissionsDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
@@ -82,6 +84,8 @@ const CompaniesManagement = () => {
         commercial_registration: formData.commercial_registration,
         address: formData.address,
         account_id: formData.account_id || null,
+        driver_commission: parseFloat(formData.driver_commission) || 0,
+        delivery_commission: parseFloat(formData.delivery_commission) || 0,
       };
       if (editingCompany) {
         const { error } = await supabase
@@ -106,7 +110,7 @@ const CompaniesManagement = () => {
         });
       }
 
-      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' });
+      setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '', driver_commission: '0', delivery_commission: '0' });
       setAccountSearch('');
       setEditingCompany(null);
       setDialogOpen(false);
@@ -131,7 +135,9 @@ const CompaniesManagement = () => {
       tax_number: company.tax_number || '',
       commercial_registration: company.commercial_registration || '',
       address: company.address || '',
-      account_id: company.account_id || ''
+      account_id: company.account_id || '',
+      driver_commission: (company.driver_commission ?? 0).toString(),
+      delivery_commission: (company.delivery_commission ?? 0).toString()
     });
     const acc = accounts.find(a => a.id === company.account_id);
     setAccountSearch(acc ? `${acc.code} - ${acc.name_ar}` : '');
@@ -181,7 +187,7 @@ const CompaniesManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '' }); setAccountSearch(''); }}>
+              <Button onClick={() => { setEditingCompany(null); setFormData({ name: '', phone: '', email: '', tax_number: '', commercial_registration: '', address: '', account_id: '', driver_commission: '0', delivery_commission: '0' }); setAccountSearch(''); }}>
                 <Plus className="h-4 w-4 ml-2" />
                 إضافة شركة / Add Company
               </Button>
@@ -246,6 +252,30 @@ const CompaniesManagement = () => {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="أدخل العنوان / Enter address"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="driver_commission">عمولة السائق / Driver Commission</Label>
+                    <Input
+                      id="driver_commission"
+                      type="number"
+                      step="0.01"
+                      value={formData.driver_commission}
+                      onChange={(e) => setFormData({ ...formData, driver_commission: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery_commission">عمولة التوصيل / Delivery Commission</Label>
+                    <Input
+                      id="delivery_commission"
+                      type="number"
+                      step="0.01"
+                      value={formData.delivery_commission}
+                      onChange={(e) => setFormData({ ...formData, delivery_commission: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="account">الحساب المحاسبي / Linked Account</Label>
