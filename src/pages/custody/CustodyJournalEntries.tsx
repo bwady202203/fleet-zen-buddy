@@ -280,6 +280,103 @@ const CustodyJournalEntries = () => {
       <CustodyNavbar />
 
       <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Filters Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              فلاتر البحث
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Date From */}
+              <div className="space-y-2">
+                <Label>التاريخ من</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !dateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, 'PPP', { locale: ar }) : <span>اختر التاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-2">
+                <Label>التاريخ إلى</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !dateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, 'PPP', { locale: ar }) : <span>اختر التاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Credit Account */}
+              <div className="space-y-2">
+                <Label>الحساب الدائن</Label>
+                <Select
+                  value={creditAccountFilter}
+                  onValueChange={setCreditAccountFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الحساب الدائن" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">الكل</SelectItem>
+                    {creditAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <Button variant="outline" onClick={clearFilters} size="sm">
+                <X className="ml-2 h-4 w-4" />
+                إعادة تعيين
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Custody Journal Entries from intermediate table */}
         {custodyEntries.length > 0 && (
           <Card className="mb-6">
