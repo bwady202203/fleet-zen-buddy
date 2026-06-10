@@ -378,7 +378,7 @@ const CustodyJournalEntries = () => {
         </Card>
 
         {/* Custody Journal Entries from intermediate table */}
-        {custodyEntries.length > 0 && (
+        {filteredCustodyEntries.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>قيود مصروفات العهد</CardTitle>
@@ -398,7 +398,7 @@ const CustodyJournalEntries = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {custodyEntries.map((entry) => (
+                  {filteredCustodyEntries.map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">
                         {entry.journal_entries?.entry_number || '-'}
@@ -426,20 +426,34 @@ const CustodyJournalEntries = () => {
                   ))}
                   <TableRow className="bg-muted/50 font-bold">
                     <TableCell colSpan={5} className="text-left">
-                      الإجمالي
+                      الإجمالي ({filteredCustodyEntries.length} قيد)
                     </TableCell>
                     <TableCell className="text-destructive">
-                      {custodyEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
+                      {custodyTotals.amount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                     <TableCell>
-                      {custodyEntries.reduce((sum, e) => sum + Number(e.tax_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
+                      {custodyTotals.tax.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                     <TableCell className="text-primary">
-                      {custodyEntries.reduce((sum, e) => sum + Number(e.total_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
+                      {custodyTotals.total.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        )}
+        {filteredCustodyEntries.length === 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>قيود مصروفات العهد</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg">
+                  لا توجد قيود مطابقة للفلاتر المحددة
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
