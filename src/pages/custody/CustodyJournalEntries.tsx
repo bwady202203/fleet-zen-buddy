@@ -182,19 +182,55 @@ const CustodyJournalEntries = () => {
     fetchAllEntries(true);
   };
 
+  const clearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setCreditAccountFilter('all');
+  };
+
+  // Filter custody entries
+  const filteredCustodyEntries = useMemo(() => {
+    return custodyEntries.filter(entry => {
+      const entryDate = new Date(entry.entry_date);
+      if (dateFrom && entryDate < new Date(dateFrom.setHours(0,0,0,0))) return false;
+      if (dateTo && entryDate > new Date(dateTo.setHours(23,59,59,999))) return false;
+      if (creditAccountFilter && creditAccountFilter !== 'all' && entry.credit_account_id !== creditAccountFilter) return false;
+      return true;
+    });
+  }, [custodyEntries, dateFrom, dateTo, creditAccountFilter]);
+
+  // Filter journal entries by date range
+  const filteredJournalEntries = useMemo(() => {
+    return journalEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      if (dateFrom && entryDate < new Date(dateFrom.setHours(0,0,0,0))) return false;
+      if (dateTo && entryDate > new Date(dateTo.setHours(23,59,59,999))) return false;
+      return true;
+    });
+  }, [journalEntries, dateFrom, dateTo]);
+
+  // Calculate totals from filtered data
+  const custodyTotals = useMemo(() => {
+    return {
+      amount: filteredCustodyEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0),
+      tax: filteredCustodyEntries.reduce((sum, e) => sum + Number(e.tax_amount || 0), 0),
+      total: filteredCustodyEntries.reduce((sum, e) => sum + Number(e.total_amount || 0), 0)
+    };
+  }, [filteredCustodyEntries]);
+
   const calculateTotals = () => {
     let totalDebit = 0;
     let totalCredit = 0;
 
-    // Calculate from custody entries
-    custodyEntries.forEach(entry => {
+    // Calculate from filtered custody entries
+    filteredCustodyEntries.forEach(entry => {
       totalDebit += Number(entry.amount || 0) + Number(entry.tax_amount || 0);
       totalCredit += Number(entry.total_amount || 0);
     });
 
-    // If no custody entries, calculate from journal entries
-    if (custodyEntries.length === 0) {
-      journalEntries.forEach(entry => {
+    // If no custody entries, calculate from filtered journal entries
+    if (filteredCustodyEntries.length === 0) {
+      filteredJournalEntries.forEach(entry => {
         entry.journal_entry_lines?.forEach(line => {
           totalDebit += Number(line.debit || 0);
           totalCredit += Number(line.credit || 0);
@@ -243,7 +279,7 @@ const CustodyJournalEntries = () => {
 
       <CustodyNavbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 space-y-6">
         {/* Custody Journal Entries from intermediate table */}
         {custodyEntries.length > 0 && (
           <Card className="mb-6">
