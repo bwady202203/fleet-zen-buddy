@@ -112,6 +112,18 @@ const CustodyJournalEntries = () => {
       if (journalError) throw journalError;
 
       setJournalEntries((journalData || []) as JournalEntry[]);
+
+      // Fetch unique credit accounts for filter dropdown
+      const { data: accountData, error: accountError } = await supabase
+        .from('custody_journal_entries')
+        .select('credit_account_id, credit_account_name')
+        .not('credit_account_id', 'is', null)
+        .order('credit_account_name', { ascending: true });
+
+      if (!accountError && accountData) {
+        const uniqueAccounts = [...new Map(accountData.map(item => [item.credit_account_id, { id: item.credit_account_id, name: item.credit_account_name }])).values()];
+        setCreditAccounts(uniqueAccounts as {id: string; name: string}[]);
+      }
       
       if (showToast) {
         toast.success('تم تحديث البيانات بنجاح');
