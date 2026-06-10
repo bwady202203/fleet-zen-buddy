@@ -1,11 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, CalendarIcon, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CustodyNavbar from '@/components/CustodyNavbar';
 import { toast } from 'sonner';
@@ -55,6 +59,12 @@ const CustodyJournalEntries = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Filter states
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [creditAccountFilter, setCreditAccountFilter] = useState<string>('all');
+  const [creditAccounts, setCreditAccounts] = useState<{id: string; name: string}[]>([]);
+
   // Fetch all entries - wrapped in useCallback
   const fetchAllEntries = useCallback(async (showToast = false) => {
     if (showToast) {
@@ -101,6 +111,18 @@ const CustodyJournalEntries = () => {
       if (journalError) throw journalError;
 
       setJournalEntries((journalData || []) as JournalEntry[]);
+
+      // Fetch unique credit accounts for filter dropdown
+      const { data: accountData, error: accountError } = await supabase
+        .from('custody_journal_entries')
+        .select('credit_account_id, credit_account_name')
+        .not('credit_account_id', 'is', null)
+        .order('credit_account_name', { ascending: true });
+
+      if (!accountError && accountData) {
+        const uniqueAccounts = [...new Map(accountData.map(item => [item.credit_account_id, { id: item.credit_account_id, name: item.credit_account_name }])).values()];
+        setCreditAccounts(uniqueAccounts as {id: string; name: string}[]);
+      }
       
       if (showToast) {
         toast.success('تم تحديث البيانات بنجاح');
@@ -159,19 +181,55 @@ const CustodyJournalEntries = () => {
     fetchAllEntries(true);
   };
 
+  const clearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setCreditAccountFilter('all');
+  };
+
+  // Filter custody entries
+  const filteredCustodyEntries = useMemo(() => {
+    return custodyEntries.filter(entry => {
+      const entryDate = new Date(entry.entry_date);
+      if (dateFrom && entryDate < new Date(dateFrom.setHours(0,0,0,0))) return false;
+      if (dateTo && entryDate > new Date(dateTo.setHours(23,59,59,999))) return false;
+      if (creditAccountFilter && creditAccountFilter !== 'all' && entry.credit_account_id !== creditAccountFilter) return false;
+      return true;
+    });
+  }, [custodyEntries, dateFrom, dateTo, creditAccountFilter]);
+
+  // Filter journal entries by date range
+  const filteredJournalEntries = useMemo(() => {
+    return journalEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      if (dateFrom && entryDate < new Date(dateFrom.setHours(0,0,0,0))) return false;
+      if (dateTo && entryDate > new Date(dateTo.setHours(23,59,59,999))) return false;
+      return true;
+    });
+  }, [journalEntries, dateFrom, dateTo]);
+
+  // Calculate totals from filtered data
+  const custodyTotals = useMemo(() => {
+    return {
+      amount: filteredCustodyEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0),
+      tax: filteredCustodyEntries.reduce((sum, e) => sum + Number(e.tax_amount || 0), 0),
+      total: filteredCustodyEntries.reduce((sum, e) => sum + Number(e.total_amount || 0), 0)
+    };
+  }, [filteredCustodyEntries]);
+
   const calculateTotals = () => {
     let totalDebit = 0;
     let totalCredit = 0;
 
-    // Calculate from custody entries
-    custodyEntries.forEach(entry => {
+    // Calculate from filtered custody entries
+    filteredCustodyEntries.forEach(entry => {
       totalDebit += Number(entry.amount || 0) + Number(entry.tax_amount || 0);
       totalCredit += Number(entry.total_amount || 0);
     });
 
-    // If no custody entries, calculate from journal entries
-    if (custodyEntries.length === 0) {
-      journalEntries.forEach(entry => {
+    // If no custody entries, calculate from filtered journal entries
+    if (filteredCustodyEntries.length === 0) {
+      filteredJournalEntries.forEach(entry => {
         entry.journal_entry_lines?.forEach(line => {
           totalDebit += Number(line.debit || 0);
           totalCredit += Number(line.credit || 0);
@@ -220,9 +278,106 @@ const CustodyJournalEntries = () => {
 
       <CustodyNavbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Filters Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              فلاتر البحث
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Date From */}
+              <div className="space-y-2">
+                <Label>التاريخ من</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !dateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, 'PPP', { locale: ar }) : <span>اختر التاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-2">
+                <Label>التاريخ إلى</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !dateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, 'PPP', { locale: ar }) : <span>اختر التاريخ</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Credit Account */}
+              <div className="space-y-2">
+                <Label>الحساب الدائن</Label>
+                <Select
+                  value={creditAccountFilter}
+                  onValueChange={setCreditAccountFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الحساب الدائن" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">الكل</SelectItem>
+                    {creditAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <Button variant="outline" onClick={clearFilters} size="sm">
+                <X className="ml-2 h-4 w-4" />
+                إعادة تعيين
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Custody Journal Entries from intermediate table */}
-        {custodyEntries.length > 0 && (
+        {filteredCustodyEntries.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>قيود مصروفات العهد</CardTitle>
@@ -242,7 +397,7 @@ const CustodyJournalEntries = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {custodyEntries.map((entry) => (
+                  {filteredCustodyEntries.map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">
                         {entry.journal_entries?.entry_number || '-'}
@@ -270,20 +425,34 @@ const CustodyJournalEntries = () => {
                   ))}
                   <TableRow className="bg-muted/50 font-bold">
                     <TableCell colSpan={5} className="text-left">
-                      الإجمالي
+                      الإجمالي ({filteredCustodyEntries.length} قيد)
                     </TableCell>
                     <TableCell className="text-destructive">
-                      {custodyEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
+                      {custodyTotals.amount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                     <TableCell>
-                      {custodyEntries.reduce((sum, e) => sum + Number(e.tax_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
+                      {custodyTotals.tax.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                     <TableCell className="text-primary">
-                      {custodyEntries.reduce((sum, e) => sum + Number(e.total_amount || 0), 0).toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
+                      {custodyTotals.total.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} ريال
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        )}
+        {filteredCustodyEntries.length === 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>قيود مصروفات العهد</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg">
+                  لا توجد قيود مطابقة للفلاتر المحددة
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -294,7 +463,7 @@ const CustodyJournalEntries = () => {
             <CardTitle>سجل القيود اليومية الكامل</CardTitle>
           </CardHeader>
           <CardContent>
-            {journalEntries.length === 0 ? (
+            {filteredJournalEntries.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-lg">
                   لا توجد قيود حالياً
@@ -314,7 +483,7 @@ const CustodyJournalEntries = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {journalEntries.map((entry) => (
+                    {filteredJournalEntries.map((entry) => (
                       <>
                         {entry.journal_entry_lines?.map((line, index) => (
                           <TableRow key={`${entry.id}-${line.id}`}>
