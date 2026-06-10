@@ -464,7 +464,7 @@ const CustodyJournalEntries = () => {
             <CardTitle>سجل القيود اليومية الكامل</CardTitle>
           </CardHeader>
           <CardContent>
-            {journalEntries.length === 0 ? (
+            {filteredJournalEntries.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-lg">
                   لا توجد قيود حالياً
@@ -484,7 +484,7 @@ const CustodyJournalEntries = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {journalEntries.map((entry) => (
+                    {filteredJournalEntries.map((entry) => (
                       <>
                         {entry.journal_entry_lines?.map((line, index) => (
                           <TableRow key={`${entry.id}-${line.id}`}>
