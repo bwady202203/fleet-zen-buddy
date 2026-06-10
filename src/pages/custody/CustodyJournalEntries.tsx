@@ -60,6 +60,12 @@ const CustodyJournalEntries = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Filter states
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [creditAccountFilter, setCreditAccountFilter] = useState<string>('all');
+  const [creditAccounts, setCreditAccounts] = useState<{id: string; name: string}[]>([]);
+
   // Fetch all entries - wrapped in useCallback
   const fetchAllEntries = useCallback(async (showToast = false) => {
     if (showToast) {
