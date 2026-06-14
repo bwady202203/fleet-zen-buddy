@@ -305,10 +305,15 @@ const ImportantBalances = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'monthly' && monthlyAccountId) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement') && monthlyAccountId) {
       loadMonthlyView();
     }
   }, [activeTab, monthlyAccountId, monthlyDate]);
+
+  const noMovementDays = useMemo(
+    () => monthlyDays.filter(d => d.debit === 0 && d.credit === 0),
+    [monthlyDays]
+  );
 
   const handleOpenAdd = () => {
     loadAllAccounts();
