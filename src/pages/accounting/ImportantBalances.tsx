@@ -224,7 +224,7 @@ const ImportantBalances = () => {
 
   // Default monthly account to first watched if not set
   useEffect(() => {
-    if (activeTab === 'monthly' && !monthlyAccountId && watchedAccounts.length > 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement') && !monthlyAccountId && watchedAccounts.length > 0) {
       setMonthlyAccountId(watchedAccounts[0].account_id);
     }
   }, [activeTab, watchedAccounts]);
