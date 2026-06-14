@@ -52,7 +52,7 @@ const ImportantBalances = () => {
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
   // Monthly view state
-  const [activeTab, setActiveTab] = useState<'overview' | 'monthly'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement'>('overview');
   const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
   const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
   const [monthlyLoading, setMonthlyLoading] = useState(false);
