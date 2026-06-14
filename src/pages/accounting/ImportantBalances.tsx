@@ -52,7 +52,7 @@ const ImportantBalances = () => {
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
   // Monthly view state
-  const [activeTab, setActiveTab] = useState<'overview' | 'monthly'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement'>('overview');
   const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
   const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
   const [monthlyLoading, setMonthlyLoading] = useState(false);
@@ -212,7 +212,7 @@ const ImportantBalances = () => {
 
   // Load accounts list for monthly tab selector
   useEffect(() => {
-    if (activeTab === 'monthly' && allAccountsList.length === 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement') && allAccountsList.length === 0) {
       supabase
         .from('chart_of_accounts')
         .select('id, code, name_ar')
@@ -224,7 +224,7 @@ const ImportantBalances = () => {
 
   // Default monthly account to first watched if not set
   useEffect(() => {
-    if (activeTab === 'monthly' && !monthlyAccountId && watchedAccounts.length > 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement') && !monthlyAccountId && watchedAccounts.length > 0) {
       setMonthlyAccountId(watchedAccounts[0].account_id);
     }
   }, [activeTab, watchedAccounts]);
@@ -305,10 +305,15 @@ const ImportantBalances = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'monthly' && monthlyAccountId) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement') && monthlyAccountId) {
       loadMonthlyView();
     }
   }, [activeTab, monthlyAccountId, monthlyDate]);
+
+  const noMovementDays = useMemo(
+    () => monthlyDays.filter(d => d.debit === 0 && d.credit === 0),
+    [monthlyDays]
+  );
 
   const handleOpenAdd = () => {
     loadAllAccounts();
@@ -431,7 +436,7 @@ const ImportantBalances = () => {
         </div>
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement')} className="w-full">
         <div className="container mx-auto px-4 pt-3 print:hidden">
           <TabsList>
             <TabsTrigger value="overview" className="gap-2">
@@ -441,6 +446,10 @@ const ImportantBalances = () => {
             <TabsTrigger value="monthly" className="gap-2">
               <CalendarRange className="h-4 w-4" />
               عرض شهري
+            </TabsTrigger>
+            <TabsTrigger value="noMovement" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              أيام بدون حركة
             </TabsTrigger>
           </TabsList>
         </div>
@@ -675,6 +684,92 @@ const ImportantBalances = () => {
                   })}
                 </div>
               </>
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="noMovement" className="mt-0" dir="rtl">
+          <div className="container mx-auto px-4 py-4 space-y-4" dir="rtl">
+            {/* Controls: account select + month nav */}
+            <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">الحساب:</span>
+                <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="اختر حساباً" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[400px]">
+                    {allAccountsList.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        <span className="font-mono text-xs ml-2">{a.code}</span>
+                        {a.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => subMonths(d, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <div className="min-w-[140px] text-center font-bold">
+                  {format(monthlyDate, 'MMMM yyyy', { locale: ar })}
+                </div>
+                <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => addMonths(d, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
+                  الشهر الحالي
+                </Button>
+              </div>
+            </div>
+
+            {!monthlyAccountId ? (
+              <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب</div>
+            ) : monthlyLoading ? (
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
+            ) : (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold">الأيام التي ليس بها أي حركة</h3>
+                    <span className="text-sm text-muted-foreground">
+                      الإجمالي: {noMovementDays.length} يوم من أصل {monthlyDays.length}
+                    </span>
+                  </div>
+                  {noMovementDays.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      جميع أيام الشهر تحتوي على حركات
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right w-[60px]">#</TableHead>
+                          <TableHead className="text-right">التاريخ</TableHead>
+                          <TableHead className="text-right">اليوم</TableHead>
+                          <TableHead className="text-right">رقم اليوم</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {noMovementDays.map((day, idx) => {
+                          const dateObj = new Date(day.date);
+                          const dow = dateObj.getDay();
+                          const isToday = isSameDay(dateObj, today);
+                          return (
+                            <TableRow key={day.date} className={isToday ? 'bg-accent/30' : ''}>
+                              <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                              <TableCell className="font-mono text-sm">{day.date}</TableCell>
+                              <TableCell className="font-medium">{dayNames[dow]}</TableCell>
+                              <TableCell>{dateObj.getDate()}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             )}
           </div>
         </TabsContent>
