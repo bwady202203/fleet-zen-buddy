@@ -470,6 +470,23 @@ export default function BankStatementImport() {
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
   const balanceDifference = totalDebit - totalCredit;
 
+  // Per-date grouping summary (each date = one journal entry)
+  const dateGroups = (() => {
+    const map = new Map<string, { debit: number; credit: number; count: number; withAccount: number }>();
+    for (const r of parsedBankStatements) {
+      const d = normalizeDate(r.date);
+      const cur = map.get(d) || { debit: 0, credit: 0, count: 0, withAccount: 0 };
+      cur.debit += r.debit;
+      cur.credit += r.credit;
+      cur.count += 1;
+      if (r.selectedAccountId) cur.withAccount += 1;
+      map.set(d, cur);
+    }
+    return Array.from(map.entries())
+      .map(([date, v]) => ({ date, ...v, balanced: Math.abs(v.debit - v.credit) < 0.01 }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  })();
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" dir="rtl">
