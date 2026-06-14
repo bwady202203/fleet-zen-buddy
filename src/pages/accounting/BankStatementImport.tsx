@@ -523,7 +523,7 @@ export default function BankStatementImport() {
               className="bg-blue-500 hover:bg-blue-600 gap-2"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              حفظ كقيد ({selectedCount} عملية)
+              حفظ {dateGroups.length > 1 ? `${dateGroups.length} قيود` : 'كقيد'} ({selectedCount} عملية)
             </Button>
           </div>
         </div>
