@@ -470,6 +470,23 @@ export default function BankStatementImport() {
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
   const balanceDifference = totalDebit - totalCredit;
 
+  // Per-date grouping summary (each date = one journal entry)
+  const dateGroups = (() => {
+    const map = new Map<string, { debit: number; credit: number; count: number; withAccount: number }>();
+    for (const r of parsedBankStatements) {
+      const d = normalizeDate(r.date);
+      const cur = map.get(d) || { debit: 0, credit: 0, count: 0, withAccount: 0 };
+      cur.debit += r.debit;
+      cur.credit += r.credit;
+      cur.count += 1;
+      if (r.selectedAccountId) cur.withAccount += 1;
+      map.set(d, cur);
+    }
+    return Array.from(map.entries())
+      .map(([date, v]) => ({ date, ...v, balanced: Math.abs(v.debit - v.credit) < 0.01 }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  })();
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" dir="rtl">
@@ -506,7 +523,7 @@ export default function BankStatementImport() {
               className="bg-blue-500 hover:bg-blue-600 gap-2"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              حفظ كقيد ({selectedCount} عملية)
+              حفظ {dateGroups.length > 1 ? `${dateGroups.length} قيود` : 'كقيد'} ({selectedCount} عملية)
             </Button>
           </div>
         </div>
@@ -578,6 +595,46 @@ export default function BankStatementImport() {
             />
           </Card>
         )}
+
+        {/* Per-Date Grouping Summary */}
+        {dateGroups.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-medium text-sm flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-blue-600" />
+                ملخص القيود حسب التاريخ ({dateGroups.length} {dateGroups.length > 1 ? 'قيود' : 'قيد'})
+              </span>
+              <span className="text-xs text-gray-500">سيتم إنشاء قيد مستقل لكل تاريخ، ويجب أن يكون المدين = الدائن لكل تاريخ</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {dateGroups.map(g => (
+                <div
+                  key={g.date}
+                  className={cn(
+                    "border rounded-lg p-2 text-xs",
+                    g.balanced ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                  )}
+                >
+                  <div className="flex items-center justify-between font-medium mb-1">
+                    <span>{g.date}</span>
+                    <span className={g.balanced ? "text-green-700" : "text-red-700"}>
+                      {g.balanced ? "✓ متوازن" : `✗ فرق ${(g.debit - g.credit).toLocaleString()}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-gray-600">
+                    <span>مدين: <span className="font-mono text-red-600">{g.debit.toLocaleString()}</span></span>
+                    <span>دائن: <span className="font-mono text-green-600">{g.credit.toLocaleString()}</span></span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">
+                    {g.count} عملية · محدد {g.withAccount}/{g.count}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+
 
         {/* Parsed Data Table */}
         {parsedBankStatements.length > 0 && (
