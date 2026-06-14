@@ -729,47 +729,74 @@ const ImportantBalances = () => {
             ) : monthlyLoading ? (
               <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold">الأيام التي ليس بها أي حركة</h3>
-                    <span className="text-sm text-muted-foreground">
-                      الإجمالي: {noMovementDays.length} يوم من أصل {monthlyDays.length}
+              <div className="space-y-4">
+                {/* Summary stats */}
+                <div className="flex flex-wrap gap-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-emerald-500" />
+                    <span className="text-sm font-medium text-emerald-800">
+                      أيام بها حركة: {monthlyDays.length - noMovementDays.length}
                     </span>
                   </div>
-                  {noMovementDays.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      جميع أيام الشهر تحتوي على حركات
+                  <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-red-500" />
+                    <span className="text-sm font-medium text-red-800">
+                      أيام بدون حركة: {noMovementDays.length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Days grid */}
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Header row */}
+                  {['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'].map((dn) => (
+                    <div key={dn} className="text-center text-xs font-bold text-muted-foreground py-2 bg-muted/40 rounded-md">
+                      {dn}
                     </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-right w-[60px]">#</TableHead>
-                          <TableHead className="text-right">التاريخ</TableHead>
-                          <TableHead className="text-right">اليوم</TableHead>
-                          <TableHead className="text-right">رقم اليوم</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {noMovementDays.map((day, idx) => {
-                          const dateObj = new Date(day.date);
-                          const dow = dateObj.getDay();
-                          const isToday = isSameDay(dateObj, today);
-                          return (
-                            <TableRow key={day.date} className={isToday ? 'bg-accent/30' : ''}>
-                              <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
-                              <TableCell className="font-mono text-sm">{day.date}</TableCell>
-                              <TableCell className="font-medium">{dayNames[dow]}</TableCell>
-                              <TableCell>{dateObj.getDate()}</TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                  ))}
+                  {/* Empty cells for days before the 1st of month */}
+                  {(() => {
+                    const firstDayOfMonth = new Date(monthlyDate.getFullYear(), monthlyDate.getMonth(), 1);
+                    const emptySlots = firstDayOfMonth.getDay();
+                    const slots: JSX.Element[] = [];
+                    for (let i = 0; i < emptySlots; i++) {
+                      slots.push(<div key={`empty-${i}`} className="aspect-square rounded-lg bg-muted/20" />);
+                    }
+                    return slots;
+                  })()}
+                  {/* Day cells */}
+                  {monthlyDays.map((day) => {
+                    const dateObj = new Date(day.date);
+                    const isToday = isSameDay(dateObj, today);
+                    const hasMovement = day.debit !== 0 || day.credit !== 0;
+                    return (
+                      <div
+                        key={day.date}
+                        className={`aspect-square rounded-lg border flex flex-col items-center justify-center gap-1 transition-colors ${
+                          hasMovement
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100'
+                            : 'bg-red-50 border-red-300 text-red-900 hover:bg-red-100'
+                        } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                        title={`${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
+                      >
+                        <span className="text-lg font-bold leading-none">{dateObj.getDate()}</span>
+                        {hasMovement ? (
+                          <div className="flex flex-col items-center leading-none gap-0.5">
+                            {(day.debit > 0) && (
+                              <span className="text-[10px] font-medium text-red-600">مدين</span>
+                            )}
+                            {(day.credit > 0) && (
+                              <span className="text-[10px] font-medium text-emerald-600">دائن</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-red-600/80">بدون حركة</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         </TabsContent>
