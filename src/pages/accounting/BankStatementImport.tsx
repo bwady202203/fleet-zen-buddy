@@ -596,6 +596,46 @@ export default function BankStatementImport() {
           </Card>
         )}
 
+        {/* Per-Date Grouping Summary */}
+        {dateGroups.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-medium text-sm flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-blue-600" />
+                ملخص القيود حسب التاريخ ({dateGroups.length} {dateGroups.length > 1 ? 'قيود' : 'قيد'})
+              </span>
+              <span className="text-xs text-gray-500">سيتم إنشاء قيد مستقل لكل تاريخ، ويجب أن يكون المدين = الدائن لكل تاريخ</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {dateGroups.map(g => (
+                <div
+                  key={g.date}
+                  className={cn(
+                    "border rounded-lg p-2 text-xs",
+                    g.balanced ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                  )}
+                >
+                  <div className="flex items-center justify-between font-medium mb-1">
+                    <span>{g.date}</span>
+                    <span className={g.balanced ? "text-green-700" : "text-red-700"}>
+                      {g.balanced ? "✓ متوازن" : `✗ فرق ${(g.debit - g.credit).toLocaleString()}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-gray-600">
+                    <span>مدين: <span className="font-mono text-red-600">{g.debit.toLocaleString()}</span></span>
+                    <span>دائن: <span className="font-mono text-green-600">{g.credit.toLocaleString()}</span></span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">
+                    {g.count} عملية · محدد {g.withAccount}/{g.count}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+
+
         {/* Parsed Data Table */}
         {parsedBankStatements.length > 0 && (
           <Card className="overflow-hidden">
