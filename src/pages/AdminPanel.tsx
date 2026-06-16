@@ -204,11 +204,10 @@ export default function AdminPanel() {
 
   const cardGradient = (...statuses: { tone: "none" | "ok" | "warn" | "expired" }[]) => {
     if (statuses.some((s) => s.tone === "expired"))
-      return "bg-[linear-gradient(135deg,#b91c1c_0%,#dc2626_40%,#7f1d1d_100%)]";
+      return "bg-red-600";
     if (statuses.some((s) => s.tone === "warn"))
-      return "bg-[linear-gradient(135deg,#f59e0b_0%,#fbbf24_40%,#d97706_100%)]";
-    // wavy blue
-    return "bg-[linear-gradient(135deg,#1e3a8a_0%,#1d4ed8_25%,#0ea5e9_55%,#1d4ed8_80%,#1e3a8a_100%)]";
+      return "bg-amber-500";
+    return "bg-blue-400";
   };
 
   const updateDriverField = async (id: string, field: keyof Driver, value: string | null) => {
@@ -303,7 +302,6 @@ export default function AdminPanel() {
                 return (
                   <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
                     <div className={`${gradient} p-4 text-white relative`}>
-                      <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 20% 10%, rgba(255,255,255,.35), transparent 40%), radial-gradient(circle at 80% 90%, rgba(255,255,255,.25), transparent 45%)" }} />
                       <div className="relative">
                         <div className="mb-3 pr-8">
                           <input
