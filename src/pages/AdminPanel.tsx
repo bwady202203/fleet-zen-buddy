@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet, ArrowUp, ArrowDown, Building2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -83,13 +83,56 @@ export default function AdminPanel() {
   const [bulkText, setBulkText] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  const [establishments, setEstablishments] = useState<{ id: string; name: string }[]>([]);
+  const [estDialog, setEstDialog] = useState(false);
+  const [newEstName, setNewEstName] = useState("");
+
+  const [newDriverDialog, setNewDriverDialog] = useState(false);
+  const [newDriverName, setNewDriverName] = useState("");
+  const [newDriverNameAr, setNewDriverNameAr] = useState("");
+  const [newDriverPhone, setNewDriverPhone] = useState("");
+
   const load = async () => {
-    const [l, d] = await Promise.all([
+    const [l, d, e] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
       (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number, sort_order").eq("is_active", true).order("sort_order", { ascending: true }).order("name"),
+      (supabase as any).from("establishments").select("id, name").order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
+    if (!e.error) setEstablishments((e.data as any) || []);
+  };
+
+  const addEstablishment = async () => {
+    const name = newEstName.trim();
+    if (!name) return;
+    const { error } = await (supabase as any).from("establishments").insert({ name });
+    if (error) { toast.error("فشل الإضافة: " + error.message); return; }
+    toast.success("تمت الإضافة"); setNewEstName(""); load();
+  };
+
+  const deleteEstablishment = async (id: string) => {
+    if (!confirm("حذف المنشأة؟")) return;
+    const { error } = await (supabase as any).from("establishments").delete().eq("id", id);
+    if (error) { toast.error("فشل الحذف"); return; }
+    toast.success("تم الحذف"); load();
+  };
+
+  const createDriver = async () => {
+    const name = newDriverName.trim();
+    if (!name) { toast.error("اسم السائق مطلوب"); return; }
+    const maxOrder = drivers.reduce((m, d) => Math.max(m, d.sort_order ?? 0), 0);
+    const { error } = await (supabase as any).from("drivers").insert({
+      name,
+      name_ar: newDriverNameAr.trim() || null,
+      phone: newDriverPhone.trim() || null,
+      sort_order: maxOrder + 1,
+      is_active: true,
+    });
+    if (error) { toast.error("فشل الإنشاء: " + error.message); return; }
+    toast.success("تم إنشاء السائق");
+    setNewDriverName(""); setNewDriverNameAr(""); setNewDriverPhone("");
+    setNewDriverDialog(false); load();
   };
 
   useEffect(() => { load(); }, []);
@@ -320,6 +363,12 @@ export default function AdminPanel() {
             <Button onClick={() => { setBulkText(""); setBulkDialog(true); }} variant="outline" className="gap-2">
               <FileSpreadsheet className="h-4 w-4" />تحديث جماعي (لصق من Excel)
             </Button>
+            <Button onClick={() => setEstDialog(true)} variant="outline" className="gap-2">
+              <Building2 className="h-4 w-4" />المنشآت
+            </Button>
+            <Button onClick={() => setNewDriverDialog(true)} className="gap-2">
+              <UserPlus className="h-4 w-4" />سائق جديد
+            </Button>
             <div className="text-sm text-muted-foreground whitespace-nowrap px-2">
               {filteredDrivers.length} / {drivers.length}
             </div>
@@ -405,10 +454,11 @@ export default function AdminPanel() {
                           <div className="text-[10px] text-center">{medicalStatus.label}</div>
                         </div>
                         <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                          <div className={labelCls}><IdCard className="h-3 w-3" />اسم المنشأة</div>
+                          <div className={labelCls}><Building2 className="h-3 w-3" />اسم المنشأة</div>
                           <input
                             defaultValue={d.establishment_name || ""}
                             dir="rtl"
+                            list="establishments-list"
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
                           />
@@ -567,6 +617,74 @@ export default function AdminPanel() {
             <Button onClick={applyBulk} disabled={bulkBusy}>
               {bulkBusy ? "جاري التحديث..." : "تطبيق التحديث"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Datalist for establishment names */}
+      <datalist id="establishments-list">
+        {establishments.map((e) => (<option key={e.id} value={e.name} />))}
+      </datalist>
+
+      {/* Establishments management dialog */}
+      <Dialog open={estDialog} onOpenChange={setEstDialog}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" />إدارة أسماء المنشآت</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={newEstName}
+                onChange={(e) => setNewEstName(e.target.value)}
+                placeholder="اسم المنشأة الجديدة"
+                dir="rtl"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addEstablishment(); } }}
+              />
+              <Button onClick={addEstablishment} className="gap-1"><Plus className="h-4 w-4" />إضافة</Button>
+            </div>
+            <div className="max-h-80 overflow-y-auto space-y-1 border rounded-md p-2">
+              {establishments.length === 0 ? (
+                <div className="text-center text-muted-foreground py-6 text-sm">لا توجد منشآت بعد.</div>
+              ) : establishments.map((e) => (
+                <div key={e.id} className="flex items-center justify-between bg-muted/40 hover:bg-muted rounded px-3 py-2">
+                  <span className="font-medium">{e.name}</span>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteEstablishment(e.id)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEstDialog(false)}>إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New driver dialog */}
+      <Dialog open={newDriverDialog} onOpenChange={setNewDriverDialog}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" />إضافة سائق جديد</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>اسم السائق (كما يظهر في النظام)</Label>
+              <Input value={newDriverName} onChange={(e) => setNewDriverName(e.target.value)} placeholder="Mohammed Ali" />
+            </div>
+            <div>
+              <Label>الاسم بالعربية</Label>
+              <Input value={newDriverNameAr} onChange={(e) => setNewDriverNameAr(e.target.value)} dir="rtl" placeholder="محمد علي" />
+            </div>
+            <div>
+              <Label>رقم الجوال (اختياري)</Label>
+              <Input value={newDriverPhone} onChange={(e) => setNewDriverPhone(e.target.value)} inputMode="tel" dir="ltr" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewDriverDialog(false)}>إلغاء</Button>
+            <Button onClick={createDriver}>إنشاء البطاقة</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
