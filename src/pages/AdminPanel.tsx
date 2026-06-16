@@ -22,6 +22,7 @@ interface UsefulLink {
 interface Driver {
   id: string;
   name: string;
+  name_ar?: string | null;
   phone?: string | null;
   iqama_number?: string | null;
   iqama_expiry?: string | null;
