@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet } from "lucide-react";
+import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -31,6 +31,7 @@ interface Driver {
   medical_insurance_expiry?: string | null;
   establishment_name?: string | null;
   vehicle_number?: string | null;
+  sort_order?: number | null;
 }
 
 
@@ -85,7 +86,7 @@ export default function AdminPanel() {
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number").eq("is_active", true).order("name"),
+      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number, sort_order").eq("is_active", true).order("sort_order", { ascending: true }).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -223,6 +224,31 @@ export default function AdminPanel() {
     toast.success("تم الحفظ", { duration: 1200 });
   };
 
+  const moveDriver = async (index: number, direction: "up" | "down") => {
+    const arr = [...filteredDrivers];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= arr.length) return;
+    const current = arr[index];
+    const target = arr[targetIndex];
+    const currentOrder = current.sort_order ?? index + 1;
+    const targetOrder = target.sort_order ?? targetIndex + 1;
+    // Optimistically update UI
+    setDrivers((prev) => {
+      const next = [...prev];
+      const ci = next.findIndex((x) => x.id === current.id);
+      const ti = next.findIndex((x) => x.id === target.id);
+      if (ci >= 0) next[ci] = { ...next[ci], sort_order: targetOrder };
+      if (ti >= 0) next[ti] = { ...next[ti], sort_order: currentOrder };
+      return next.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+    await Promise.all([
+      (supabase as any).from("drivers").update({ sort_order: targetOrder }).eq("id", current.id),
+      (supabase as any).from("drivers").update({ sort_order: currentOrder }).eq("id", target.id),
+    ]);
+    toast.success("تم تبديل المكان", { duration: 1200 });
+    load();
+  };
+
   return (
     <div dir="rtl" className="container mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -297,8 +323,8 @@ export default function AdminPanel() {
               {drivers.length === 0 ? "لا يوجد سائقون." : "لا توجد نتائج للبحث."}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {filteredDrivers.map((d) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredDrivers.map((d, idx) => {
                 const iqamaStatus = getExpiryStatus(d.iqama_expiry);
                 const cardStatus = getExpiryStatus(d.operation_card_expiry);
                 const medicalStatus = getExpiryStatus(d.medical_insurance_expiry);
@@ -306,27 +332,27 @@ export default function AdminPanel() {
                 const anyExpired = iqamaStatus.tone === "expired" || cardStatus.tone === "expired" || medicalStatus.tone === "expired";
                 const anyWarn = iqamaStatus.tone === "warn" || cardStatus.tone === "warn" || medicalStatus.tone === "warn";
 
-                const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-1.5 py-0.5 text-white placeholder-white/50 font-mono font-bold text-[11px] outline-none transition text-center";
-                const labelCls = "text-[9px] text-white/70 flex items-center justify-center gap-0.5";
+                const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-2 py-1 text-white placeholder-white/50 font-mono font-bold text-xs outline-none transition text-center";
+                const labelCls = "text-[10px] text-white/70 flex items-center justify-center gap-1";
                 return (
-                  <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 aspect-square flex flex-col">
-                    <div className={`${gradient} p-3 text-white h-full flex flex-col`}>
+                  <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col">
+                    <div className={`${gradient} p-4 text-white h-full flex flex-col`}>
                       {/* Header */}
-                      <div className="mb-2 pr-6">
+                      <div className="mb-3 pr-14">
                         <input
                           defaultValue={d.name_ar || ""}
                           placeholder={d.name}
                           dir="rtl"
-                          className="w-full bg-transparent border-b border-white/30 focus:border-white outline-none font-bold text-sm placeholder-white/60 text-center"
+                          className="w-full bg-transparent border-b border-white/30 focus:border-white outline-none font-bold text-base placeholder-white/60 text-center"
                           onBlur={(e) => updateDriverField(d.id, "name_ar", e.target.value.trim() || null)}
                         />
-                        <div className="text-[10px] text-white/60 text-center truncate" dir="ltr">{d.name}{d.phone ? ` • ${d.phone}` : ""}</div>
+                        <div className="text-xs text-white/60 text-center truncate" dir="ltr">{d.name}{d.phone ? ` • ${d.phone}` : ""}</div>
                       </div>
 
-                      {/* Compact grid of fields */}
-                      <div className="flex-1 grid grid-cols-2 gap-1.5 content-start">
-                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
-                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />الإقامة</div>
+                      {/* Fields grid */}
+                      <div className="flex-1 grid grid-cols-2 gap-2 content-start">
+                        <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                          <div className={labelCls}><IdCard className="h-3 w-3" />رقم الإقامة</div>
                           <input
                             defaultValue={d.iqama_number || ""}
                             dir="ltr"
@@ -334,15 +360,17 @@ export default function AdminPanel() {
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "iqama_number", e.target.value.trim() || null)}
                           />
+                          <div className={labelCls}><Calendar className="h-3 w-3" />انتهاء الإقامة</div>
                           <input
                             type="date"
                             defaultValue={d.iqama_expiry || ""}
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "iqama_expiry", e.target.value || null)}
                           />
+                          <div className="text-[10px] text-center">{iqamaStatus.label}</div>
                         </div>
-                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
-                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />التشغيل</div>
+                        <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                          <div className={labelCls}><IdCard className="h-3 w-3" />رقم التشغيل</div>
                           <input
                             defaultValue={d.operation_card_number || ""}
                             dir="ltr"
@@ -350,24 +378,27 @@ export default function AdminPanel() {
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "operation_card_number", e.target.value.trim() || null)}
                           />
+                          <div className={labelCls}><Calendar className="h-3 w-3" />انتهاء التشغيل</div>
                           <input
                             type="date"
                             defaultValue={d.operation_card_expiry || ""}
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "operation_card_expiry", e.target.value || null)}
                           />
+                          <div className="text-[10px] text-center">{cardStatus.label}</div>
                         </div>
-                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
-                          <div className={labelCls}><Calendar className="h-2.5 w-2.5" />الطبيب</div>
+                        <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                          <div className={labelCls}><Calendar className="h-3 w-3" />انتهاء التأمين الطبي</div>
                           <input
                             type="date"
                             defaultValue={d.medical_insurance_expiry || ""}
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "medical_insurance_expiry", e.target.value || null)}
                           />
+                          <div className="text-[10px] text-center">{medicalStatus.label}</div>
                         </div>
-                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
-                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />المنشأة</div>
+                        <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                          <div className={labelCls}><IdCard className="h-3 w-3" />اسم المنشأة</div>
                           <input
                             defaultValue={d.establishment_name || ""}
                             dir="rtl"
@@ -375,8 +406,8 @@ export default function AdminPanel() {
                             onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
                           />
                         </div>
-                        <div className="col-span-2 bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
-                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />السيارة</div>
+                        <div className="col-span-2 bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                          <div className={labelCls}><IdCard className="h-3 w-3" />رقم السيارة</div>
                           <input
                             defaultValue={d.vehicle_number || ""}
                             dir="ltr"
@@ -387,23 +418,46 @@ export default function AdminPanel() {
                       </div>
 
                       {/* Status dots */}
-                      <div className="mt-1.5 flex items-center justify-center gap-2">
-                        <span className={`inline-block w-2 h-2 rounded-full ${iqamaStatus.tone === "expired" ? "bg-red-300" : iqamaStatus.tone === "warn" ? "bg-yellow-300" : iqamaStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`إقامة: ${iqamaStatus.label}`} />
-                        <span className={`inline-block w-2 h-2 rounded-full ${cardStatus.tone === "expired" ? "bg-red-300" : cardStatus.tone === "warn" ? "bg-yellow-300" : cardStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`تشغيل: ${cardStatus.label}`} />
-                        <span className={`inline-block w-2 h-2 rounded-full ${medicalStatus.tone === "expired" ? "bg-red-300" : medicalStatus.tone === "warn" ? "bg-yellow-300" : medicalStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`تأمين طبي: ${medicalStatus.label}`} />
-                        {anyExpired && <span className="text-[9px] bg-red-500/80 px-1.5 rounded text-white font-bold">منتهٍ</span>}
-                        {!anyExpired && anyWarn && <span className="text-[9px] bg-yellow-500/80 px-1.5 rounded text-white font-bold">تنبيه</span>}
+                      <div className="mt-2 flex items-center justify-center gap-2">
+                        <span className={`inline-block w-2.5 h-2.5 rounded-full ${iqamaStatus.tone === "expired" ? "bg-red-300" : iqamaStatus.tone === "warn" ? "bg-yellow-300" : iqamaStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`إقامة: ${iqamaStatus.label}`} />
+                        <span className={`inline-block w-2.5 h-2.5 rounded-full ${cardStatus.tone === "expired" ? "bg-red-300" : cardStatus.tone === "warn" ? "bg-yellow-300" : cardStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`تشغيل: ${cardStatus.label}`} />
+                        <span className={`inline-block w-2.5 h-2.5 rounded-full ${medicalStatus.tone === "expired" ? "bg-red-300" : medicalStatus.tone === "warn" ? "bg-yellow-300" : medicalStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`تأمين طبي: ${medicalStatus.label}`} />
+                        {anyExpired && <span className="text-[10px] bg-red-500/80 px-2 rounded text-white font-bold">منتهٍ</span>}
+                        {!anyExpired && anyWarn && <span className="text-[10px] bg-yellow-500/80 px-2 rounded text-white font-bold">تنبيه</span>}
                       </div>
                     </div>
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                      onClick={(e) => { e.stopPropagation(); clearDriverCard(d); }}
-                      title="حذف بيانات البطاقة"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    {/* Action buttons */}
+                    <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-7 w-7"
+                        onClick={(e) => { e.stopPropagation(); moveDriver(idx, "up"); }}
+                        disabled={idx === 0}
+                        title="للأعلى"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-7 w-7"
+                        onClick={(e) => { e.stopPropagation(); moveDriver(idx, "down"); }}
+                        disabled={idx === filteredDrivers.length - 1}
+                        title="للأسفل"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-7 w-7"
+                        onClick={(e) => { e.stopPropagation(); clearDriverCard(d); }}
+                        title="حذف بيانات البطاقة"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </Card>
                 );
               })}

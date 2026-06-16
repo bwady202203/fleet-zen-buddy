@@ -1151,6 +1151,7 @@ export type Database = {
           operation_card_number: string | null
           organization_id: string | null
           phone: string | null
+          sort_order: number | null
           updated_at: string | null
           vehicle_number: string | null
         }
@@ -1168,6 +1169,7 @@ export type Database = {
           operation_card_number?: string | null
           organization_id?: string | null
           phone?: string | null
+          sort_order?: number | null
           updated_at?: string | null
           vehicle_number?: string | null
         }
@@ -1185,6 +1187,7 @@ export type Database = {
           operation_card_number?: string | null
           organization_id?: string | null
           phone?: string | null
+          sort_order?: number | null
           updated_at?: string | null
           vehicle_number?: string | null
         }
