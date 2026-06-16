@@ -1,38 +1,93 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { KeyRound, Calculator } from 'lucide-react';
+import { KeyRound, Calculator, Loader2 } from 'lucide-react';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Check if this is a recovery session
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    
-    if (type === 'recovery') {
-      setIsValidSession(true);
-    }
+    let mounted = true;
 
-    // Also listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsValidSession(true);
+    const init = async () => {
+      try {
+        // 1) Error returned in hash (e.g. expired link)
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const queryParams = searchParams;
+        const hashError = hashParams.get('error_description') || hashParams.get('error');
+        if (hashError) {
+          setErrorMsg(decodeURIComponent(hashError));
+          setChecking(false);
+          return;
+        }
+
+        // 2) New-style link with token_hash in query string
+        const tokenHash = queryParams.get('token_hash') || hashParams.get('token_hash');
+        const type = queryParams.get('type') || hashParams.get('type');
+        if (tokenHash && type === 'recovery') {
+          const { error } = await supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+          if (error) {
+            setErrorMsg(error.message);
+            setChecking(false);
+            return;
+          }
+          if (mounted) {
+            setIsValidSession(true);
+            setChecking(false);
+          }
+          return;
+        }
+
+        // 3) Old-style link: access_token in hash → supabase-js sets session automatically
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          if (mounted) {
+            setIsValidSession(true);
+            setChecking(false);
+          }
+          return;
+        }
+
+        // 4) Wait for PASSWORD_RECOVERY event
+        const timeout = setTimeout(() => {
+          if (mounted) setChecking(false);
+        }, 1500);
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
+          if (event === 'PASSWORD_RECOVERY' || sess) {
+            if (mounted) {
+              setIsValidSession(true);
+              setChecking(false);
+              clearTimeout(timeout);
+            }
+          }
+        });
+
+        return () => {
+          subscription.unsubscribe();
+          clearTimeout(timeout);
+        };
+      } catch (e: any) {
+        setErrorMsg(e?.message ?? 'حدث خطأ غير متوقع');
+        setChecking(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, []);
+    init();
+    return () => { mounted = false; };
+  }, [searchParams]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,21 +107,48 @@ const ResetPassword = () => {
     setIsLoading(false);
 
     if (error) {
-      toast.error('حدث خطأ أثناء تحديث كلمة المرور');
+      const msg = error.message?.toLowerCase() ?? '';
+      if (msg.includes('different from the old')) {
+        toast.error('كلمة المرور الجديدة يجب أن تكون مختلفة عن القديمة');
+      } else if (msg.includes('weak') || msg.includes('password')) {
+        toast.error('كلمة المرور ضعيفة، استخدم كلمة أقوى');
+      } else if (msg.includes('session') || msg.includes('jwt')) {
+        toast.error('انتهت صلاحية الجلسة، اطلب رابط إعادة تعيين جديد');
+      } else {
+        toast.error('حدث خطأ أثناء تحديث كلمة المرور: ' + error.message);
+      }
       console.error(error);
     } else {
       toast.success('تم تحديث كلمة المرور بنجاح');
+      await supabase.auth.signOut();
       navigate('/auth');
     }
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4" dir="rtl">
+        <Card className="w-full max-w-md shadow-2xl">
+          <CardContent className="p-8 text-center flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">جاري التحقق من رابط إعادة التعيين...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!isValidSession) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4" dir="rtl">
         <Card className="w-full max-w-md shadow-2xl">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground text-lg">رابط إعادة التعيين غير صالح أو منتهي الصلاحية</p>
-            <Button className="mt-4" onClick={() => navigate('/auth')}>العودة لتسجيل الدخول</Button>
+          <CardContent className="p-8 text-center space-y-3">
+            <p className="text-foreground text-lg font-semibold">رابط إعادة التعيين غير صالح أو منتهي الصلاحية</p>
+            {errorMsg && <p className="text-sm text-muted-foreground">{errorMsg}</p>}
+            <p className="text-sm text-muted-foreground">
+              قد يكون السبب: تم استخدام الرابط من قبل، أو انتهت صلاحيته (الروابط صالحة لساعة واحدة فقط)، أو تم فتحه في متصفح مختلف.
+            </p>
+            <Button className="mt-2" onClick={() => navigate('/auth')}>العودة لتسجيل الدخول وطلب رابط جديد</Button>
           </CardContent>
         </Card>
       </div>
