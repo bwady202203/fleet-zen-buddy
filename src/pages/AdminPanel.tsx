@@ -360,6 +360,35 @@ export default function AdminPanel() {
                             />
                             <div className="text-[10px]">{cardStatus.label}</div>
                           </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء التأمين الطبي</div>
+                            <input
+                              type="date"
+                              defaultValue={d.medical_insurance_expiry || ""}
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "medical_insurance_expiry", e.target.value || null)}
+                            />
+                            <div className="text-[10px]">{medicalStatus.label}</div>
+                          </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />اسم المنشأة</div>
+                            <input
+                              defaultValue={d.establishment_name || ""}
+                              dir="rtl"
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
+                            />
+                          </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم السيارة</div>
+                            <input
+                              defaultValue={d.vehicle_number || ""}
+                              dir="ltr"
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "vehicle_number", e.target.value.trim() || null)}
+                            />
+                          </div>
+
                         </div>
                       </div>
                     </div>
