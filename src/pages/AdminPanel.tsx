@@ -195,12 +195,29 @@ export default function AdminPanel() {
   };
 
   const getExpiryStatus = (expiry?: string | null) => {
-    if (!expiry) return { color: "from-slate-400 to-slate-600", label: "غير محدد", days: null };
+    if (!expiry) return { tone: "none" as const, label: "غير محدد", days: null as number | null };
     const days = differenceInDays(parseISO(expiry), new Date());
-    if (days < 0) return { color: "from-red-600 to-red-800", label: `منتهية منذ ${Math.abs(days)} يوم`, days };
-    if (days <= 30) return { color: "from-red-500 to-orange-600", label: `${days} يوم متبقي`, days };
-    if (days <= 90) return { color: "from-amber-500 to-amber-700", label: `${days} يوم متبقي`, days };
-    return { color: "from-emerald-500 to-emerald-700", label: `${days} يوم متبقي`, days };
+    if (days < 0) return { tone: "expired" as const, label: `منتهية منذ ${Math.abs(days)} يوم`, days };
+    if (days <= 7) return { tone: "warn" as const, label: `${days} يوم متبقي`, days };
+    return { tone: "ok" as const, label: `${days} يوم متبقي`, days };
+  };
+
+  const cardGradient = (...statuses: { tone: "none" | "ok" | "warn" | "expired" }[]) => {
+    if (statuses.some((s) => s.tone === "expired"))
+      return "bg-[linear-gradient(135deg,#b91c1c_0%,#dc2626_40%,#7f1d1d_100%)]";
+    if (statuses.some((s) => s.tone === "warn"))
+      return "bg-[linear-gradient(135deg,#f59e0b_0%,#fbbf24_40%,#d97706_100%)]";
+    // wavy blue
+    return "bg-[linear-gradient(135deg,#1e3a8a_0%,#1d4ed8_25%,#0ea5e9_55%,#1d4ed8_80%,#1e3a8a_100%)]";
+  };
+
+  const updateDriverField = async (id: string, field: keyof Driver, value: string | null) => {
+    const current = drivers.find((x) => x.id === id);
+    if (current && (current as any)[field] === (value ?? null)) return;
+    setDrivers((prev) => prev.map((x) => (x.id === id ? { ...x, [field]: value } : x)));
+    const { error } = await (supabase as any).from("drivers").update({ [field]: value }).eq("id", id);
+    if (error) { toast.error("فشل الحفظ: " + error.message); load(); return; }
+    toast.success("تم الحفظ", { duration: 1200 });
   };
 
   return (
