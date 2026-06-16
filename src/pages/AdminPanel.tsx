@@ -81,7 +81,7 @@ export default function AdminPanel() {
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      (supabase as any).from("drivers").select("id, name, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry").eq("is_active", true).order("name"),
+      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry").eq("is_active", true).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
