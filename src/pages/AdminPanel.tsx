@@ -454,10 +454,11 @@ export default function AdminPanel() {
                           <div className="text-[10px] text-center">{medicalStatus.label}</div>
                         </div>
                         <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                          <div className={labelCls}><IdCard className="h-3 w-3" />اسم المنشأة</div>
+                          <div className={labelCls}><Building2 className="h-3 w-3" />اسم المنشأة</div>
                           <input
                             defaultValue={d.establishment_name || ""}
                             dir="rtl"
+                            list="establishments-list"
                             className={fieldCls}
                             onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
                           />
