@@ -1,0 +1,1 @@
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS operation_card_number TEXT;
