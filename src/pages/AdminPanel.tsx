@@ -301,7 +301,9 @@ export default function AdminPanel() {
               {filteredDrivers.map((d) => {
                 const iqamaStatus = getExpiryStatus(d.iqama_expiry);
                 const cardStatus = getExpiryStatus(d.operation_card_expiry);
-                const gradient = cardGradient(iqamaStatus, cardStatus);
+                const medicalStatus = getExpiryStatus(d.medical_insurance_expiry);
+                const gradient = cardGradient(iqamaStatus, cardStatus, medicalStatus);
+
                 const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-2 py-1 text-white placeholder-white/50 font-mono font-bold text-sm outline-none transition";
                 return (
                   <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
