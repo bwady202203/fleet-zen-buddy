@@ -1139,10 +1139,12 @@ export type Database = {
       drivers: {
         Row: {
           created_at: string | null
+          establishment_name: string | null
           id: string
           iqama_expiry: string | null
           iqama_number: string | null
           is_active: boolean | null
+          medical_insurance_expiry: string | null
           name: string
           name_ar: string | null
           operation_card_expiry: string | null
@@ -1150,13 +1152,16 @@ export type Database = {
           organization_id: string | null
           phone: string | null
           updated_at: string | null
+          vehicle_number: string | null
         }
         Insert: {
           created_at?: string | null
+          establishment_name?: string | null
           id?: string
           iqama_expiry?: string | null
           iqama_number?: string | null
           is_active?: boolean | null
+          medical_insurance_expiry?: string | null
           name: string
           name_ar?: string | null
           operation_card_expiry?: string | null
@@ -1164,13 +1169,16 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
+          vehicle_number?: string | null
         }
         Update: {
           created_at?: string | null
+          establishment_name?: string | null
           id?: string
           iqama_expiry?: string | null
           iqama_number?: string | null
           is_active?: boolean | null
+          medical_insurance_expiry?: string | null
           name?: string
           name_ar?: string | null
           operation_card_expiry?: string | null
@@ -1178,6 +1186,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
+          vehicle_number?: string | null
         }
         Relationships: [
           {
