@@ -297,109 +297,112 @@ export default function AdminPanel() {
               {drivers.length === 0 ? "لا يوجد سائقون." : "لا توجد نتائج للبحث."}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {filteredDrivers.map((d) => {
                 const iqamaStatus = getExpiryStatus(d.iqama_expiry);
                 const cardStatus = getExpiryStatus(d.operation_card_expiry);
                 const medicalStatus = getExpiryStatus(d.medical_insurance_expiry);
                 const gradient = cardGradient(iqamaStatus, cardStatus, medicalStatus);
+                const anyExpired = iqamaStatus.tone === "expired" || cardStatus.tone === "expired" || medicalStatus.tone === "expired";
+                const anyWarn = iqamaStatus.tone === "warn" || cardStatus.tone === "warn" || medicalStatus.tone === "warn";
 
-                const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-2 py-1 text-white placeholder-white/50 font-mono font-bold text-sm outline-none transition";
+                const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-1.5 py-0.5 text-white placeholder-white/50 font-mono font-bold text-[11px] outline-none transition text-center";
+                const labelCls = "text-[9px] text-white/70 flex items-center justify-center gap-0.5";
                 return (
-                  <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                    <div className={`${gradient} p-4 text-white relative`}>
-                      <div className="relative">
-                        <div className="mb-3 pr-8">
-                          <input
-                            defaultValue={d.name_ar || ""}
-                            placeholder={d.name}
-                            dir="rtl"
-                            className="w-full bg-transparent border-b border-white/30 focus:border-white outline-none font-bold text-lg placeholder-white/60"
-                            onBlur={(e) => updateDriverField(d.id, "name_ar", e.target.value.trim() || null)}
-                          />
-                          <div className="text-xs text-white/70 line-clamp-1 mt-0.5" dir="ltr">{d.name}{d.phone ? ` • ${d.phone}` : ""}</div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم الإقامة</div>
-                            <input
-                              defaultValue={d.iqama_number || ""}
-                              dir="ltr"
-                              inputMode="numeric"
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "iqama_number", e.target.value.trim() || null)}
-                            />
-                          </div>
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء الإقامة</div>
-                            <input
-                              type="date"
-                              defaultValue={d.iqama_expiry || ""}
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "iqama_expiry", e.target.value || null)}
-                            />
-                            <div className="text-[10px]">{iqamaStatus.label}</div>
-                          </div>
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم بطاقة التشغيل</div>
-                            <input
-                              defaultValue={d.operation_card_number || ""}
-                              dir="ltr"
-                              inputMode="numeric"
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "operation_card_number", e.target.value.trim() || null)}
-                            />
-                          </div>
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء بطاقة التشغيل</div>
-                            <input
-                              type="date"
-                              defaultValue={d.operation_card_expiry || ""}
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "operation_card_expiry", e.target.value || null)}
-                            />
-                            <div className="text-[10px]">{cardStatus.label}</div>
-                          </div>
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء التأمين الطبي</div>
-                            <input
-                              type="date"
-                              defaultValue={d.medical_insurance_expiry || ""}
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "medical_insurance_expiry", e.target.value || null)}
-                            />
-                            <div className="text-[10px]">{medicalStatus.label}</div>
-                          </div>
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />اسم المنشأة</div>
-                            <input
-                              defaultValue={d.establishment_name || ""}
-                              dir="rtl"
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
-                            />
-                          </div>
-                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
-                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم السيارة</div>
-                            <input
-                              defaultValue={d.vehicle_number || ""}
-                              dir="ltr"
-                              className={fieldCls}
-                              onBlur={(e) => updateDriverField(d.id, "vehicle_number", e.target.value.trim() || null)}
-                            />
-                          </div>
+                  <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 aspect-square flex flex-col">
+                    <div className={`${gradient} p-3 text-white h-full flex flex-col`}>
+                      {/* Header */}
+                      <div className="mb-2 pr-6">
+                        <input
+                          defaultValue={d.name_ar || ""}
+                          placeholder={d.name}
+                          dir="rtl"
+                          className="w-full bg-transparent border-b border-white/30 focus:border-white outline-none font-bold text-sm placeholder-white/60 text-center"
+                          onBlur={(e) => updateDriverField(d.id, "name_ar", e.target.value.trim() || null)}
+                        />
+                        <div className="text-[10px] text-white/60 text-center truncate" dir="ltr">{d.name}{d.phone ? ` • ${d.phone}` : ""}</div>
+                      </div>
 
+                      {/* Compact grid of fields */}
+                      <div className="flex-1 grid grid-cols-2 gap-1.5 content-start">
+                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
+                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />الإقامة</div>
+                          <input
+                            defaultValue={d.iqama_number || ""}
+                            dir="ltr"
+                            inputMode="numeric"
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "iqama_number", e.target.value.trim() || null)}
+                          />
+                          <input
+                            type="date"
+                            defaultValue={d.iqama_expiry || ""}
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "iqama_expiry", e.target.value || null)}
+                          />
                         </div>
+                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
+                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />التشغيل</div>
+                          <input
+                            defaultValue={d.operation_card_number || ""}
+                            dir="ltr"
+                            inputMode="numeric"
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "operation_card_number", e.target.value.trim() || null)}
+                          />
+                          <input
+                            type="date"
+                            defaultValue={d.operation_card_expiry || ""}
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "operation_card_expiry", e.target.value || null)}
+                          />
+                        </div>
+                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
+                          <div className={labelCls}><Calendar className="h-2.5 w-2.5" />الطبيب</div>
+                          <input
+                            type="date"
+                            defaultValue={d.medical_insurance_expiry || ""}
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "medical_insurance_expiry", e.target.value || null)}
+                          />
+                        </div>
+                        <div className="bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
+                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />المنشأة</div>
+                          <input
+                            defaultValue={d.establishment_name || ""}
+                            dir="rtl"
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
+                          />
+                        </div>
+                        <div className="col-span-2 bg-white/10 backdrop-blur rounded p-1.5 space-y-0.5">
+                          <div className={labelCls}><IdCard className="h-2.5 w-2.5" />السيارة</div>
+                          <input
+                            defaultValue={d.vehicle_number || ""}
+                            dir="ltr"
+                            className={fieldCls}
+                            onBlur={(e) => updateDriverField(d.id, "vehicle_number", e.target.value.trim() || null)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Status dots */}
+                      <div className="mt-1.5 flex items-center justify-center gap-2">
+                        <span className={`inline-block w-2 h-2 rounded-full ${iqamaStatus.tone === "expired" ? "bg-red-300" : iqamaStatus.tone === "warn" ? "bg-yellow-300" : iqamaStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`إقامة: ${iqamaStatus.label}`} />
+                        <span className={`inline-block w-2 h-2 rounded-full ${cardStatus.tone === "expired" ? "bg-red-300" : cardStatus.tone === "warn" ? "bg-yellow-300" : cardStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`تشغيل: ${cardStatus.label}`} />
+                        <span className={`inline-block w-2 h-2 rounded-full ${medicalStatus.tone === "expired" ? "bg-red-300" : medicalStatus.tone === "warn" ? "bg-yellow-300" : medicalStatus.tone === "ok" ? "bg-green-300" : "bg-white/30"}`} title={`تأمين طبي: ${medicalStatus.label}`} />
+                        {anyExpired && <span className="text-[9px] bg-red-500/80 px-1.5 rounded text-white font-bold">منتهٍ</span>}
+                        {!anyExpired && anyWarn && <span className="text-[9px] bg-yellow-500/80 px-1.5 rounded text-white font-bold">تنبيه</span>}
                       </div>
                     </div>
                     <Button
                       size="icon"
                       variant="destructive"
-                      className="absolute top-2 left-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       onClick={(e) => { e.stopPropagation(); clearDriverCard(d); }}
                       title="حذف بيانات البطاقة"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </Card>
                 );
