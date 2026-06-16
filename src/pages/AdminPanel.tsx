@@ -25,6 +25,7 @@ interface Driver {
   phone?: string | null;
   iqama_number?: string | null;
   iqama_expiry?: string | null;
+  operation_card_expiry?: string | null;
 }
 
 const PALETTE = [
@@ -47,12 +48,12 @@ export default function AdminPanel() {
 
   const [driverDialog, setDriverDialog] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "" });
+  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "", operation_card_expiry: "" });
 
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      supabase.from("drivers").select("id, name, phone, iqama_number, iqama_expiry").eq("is_active", true).order("name"),
+      supabase.from("drivers").select("id, name, phone, iqama_number, iqama_expiry, operation_card_expiry").eq("is_active", true).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -100,7 +101,11 @@ export default function AdminPanel() {
 
   const openEditDriver = (d: Driver) => {
     setEditingDriver(d);
-    setDriverForm({ iqama_number: d.iqama_number || "", iqama_expiry: d.iqama_expiry || "" });
+    setDriverForm({
+      iqama_number: d.iqama_number || "",
+      iqama_expiry: d.iqama_expiry || "",
+      operation_card_expiry: d.operation_card_expiry || "",
+    });
     setDriverDialog(true);
   };
 
@@ -111,6 +116,7 @@ export default function AdminPanel() {
       .update({
         iqama_number: driverForm.iqama_number.trim() || null,
         iqama_expiry: driverForm.iqama_expiry || null,
+        operation_card_expiry: driverForm.operation_card_expiry || null,
       } as any)
       .eq("id", editingDriver.id);
     if (error) { toast.error("فشل الحفظ"); return; }
