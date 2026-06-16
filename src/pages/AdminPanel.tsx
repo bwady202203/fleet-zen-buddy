@@ -190,11 +190,12 @@ export default function AdminPanel() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {drivers.map((d) => {
-                const status = getExpiryStatus(d.iqama_expiry);
+                const iqamaStatus = getExpiryStatus(d.iqama_expiry);
+                const cardStatus = getExpiryStatus(d.operation_card_expiry);
                 return (
                   <Card key={d.id} className="overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer" onClick={() => openEditDriver(d)}>
-                    <div className={`bg-gradient-to-br ${status.color} p-4 text-white aspect-square flex flex-col justify-between`}>
-                      <div>
+                    <div className={`bg-gradient-to-br ${iqamaStatus.color} p-4 text-white`}>
+                      <div className="mb-3">
                         <div className="font-bold text-lg line-clamp-1">{d.name}</div>
                         {d.phone && <div className="text-xs text-white/80">{d.phone}</div>}
                       </div>
@@ -204,11 +205,18 @@ export default function AdminPanel() {
                           <div className="font-mono font-bold text-base">{d.iqama_number || "—"}</div>
                         </div>
                         <div className="bg-white/20 backdrop-blur rounded-md p-2">
-                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />تاريخ الانتهاء</div>
+                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء الإقامة</div>
                           <div className="font-mono font-bold text-sm">
                             {d.iqama_expiry ? format(parseISO(d.iqama_expiry), "yyyy/MM/dd") : "—"}
                           </div>
-                          <div className="text-[10px] mt-0.5">{status.label}</div>
+                          <div className="text-[10px] mt-0.5">{iqamaStatus.label}</div>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
+                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء بطاقة التشغيل</div>
+                          <div className="font-mono font-bold text-sm">
+                            {d.operation_card_expiry ? format(parseISO(d.operation_card_expiry), "yyyy/MM/dd") : "—"}
+                          </div>
+                          <div className="text-[10px] mt-0.5">{cardStatus.label}</div>
                         </div>
                       </div>
                     </div>
