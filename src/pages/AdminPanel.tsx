@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet } from "lucide-react";
+import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -86,7 +86,7 @@ export default function AdminPanel() {
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number").eq("is_active", true).order("name"),
+      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number, sort_order").eq("is_active", true).order("sort_order", { ascending: true }).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -222,6 +222,31 @@ export default function AdminPanel() {
     const { error } = await (supabase as any).from("drivers").update({ [field]: value }).eq("id", id);
     if (error) { toast.error("فشل الحفظ: " + error.message); load(); return; }
     toast.success("تم الحفظ", { duration: 1200 });
+  };
+
+  const moveDriver = async (index: number, direction: "up" | "down") => {
+    const arr = [...filteredDrivers];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= arr.length) return;
+    const current = arr[index];
+    const target = arr[targetIndex];
+    const currentOrder = current.sort_order ?? index + 1;
+    const targetOrder = target.sort_order ?? targetIndex + 1;
+    // Optimistically update UI
+    setDrivers((prev) => {
+      const next = [...prev];
+      const ci = next.findIndex((x) => x.id === current.id);
+      const ti = next.findIndex((x) => x.id === target.id);
+      if (ci >= 0) next[ci] = { ...next[ci], sort_order: targetOrder };
+      if (ti >= 0) next[ti] = { ...next[ti], sort_order: currentOrder };
+      return next.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    });
+    await Promise.all([
+      (supabase as any).from("drivers").update({ sort_order: targetOrder }).eq("id", current.id),
+      (supabase as any).from("drivers").update({ sort_order: currentOrder }).eq("id", target.id),
+    ]);
+    toast.success("تم تبديل المكان", { duration: 1200 });
+    load();
   };
 
   return (
