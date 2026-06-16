@@ -28,7 +28,11 @@ interface Driver {
   iqama_expiry?: string | null;
   operation_card_number?: string | null;
   operation_card_expiry?: string | null;
+  medical_insurance_expiry?: string | null;
+  establishment_name?: string | null;
+  vehicle_number?: string | null;
 }
+
 
 const PALETTE = [
   "from-blue-500 to-blue-700",
