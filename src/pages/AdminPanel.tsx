@@ -288,7 +288,8 @@ export default function AdminPanel() {
                       onClick={() => openEditDriver(d)}
                     >
                       <div className="mb-3 pr-8">
-                        <div className="font-bold text-lg line-clamp-1">{d.name}</div>
+                        <div className="font-bold text-lg line-clamp-1">{d.name_ar || d.name}</div>
+                        {d.name_ar && <div className="text-xs text-white/70 line-clamp-1" dir="ltr">{d.name}</div>}
                         {d.phone && <div className="text-xs text-white/80">{d.phone}</div>}
                       </div>
                       <div className="space-y-2">
