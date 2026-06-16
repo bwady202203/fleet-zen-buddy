@@ -71,7 +71,7 @@ export default function AdminPanel() {
 
   const [driverDialog, setDriverDialog] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "", operation_card_number: "", operation_card_expiry: "" });
+  const [driverForm, setDriverForm] = useState({ name_ar: "", iqama_number: "", iqama_expiry: "", operation_card_number: "", operation_card_expiry: "" });
 
   const [search, setSearch] = useState("");
   const [bulkDialog, setBulkDialog] = useState(false);
