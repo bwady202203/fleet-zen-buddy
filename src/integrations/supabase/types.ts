@@ -1140,6 +1140,8 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          iqama_expiry: string | null
+          iqama_number: string | null
           is_active: boolean | null
           name: string
           organization_id: string | null
@@ -1149,6 +1151,8 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          iqama_expiry?: string | null
+          iqama_number?: string | null
           is_active?: boolean | null
           name: string
           organization_id?: string | null
@@ -1158,6 +1162,8 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          iqama_expiry?: string | null
+          iqama_number?: string | null
           is_active?: boolean | null
           name?: string
           organization_id?: string | null
@@ -3220,6 +3226,53 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      useful_links: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          organization_id: string | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          organization_id?: string | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "useful_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
