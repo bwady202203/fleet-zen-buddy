@@ -690,6 +690,14 @@ const UsersManagement = () => {
               <div className="text-center py-8">
                 <p className="text-muted-foreground">جاري التحميل...</p>
               </div>
+            ) : !selectedOrganization ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">الرجاء اختيار الشركة لعرض المستخدمين</p>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">لا يوجد مستخدمون في هذه الشركة</p>
+              </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -757,6 +765,7 @@ const UsersManagement = () => {
                 </TableBody>
               </Table>
             )}
+
           </CardContent>
         </Card>
 
