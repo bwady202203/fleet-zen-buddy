@@ -94,6 +94,7 @@ export default function AdminPanel() {
     if (!q) return drivers;
     return drivers.filter((d) =>
       (d.name || "").toLowerCase().includes(q) ||
+      (d.name_ar || "").toLowerCase().includes(q) ||
       (d.iqama_number || "").toLowerCase().includes(q) ||
       (d.operation_card_number || "").toLowerCase().includes(q)
     );
@@ -126,6 +127,7 @@ export default function AdminPanel() {
   const openEditDriver = (d: Driver) => {
     setEditingDriver(d);
     setDriverForm({
+      name_ar: d.name_ar || "",
       iqama_number: d.iqama_number || "",
       iqama_expiry: d.iqama_expiry || "",
       operation_card_number: d.operation_card_number || "",
@@ -137,6 +139,7 @@ export default function AdminPanel() {
   const saveDriver = async () => {
     if (!editingDriver) return;
     const { error } = await (supabase as any).from("drivers").update({
+      name_ar: driverForm.name_ar.trim() || null,
       iqama_number: driverForm.iqama_number.trim() || null,
       iqama_expiry: driverForm.iqama_expiry || null,
       operation_card_number: driverForm.operation_card_number.trim() || null,
