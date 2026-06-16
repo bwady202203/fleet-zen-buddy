@@ -31,6 +31,7 @@ interface Driver {
   medical_insurance_expiry?: string | null;
   establishment_name?: string | null;
   vehicle_number?: string | null;
+  sort_order?: number | null;
 }
 
 
