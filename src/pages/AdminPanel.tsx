@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 
@@ -25,6 +25,7 @@ interface Driver {
   phone?: string | null;
   iqama_number?: string | null;
   iqama_expiry?: string | null;
+  operation_card_number?: string | null;
   operation_card_expiry?: string | null;
 }
 
@@ -39,6 +40,27 @@ const PALETTE = [
   "from-orange-500 to-orange-700",
 ];
 
+// Parse various date formats (yyyy-mm-dd, dd/mm/yyyy, dd-mm-yyyy, yyyy/mm/dd) to ISO
+function parseDate(raw: string): string | null {
+  const s = raw.trim();
+  if (!s) return null;
+  // ISO
+  let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  // dd/mm/yyyy or dd-mm-yyyy
+  m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  // Excel serial number
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10);
+    if (n > 20000 && n < 80000) {
+      const d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+      return d.toISOString().slice(0, 10);
+    }
+  }
+  return null;
+}
+
 export default function AdminPanel() {
   const [links, setLinks] = useState<UsefulLink[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -48,12 +70,17 @@ export default function AdminPanel() {
 
   const [driverDialog, setDriverDialog] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "", operation_card_expiry: "" });
+  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "", operation_card_number: "", operation_card_expiry: "" });
+
+  const [search, setSearch] = useState("");
+  const [bulkDialog, setBulkDialog] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      supabase.from("drivers").select("id, name, phone, iqama_number, iqama_expiry, operation_card_expiry").eq("is_active", true).order("name"),
+      (supabase as any).from("drivers").select("id, name, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry").eq("is_active", true).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -61,26 +88,23 @@ export default function AdminPanel() {
 
   useEffect(() => { load(); }, []);
 
-  const openNewLink = () => {
-    setEditingLink(null);
-    setLinkForm({ title: "", url: "", description: "" });
-    setLinkDialog(true);
-  };
+  const filteredDrivers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return drivers;
+    return drivers.filter((d) =>
+      (d.name || "").toLowerCase().includes(q) ||
+      (d.iqama_number || "").toLowerCase().includes(q) ||
+      (d.operation_card_number || "").toLowerCase().includes(q)
+    );
+  }, [drivers, search]);
 
-  const openEditLink = (l: UsefulLink) => {
-    setEditingLink(l);
-    setLinkForm({ title: l.title, url: l.url, description: l.description || "" });
-    setLinkDialog(true);
-  };
+  const openNewLink = () => { setEditingLink(null); setLinkForm({ title: "", url: "", description: "" }); setLinkDialog(true); };
+  const openEditLink = (l: UsefulLink) => { setEditingLink(l); setLinkForm({ title: l.title, url: l.url, description: l.description || "" }); setLinkDialog(true); };
 
   const saveLink = async () => {
-    if (!linkForm.title.trim() || !linkForm.url.trim()) {
-      toast.error("العنوان والرابط مطلوبان");
-      return;
-    }
+    if (!linkForm.title.trim() || !linkForm.url.trim()) { toast.error("العنوان والرابط مطلوبان"); return; }
     let url = linkForm.url.trim();
     if (!/^https?:\/\//i.test(url)) url = "https://" + url;
-
     const payload = { title: linkForm.title.trim(), url, description: linkForm.description.trim() || null };
     const res = editingLink
       ? await (supabase as any).from("useful_links").update(payload).eq("id", editingLink.id)
@@ -95,8 +119,7 @@ export default function AdminPanel() {
     if (!confirm("حذف الرابط؟")) return;
     const { error } = await (supabase as any).from("useful_links").delete().eq("id", id);
     if (error) { toast.error("فشل الحذف"); return; }
-    toast.success("تم الحذف");
-    load();
+    toast.success("تم الحذف"); load();
   };
 
   const openEditDriver = (d: Driver) => {
@@ -104,6 +127,7 @@ export default function AdminPanel() {
     setDriverForm({
       iqama_number: d.iqama_number || "",
       iqama_expiry: d.iqama_expiry || "",
+      operation_card_number: d.operation_card_number || "",
       operation_card_expiry: d.operation_card_expiry || "",
     });
     setDriverDialog(true);
@@ -111,18 +135,59 @@ export default function AdminPanel() {
 
   const saveDriver = async () => {
     if (!editingDriver) return;
-    const { error } = await supabase
-      .from("drivers")
-      .update({
-        iqama_number: driverForm.iqama_number.trim() || null,
-        iqama_expiry: driverForm.iqama_expiry || null,
-        operation_card_expiry: driverForm.operation_card_expiry || null,
-      } as any)
-      .eq("id", editingDriver.id);
+    const { error } = await (supabase as any).from("drivers").update({
+      iqama_number: driverForm.iqama_number.trim() || null,
+      iqama_expiry: driverForm.iqama_expiry || null,
+      operation_card_number: driverForm.operation_card_number.trim() || null,
+      operation_card_expiry: driverForm.operation_card_expiry || null,
+    }).eq("id", editingDriver.id);
     if (error) { toast.error("فشل الحفظ"); return; }
-    toast.success("تم الحفظ");
-    setDriverDialog(false);
-    load();
+    toast.success("تم الحفظ"); setDriverDialog(false); load();
+  };
+
+  const clearDriverCard = async (d: Driver) => {
+    if (!confirm(`حذف بيانات بطاقة السائق "${d.name}"؟\nسيتم مسح رقم الإقامة وتواريخ الانتهاء وبطاقة التشغيل.`)) return;
+    const { error } = await (supabase as any).from("drivers").update({
+      iqama_number: null, iqama_expiry: null, operation_card_number: null, operation_card_expiry: null,
+    }).eq("id", d.id);
+    if (error) { toast.error("فشل الحذف: " + error.message); return; }
+    toast.success("تم حذف بيانات البطاقة"); load();
+  };
+
+  const applyBulk = async () => {
+    const text = bulkText.trim();
+    if (!text) { toast.error("ألصق بيانات من Excel أولاً"); return; }
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length === 0) return;
+    setBulkBusy(true);
+    let updated = 0, notFound = 0, failed = 0;
+    const notFoundNames: string[] = [];
+
+    // Build name lookup
+    const byName = new Map<string, Driver>();
+    drivers.forEach((d) => byName.set((d.name || "").trim().toLowerCase(), d));
+
+    for (const raw of lines) {
+      const cols = raw.split(/\t|,/).map((c) => c.trim());
+      // Skip header row
+      if (/اسم|name/i.test(cols[0] || "") && updated === 0 && notFound === 0) continue;
+      const [name, iqama, iqamaExp, cardNo, cardExp] = cols;
+      if (!name) continue;
+      const driver = byName.get(name.toLowerCase());
+      if (!driver) { notFound++; notFoundNames.push(name); continue; }
+      const payload: any = {};
+      if (iqama !== undefined && iqama !== "") payload.iqama_number = iqama;
+      if (iqamaExp) { const p = parseDate(iqamaExp); if (p) payload.iqama_expiry = p; }
+      if (cardNo !== undefined && cardNo !== "") payload.operation_card_number = cardNo;
+      if (cardExp) { const p = parseDate(cardExp); if (p) payload.operation_card_expiry = p; }
+      if (Object.keys(payload).length === 0) continue;
+      const { error } = await (supabase as any).from("drivers").update(payload).eq("id", driver.id);
+      if (error) failed++; else updated++;
+    }
+    setBulkBusy(false);
+    toast.success(`تم تحديث ${updated} سائق${notFound ? ` • ${notFound} غير موجود` : ""}${failed ? ` • ${failed} فشل` : ""}`);
+    if (notFoundNames.length) console.warn("Drivers not found:", notFoundNames);
+    setBulkDialog(false); setBulkText(""); load();
   };
 
   const getExpiryStatus = (expiry?: string | null) => {
@@ -184,18 +249,41 @@ export default function AdminPanel() {
         </TabsContent>
 
         {/* Drivers Tab */}
-        <TabsContent value="drivers" className="mt-4">
-          {drivers.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">لا يوجد سائقون.</div>
+        <TabsContent value="drivers" className="mt-4 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="بحث بالاسم أو رقم الإقامة أو رقم بطاقة التشغيل..."
+                className="pr-9"
+              />
+            </div>
+            <Button onClick={() => { setBulkText(""); setBulkDialog(true); }} variant="outline" className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />تحديث جماعي (لصق من Excel)
+            </Button>
+            <div className="text-sm text-muted-foreground whitespace-nowrap px-2">
+              {filteredDrivers.length} / {drivers.length}
+            </div>
+          </div>
+
+          {filteredDrivers.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">
+              {drivers.length === 0 ? "لا يوجد سائقون." : "لا توجد نتائج للبحث."}
+            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {drivers.map((d) => {
+              {filteredDrivers.map((d) => {
                 const iqamaStatus = getExpiryStatus(d.iqama_expiry);
                 const cardStatus = getExpiryStatus(d.operation_card_expiry);
                 return (
-                  <Card key={d.id} className="overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer" onClick={() => openEditDriver(d)}>
-                    <div className={`bg-gradient-to-br ${iqamaStatus.color} p-4 text-white`}>
-                      <div className="mb-3">
+                  <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div
+                      className={`bg-gradient-to-br ${iqamaStatus.color} p-4 text-white cursor-pointer`}
+                      onClick={() => openEditDriver(d)}
+                    >
+                      <div className="mb-3 pr-8">
                         <div className="font-bold text-lg line-clamp-1">{d.name}</div>
                         {d.phone && <div className="text-xs text-white/80">{d.phone}</div>}
                       </div>
@@ -212,6 +300,10 @@ export default function AdminPanel() {
                           <div className="text-[10px] mt-0.5">{iqamaStatus.label}</div>
                         </div>
                         <div className="bg-white/20 backdrop-blur rounded-md p-2">
+                          <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم بطاقة التشغيل</div>
+                          <div className="font-mono font-bold text-base">{d.operation_card_number || "—"}</div>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
                           <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء بطاقة التشغيل</div>
                           <div className="font-mono font-bold text-sm">
                             {d.operation_card_expiry ? format(parseISO(d.operation_card_expiry), "yyyy/MM/dd") : "—"}
@@ -220,6 +312,15 @@ export default function AdminPanel() {
                         </div>
                       </div>
                     </div>
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 left-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={(e) => { e.stopPropagation(); clearDriverCard(d); }}
+                      title="حذف بيانات البطاقة"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </Card>
                 );
               })}
@@ -271,6 +372,10 @@ export default function AdminPanel() {
               <Input type="date" value={driverForm.iqama_expiry} onChange={(e) => setDriverForm({ ...driverForm, iqama_expiry: e.target.value })} />
             </div>
             <div>
+              <Label>رقم بطاقة التشغيل</Label>
+              <Input value={driverForm.operation_card_number} onChange={(e) => setDriverForm({ ...driverForm, operation_card_number: e.target.value })} inputMode="numeric" />
+            </div>
+            <div>
               <Label>تاريخ انتهاء بطاقة التشغيل</Label>
               <Input type="date" value={driverForm.operation_card_expiry} onChange={(e) => setDriverForm({ ...driverForm, operation_card_expiry: e.target.value })} />
             </div>
@@ -278,6 +383,41 @@ export default function AdminPanel() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDriverDialog(false)}>إلغاء</Button>
             <Button onClick={saveDriver}>حفظ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk paste dialog */}
+      <Dialog open={bulkDialog} onOpenChange={setBulkDialog}>
+        <DialogContent dir="rtl" className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>تحديث جماعي للسائقين من Excel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
+              <div className="font-semibold">طريقة الاستخدام:</div>
+              <div>انسخ الأعمدة من Excel بالترتيب التالي ثم الصقها في الأسفل:</div>
+              <div className="font-mono text-xs bg-background p-2 rounded">
+                اسم السائق | رقم الإقامة | تاريخ انتهاء الإقامة | رقم بطاقة التشغيل | تاريخ انتهاء بطاقة التشغيل
+              </div>
+              <div className="text-xs">• يتم المطابقة بالاسم تماماً كما هو مسجل في النظام.</div>
+              <div className="text-xs">• صيغ التاريخ المقبولة: yyyy-mm-dd أو dd/mm/yyyy أو رقم Excel.</div>
+              <div className="text-xs">• الأعمدة الفارغة لن يتم تحديثها.</div>
+            </div>
+            <Textarea
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              rows={12}
+              dir="ltr"
+              placeholder={"محمد علي\t2123456789\t2026-12-31\t9876\t2027-06-30\nأحمد سالم\t2234567890\t30/06/2026\t8765\t15/08/2026"}
+              className="font-mono text-sm"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialog(false)} disabled={bulkBusy}>إلغاء</Button>
+            <Button onClick={applyBulk} disabled={bulkBusy}>
+              {bulkBusy ? "جاري التحديث..." : "تطبيق التحديث"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
