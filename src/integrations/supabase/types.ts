@@ -1144,6 +1144,7 @@ export type Database = {
           iqama_number: string | null
           is_active: boolean | null
           name: string
+          operation_card_expiry: string | null
           organization_id: string | null
           phone: string | null
           updated_at: string | null
@@ -1155,6 +1156,7 @@ export type Database = {
           iqama_number?: string | null
           is_active?: boolean | null
           name: string
+          operation_card_expiry?: string | null
           organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
@@ -1166,6 +1168,7 @@ export type Database = {
           iqama_number?: string | null
           is_active?: boolean | null
           name?: string
+          operation_card_expiry?: string | null
           organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
