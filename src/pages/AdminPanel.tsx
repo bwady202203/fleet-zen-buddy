@@ -620,6 +620,74 @@ export default function AdminPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Datalist for establishment names */}
+      <datalist id="establishments-list">
+        {establishments.map((e) => (<option key={e.id} value={e.name} />))}
+      </datalist>
+
+      {/* Establishments management dialog */}
+      <Dialog open={estDialog} onOpenChange={setEstDialog}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" />إدارة أسماء المنشآت</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={newEstName}
+                onChange={(e) => setNewEstName(e.target.value)}
+                placeholder="اسم المنشأة الجديدة"
+                dir="rtl"
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addEstablishment(); } }}
+              />
+              <Button onClick={addEstablishment} className="gap-1"><Plus className="h-4 w-4" />إضافة</Button>
+            </div>
+            <div className="max-h-80 overflow-y-auto space-y-1 border rounded-md p-2">
+              {establishments.length === 0 ? (
+                <div className="text-center text-muted-foreground py-6 text-sm">لا توجد منشآت بعد.</div>
+              ) : establishments.map((e) => (
+                <div key={e.id} className="flex items-center justify-between bg-muted/40 hover:bg-muted rounded px-3 py-2">
+                  <span className="font-medium">{e.name}</span>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteEstablishment(e.id)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEstDialog(false)}>إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New driver dialog */}
+      <Dialog open={newDriverDialog} onOpenChange={setNewDriverDialog}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5" />إضافة سائق جديد</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>اسم السائق (كما يظهر في النظام)</Label>
+              <Input value={newDriverName} onChange={(e) => setNewDriverName(e.target.value)} placeholder="Mohammed Ali" />
+            </div>
+            <div>
+              <Label>الاسم بالعربية</Label>
+              <Input value={newDriverNameAr} onChange={(e) => setNewDriverNameAr(e.target.value)} dir="rtl" placeholder="محمد علي" />
+            </div>
+            <div>
+              <Label>رقم الجوال (اختياري)</Label>
+              <Input value={newDriverPhone} onChange={(e) => setNewDriverPhone(e.target.value)} inputMode="tel" dir="ltr" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewDriverDialog(false)}>إلغاء</Button>
+            <Button onClick={createDriver}>إنشاء البطاقة</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
