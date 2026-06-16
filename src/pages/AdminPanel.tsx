@@ -270,6 +270,10 @@ export default function AdminPanel() {
               <Label>تاريخ انتهاء الإقامة</Label>
               <Input type="date" value={driverForm.iqama_expiry} onChange={(e) => setDriverForm({ ...driverForm, iqama_expiry: e.target.value })} />
             </div>
+            <div>
+              <Label>تاريخ انتهاء بطاقة التشغيل</Label>
+              <Input type="date" value={driverForm.operation_card_expiry} onChange={(e) => setDriverForm({ ...driverForm, operation_card_expiry: e.target.value })} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDriverDialog(false)}>إلغاء</Button>
