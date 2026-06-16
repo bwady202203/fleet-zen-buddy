@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, ExternalLink, Edit, Trash2, Link2, IdCard, Calendar, Search, FileSpreadsheet, ArrowUp, ArrowDown, Building2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { format, differenceInDays, parseISO } from "date-fns";
 
