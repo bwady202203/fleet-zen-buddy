@@ -110,8 +110,9 @@ const UsersManagement = () => {
 
   const fetchUsers = async () => {
     if (!selectedOrganization) return;
-    
+    setLoading(true);
     try {
+
       // جلب المستخدمين المرتبطين بالشركة
       const { data: userOrgs, error: userOrgsError } = await supabase
         .from('user_organizations')
