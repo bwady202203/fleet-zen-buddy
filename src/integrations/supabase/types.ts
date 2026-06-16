@@ -1145,6 +1145,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           operation_card_expiry: string | null
+          operation_card_number: string | null
           organization_id: string | null
           phone: string | null
           updated_at: string | null
@@ -1157,6 +1158,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           operation_card_expiry?: string | null
+          operation_card_number?: string | null
           organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
@@ -1169,6 +1171,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           operation_card_expiry?: string | null
+          operation_card_number?: string | null
           organization_id?: string | null
           phone?: string | null
           updated_at?: string | null
