@@ -28,7 +28,11 @@ interface Driver {
   iqama_expiry?: string | null;
   operation_card_number?: string | null;
   operation_card_expiry?: string | null;
+  medical_insurance_expiry?: string | null;
+  establishment_name?: string | null;
+  vehicle_number?: string | null;
 }
+
 
 const PALETTE = [
   "from-blue-500 to-blue-700",
@@ -81,7 +85,7 @@ export default function AdminPanel() {
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry").eq("is_active", true).order("name"),
+      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number").eq("is_active", true).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -297,7 +301,9 @@ export default function AdminPanel() {
               {filteredDrivers.map((d) => {
                 const iqamaStatus = getExpiryStatus(d.iqama_expiry);
                 const cardStatus = getExpiryStatus(d.operation_card_expiry);
-                const gradient = cardGradient(iqamaStatus, cardStatus);
+                const medicalStatus = getExpiryStatus(d.medical_insurance_expiry);
+                const gradient = cardGradient(iqamaStatus, cardStatus, medicalStatus);
+
                 const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-2 py-1 text-white placeholder-white/50 font-mono font-bold text-sm outline-none transition";
                 return (
                   <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
@@ -354,6 +360,35 @@ export default function AdminPanel() {
                             />
                             <div className="text-[10px]">{cardStatus.label}</div>
                           </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء التأمين الطبي</div>
+                            <input
+                              type="date"
+                              defaultValue={d.medical_insurance_expiry || ""}
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "medical_insurance_expiry", e.target.value || null)}
+                            />
+                            <div className="text-[10px]">{medicalStatus.label}</div>
+                          </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />اسم المنشأة</div>
+                            <input
+                              defaultValue={d.establishment_name || ""}
+                              dir="rtl"
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "establishment_name", e.target.value.trim() || null)}
+                            />
+                          </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم السيارة</div>
+                            <input
+                              defaultValue={d.vehicle_number || ""}
+                              dir="ltr"
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "vehicle_number", e.target.value.trim() || null)}
+                            />
+                          </div>
+
                         </div>
                       </div>
                     </div>
