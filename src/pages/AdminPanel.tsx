@@ -369,6 +369,10 @@ export default function AdminPanel() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
+              <Label>اسم السائق بالعربية</Label>
+              <Input value={driverForm.name_ar} onChange={(e) => setDriverForm({ ...driverForm, name_ar: e.target.value })} dir="rtl" placeholder="مثال: محمد علي" />
+            </div>
+            <div>
               <Label>رقم الإقامة</Label>
               <Input value={driverForm.iqama_number} onChange={(e) => setDriverForm({ ...driverForm, iqama_number: e.target.value })} inputMode="numeric" />
             </div>
