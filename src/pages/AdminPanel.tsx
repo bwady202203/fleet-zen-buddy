@@ -25,6 +25,7 @@ interface Driver {
   phone?: string | null;
   iqama_number?: string | null;
   iqama_expiry?: string | null;
+  operation_card_expiry?: string | null;
 }
 
 const PALETTE = [
@@ -47,12 +48,12 @@ export default function AdminPanel() {
 
   const [driverDialog, setDriverDialog] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "" });
+  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "", operation_card_expiry: "" });
 
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      supabase.from("drivers").select("id, name, phone, iqama_number, iqama_expiry").eq("is_active", true).order("name"),
+      supabase.from("drivers").select("id, name, phone, iqama_number, iqama_expiry, operation_card_expiry").eq("is_active", true).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -100,7 +101,11 @@ export default function AdminPanel() {
 
   const openEditDriver = (d: Driver) => {
     setEditingDriver(d);
-    setDriverForm({ iqama_number: d.iqama_number || "", iqama_expiry: d.iqama_expiry || "" });
+    setDriverForm({
+      iqama_number: d.iqama_number || "",
+      iqama_expiry: d.iqama_expiry || "",
+      operation_card_expiry: d.operation_card_expiry || "",
+    });
     setDriverDialog(true);
   };
 
@@ -111,6 +116,7 @@ export default function AdminPanel() {
       .update({
         iqama_number: driverForm.iqama_number.trim() || null,
         iqama_expiry: driverForm.iqama_expiry || null,
+        operation_card_expiry: driverForm.operation_card_expiry || null,
       } as any)
       .eq("id", editingDriver.id);
     if (error) { toast.error("فشل الحفظ"); return; }
@@ -184,11 +190,12 @@ export default function AdminPanel() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {drivers.map((d) => {
-                const status = getExpiryStatus(d.iqama_expiry);
+                const iqamaStatus = getExpiryStatus(d.iqama_expiry);
+                const cardStatus = getExpiryStatus(d.operation_card_expiry);
                 return (
                   <Card key={d.id} className="overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer" onClick={() => openEditDriver(d)}>
-                    <div className={`bg-gradient-to-br ${status.color} p-4 text-white aspect-square flex flex-col justify-between`}>
-                      <div>
+                    <div className={`bg-gradient-to-br ${iqamaStatus.color} p-4 text-white`}>
+                      <div className="mb-3">
                         <div className="font-bold text-lg line-clamp-1">{d.name}</div>
                         {d.phone && <div className="text-xs text-white/80">{d.phone}</div>}
                       </div>
@@ -198,11 +205,18 @@ export default function AdminPanel() {
                           <div className="font-mono font-bold text-base">{d.iqama_number || "—"}</div>
                         </div>
                         <div className="bg-white/20 backdrop-blur rounded-md p-2">
-                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />تاريخ الانتهاء</div>
+                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء الإقامة</div>
                           <div className="font-mono font-bold text-sm">
                             {d.iqama_expiry ? format(parseISO(d.iqama_expiry), "yyyy/MM/dd") : "—"}
                           </div>
-                          <div className="text-[10px] mt-0.5">{status.label}</div>
+                          <div className="text-[10px] mt-0.5">{iqamaStatus.label}</div>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
+                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء بطاقة التشغيل</div>
+                          <div className="font-mono font-bold text-sm">
+                            {d.operation_card_expiry ? format(parseISO(d.operation_card_expiry), "yyyy/MM/dd") : "—"}
+                          </div>
+                          <div className="text-[10px] mt-0.5">{cardStatus.label}</div>
                         </div>
                       </div>
                     </div>
@@ -255,6 +269,10 @@ export default function AdminPanel() {
             <div>
               <Label>تاريخ انتهاء الإقامة</Label>
               <Input type="date" value={driverForm.iqama_expiry} onChange={(e) => setDriverForm({ ...driverForm, iqama_expiry: e.target.value })} />
+            </div>
+            <div>
+              <Label>تاريخ انتهاء بطاقة التشغيل</Label>
+              <Input type="date" value={driverForm.operation_card_expiry} onChange={(e) => setDriverForm({ ...driverForm, operation_card_expiry: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
