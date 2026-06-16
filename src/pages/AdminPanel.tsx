@@ -155,9 +155,16 @@ export default function AdminPanel() {
   };
 
   const clearDriverCard = async (d: Driver) => {
-    if (!confirm(`حذف بيانات بطاقة السائق "${d.name}"؟\nسيتم مسح رقم الإقامة وتواريخ الانتهاء وبطاقة التشغيل.`)) return;
+    if (!confirm(`حذف جميع بيانات بطاقة السائق "${d.name}"؟\nسيتم مسح كل الحقول (الإقامة، التشغيل، التأمين الطبي، اسم المنشأة، رقم السيارة، الاسم بالعربي).`)) return;
     const { error } = await (supabase as any).from("drivers").update({
-      iqama_number: null, iqama_expiry: null, operation_card_number: null, operation_card_expiry: null,
+      iqama_number: null,
+      iqama_expiry: null,
+      operation_card_number: null,
+      operation_card_expiry: null,
+      medical_insurance_expiry: null,
+      establishment_name: null,
+      vehicle_number: null,
+      name_ar: null,
     }).eq("id", d.id);
     if (error) { toast.error("فشل الحذف: " + error.message); return; }
     toast.success("تم حذف بيانات البطاقة"); load();
