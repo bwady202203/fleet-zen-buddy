@@ -1,4 +1,4 @@
-import { LogOut, Download, Clock, User, ArrowRight, PieChart } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
@@ -178,6 +178,16 @@ export const SystemIconsBar = () => {
                 <span className="hidden sm:inline text-xs font-bold">تقريري</span>
               </Button>
             )}
+            <Button
+              onClick={() => navigate('/admin-panel')}
+              variant="default"
+              size="sm"
+              className="h-8 gap-1.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:opacity-90 shadow-md"
+              title="الشاشة الإدارية: الروابط الهامة وبطاقات تشغيل السائقين"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs font-bold">الإدارية</span>
+            </Button>
           </div>
           
           {/* معلومات المستخدم وعداد الجلسة */}
