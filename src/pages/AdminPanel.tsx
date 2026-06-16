@@ -298,39 +298,64 @@ export default function AdminPanel() {
               {filteredDrivers.map((d) => {
                 const iqamaStatus = getExpiryStatus(d.iqama_expiry);
                 const cardStatus = getExpiryStatus(d.operation_card_expiry);
+                const gradient = cardGradient(iqamaStatus, cardStatus);
+                const fieldCls = "w-full bg-white/15 hover:bg-white/25 focus:bg-white/30 border border-white/20 rounded px-2 py-1 text-white placeholder-white/50 font-mono font-bold text-sm outline-none transition";
                 return (
                   <Card key={d.id} className="group relative overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                    <div
-                      className={`bg-gradient-to-br ${iqamaStatus.color} p-4 text-white cursor-pointer`}
-                      onClick={() => openEditDriver(d)}
-                    >
-                      <div className="mb-3 pr-8">
-                        <div className="font-bold text-lg line-clamp-1">{d.name_ar || d.name}</div>
-                        {d.name_ar && <div className="text-xs text-white/70 line-clamp-1" dir="ltr">{d.name}</div>}
-                        {d.phone && <div className="text-xs text-white/80">{d.phone}</div>}
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
-                          <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم الإقامة</div>
-                          <div className="font-mono font-bold text-base">{d.iqama_number || "—"}</div>
+                    <div className={`${gradient} p-4 text-white relative`}>
+                      <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 20% 10%, rgba(255,255,255,.35), transparent 40%), radial-gradient(circle at 80% 90%, rgba(255,255,255,.25), transparent 45%)" }} />
+                      <div className="relative">
+                        <div className="mb-3 pr-8">
+                          <input
+                            defaultValue={d.name_ar || ""}
+                            placeholder={d.name}
+                            dir="rtl"
+                            className="w-full bg-transparent border-b border-white/30 focus:border-white outline-none font-bold text-lg placeholder-white/60"
+                            onBlur={(e) => updateDriverField(d.id, "name_ar", e.target.value.trim() || null)}
+                          />
+                          <div className="text-xs text-white/70 line-clamp-1 mt-0.5" dir="ltr">{d.name}{d.phone ? ` • ${d.phone}` : ""}</div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
-                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء الإقامة</div>
-                          <div className="font-mono font-bold text-sm">
-                            {d.iqama_expiry ? format(parseISO(d.iqama_expiry), "yyyy/MM/dd") : "—"}
+                        <div className="space-y-2">
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم الإقامة</div>
+                            <input
+                              defaultValue={d.iqama_number || ""}
+                              dir="ltr"
+                              inputMode="numeric"
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "iqama_number", e.target.value.trim() || null)}
+                            />
                           </div>
-                          <div className="text-[10px] mt-0.5">{iqamaStatus.label}</div>
-                        </div>
-                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
-                          <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم بطاقة التشغيل</div>
-                          <div className="font-mono font-bold text-base">{d.operation_card_number || "—"}</div>
-                        </div>
-                        <div className="bg-white/20 backdrop-blur rounded-md p-2">
-                          <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء بطاقة التشغيل</div>
-                          <div className="font-mono font-bold text-sm">
-                            {d.operation_card_expiry ? format(parseISO(d.operation_card_expiry), "yyyy/MM/dd") : "—"}
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء الإقامة</div>
+                            <input
+                              type="date"
+                              defaultValue={d.iqama_expiry || ""}
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "iqama_expiry", e.target.value || null)}
+                            />
+                            <div className="text-[10px]">{iqamaStatus.label}</div>
                           </div>
-                          <div className="text-[10px] mt-0.5">{cardStatus.label}</div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><IdCard className="h-3 w-3" />رقم بطاقة التشغيل</div>
+                            <input
+                              defaultValue={d.operation_card_number || ""}
+                              dir="ltr"
+                              inputMode="numeric"
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "operation_card_number", e.target.value.trim() || null)}
+                            />
+                          </div>
+                          <div className="bg-white/10 backdrop-blur rounded-md p-2 space-y-1">
+                            <div className="text-[10px] text-white/80 flex items-center gap-1"><Calendar className="h-3 w-3" />انتهاء بطاقة التشغيل</div>
+                            <input
+                              type="date"
+                              defaultValue={d.operation_card_expiry || ""}
+                              className={fieldCls}
+                              onBlur={(e) => updateDriverField(d.id, "operation_card_expiry", e.target.value || null)}
+                            />
+                            <div className="text-[10px]">{cardStatus.label}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -350,6 +375,7 @@ export default function AdminPanel() {
           )}
         </TabsContent>
       </Tabs>
+
 
       {/* Link dialog */}
       <Dialog open={linkDialog} onOpenChange={setLinkDialog}>
