@@ -22,6 +22,7 @@ interface UsefulLink {
 interface Driver {
   id: string;
   name: string;
+  name_ar?: string | null;
   phone?: string | null;
   iqama_number?: string | null;
   iqama_expiry?: string | null;
@@ -70,7 +71,7 @@ export default function AdminPanel() {
 
   const [driverDialog, setDriverDialog] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [driverForm, setDriverForm] = useState({ iqama_number: "", iqama_expiry: "", operation_card_number: "", operation_card_expiry: "" });
+  const [driverForm, setDriverForm] = useState({ name_ar: "", iqama_number: "", iqama_expiry: "", operation_card_number: "", operation_card_expiry: "" });
 
   const [search, setSearch] = useState("");
   const [bulkDialog, setBulkDialog] = useState(false);
@@ -80,7 +81,7 @@ export default function AdminPanel() {
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
-      (supabase as any).from("drivers").select("id, name, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry").eq("is_active", true).order("name"),
+      (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry").eq("is_active", true).order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
@@ -93,6 +94,7 @@ export default function AdminPanel() {
     if (!q) return drivers;
     return drivers.filter((d) =>
       (d.name || "").toLowerCase().includes(q) ||
+      (d.name_ar || "").toLowerCase().includes(q) ||
       (d.iqama_number || "").toLowerCase().includes(q) ||
       (d.operation_card_number || "").toLowerCase().includes(q)
     );
@@ -125,6 +127,7 @@ export default function AdminPanel() {
   const openEditDriver = (d: Driver) => {
     setEditingDriver(d);
     setDriverForm({
+      name_ar: d.name_ar || "",
       iqama_number: d.iqama_number || "",
       iqama_expiry: d.iqama_expiry || "",
       operation_card_number: d.operation_card_number || "",
@@ -136,6 +139,7 @@ export default function AdminPanel() {
   const saveDriver = async () => {
     if (!editingDriver) return;
     const { error } = await (supabase as any).from("drivers").update({
+      name_ar: driverForm.name_ar.trim() || null,
       iqama_number: driverForm.iqama_number.trim() || null,
       iqama_expiry: driverForm.iqama_expiry || null,
       operation_card_number: driverForm.operation_card_number.trim() || null,
@@ -284,7 +288,8 @@ export default function AdminPanel() {
                       onClick={() => openEditDriver(d)}
                     >
                       <div className="mb-3 pr-8">
-                        <div className="font-bold text-lg line-clamp-1">{d.name}</div>
+                        <div className="font-bold text-lg line-clamp-1">{d.name_ar || d.name}</div>
+                        {d.name_ar && <div className="text-xs text-white/70 line-clamp-1" dir="ltr">{d.name}</div>}
                         {d.phone && <div className="text-xs text-white/80">{d.phone}</div>}
                       </div>
                       <div className="space-y-2">
@@ -363,6 +368,10 @@ export default function AdminPanel() {
             <DialogTitle>بطاقة تشغيل: {editingDriver?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <div>
+              <Label>اسم السائق بالعربية</Label>
+              <Input value={driverForm.name_ar} onChange={(e) => setDriverForm({ ...driverForm, name_ar: e.target.value })} dir="rtl" placeholder="مثال: محمد علي" />
+            </div>
             <div>
               <Label>رقم الإقامة</Label>
               <Input value={driverForm.iqama_number} onChange={(e) => setDriverForm({ ...driverForm, iqama_number: e.target.value })} inputMode="numeric" />
