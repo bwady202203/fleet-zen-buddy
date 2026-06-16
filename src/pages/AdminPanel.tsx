@@ -363,6 +363,12 @@ export default function AdminPanel() {
             <Button onClick={() => { setBulkText(""); setBulkDialog(true); }} variant="outline" className="gap-2">
               <FileSpreadsheet className="h-4 w-4" />تحديث جماعي (لصق من Excel)
             </Button>
+            <Button onClick={() => setEstDialog(true)} variant="outline" className="gap-2">
+              <Building2 className="h-4 w-4" />المنشآت
+            </Button>
+            <Button onClick={() => setNewDriverDialog(true)} className="gap-2">
+              <UserPlus className="h-4 w-4" />سائق جديد
+            </Button>
             <div className="text-sm text-muted-foreground whitespace-nowrap px-2">
               {filteredDrivers.length} / {drivers.length}
             </div>
