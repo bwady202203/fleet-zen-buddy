@@ -93,12 +93,46 @@ export default function AdminPanel() {
   const [newDriverPhone, setNewDriverPhone] = useState("");
 
   const load = async () => {
-    const [l, d] = await Promise.all([
+    const [l, d, e] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
       (supabase as any).from("drivers").select("id, name, name_ar, phone, iqama_number, iqama_expiry, operation_card_number, operation_card_expiry, medical_insurance_expiry, establishment_name, vehicle_number, sort_order").eq("is_active", true).order("sort_order", { ascending: true }).order("name"),
+      (supabase as any).from("establishments").select("id, name").order("name"),
     ]);
     if (!l.error) setLinks(l.data || []);
     if (!d.error) setDrivers((d.data as any) || []);
+    if (!e.error) setEstablishments((e.data as any) || []);
+  };
+
+  const addEstablishment = async () => {
+    const name = newEstName.trim();
+    if (!name) return;
+    const { error } = await (supabase as any).from("establishments").insert({ name });
+    if (error) { toast.error("فشل الإضافة: " + error.message); return; }
+    toast.success("تمت الإضافة"); setNewEstName(""); load();
+  };
+
+  const deleteEstablishment = async (id: string) => {
+    if (!confirm("حذف المنشأة؟")) return;
+    const { error } = await (supabase as any).from("establishments").delete().eq("id", id);
+    if (error) { toast.error("فشل الحذف"); return; }
+    toast.success("تم الحذف"); load();
+  };
+
+  const createDriver = async () => {
+    const name = newDriverName.trim();
+    if (!name) { toast.error("اسم السائق مطلوب"); return; }
+    const maxOrder = drivers.reduce((m, d) => Math.max(m, d.sort_order ?? 0), 0);
+    const { error } = await (supabase as any).from("drivers").insert({
+      name,
+      name_ar: newDriverNameAr.trim() || null,
+      phone: newDriverPhone.trim() || null,
+      sort_order: maxOrder + 1,
+      is_active: true,
+    });
+    if (error) { toast.error("فشل الإنشاء: " + error.message); return; }
+    toast.success("تم إنشاء السائق");
+    setNewDriverName(""); setNewDriverNameAr(""); setNewDriverPhone("");
+    setNewDriverDialog(false); load();
   };
 
   useEffect(() => { load(); }, []);
