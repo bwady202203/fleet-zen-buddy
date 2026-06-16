@@ -79,8 +79,12 @@ const UsersManagement = () => {
   useEffect(() => {
     if (selectedOrganization) {
       fetchUsers();
+    } else {
+      setUsers([]);
+      setLoading(false);
     }
   }, [selectedOrganization]);
+
 
   const fetchOrganizations = async () => {
     try {
