@@ -83,6 +83,15 @@ export default function AdminPanel() {
   const [bulkText, setBulkText] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  const [establishments, setEstablishments] = useState<{ id: string; name: string }[]>([]);
+  const [estDialog, setEstDialog] = useState(false);
+  const [newEstName, setNewEstName] = useState("");
+
+  const [newDriverDialog, setNewDriverDialog] = useState(false);
+  const [newDriverName, setNewDriverName] = useState("");
+  const [newDriverNameAr, setNewDriverNameAr] = useState("");
+  const [newDriverPhone, setNewDriverPhone] = useState("");
+
   const load = async () => {
     const [l, d] = await Promise.all([
       (supabase as any).from("useful_links").select("*").order("created_at", { ascending: false }),
