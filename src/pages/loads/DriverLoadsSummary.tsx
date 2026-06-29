@@ -1148,6 +1148,238 @@ const DriverLoadsSummary = () => {
               )
             )}
           </TabsContent>
+
+          <TabsContent value="smart" className="space-y-6 mt-6" dir="rtl">
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                  التقرير الذكي — لوحة تحكم تحليلية
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <MonthChips setStart={setSmStart} setEnd={setSmEnd} />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label>من تاريخ</Label>
+                    <Input type="date" value={smStart} onChange={(e) => setSmStart(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>إلى تاريخ</Label>
+                    <Input type="date" value={smEnd} onChange={(e) => setSmEnd(e.target.value)} />
+                  </div>
+                  <Button onClick={handleGenerateSmartReport} disabled={smLoading} size="lg" className="bg-gradient-to-l from-primary to-accent">
+                    {smLoading ? (
+                      <><Loader2 className="h-4 w-4 ml-2 animate-spin" />جاري التحليل...</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4 ml-2" />تحليل ذكي</>
+                    )}
+                  </Button>
+                  {smData && (
+                    <div className="flex gap-2">
+                      <Button onClick={handlePrintSmart} variant="outline" size="lg" className="flex-1">
+                        <Printer className="h-4 w-4 ml-2" /> طباعة
+                      </Button>
+                      <Button onClick={handleExportSmartPDF} disabled={smExporting} variant="outline" size="lg" className="flex-1">
+                        {smExporting ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <FileDown className="h-4 w-4 ml-2" />}
+                        PDF
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {smData ? (
+              <div ref={smartRef} className="space-y-6 bg-background p-4 rounded-lg" dir="rtl">
+                <div className="text-center pb-4 border-b-2 border-primary">
+                  <h1 className="text-2xl font-extrabold text-primary">شركة الرمال الصناعية</h1>
+                  <h2 className="text-lg font-bold mt-1">التقرير الذكي للحمولات</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    من {smStart} إلى {smEnd} • تاريخ التقرير: {format(new Date(), "PPP", { locale: ar })}
+                  </p>
+                </div>
+
+                {/* KPI Cards */}
+                <div className="kpi grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                    <CardContent className="pt-6 text-center">
+                      <Boxes className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+                      <div className="lbl text-xs text-muted-foreground">إجمالي الشحنات</div>
+                      <div className="val text-2xl font-extrabold text-blue-700">{smData.totals.loads.toLocaleString("en-US")}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+                    <CardContent className="pt-6 text-center">
+                      <Package className="h-8 w-8 mx-auto text-emerald-600 mb-2" />
+                      <div className="lbl text-xs text-muted-foreground">إجمالي الأطنان</div>
+                      <div className="val text-2xl font-extrabold text-emerald-700">
+                        {smData.totals.quantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+                    <CardContent className="pt-6 text-center">
+                      <Coins className="h-8 w-8 mx-auto text-amber-600 mb-2" />
+                      <div className="lbl text-xs text-muted-foreground">إجمالي عمولات السائقين</div>
+                      <div className="val text-2xl font-extrabold text-amber-700">
+                        {smData.totals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                    <CardContent className="pt-6 text-center">
+                      <TrendingUp className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+                      <div className="lbl text-xs text-muted-foreground">متوسط العمولة / شحنة</div>
+                      <div className="val text-2xl font-extrabold text-purple-700">
+                        {(smData.totals.loads > 0 ? smData.totals.commission / smData.totals.loads : 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Companies chart + table */}
+                <Card className="chart-wrap">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />إجماليات الشركات</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div style={{ width: "100%", height: 300 }} dir="ltr">
+                      <ResponsiveContainer>
+                        <BarChart data={smData.companies.slice(0, 10)} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="name" angle={-25} textAnchor="end" height={70} tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <RTooltip />
+                          <Legend />
+                          <Bar dataKey="quantity" name="الأطنان" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                          <Bar dataKey="commission" name="العمولات" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <Table className="mt-4">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">الشركة</TableHead>
+                          <TableHead className="text-center">عدد الشحنات</TableHead>
+                          <TableHead className="text-center">الأطنان</TableHead>
+                          <TableHead className="text-center">العمولات</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {smData.companies.map((c) => (
+                          <TableRow key={c.name}>
+                            <TableCell className="font-medium">{c.name}</TableCell>
+                            <TableCell className="text-center">{c.loads}</TableCell>
+                            <TableCell className="text-center">{c.quantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-center text-emerald-600 font-semibold">{c.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* Materials chart + table */}
+                <Card className="chart-wrap">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5 text-emerald-600" />إجماليات كميات المواد</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div style={{ width: "100%", height: 300 }} dir="ltr">
+                      <ResponsiveContainer>
+                        <PieChart>
+                          <Pie data={smData.materials} dataKey="quantity" nameKey="name" outerRadius={100} label={(e: any) => `${e.name}: ${e.quantity.toFixed(1)}`}>
+                            {smData.materials.map((_, i) => {
+                              const palette = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+                              return <Cell key={i} fill={palette[i % palette.length]} />;
+                            })}
+                          </Pie>
+                          <RTooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right">المادة</TableHead>
+                          <TableHead className="text-center">الشحنات</TableHead>
+                          <TableHead className="text-center">الأطنان</TableHead>
+                          <TableHead className="text-center">العمولات</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {smData.materials.map((m) => (
+                          <TableRow key={m.name}>
+                            <TableCell className="font-medium">{m.name}</TableCell>
+                            <TableCell className="text-center">{m.loads}</TableCell>
+                            <TableCell className="text-center font-semibold text-primary">{m.quantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-center text-emerald-600">{m.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* Drivers commissions chart + table */}
+                <Card className="chart-wrap">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Coins className="h-5 w-5 text-amber-600" />إجماليات عمولات السائقين</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div style={{ width: "100%", height: 320 }} dir="ltr">
+                      <ResponsiveContainer>
+                        <BarChart data={smData.drivers.slice(0, 12)} margin={{ top: 10, right: 20, left: 0, bottom: 50 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="name" angle={-30} textAnchor="end" height={80} tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <RTooltip />
+                          <Legend />
+                          <Bar dataKey="commission" name="العمولات" fill="hsl(var(--chart-3))" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <Table className="mt-4">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-right w-12">#</TableHead>
+                          <TableHead className="text-right">السائق</TableHead>
+                          <TableHead className="text-center">الشحنات</TableHead>
+                          <TableHead className="text-center">الأطنان</TableHead>
+                          <TableHead className="text-center">إجمالي العمولات</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {smData.drivers.map((d, i) => (
+                          <TableRow key={d.name}>
+                            <TableCell>{i + 1}</TableCell>
+                            <TableCell className="font-medium">{d.name}</TableCell>
+                            <TableCell className="text-center">{d.loads}</TableCell>
+                            <TableCell className="text-center">{d.quantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-center font-bold text-amber-700">{d.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-muted font-bold">
+                          <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                          <TableCell className="text-center">{smData.totals.loads}</TableCell>
+                          <TableCell className="text-center">{smData.totals.quantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-center text-amber-800">{smData.totals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              !smLoading && (
+                <Card className="p-12 text-center">
+                  <Sparkles className="h-16 w-16 mx-auto text-primary mb-4" />
+                  <p className="text-muted-foreground">حدد الفترة واضغط "تحليل ذكي" للحصول على لوحة تحليلية كاملة</p>
+                </Card>
+              )
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
