@@ -745,7 +745,6 @@ const DriverLoadsSummary = () => {
                     )}
                   </Button>
                 </div>
-                </div>
               </CardContent>
             </Card>
 
