@@ -67,7 +67,7 @@ const DriverLoadsSummary = () => {
   const [showTypeReport, setShowTypeReport] = useState(false);
 
   // ====== تبويب تقرير سائق (تفصيلي) ======
-  const [activeTab, setActiveTab] = useState<"summary" | "driver">("summary");
+  const [activeTab, setActiveTab] = useState<"summary" | "driver" | "company">("summary");
   const [driversList, setDriversList] = useState<{ id: string; name: string }[]>([]);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [drvStart, setDrvStart] = useState(today);
@@ -81,6 +81,12 @@ const DriverLoadsSummary = () => {
     quantity: number;
     commission: number;
   }>>([]);
+
+  // ====== تبويب ملخص الشركات ======
+  const [cmpStart, setCmpStart] = useState(today);
+  const [cmpEnd, setCmpEnd] = useState(today);
+  const [cmpLoading, setCmpLoading] = useState(false);
+  const [cmpRows, setCmpRows] = useState<CompanyRow[]>([]);
 
   useEffect(() => {
     (async () => {
