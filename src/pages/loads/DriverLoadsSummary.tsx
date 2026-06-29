@@ -637,12 +637,15 @@ const DriverLoadsSummary = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6 no-print">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+          <TabsList className="grid grid-cols-3 w-full max-w-2xl mx-auto">
             <TabsTrigger value="summary" className="gap-2">
               <Truck className="h-4 w-4" /> ملخص السائقين
             </TabsTrigger>
             <TabsTrigger value="driver" className="gap-2">
               <User className="h-4 w-4" /> تقرير سائق تفصيلي
+            </TabsTrigger>
+            <TabsTrigger value="company" className="gap-2">
+              <Building2 className="h-4 w-4" /> ملخص الشركات
             </TabsTrigger>
           </TabsList>
 
