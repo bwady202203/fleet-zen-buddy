@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package, User, Building2 } from "lucide-react";
+import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package, User, Building2, Sparkles, TrendingUp, Coins, Boxes } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,12 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const AR_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
