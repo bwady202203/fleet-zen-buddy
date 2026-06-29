@@ -25,6 +25,81 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const AR_MONTHS = [
+  "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+];
+
+interface MonthChipsProps {
+  setStart: (v: string) => void;
+  setEnd: (v: string) => void;
+}
+
+const MonthChips = ({ setStart, setEnd }: MonthChipsProps) => {
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [selected, setSelected] = useState<number[]>([]);
+
+  const toggle = (m: number) => {
+    const next = selected.includes(m) ? selected.filter((x) => x !== m) : [...selected, m].sort((a, b) => a - b);
+    setSelected(next);
+    if (next.length > 0) {
+      const minM = next[0];
+      const maxM = next[next.length - 1];
+      const start = `${year}-${String(minM + 1).padStart(2, "0")}-01`;
+      const lastDay = new Date(year, maxM + 1, 0).getDate();
+      const end = `${year}-${String(maxM + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      setStart(start);
+      setEnd(end);
+    }
+  };
+
+  const clear = () => setSelected([]);
+
+  return (
+    <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs">تحديد الشهور — السنة:</Label>
+        <div className="flex items-center gap-1">
+          <Button type="button" size="sm" variant="outline" className="h-7 px-2" onClick={() => { setYear(year - 1); setSelected([]); }}>
+            ◀
+          </Button>
+          <span className="font-bold text-sm min-w-12 text-center">{year}</span>
+          <Button type="button" size="sm" variant="outline" className="h-7 px-2" onClick={() => { setYear(year + 1); setSelected([]); }}>
+            ▶
+          </Button>
+          {selected.length > 0 && (
+            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={clear}>
+              مسح
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-6 md:grid-cols-12 gap-1.5">
+        {AR_MONTHS.map((name, i) => {
+          const active = selected.includes(i);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => toggle(i)}
+              className={cn(
+                "px-2 py-1.5 text-xs rounded-md border transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground border-primary font-bold"
+                  : "bg-background hover:bg-accent border-border"
+              )}
+            >
+              {name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 interface TypeBreakdown {
   typeName: string;
