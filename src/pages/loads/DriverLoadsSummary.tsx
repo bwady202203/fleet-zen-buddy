@@ -69,7 +69,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("id, driver_id, quantity, commission_amount, driver_commission, delivery_commission, drivers(name), load_types(name)")
+          .select("id, driver_id, company_id, quantity, commission_amount, driver_commission, delivery_commission, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -79,6 +79,32 @@ const DriverLoadsSummary = () => {
         if (data.length < pageSize) break;
         from += pageSize;
       }
+
+      // جلب جداول عمولات السائق لكل شركة (نطاقات الأوزان)
+      const companyCommissionsMap = new Map<string, any[]>();
+      try {
+        const { data: commData } = await supabase
+          .from("company_driver_commissions")
+          .select("company_id, commission_type, amount");
+        (commData || []).forEach((c: any) => {
+          if (!companyCommissionsMap.has(c.company_id)) companyCommissionsMap.set(c.company_id, []);
+          companyCommissionsMap.get(c.company_id)!.push(c);
+        });
+      } catch (e) {
+        console.warn("commission brackets fetch failed", e);
+      }
+
+      const calcCommission = (qty: number, companyId: string | null): number => {
+        if (!companyId) return 0;
+        const list = companyCommissionsMap.get(companyId);
+        if (!list || list.length === 0) return 0;
+        let type = "weight_less_40";
+        if (qty >= 49) type = "weight_more_49";
+        else if (qty >= 44) type = "weight_44_49";
+        else if (qty >= 40) type = "weight_40_44";
+        const found = list.find((c) => c.commission_type === type);
+        return found ? Number(found.amount) : 0;
+      };
 
       // جلب سعر البيع من بنود فواتير العملاء (load_invoice_items) لكل شحنة
       const loadIds = all.map((r) => r.id).filter(Boolean);
