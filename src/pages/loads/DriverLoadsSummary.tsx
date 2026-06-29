@@ -150,6 +150,62 @@ const DriverLoadsSummary = () => {
     [drvLoads],
   );
 
+  const cmpTotals = useMemo(
+    () => ({
+      count: cmpRows.reduce((s, r) => s + r.loadsCount, 0),
+      qty: cmpRows.reduce((s, r) => s + r.totalQuantity, 0),
+      commission: cmpRows.reduce((s, r) => s + r.totalCommission, 0),
+    }),
+    [cmpRows],
+  );
+
+  const handleGenerateCompanyReport = async () => {
+    if (cmpStart > cmpEnd) {
+      toast({ title: "خطأ في التواريخ", variant: "destructive" });
+      return;
+    }
+    setCmpLoading(true);
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("loads")
+          .select("id, company_id, quantity, unit_price, companies(name)")
+          .gte("date", cmpStart)
+          .lte("date", cmpEnd)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      const map = new Map<string, CompanyRow>();
+      for (const r of all) {
+        const id = r.company_id || "unknown";
+        const name = (r as any).companies?.name || "بدون شركة";
+        const qty = Number(r.quantity || 0);
+        const com = Number(r.unit_price || 0);
+        const existing = map.get(id);
+        if (existing) {
+          existing.loadsCount += 1;
+          existing.totalQuantity += qty;
+          existing.totalCommission += com;
+        } else {
+          map.set(id, { companyId: id, companyName: name, loadsCount: 1, totalQuantity: qty, totalCommission: com });
+        }
+      }
+      setCmpRows(Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity));
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    } finally {
+      setCmpLoading(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (startDate > endDate) {
       toast({
