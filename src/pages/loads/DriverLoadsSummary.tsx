@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package, User } from "lucide-react";
+import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package, User, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,14 @@ interface DriverRow {
   breakdown: DriverDetailBreakdown[];
 }
 
+interface CompanyRow {
+  companyId: string;
+  companyName: string;
+  loadsCount: number;
+  totalQuantity: number;
+  totalCommission: number;
+}
+
 const DriverLoadsSummary = () => {
   const today = format(new Date(), "yyyy-MM-dd");
   const [startDate, setStartDate] = useState(today);
@@ -59,7 +67,7 @@ const DriverLoadsSummary = () => {
   const [showTypeReport, setShowTypeReport] = useState(false);
 
   // ====== تبويب تقرير سائق (تفصيلي) ======
-  const [activeTab, setActiveTab] = useState<"summary" | "driver">("summary");
+  const [activeTab, setActiveTab] = useState<"summary" | "driver" | "company">("summary");
   const [driversList, setDriversList] = useState<{ id: string; name: string }[]>([]);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [drvStart, setDrvStart] = useState(today);
@@ -73,6 +81,12 @@ const DriverLoadsSummary = () => {
     quantity: number;
     commission: number;
   }>>([]);
+
+  // ====== تبويب ملخص الشركات ======
+  const [cmpStart, setCmpStart] = useState(today);
+  const [cmpEnd, setCmpEnd] = useState(today);
+  const [cmpLoading, setCmpLoading] = useState(false);
+  const [cmpRows, setCmpRows] = useState<CompanyRow[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -135,6 +149,62 @@ const DriverLoadsSummary = () => {
     }),
     [drvLoads],
   );
+
+  const cmpTotals = useMemo(
+    () => ({
+      count: cmpRows.reduce((s, r) => s + r.loadsCount, 0),
+      qty: cmpRows.reduce((s, r) => s + r.totalQuantity, 0),
+      commission: cmpRows.reduce((s, r) => s + r.totalCommission, 0),
+    }),
+    [cmpRows],
+  );
+
+  const handleGenerateCompanyReport = async () => {
+    if (cmpStart > cmpEnd) {
+      toast({ title: "خطأ في التواريخ", variant: "destructive" });
+      return;
+    }
+    setCmpLoading(true);
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("loads")
+          .select("id, company_id, quantity, unit_price, companies(name)")
+          .gte("date", cmpStart)
+          .lte("date", cmpEnd)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      const map = new Map<string, CompanyRow>();
+      for (const r of all) {
+        const id = r.company_id || "unknown";
+        const name = (r as any).companies?.name || "بدون شركة";
+        const qty = Number(r.quantity || 0);
+        const com = Number(r.unit_price || 0);
+        const existing = map.get(id);
+        if (existing) {
+          existing.loadsCount += 1;
+          existing.totalQuantity += qty;
+          existing.totalCommission += com;
+        } else {
+          map.set(id, { companyId: id, companyName: name, loadsCount: 1, totalQuantity: qty, totalCommission: com });
+        }
+      }
+      setCmpRows(Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity));
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    } finally {
+      setCmpLoading(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (startDate > endDate) {
@@ -567,12 +637,15 @@ const DriverLoadsSummary = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6 no-print">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+          <TabsList className="grid grid-cols-3 w-full max-w-2xl mx-auto">
             <TabsTrigger value="summary" className="gap-2">
               <Truck className="h-4 w-4" /> ملخص السائقين
             </TabsTrigger>
             <TabsTrigger value="driver" className="gap-2">
               <User className="h-4 w-4" /> تقرير سائق تفصيلي
+            </TabsTrigger>
+            <TabsTrigger value="company" className="gap-2">
+              <Building2 className="h-4 w-4" /> ملخص الشركات
             </TabsTrigger>
           </TabsList>
 
@@ -764,6 +837,105 @@ const DriverLoadsSummary = () => {
                 <Card className="p-12 text-center">
                   <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">اختر السائق والفترة ثم اضغط "عرض"</p>
+                </Card>
+              )
+            )}
+          </TabsContent>
+
+          <TabsContent value="company" className="space-y-6 mt-6" dir="rtl">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label>من تاريخ</Label>
+                    <Input type="date" value={cmpStart} onChange={(e) => setCmpStart(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>إلى تاريخ</Label>
+                    <Input type="date" value={cmpEnd} onChange={(e) => setCmpEnd(e.target.value)} />
+                  </div>
+                  <Button onClick={handleGenerateCompanyReport} disabled={cmpLoading} size="lg">
+                    {cmpLoading ? (
+                      <><Loader2 className="h-4 w-4 ml-2 animate-spin" />جاري الجلب...</>
+                    ) : (
+                      <><FileText className="h-4 w-4 ml-2" />عرض التقرير</>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {cmpRows.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>ملخص الشركات: من {cmpStart} إلى {cmpEnd}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{cmpRows.length} شركة</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                      <div className="text-xs text-muted-foreground">عدد الشحنات</div>
+                      <div className="text-xl font-extrabold text-primary">{cmpTotals.count}</div>
+                    </div>
+                    <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                      <div className="text-xs text-muted-foreground">إجمالي الأطنان</div>
+                      <div className="text-xl font-extrabold text-primary">
+                        {cmpTotals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border bg-emerald-50 p-3 text-center">
+                      <div className="text-xs text-muted-foreground">إجمالي العمولات</div>
+                      <div className="text-xl font-extrabold text-emerald-600">
+                        {cmpTotals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right w-16">#</TableHead>
+                        <TableHead className="text-right">اسم الشركة</TableHead>
+                        <TableHead className="text-center">عدد الشحنات</TableHead>
+                        <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                        <TableHead className="text-center">إجمالي العمولات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cmpRows.map((r, i) => (
+                        <TableRow key={r.companyId}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell className="font-medium">{r.companyName}</TableCell>
+                          <TableCell className="text-center">{r.loadsCount}</TableCell>
+                          <TableCell className="text-center">
+                            {r.totalQuantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold text-emerald-600">
+                            {r.totalCommission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted font-bold">
+                        <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                        <TableCell className="text-center">{cmpTotals.count}</TableCell>
+                        <TableCell className="text-center">
+                          {cmpTotals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-center text-emerald-700">
+                          {cmpTotals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              !cmpLoading && (
+                <Card className="p-12 text-center">
+                  <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">اختر الفترة واضغط "عرض التقرير"</p>
                 </Card>
               )
             )}
