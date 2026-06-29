@@ -726,7 +726,8 @@ const DriverLoadsSummary = () => {
 
           <TabsContent value="summary" className="space-y-6 mt-6" dir="rtl">
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 space-y-4">
+                <MonthChips setStart={setStartDate} setEnd={setEndDate} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                   <div className="space-y-2">
                     <Label>من تاريخ</Label>
@@ -743,6 +744,7 @@ const DriverLoadsSummary = () => {
                       <><FileText className="h-4 w-4 ml-2" />عرض التقرير</>
                     )}
                   </Button>
+                </div>
                 </div>
               </CardContent>
             </Card>
