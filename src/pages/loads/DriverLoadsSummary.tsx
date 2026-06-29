@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package, User } from "lucide-react";
+import { ArrowRight, FileText, Loader2, Printer, Truck, FileDown, Package, User, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
