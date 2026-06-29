@@ -148,7 +148,7 @@ const DriverLoadsSummary = () => {
   const [showTypeReport, setShowTypeReport] = useState(false);
 
   // ====== تبويب تقرير سائق (تفصيلي) ======
-  const [activeTab, setActiveTab] = useState<"summary" | "driver" | "company">("summary");
+  const [activeTab, setActiveTab] = useState<"summary" | "driver" | "company" | "smart">("summary");
   const [driversList, setDriversList] = useState<{ id: string; name: string }[]>([]);
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
   const [drvStart, setDrvStart] = useState(today);
