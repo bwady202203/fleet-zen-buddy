@@ -69,7 +69,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("id, driver_id, quantity, commission_amount, drivers(name), load_types(name)")
+          .select("id, driver_id, quantity, commission_amount, driver_commission, delivery_commission, drivers(name), load_types(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
