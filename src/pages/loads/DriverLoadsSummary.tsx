@@ -576,7 +576,7 @@ const DriverLoadsSummary = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="summary" className="space-y-6 mt-6">
+          <TabsContent value="summary" className="space-y-6 mt-6" dir="rtl">
             <Card>
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
