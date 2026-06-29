@@ -809,7 +809,8 @@ const DriverLoadsSummary = () => {
 
           <TabsContent value="driver" className="space-y-6 mt-6" dir="rtl">
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 space-y-4">
+                <MonthChips setStart={setDrvStart} setEnd={setDrvEnd} />
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                   <div className="space-y-2">
                     <Label>السائق</Label>
