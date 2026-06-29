@@ -48,6 +48,14 @@ interface DriverRow {
   breakdown: DriverDetailBreakdown[];
 }
 
+interface CompanyRow {
+  companyId: string;
+  companyName: string;
+  loadsCount: number;
+  totalQuantity: number;
+  totalCommission: number;
+}
+
 const DriverLoadsSummary = () => {
   const today = format(new Date(), "yyyy-MM-dd");
   const [startDate, setStartDate] = useState(today);
