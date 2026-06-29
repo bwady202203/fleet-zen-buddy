@@ -566,149 +566,211 @@ const DriverLoadsSummary = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6 no-print">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <div className="space-y-2">
-                <Label>من تاريخ</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>إلى تاريخ</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-              <Button onClick={handleGenerate} disabled={loading} size="lg">
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                    جاري الجلب...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="h-4 w-4 ml-2" />
-                    عرض التقرير
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
+            <TabsTrigger value="summary" className="gap-2">
+              <Truck className="h-4 w-4" /> ملخص السائقين
+            </TabsTrigger>
+            <TabsTrigger value="driver" className="gap-2">
+              <User className="h-4 w-4" /> تقرير سائق تفصيلي
+            </TabsTrigger>
+          </TabsList>
 
-        {rows.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
-                  النتائج: من {startDate} إلى {endDate}
-                </span>
-                <span className="text-sm font-normal text-muted-foreground">
-                  {rows.length} سائق
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right w-16">#</TableHead>
-                    <TableHead className="text-right">اسم السائق</TableHead>
-                    <TableHead className="text-center">عدد الشحنات</TableHead>
-                    <TableHead className="text-center">إجمالي الأطنان</TableHead>
-                    <TableHead className="text-center">إجمالي العمولات</TableHead>
-                    <TableHead className="text-center">إجمالي البيع للعملاء</TableHead>
-                    <TableHead className="text-center w-24">طباعة</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((r, i) => (
-                    <TableRow
-                      key={r.driverId}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedDriver(r)}
-                    >
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell className="font-medium text-primary underline-offset-2 hover:underline">
-                        {r.driverName}
-                      </TableCell>
-                      <TableCell className="text-center">{r.loadsCount}</TableCell>
-                      <TableCell className="text-center">
-                        {r.totalQuantity.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center font-semibold text-emerald-600">
-                        {r.totalCommission.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center font-semibold text-blue-600">
-                        {r.totalSales.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handlePrintDriver(r)}
-                          title="طباعة تقرير هذا السائق"
-                        >
-                          <FileDown className="h-4 w-4 text-primary" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="bg-muted font-bold">
-                    <TableCell colSpan={2} className="text-right">
-                      الإجمالي
-                    </TableCell>
-                    <TableCell className="text-center">{totals.loads}</TableCell>
-                    <TableCell className="text-center">
-                      {totals.qty.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-center text-emerald-700">
-                      {totals.commission.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-center text-blue-700">
-                      {totals.sales.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        ) : (
-          !loading && (
-            <Card className="p-12 text-center">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                اختر الفترة واضغط "عرض التقرير"
-              </p>
+          <TabsContent value="summary" className="space-y-6 mt-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label>من تاريخ</Label>
+                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>إلى تاريخ</Label>
+                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  </div>
+                  <Button onClick={handleGenerate} disabled={loading} size="lg">
+                    {loading ? (
+                      <><Loader2 className="h-4 w-4 ml-2 animate-spin" />جاري الجلب...</>
+                    ) : (
+                      <><FileText className="h-4 w-4 ml-2" />عرض التقرير</>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
-          )
-        )}
+
+            {rows.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>النتائج: من {startDate} إلى {endDate}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{rows.length} سائق</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right w-16">#</TableHead>
+                        <TableHead className="text-right">اسم السائق</TableHead>
+                        <TableHead className="text-center">عدد الشحنات</TableHead>
+                        <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                        <TableHead className="text-center">إجمالي العمولات</TableHead>
+                        <TableHead className="text-center">إجمالي البيع للعملاء</TableHead>
+                        <TableHead className="text-center w-24">طباعة</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((r, i) => (
+                        <TableRow key={r.driverId} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedDriver(r)}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell className="font-medium text-primary underline-offset-2 hover:underline">{r.driverName}</TableCell>
+                          <TableCell className="text-center">{r.loadsCount}</TableCell>
+                          <TableCell className="text-center">{r.totalQuantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-center font-semibold text-emerald-600">{r.totalCommission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-center font-semibold text-blue-600">{r.totalSales.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <Button size="sm" variant="ghost" onClick={() => handlePrintDriver(r)} title="طباعة تقرير هذا السائق">
+                              <FileDown className="h-4 w-4 text-primary" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted font-bold">
+                        <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                        <TableCell className="text-center">{totals.loads}</TableCell>
+                        <TableCell className="text-center">{totals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        <TableCell className="text-center text-emerald-700">{totals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        <TableCell className="text-center text-blue-700">{totals.sales.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              !loading && (
+                <Card className="p-12 text-center">
+                  <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">اختر الفترة واضغط "عرض التقرير"</p>
+                </Card>
+              )
+            )}
+          </TabsContent>
+
+          <TabsContent value="driver" className="space-y-6 mt-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label>السائق</Label>
+                    <Select value={selectedDriverId} onValueChange={setSelectedDriverId}>
+                      <SelectTrigger><SelectValue placeholder="اختر السائق" /></SelectTrigger>
+                      <SelectContent>
+                        {driversList.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>من تاريخ</Label>
+                    <Input type="date" value={drvStart} onChange={(e) => setDrvStart(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>إلى تاريخ</Label>
+                    <Input type="date" value={drvEnd} onChange={(e) => setDrvEnd(e.target.value)} />
+                  </div>
+                  <Button onClick={handleGenerateDriverReport} disabled={drvLoading} size="lg">
+                    {drvLoading ? (
+                      <><Loader2 className="h-4 w-4 ml-2 animate-spin" />جاري الجلب...</>
+                    ) : (
+                      <><FileText className="h-4 w-4 ml-2" />عرض</>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {drvLoads.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>تفاصيل شحنات السائق: {driversList.find((d) => d.id === selectedDriverId)?.name}</span>
+                    <span className="text-sm font-normal text-muted-foreground">{drvTotals.count} شحنة</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                      <div className="text-xs text-muted-foreground">عدد الشحنات</div>
+                      <div className="text-xl font-extrabold text-primary">{drvTotals.count}</div>
+                    </div>
+                    <div className="rounded-lg border bg-muted/40 p-3 text-center">
+                      <div className="text-xs text-muted-foreground">إجمالي الأطنان</div>
+                      <div className="text-xl font-extrabold text-primary">
+                        {drvTotals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border bg-emerald-50 p-3 text-center">
+                      <div className="text-xs text-muted-foreground">إجمالي العمولات</div>
+                      <div className="text-xl font-extrabold text-emerald-600">
+                        {drvTotals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right w-16">#</TableHead>
+                        <TableHead className="text-center">التاريخ</TableHead>
+                        <TableHead className="text-right">اسم الشركة</TableHead>
+                        <TableHead className="text-right">نوع الشحنة</TableHead>
+                        <TableHead className="text-center">الكمية (طن)</TableHead>
+                        <TableHead className="text-center">العمولة</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {drvLoads.map((l, i) => (
+                        <TableRow key={l.id}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell className="text-center">{l.date}</TableCell>
+                          <TableCell className="font-medium">{l.companyName}</TableCell>
+                          <TableCell>{l.typeName}</TableCell>
+                          <TableCell className="text-center">
+                            {l.quantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold text-emerald-600">
+                            {l.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted font-bold">
+                        <TableCell colSpan={4} className="text-right">الإجمالي</TableCell>
+                        <TableCell className="text-center">
+                          {drvTotals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-center text-emerald-700">
+                          {drvTotals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              !drvLoading && (
+                <Card className="p-12 text-center">
+                  <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">اختر السائق والفترة ثم اضغط "عرض"</p>
+                </Card>
+              )
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
+
 
       {/* Print area - full report */}
       {rows.length > 0 && (
