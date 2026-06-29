@@ -1041,29 +1041,31 @@ const LoadInvoices = () => {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6" dir="rtl">
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>من تاريخ</Label>
+              <div className="space-y-2 text-right">
+                <Label className="text-right">من تاريخ</Label>
                 <Input
                   type="date"
                   value={filterStartDate}
                   onChange={(e) => setFilterStartDate(e.target.value)}
+                  className="text-right"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>إلى تاريخ</Label>
+              <div className="space-y-2 text-right">
+                <Label className="text-right">إلى تاريخ</Label>
                 <Input
                   type="date"
                   value={filterEndDate}
                   onChange={(e) => setFilterEndDate(e.target.value)}
+                  className="text-right"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>الشركة</Label>
+              <div className="space-y-2 text-right">
+                <Label className="text-right">الشركة</Label>
                 <Select value={filterCompanyId} onValueChange={setFilterCompanyId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-right">
                     <SelectValue placeholder="جميع الشركات" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1076,8 +1078,8 @@ const LoadInvoices = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="opacity-0">إجراءات</Label>
+              <div className="space-y-2 text-right">
+                <Label className="opacity-0 text-right">إجراءات</Label>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
