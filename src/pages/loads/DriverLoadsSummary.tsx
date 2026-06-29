@@ -110,10 +110,8 @@ const DriverLoadsSummary = () => {
         const name = (r as any).drivers?.name || "بدون سائق";
         const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
-        // العمولة تُحسب من حقول السعر في جدول الشحنات: الكمية × سعر الوحدة (سعر العمولة)
-        // أو نأخذ total_amount مباشرة إن كان مخزناً
-        const unitCommissionPrice = Number(r.unit_price || 0);
-        const com = Number(r.total_amount || 0) || (qty * unitCommissionPrice);
+        // العمولة لكل شحنة = قيمة السعر (unit_price) فقط، بدون ضرب في الكمية
+        const com = Number(r.unit_price || 0);
         const unitPrice = priceMap.get(r.id) || 0;
         // إجمالي البيع = الكمية × سعر البيع من فاتورة العميل
         const sale = qty * unitPrice;
