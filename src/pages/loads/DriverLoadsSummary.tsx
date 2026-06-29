@@ -169,6 +169,127 @@ const DriverLoadsSummary = () => {
   const [cmpLoading, setCmpLoading] = useState(false);
   const [cmpRows, setCmpRows] = useState<CompanyRow[]>([]);
 
+  // ====== التقرير الذكي ======
+  const smartRef = useRef<HTMLDivElement>(null);
+  const [smStart, setSmStart] = useState(today);
+  const [smEnd, setSmEnd] = useState(today);
+  const [smLoading, setSmLoading] = useState(false);
+  const [smData, setSmData] = useState<{
+    companies: { name: string; loads: number; quantity: number; commission: number }[];
+    materials: { name: string; loads: number; quantity: number; commission: number }[];
+    drivers: { name: string; loads: number; quantity: number; commission: number }[];
+    totals: { loads: number; quantity: number; commission: number };
+  } | null>(null);
+  const [smExporting, setSmExporting] = useState(false);
+
+  const handleGenerateSmartReport = async () => {
+    if (smStart > smEnd) {
+      toast({ title: "خطأ في التواريخ", variant: "destructive" });
+      return;
+    }
+    setSmLoading(true);
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("loads")
+          .select("id, quantity, unit_price, drivers(name), companies(name), load_types(name)")
+          .gte("date", smStart)
+          .lte("date", smEnd)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      const aggregate = (keyFn: (r: any) => string) => {
+        const m = new Map<string, { name: string; loads: number; quantity: number; commission: number }>();
+        for (const r of all) {
+          const k = keyFn(r);
+          const qty = Number(r.quantity || 0);
+          const com = Number(r.unit_price || 0);
+          const e = m.get(k);
+          if (e) { e.loads += 1; e.quantity += qty; e.commission += com; }
+          else m.set(k, { name: k, loads: 1, quantity: qty, commission: com });
+        }
+        return Array.from(m.values());
+      };
+
+      const companies = aggregate((r) => r.companies?.name || "بدون شركة").sort((a, b) => b.quantity - a.quantity);
+      const materials = aggregate((r) => r.load_types?.name || "غير محدد").sort((a, b) => b.quantity - a.quantity);
+      const drivers = aggregate((r) => r.drivers?.name || "بدون سائق").sort((a, b) => b.commission - a.commission);
+
+      const totals = {
+        loads: all.length,
+        quantity: all.reduce((s, r) => s + Number(r.quantity || 0), 0),
+        commission: all.reduce((s, r) => s + Number(r.unit_price || 0), 0),
+      };
+
+      setSmData({ companies, materials, drivers, totals });
+      toast({ title: "تم إنشاء التقرير الذكي", description: `${all.length} شحنة` });
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    } finally {
+      setSmLoading(false);
+    }
+  };
+
+  const handleExportSmartPDF = async () => {
+    if (!smartRef.current) return;
+    setSmExporting(true);
+    try {
+      const canvas = await html2canvas(smartRef.current, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const img = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let heightLeft = imgH;
+      let position = 0;
+      pdf.addImage(img, "PNG", 0, position, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        position = heightLeft - imgH;
+        pdf.addPage();
+        pdf.addImage(img, "PNG", 0, position, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      pdf.save(`smart-report-${smStart}_${smEnd}.pdf`);
+    } catch (e: any) {
+      toast({ title: "تعذر تصدير PDF", description: e.message, variant: "destructive" });
+    } finally {
+      setSmExporting(false);
+    }
+  };
+
+  const handlePrintSmart = () => {
+    if (!smartRef.current) return;
+    const html = smartRef.current.outerHTML;
+    const w = window.open("", "_blank", "width=1200,height=900");
+    if (!w) return;
+    w.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"/><title>التقرير الذكي</title>
+      <style>
+        body{font-family:'Cairo','Tajawal',Arial,sans-serif;margin:16px;background:#fff;color:#111;}
+        table{width:100%;border-collapse:collapse;font-size:11pt;}
+        th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:right;}
+        thead th{background:#0a4a8a;color:#fff;}
+        .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
+        .kpi>div{border:1px solid #d1d5db;border-radius:8px;padding:10px;text-align:center;background:#f3f6fb;}
+        .kpi .lbl{font-size:10pt;color:#555;}
+        .kpi .val{font-size:16pt;font-weight:800;color:#0a4a8a;}
+        h1,h2,h3{color:#0a4a8a;}
+        .chart-wrap{page-break-inside:avoid;}
+      </style></head><body>${html}</body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 400);
+  };
+
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("drivers").select("id, name").order("name");
