@@ -1080,7 +1080,7 @@ const LoadInvoices = () => {
               </div>
               <div className="space-y-2 text-right">
                 <Label className="opacity-0 text-right">إجراءات</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2" dir="rtl">
                   <Button
                     variant="outline"
                     onClick={() => {
