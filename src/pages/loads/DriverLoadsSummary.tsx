@@ -32,6 +32,10 @@ interface TypeBreakdown {
   totalSales: number;
 }
 
+interface DriverDetailBreakdown extends TypeBreakdown {
+  companyName: string;
+}
+
 interface DriverRow {
   driverId: string;
   driverName: string;
@@ -39,7 +43,7 @@ interface DriverRow {
   totalQuantity: number;
   totalCommission: number;
   totalSales: number;
-  breakdown: TypeBreakdown[];
+  breakdown: DriverDetailBreakdown[];
 }
 
 const DriverLoadsSummary = () => {
@@ -69,7 +73,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("id, driver_id, company_id, quantity, unit_price, total_amount, drivers(name), load_types(name)")
+          .select("id, driver_id, company_id, quantity, unit_price, total_amount, drivers(name), load_types(name), companies(name)")
           .gte("date", startDate)
           .lte("date", endDate)
           .range(from, from + pageSize - 1);
@@ -104,11 +108,12 @@ const DriverLoadsSummary = () => {
       }
 
 
-      const map = new Map<string, DriverRow & { _types: Map<string, TypeBreakdown> }>();
+      const map = new Map<string, DriverRow & { _types: Map<string, DriverDetailBreakdown> }>();
       for (const r of all) {
         const id = r.driver_id || "unknown";
         const name = (r as any).drivers?.name || "بدون سائق";
         const typeName = (r as any).load_types?.name || "غير محدد";
+        const companyName = (r as any).companies?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
         // العمولة لكل شحنة = قيمة السعر (unit_price) فقط، بدون ضرب في الكمية
         const com = Number(r.unit_price || 0);
@@ -133,14 +138,16 @@ const DriverLoadsSummary = () => {
         existing.totalQuantity += qty;
         existing.totalCommission += com;
         existing.totalSales += sale;
-        const t = existing._types.get(typeName);
+        const typeKey = `${companyName}||${typeName}`;
+        const t = existing._types.get(typeKey);
         if (t) {
           t.loadsCount += 1;
           t.totalQuantity += qty;
           t.totalCommission += com;
           t.totalSales += sale;
         } else {
-          existing._types.set(typeName, {
+          existing._types.set(typeKey, {
+            companyName,
             typeName,
             loadsCount: 1,
             totalQuantity: qty,
@@ -158,7 +165,7 @@ const DriverLoadsSummary = () => {
           totalCommission: d.totalCommission,
           totalSales: d.totalSales,
           breakdown: Array.from(d._types.values()).sort(
-            (a, b) => b.totalQuantity - a.totalQuantity,
+            (a, b) => a.companyName.localeCompare(b.companyName, "ar") || b.totalQuantity - a.totalQuantity,
           ),
         }))
         .sort((a, b) => b.totalQuantity - a.totalQuantity);
@@ -759,6 +766,7 @@ const DriverLoadsSummary = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted">
+                      <TableHead className="text-right">اسم الشركة</TableHead>
                       <TableHead className="text-right">نوع الشحنة</TableHead>
                       <TableHead className="text-center">عدد الشحنات</TableHead>
                       <TableHead className="text-center">إجمالي الأطنان</TableHead>
@@ -777,7 +785,8 @@ const DriverLoadsSummary = () => {
                         ? b.totalSales / b.totalQuantity
                         : 0;
                       return (
-                        <TableRow key={b.typeName}>
+                        <TableRow key={`${b.companyName}||${b.typeName}`}>
+                          <TableCell className="font-semibold">{b.companyName}</TableCell>
                           <TableCell className="font-semibold">{b.typeName}</TableCell>
                           <TableCell className="text-center">{b.loadsCount}</TableCell>
                           <TableCell className="text-center font-semibold text-primary">
@@ -811,7 +820,7 @@ const DriverLoadsSummary = () => {
                       );
                     })}
                     <TableRow className="bg-muted font-bold">
-                      <TableCell>الإجمالي</TableCell>
+                      <TableCell colSpan={2}>الإجمالي</TableCell>
                       <TableCell className="text-center">{selectedDriver.loadsCount}</TableCell>
                       <TableCell className="text-center">
                         {selectedDriver.totalQuantity.toLocaleString("en-US", {
