@@ -839,7 +839,7 @@ const DriverLoadsSummary = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6 no-print">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid grid-cols-3 w-full max-w-2xl mx-auto">
+          <TabsList className="grid grid-cols-4 w-full max-w-3xl mx-auto">
             <TabsTrigger value="summary" className="gap-2">
               <Truck className="h-4 w-4" /> ملخص السائقين
             </TabsTrigger>
@@ -848,6 +848,9 @@ const DriverLoadsSummary = () => {
             </TabsTrigger>
             <TabsTrigger value="company" className="gap-2">
               <Building2 className="h-4 w-4" /> ملخص الشركات
+            </TabsTrigger>
+            <TabsTrigger value="smart" className="gap-2 data-[state=active]:bg-gradient-to-l data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-primary-foreground">
+              <Sparkles className="h-4 w-4" /> التقرير الذكي
             </TabsTrigger>
           </TabsList>
 
