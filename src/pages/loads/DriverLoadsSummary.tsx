@@ -58,6 +58,84 @@ const DriverLoadsSummary = () => {
   const [selectedDriver, setSelectedDriver] = useState<DriverRow | null>(null);
   const [showTypeReport, setShowTypeReport] = useState(false);
 
+  // ====== تبويب تقرير سائق (تفصيلي) ======
+  const [activeTab, setActiveTab] = useState<"summary" | "driver">("summary");
+  const [driversList, setDriversList] = useState<{ id: string; name: string }[]>([]);
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
+  const [drvStart, setDrvStart] = useState(today);
+  const [drvEnd, setDrvEnd] = useState(today);
+  const [drvLoading, setDrvLoading] = useState(false);
+  const [drvLoads, setDrvLoads] = useState<Array<{
+    id: string;
+    date: string;
+    companyName: string;
+    typeName: string;
+    quantity: number;
+    commission: number;
+  }>>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("drivers").select("id, name").order("name");
+      setDriversList((data || []) as any);
+    })();
+  }, []);
+
+  const handleGenerateDriverReport = async () => {
+    if (!selectedDriverId) {
+      toast({ title: "اختر السائق", variant: "destructive" });
+      return;
+    }
+    if (drvStart > drvEnd) {
+      toast({ title: "خطأ في التواريخ", variant: "destructive" });
+      return;
+    }
+    setDrvLoading(true);
+    try {
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("loads")
+          .select("id, date, quantity, unit_price, companies(name), load_types(name)")
+          .eq("driver_id", selectedDriverId)
+          .gte("date", drvStart)
+          .lte("date", drvEnd)
+          .order("date", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      setDrvLoads(
+        all.map((r: any) => ({
+          id: r.id,
+          date: r.date,
+          companyName: r.companies?.name || "غير محدد",
+          typeName: r.load_types?.name || "غير محدد",
+          quantity: Number(r.quantity || 0),
+          commission: Number(r.unit_price || 0),
+        })),
+      );
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+    } finally {
+      setDrvLoading(false);
+    }
+  };
+
+  const drvTotals = useMemo(
+    () => ({
+      count: drvLoads.length,
+      qty: drvLoads.reduce((s, r) => s + r.quantity, 0),
+      commission: drvLoads.reduce((s, r) => s + r.commission, 0),
+    }),
+    [drvLoads],
+  );
+
   const handleGenerate = async () => {
     if (startDate > endDate) {
       toast({
