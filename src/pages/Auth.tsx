@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { LogIn, Calculator, KeyRound } from 'lucide-react';
+import { LogIn, Calculator, KeyRound, Hash } from 'lucide-react';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -16,8 +17,40 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [pinCode, setPinCode] = useState('');
+  const [isPinLoading, setIsPinLoading] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  const handlePinLogin = async (code: string) => {
+    setIsPinLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('quick-login', {
+        body: { code },
+      });
+      if (error || !data?.access_token) {
+        toast.error('الرمز غير صحيح');
+        setPinCode('');
+        return;
+      }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      });
+      if (sessionError) {
+        toast.error('فشل إنشاء الجلسة');
+        setPinCode('');
+        return;
+      }
+      toast.success('تم تسجيل الدخول');
+      navigate('/');
+    } catch {
+      toast.error('حدث خطأ');
+      setPinCode('');
+    } finally {
+      setIsPinLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
