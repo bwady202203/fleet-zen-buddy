@@ -192,8 +192,41 @@ const Auth = () => {
                 </form>
               </div>
             )}
+
+            <div className="mt-6 pt-6 border-t space-y-3">
+              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground">
+                <Hash className="h-4 w-4" />
+                الدخول السريع برمز مكوّن من 6 أرقام
+              </div>
+              <div className="flex justify-center" dir="ltr">
+                <InputOTP
+                  maxLength={6}
+                  value={pinCode}
+                  onChange={(v) => {
+                    setPinCode(v);
+                    if (v.length === 6 && !isPinLoading) {
+                      handlePinLogin(v);
+                    }
+                  }}
+                  disabled={isPinLoading}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              {isPinLoading && (
+                <p className="text-center text-xs text-muted-foreground">جاري التحقق...</p>
+              )}
+            </div>
           </CardContent>
         </Card>
+
 
         <p className="text-center text-sm text-muted-foreground mt-8">
           جميع الحقوق محفوظة © 2025 - نظام المحاسبة الممتاز
