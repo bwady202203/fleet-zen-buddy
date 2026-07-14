@@ -363,6 +363,20 @@ const DriverLoadsSummary = () => {
     [cmpRows],
   );
 
+  const cmpTypes = useMemo(() => {
+    const s = new Set<string>();
+    cmpRows.forEach((r) => Object.keys(r.typeQuantities || {}).forEach((k) => s.add(k)));
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "ar"));
+  }, [cmpRows]);
+
+  const cmpTypeTotals = useMemo(() => {
+    const t: Record<string, number> = {};
+    cmpTypes.forEach((k) => {
+      t[k] = cmpRows.reduce((s, r) => s + (r.typeQuantities?.[k] || 0), 0);
+    });
+    return t;
+  }, [cmpRows, cmpTypes]);
+
   const handleGenerateCompanyReport = async () => {
     if (cmpStart > cmpEnd) {
       toast({ title: "خطأ في التواريخ", variant: "destructive" });
