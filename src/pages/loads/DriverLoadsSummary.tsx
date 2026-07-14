@@ -136,6 +136,7 @@ interface CompanyRow {
   loadsCount: number;
   totalQuantity: number;
   totalCommission: number;
+  typeQuantities: Record<string, number>;
 }
 
 const DriverLoadsSummary = () => {
