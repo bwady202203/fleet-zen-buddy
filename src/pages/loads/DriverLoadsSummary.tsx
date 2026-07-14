@@ -376,7 +376,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("id, company_id, quantity, unit_price, companies(name)")
+          .select("id, company_id, quantity, unit_price, companies(name), load_types(name)")
           .gte("date", cmpStart)
           .lte("date", cmpEnd)
           .range(from, from + pageSize - 1);
@@ -391,6 +391,7 @@ const DriverLoadsSummary = () => {
       for (const r of all) {
         const id = r.company_id || "unknown";
         const name = (r as any).companies?.name || "بدون شركة";
+        const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
         const com = Number(r.unit_price || 0);
         const existing = map.get(id);
@@ -398,8 +399,9 @@ const DriverLoadsSummary = () => {
           existing.loadsCount += 1;
           existing.totalQuantity += qty;
           existing.totalCommission += com;
+          existing.typeQuantities[typeName] = (existing.typeQuantities[typeName] || 0) + qty;
         } else {
-          map.set(id, { companyId: id, companyName: name, loadsCount: 1, totalQuantity: qty, totalCommission: com });
+          map.set(id, { companyId: id, companyName: name, loadsCount: 1, totalQuantity: qty, totalCommission: com, typeQuantities: { [typeName]: qty } });
         }
       }
       setCmpRows(Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity));
