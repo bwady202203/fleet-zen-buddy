@@ -2312,6 +2312,111 @@ const LoadReports = () => {
               </DialogContent>
             </Dialog>
           </TabsContent>
+
+          <TabsContent value="invoice-quantities">
+            <Card dir="rtl">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    تقرير كميات الفواتير حسب الشركة
+                  </CardTitle>
+                  {invQtyRows.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={handleExportInvoiceQuantities} className="gap-2">
+                      <Download className="h-4 w-4" />
+                      تصدير Excel
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-end gap-3 flex-wrap mt-4">
+                  <div className="flex flex-col gap-1">
+                    <Label>من تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-[180px] justify-start text-right font-normal", !invQtyFrom && "text-muted-foreground")}>
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {invQtyFrom ? format(invQtyFrom, "yyyy-MM-dd") : "اختر التاريخ"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={invQtyFrom} onSelect={setInvQtyFrom} initialFocus className="pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label>إلى تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-[180px] justify-start text-right font-normal", !invQtyTo && "text-muted-foreground")}>
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {invQtyTo ? format(invQtyTo, "yyyy-MM-dd") : "اختر التاريخ"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={invQtyTo} onSelect={setInvQtyTo} initialFocus className="pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <Button onClick={handleGenerateInvoiceQuantitiesReport} disabled={invQtyLoading}>
+                    {invQtyLoading ? "جاري..." : "إنشاء التقرير"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {invQtyRows.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    اختر الفترة الزمنية ثم اضغط "إنشاء التقرير"
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted">
+                          <TableHead className="text-right">#</TableHead>
+                          <TableHead className="text-right">الشركة</TableHead>
+                          {invQtyTypes.map(t => (
+                            <TableHead key={t} className="text-center">{t} (طن)</TableHead>
+                          ))}
+                          <TableHead className="text-center font-bold">الإجمالي</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invQtyRows.map((r, i) => (
+                          <TableRow key={r.companyId}>
+                            <TableCell>{i + 1}</TableCell>
+                            <TableCell className="font-medium">{r.companyName}</TableCell>
+                            {invQtyTypes.map(t => (
+                              <TableCell key={t} className="text-center">
+                                {(r.quantities[t] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-center font-bold text-primary">
+                              {r.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-blue-100 font-bold">
+                          <TableCell></TableCell>
+                          <TableCell>الإجمالي</TableCell>
+                          {invQtyTypes.map(t => {
+                            const s = invQtyRows.reduce((sum, r) => sum + (r.quantities[t] || 0), 0);
+                            return (
+                              <TableCell key={t} className="text-center">
+                                {s.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center text-primary">
+                            {invQtyRows.reduce((sum, r) => sum + r.total, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
