@@ -976,9 +976,43 @@ const DriverLoadsSummary = () => {
             {drvLoads.length > 0 ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
+                  <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
                     <span>تفاصيل شحنات السائق: {driversList.find((d) => d.id === selectedDriverId)?.name}</span>
-                    <span className="text-sm font-normal text-muted-foreground">{drvTotals.count} شحنة</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-normal text-muted-foreground">{drvTotals.count} شحنة</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const driverName = driversList.find((d) => d.id === selectedDriverId)?.name || "driver";
+                          const rows = drvLoads.map((l, i) => ({
+                            "#": i + 1,
+                            "التاريخ": l.date,
+                            "اسم الشركة": l.companyName,
+                            "نوع الشحنة": l.typeName,
+                            "الكمية (طن)": Number(l.quantity.toFixed(2)),
+                            "العمولة": Number(l.commission.toFixed(2)),
+                          }));
+                          rows.push({
+                            "#": "" as any,
+                            "التاريخ": "" as any,
+                            "اسم الشركة": "" as any,
+                            "نوع الشحنة": "الإجمالي" as any,
+                            "الكمية (طن)": Number(drvTotals.qty.toFixed(2)),
+                            "العمولة": Number(drvTotals.commission.toFixed(2)),
+                          });
+                          const ws = XLSX.utils.json_to_sheet(rows);
+                          ws["!cols"] = [{ wch: 6 }, { wch: 14 }, { wch: 26 }, { wch: 22 }, { wch: 14 }, { wch: 14 }];
+                          const wb = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(wb, ws, "شحنات السائق");
+                          XLSX.writeFile(wb, `driver-loads-${driverName}-${drvStart}_${drvEnd}.xlsx`);
+                          toast({ title: "تم تصدير ملف Excel" });
+                        }}
+                      >
+                        <FileDown className="h-4 w-4 ml-2" />
+                        تحميل Excel
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
