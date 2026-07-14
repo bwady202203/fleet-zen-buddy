@@ -1862,7 +1862,7 @@ const LoadReports = () => {
           </TabsContent>
 
           <TabsContent value="companies">
-            <Card>
+            <Card dir="rtl">
               <CardHeader>
                 <div className="flex items-center justify-between mb-4">
                   <CardTitle className="flex items-center gap-2">
@@ -1888,7 +1888,7 @@ const LoadReports = () => {
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full justify-start text-right font-normal",
                             !dateFrom && "text-muted-foreground"
                           )}
                         >
@@ -1914,7 +1914,7 @@ const LoadReports = () => {
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full justify-start text-right font-normal",
                             !dateTo && "text-muted-foreground"
                           )}
                         >
