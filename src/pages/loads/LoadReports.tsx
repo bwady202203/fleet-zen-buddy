@@ -1862,7 +1862,7 @@ const LoadReports = () => {
           </TabsContent>
 
           <TabsContent value="companies">
-            <Card>
+            <Card dir="rtl">
               <CardHeader>
                 <div className="flex items-center justify-between mb-4">
                   <CardTitle className="flex items-center gap-2">
