@@ -1160,6 +1160,11 @@ const DriverLoadsSummary = () => {
                         <TableHead className="text-right">اسم الشركة</TableHead>
                         <TableHead className="text-center">عدد الشحنات</TableHead>
                         <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                        {cmpTypes.map((t) => (
+                          <TableHead key={t} className="text-center whitespace-nowrap bg-blue-50">
+                            {t} (طن)
+                          </TableHead>
+                        ))}
                         <TableHead className="text-center">إجمالي العمولات</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1172,6 +1177,11 @@ const DriverLoadsSummary = () => {
                           <TableCell className="text-center">
                             {r.totalQuantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
+                          {cmpTypes.map((t) => (
+                            <TableCell key={t} className="text-center bg-blue-50/40">
+                              {(r.typeQuantities?.[t] || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </TableCell>
+                          ))}
                           <TableCell className="text-center font-semibold text-emerald-600">
                             {r.totalCommission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
@@ -1183,6 +1193,11 @@ const DriverLoadsSummary = () => {
                         <TableCell className="text-center">
                           {cmpTotals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
+                        {cmpTypes.map((t) => (
+                          <TableCell key={t} className="text-center bg-blue-100">
+                            {(cmpTypeTotals[t] || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                        ))}
                         <TableCell className="text-center text-emerald-700">
                           {cmpTotals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
