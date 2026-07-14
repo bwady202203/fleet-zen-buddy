@@ -92,6 +92,86 @@ const LoadReports = () => {
   });
   const [loadingPaymentReport, setLoadingPaymentReport] = useState(false);
 
+  // Invoice quantities report states
+  const [invQtyFrom, setInvQtyFrom] = useState<Date | undefined>(undefined);
+  const [invQtyTo, setInvQtyTo] = useState<Date | undefined>(undefined);
+  const [invQtyRows, setInvQtyRows] = useState<Array<{ companyId: string; companyName: string; quantities: Record<string, number>; total: number }>>([]);
+  const [invQtyTypes, setInvQtyTypes] = useState<string[]>([]);
+  const [invQtyLoading, setInvQtyLoading] = useState(false);
+
+  const handleGenerateInvoiceQuantitiesReport = async () => {
+    if (!invQtyFrom || !invQtyTo) {
+      toast({ title: "خطأ", description: "الرجاء تحديد الفترة الزمنية", variant: "destructive" });
+      return;
+    }
+    setInvQtyLoading(true);
+    try {
+      const from = format(invQtyFrom, 'yyyy-MM-dd');
+      const to = format(invQtyTo, 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('load_invoices')
+        .select(`
+          id, date, company_id,
+          companies(id, name),
+          load_invoice_items(quantity, loads(load_types(name)))
+        `)
+        .gte('date', from)
+        .lte('date', to);
+      if (error) throw error;
+
+      const companyMap: Record<string, { companyId: string; companyName: string; quantities: Record<string, number>; total: number }> = {};
+      const typesSet = new Set<string>();
+
+      (data || []).forEach((inv: any) => {
+        const companyId = inv.company_id || 'unknown';
+        const companyName = inv.companies?.name || 'غير محدد';
+        if (!companyMap[companyId]) {
+          companyMap[companyId] = { companyId, companyName, quantities: {}, total: 0 };
+        }
+        (inv.load_invoice_items || []).forEach((item: any) => {
+          const typeName = item.loads?.load_types?.name || 'غير محدد';
+          const qty = parseFloat(item.quantity) || 0;
+          typesSet.add(typeName);
+          companyMap[companyId].quantities[typeName] = (companyMap[companyId].quantities[typeName] || 0) + qty;
+          companyMap[companyId].total += qty;
+        });
+      });
+
+      const types = Array.from(typesSet).sort();
+      const rows = Object.values(companyMap).sort((a, b) => a.companyName.localeCompare(b.companyName, 'ar'));
+      setInvQtyTypes(types);
+      setInvQtyRows(rows);
+      toast({ title: "تم", description: `تم إنشاء التقرير (${rows.length} شركة)` });
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message || "تعذر إنشاء التقرير", variant: "destructive" });
+    } finally {
+      setInvQtyLoading(false);
+    }
+  };
+
+  const handleExportInvoiceQuantities = () => {
+    if (invQtyRows.length === 0) return;
+    const rows = invQtyRows.map((r, i) => {
+      const row: any = { '#': i + 1, 'الشركة': r.companyName };
+      invQtyTypes.forEach(t => { row[t] = r.quantities[t] || 0; });
+      row['الإجمالي'] = r.total;
+      return row;
+    });
+    const totalsRow: any = { '#': '', 'الشركة': 'الإجمالي' };
+    let grand = 0;
+    invQtyTypes.forEach(t => {
+      const s = invQtyRows.reduce((sum, r) => sum + (r.quantities[t] || 0), 0);
+      totalsRow[t] = s;
+      grand += s;
+    });
+    totalsRow['الإجمالي'] = grand;
+    rows.push(totalsRow);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'كميات الفواتير');
+    XLSX.writeFile(wb, `invoice-quantities-${format(invQtyFrom!, 'yyyy-MM-dd')}_${format(invQtyTo!, 'yyyy-MM-dd')}.xlsx`);
+  };
+
   useEffect(() => {
     loadDrivers();
     loadDriverReports();
@@ -1478,7 +1558,7 @@ const LoadReports = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="drivers" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6" dir="ltr">
+          <TabsList className="grid w-full grid-cols-4 mb-6" dir="ltr">
             <TabsTrigger value="drivers" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               تقرير السائقين
@@ -1490,6 +1570,10 @@ const LoadReports = () => {
             <TabsTrigger value="payments" className="flex items-center gap-2">
               <Receipt className="h-4 w-4" />
               تقرير مستحقات السائقين
+            </TabsTrigger>
+            <TabsTrigger value="invoice-quantities" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              كميات الفواتير
             </TabsTrigger>
           </TabsList>
 
@@ -2227,6 +2311,111 @@ const LoadReports = () => {
                 </form>
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          <TabsContent value="invoice-quantities">
+            <Card dir="rtl">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    تقرير كميات الفواتير حسب الشركة
+                  </CardTitle>
+                  {invQtyRows.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={handleExportInvoiceQuantities} className="gap-2">
+                      <Download className="h-4 w-4" />
+                      تصدير Excel
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-end gap-3 flex-wrap mt-4">
+                  <div className="flex flex-col gap-1">
+                    <Label>من تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-[180px] justify-start text-right font-normal", !invQtyFrom && "text-muted-foreground")}>
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {invQtyFrom ? format(invQtyFrom, "yyyy-MM-dd") : "اختر التاريخ"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={invQtyFrom} onSelect={setInvQtyFrom} initialFocus className="pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label>إلى تاريخ</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-[180px] justify-start text-right font-normal", !invQtyTo && "text-muted-foreground")}>
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {invQtyTo ? format(invQtyTo, "yyyy-MM-dd") : "اختر التاريخ"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={invQtyTo} onSelect={setInvQtyTo} initialFocus className="pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <Button onClick={handleGenerateInvoiceQuantitiesReport} disabled={invQtyLoading}>
+                    {invQtyLoading ? "جاري..." : "إنشاء التقرير"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {invQtyRows.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    اختر الفترة الزمنية ثم اضغط "إنشاء التقرير"
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted">
+                          <TableHead className="text-right">#</TableHead>
+                          <TableHead className="text-right">الشركة</TableHead>
+                          {invQtyTypes.map(t => (
+                            <TableHead key={t} className="text-center">{t} (طن)</TableHead>
+                          ))}
+                          <TableHead className="text-center font-bold">الإجمالي</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invQtyRows.map((r, i) => (
+                          <TableRow key={r.companyId}>
+                            <TableCell>{i + 1}</TableCell>
+                            <TableCell className="font-medium">{r.companyName}</TableCell>
+                            {invQtyTypes.map(t => (
+                              <TableCell key={t} className="text-center">
+                                {(r.quantities[t] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-center font-bold text-primary">
+                              {r.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-blue-100 font-bold">
+                          <TableCell></TableCell>
+                          <TableCell>الإجمالي</TableCell>
+                          {invQtyTypes.map(t => {
+                            const s = invQtyRows.reduce((sum, r) => sum + (r.quantities[t] || 0), 0);
+                            return (
+                              <TableCell key={t} className="text-center">
+                                {s.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center text-primary">
+                            {invQtyRows.reduce((sum, r) => sum + r.total, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>
