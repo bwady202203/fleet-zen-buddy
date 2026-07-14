@@ -32,6 +32,7 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 
 const AR_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
