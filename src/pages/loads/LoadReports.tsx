@@ -92,6 +92,86 @@ const LoadReports = () => {
   });
   const [loadingPaymentReport, setLoadingPaymentReport] = useState(false);
 
+  // Invoice quantities report states
+  const [invQtyFrom, setInvQtyFrom] = useState<Date | undefined>(undefined);
+  const [invQtyTo, setInvQtyTo] = useState<Date | undefined>(undefined);
+  const [invQtyRows, setInvQtyRows] = useState<Array<{ companyId: string; companyName: string; quantities: Record<string, number>; total: number }>>([]);
+  const [invQtyTypes, setInvQtyTypes] = useState<string[]>([]);
+  const [invQtyLoading, setInvQtyLoading] = useState(false);
+
+  const handleGenerateInvoiceQuantitiesReport = async () => {
+    if (!invQtyFrom || !invQtyTo) {
+      toast({ title: "خطأ", description: "الرجاء تحديد الفترة الزمنية", variant: "destructive" });
+      return;
+    }
+    setInvQtyLoading(true);
+    try {
+      const from = format(invQtyFrom, 'yyyy-MM-dd');
+      const to = format(invQtyTo, 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('load_invoices')
+        .select(`
+          id, date, company_id,
+          companies(id, name),
+          load_invoice_items(quantity, loads(load_types(name)))
+        `)
+        .gte('date', from)
+        .lte('date', to);
+      if (error) throw error;
+
+      const companyMap: Record<string, { companyId: string; companyName: string; quantities: Record<string, number>; total: number }> = {};
+      const typesSet = new Set<string>();
+
+      (data || []).forEach((inv: any) => {
+        const companyId = inv.company_id || 'unknown';
+        const companyName = inv.companies?.name || 'غير محدد';
+        if (!companyMap[companyId]) {
+          companyMap[companyId] = { companyId, companyName, quantities: {}, total: 0 };
+        }
+        (inv.load_invoice_items || []).forEach((item: any) => {
+          const typeName = item.loads?.load_types?.name || 'غير محدد';
+          const qty = parseFloat(item.quantity) || 0;
+          typesSet.add(typeName);
+          companyMap[companyId].quantities[typeName] = (companyMap[companyId].quantities[typeName] || 0) + qty;
+          companyMap[companyId].total += qty;
+        });
+      });
+
+      const types = Array.from(typesSet).sort();
+      const rows = Object.values(companyMap).sort((a, b) => a.companyName.localeCompare(b.companyName, 'ar'));
+      setInvQtyTypes(types);
+      setInvQtyRows(rows);
+      toast({ title: "تم", description: `تم إنشاء التقرير (${rows.length} شركة)` });
+    } catch (e: any) {
+      toast({ title: "خطأ", description: e.message || "تعذر إنشاء التقرير", variant: "destructive" });
+    } finally {
+      setInvQtyLoading(false);
+    }
+  };
+
+  const handleExportInvoiceQuantities = () => {
+    if (invQtyRows.length === 0) return;
+    const rows = invQtyRows.map((r, i) => {
+      const row: any = { '#': i + 1, 'الشركة': r.companyName };
+      invQtyTypes.forEach(t => { row[t] = r.quantities[t] || 0; });
+      row['الإجمالي'] = r.total;
+      return row;
+    });
+    const totalsRow: any = { '#': '', 'الشركة': 'الإجمالي' };
+    let grand = 0;
+    invQtyTypes.forEach(t => {
+      const s = invQtyRows.reduce((sum, r) => sum + (r.quantities[t] || 0), 0);
+      totalsRow[t] = s;
+      grand += s;
+    });
+    totalsRow['الإجمالي'] = grand;
+    rows.push(totalsRow);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'كميات الفواتير');
+    XLSX.writeFile(wb, `invoice-quantities-${format(invQtyFrom!, 'yyyy-MM-dd')}_${format(invQtyTo!, 'yyyy-MM-dd')}.xlsx`);
+  };
+
   useEffect(() => {
     loadDrivers();
     loadDriverReports();
