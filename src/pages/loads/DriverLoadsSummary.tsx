@@ -136,6 +136,7 @@ interface CompanyRow {
   loadsCount: number;
   totalQuantity: number;
   totalCommission: number;
+  typeQuantities: Record<string, number>;
 }
 
 const DriverLoadsSummary = () => {
@@ -362,6 +363,20 @@ const DriverLoadsSummary = () => {
     [cmpRows],
   );
 
+  const cmpTypes = useMemo(() => {
+    const s = new Set<string>();
+    cmpRows.forEach((r) => Object.keys(r.typeQuantities || {}).forEach((k) => s.add(k)));
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "ar"));
+  }, [cmpRows]);
+
+  const cmpTypeTotals = useMemo(() => {
+    const t: Record<string, number> = {};
+    cmpTypes.forEach((k) => {
+      t[k] = cmpRows.reduce((s, r) => s + (r.typeQuantities?.[k] || 0), 0);
+    });
+    return t;
+  }, [cmpRows, cmpTypes]);
+
   const handleGenerateCompanyReport = async () => {
     if (cmpStart > cmpEnd) {
       toast({ title: "خطأ في التواريخ", variant: "destructive" });
@@ -375,7 +390,7 @@ const DriverLoadsSummary = () => {
       while (true) {
         const { data, error } = await supabase
           .from("loads")
-          .select("id, company_id, quantity, unit_price, companies(name)")
+          .select("id, company_id, quantity, unit_price, companies(name), load_types(name)")
           .gte("date", cmpStart)
           .lte("date", cmpEnd)
           .range(from, from + pageSize - 1);
@@ -390,6 +405,7 @@ const DriverLoadsSummary = () => {
       for (const r of all) {
         const id = r.company_id || "unknown";
         const name = (r as any).companies?.name || "بدون شركة";
+        const typeName = (r as any).load_types?.name || "غير محدد";
         const qty = Number(r.quantity || 0);
         const com = Number(r.unit_price || 0);
         const existing = map.get(id);
@@ -397,8 +413,9 @@ const DriverLoadsSummary = () => {
           existing.loadsCount += 1;
           existing.totalQuantity += qty;
           existing.totalCommission += com;
+          existing.typeQuantities[typeName] = (existing.typeQuantities[typeName] || 0) + qty;
         } else {
-          map.set(id, { companyId: id, companyName: name, loadsCount: 1, totalQuantity: qty, totalCommission: com });
+          map.set(id, { companyId: id, companyName: name, loadsCount: 1, totalQuantity: qty, totalCommission: com, typeQuantities: { [typeName]: qty } });
         }
       }
       setCmpRows(Array.from(map.values()).sort((a, b) => b.totalQuantity - a.totalQuantity));
@@ -1143,6 +1160,11 @@ const DriverLoadsSummary = () => {
                         <TableHead className="text-right">اسم الشركة</TableHead>
                         <TableHead className="text-center">عدد الشحنات</TableHead>
                         <TableHead className="text-center">إجمالي الأطنان</TableHead>
+                        {cmpTypes.map((t) => (
+                          <TableHead key={t} className="text-center whitespace-nowrap bg-blue-50">
+                            {t} (طن)
+                          </TableHead>
+                        ))}
                         <TableHead className="text-center">إجمالي العمولات</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1155,6 +1177,11 @@ const DriverLoadsSummary = () => {
                           <TableCell className="text-center">
                             {r.totalQuantity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
+                          {cmpTypes.map((t) => (
+                            <TableCell key={t} className="text-center bg-blue-50/40">
+                              {(r.typeQuantities?.[t] || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </TableCell>
+                          ))}
                           <TableCell className="text-center font-semibold text-emerald-600">
                             {r.totalCommission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
@@ -1166,6 +1193,11 @@ const DriverLoadsSummary = () => {
                         <TableCell className="text-center">
                           {cmpTotals.qty.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
+                        {cmpTypes.map((t) => (
+                          <TableCell key={t} className="text-center bg-blue-100">
+                            {(cmpTypeTotals[t] || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                        ))}
                         <TableCell className="text-center text-emerald-700">
                           {cmpTotals.commission.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
