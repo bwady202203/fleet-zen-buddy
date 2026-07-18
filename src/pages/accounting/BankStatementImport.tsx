@@ -890,17 +890,25 @@ export default function BankStatementImport() {
 
 
             <div className="overflow-auto max-h-[60vh]">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th className="p-1.5 text-right border-b w-8">#</th>
-                    
-                    <th className="p-1.5 text-right border-b w-24">التاريخ</th>
-                    <th className="p-1.5 text-left border-b w-24">مدين</th>
-                    <th className="p-1.5 text-left border-b w-24">دائن</th>
-                    <th className="p-1.5 text-right border-b w-40">التفاصيل</th>
-                    <th className="p-1.5 text-right border-b w-52">الحساب</th>
-                    <th className="p-1.5 text-center border-b w-8"></th>
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-10" />
+                  <col className="w-24" />
+                  <col className="w-28" />
+                  <col className="w-28" />
+                  <col />
+                  <col className="w-[34%]" />
+                  <col className="w-10" />
+                </colgroup>
+                <thead className="bg-gray-100 sticky top-0 z-10">
+                  <tr className="text-xs font-semibold">
+                    <th className="p-2 text-center border-b">#</th>
+                    <th className="p-2 text-right border-b">التاريخ</th>
+                    <th className="p-2 text-center border-b">مدين</th>
+                    <th className="p-2 text-center border-b">دائن</th>
+                    <th className="p-2 text-right border-b">التفاصيل</th>
+                    <th className="p-2 text-right border-b">الحساب</th>
+                    <th className="p-2 text-center border-b"></th>
                   </tr>
                 </thead>
                 <tbody>
