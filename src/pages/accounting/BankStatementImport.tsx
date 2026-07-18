@@ -726,7 +726,7 @@ export default function BankStatementImport() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[70px]">
+                  <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[76px] content-start">
                     {accounts
                       .filter(a => quickCategory === 'all' || a.type === quickCategory)
                       .filter(a => {
@@ -756,13 +756,13 @@ export default function BankStatementImport() {
                             toast.success(`تم إدراج ${a.name_ar}`);
                           }}
                           className={cn(
-                            "p-1 text-[10px] rounded border cursor-pointer hover:shadow-md hover:scale-105 transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
+                            "h-full w-full min-w-0 p-1 text-[10px] rounded border cursor-pointer hover:shadow-md transition flex flex-col items-center justify-center text-center gap-0.5 overflow-hidden",
                             getAccountTypeColor(a.type)
                           )}
                           title={`${a.code} - ${a.name_ar} — انقر للإدراج أو اسحب`}
                         >
-                          <span className="line-clamp-2 leading-tight font-medium">{a.name_ar}</span>
-                          <span className="text-[9px] text-gray-600 shrink-0">{a.code}</span>
+                          <span className="leading-tight font-medium text-gray-900 break-words max-h-9 overflow-hidden">{a.name_ar || a.name_en || 'بدون اسم'}</span>
+                          <span className="text-[9px] text-gray-600 shrink-0 truncate max-w-full">{a.code}</span>
                         </div>
 
                       ))}
