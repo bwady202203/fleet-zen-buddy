@@ -750,14 +750,18 @@ export default function BankStatementImport() {
                         >→</button>
                         <button
                           onClick={() => {
-                            // Fill first empty row sequentially
                             setParsedBankStatements(prev => {
-                              const emptyIdx = prev.findIndex(r => !r.selectedAccountId);
-                              if (emptyIdx === -1) {
+                              let targetIdx = -1;
+                              if (activeRowIndex !== null && !prev[activeRowIndex]?.selectedAccountId) {
+                                targetIdx = activeRowIndex;
+                              } else {
+                                targetIdx = prev.findIndex(r => !r.selectedAccountId);
+                              }
+                              if (targetIdx === -1) {
                                 toast.info("كل الصفوف معبأة");
                                 return prev;
                               }
-                              return prev.map((r, i) => i === emptyIdx ? { ...r, selectedAccountId: acc.id } : r);
+                              return prev.map((r, i) => i === targetIdx ? { ...r, selectedAccountId: acc.id } : r);
                             });
                           }}
                           className="font-medium"
@@ -824,7 +828,7 @@ export default function BankStatementImport() {
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
                     <th className="p-1.5 text-right border-b w-8">#</th>
-                    <th className="p-1.5 text-center border-b w-44">اختصار</th>
+                    
                     <th className="p-1.5 text-right border-b w-24">التاريخ</th>
                     <th className="p-1.5 text-left border-b w-24">مدين</th>
                     <th className="p-1.5 text-left border-b w-24">دائن</th>
@@ -845,33 +849,6 @@ export default function BankStatementImport() {
                         activeRowIndex === index && "bg-blue-50"
                       )}>
                         <td className="p-1.5 text-gray-500 text-xs">{index + 1}</td>
-                        <td className="p-1 align-middle">
-                          <div className="flex flex-wrap gap-1 max-w-[200px]">
-                            {quickAccountIds.length === 0 && (
-                              <div className="h-6 text-[11px] text-gray-300 text-center border border-dashed border-gray-200 rounded px-2 w-full">لا مفضلات</div>
-                            )}
-                            {quickAccountIds.map(id => {
-                              const acc = accounts.find(a => a.id === id);
-                              if (!acc) return null;
-                              const isSelected = row.selectedAccountId === acc.id;
-                              return (
-                                <button
-                                  key={id}
-                                  onClick={() => handleSelectAccount(index, acc.id)}
-                                  className={cn(
-                                    "h-7 text-xs px-2 rounded border truncate transition",
-                                    isSelected
-                                      ? "bg-green-500 text-white border-green-500"
-                                      : getAccountTypeColor(acc.type)
-                                  )}
-                                  title={`${acc.code} - ${acc.name_ar}`}
-                                >
-                                  {acc.name_ar}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </td>
                         <td className="p-1.5 text-xs whitespace-nowrap">{row.date || '-'}</td>
                         <td className="p-1.5">
                           <Input
