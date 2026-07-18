@@ -826,37 +826,37 @@ export default function BankStatementImport() {
                         "border-b hover:bg-gray-50 group",
                         activeRowIndex === index && "bg-blue-50"
                       )}>
-                        <td className="p-1.5 text-gray-500 text-xs">{index + 1}</td>
-                        <td className="p-1.5 text-xs whitespace-nowrap">{row.date || '-'}</td>
-                        <td className="p-1.5">
+                        <td className="p-2 text-gray-500 text-sm">{index + 1}</td>
+                        <td className="p-2 text-sm whitespace-nowrap">{row.date || '-'}</td>
+                        <td className="p-2">
                           <Input
                             type="number"
                             value={row.debit || ""}
                             onChange={(e) => handleUpdateRow(index, 'debit', e.target.value)}
                             className={cn(
-                              "h-7 text-left text-xs font-mono px-1",
+                              "h-9 text-left text-sm font-mono px-2",
                               row.debit > 0 && "bg-red-50 border-red-200"
                             )}
                             placeholder="0"
                           />
                         </td>
-                        <td className="p-1.5">
+                        <td className="p-2">
                           <Input
                             type="number"
                             value={row.credit || ""}
                             onChange={(e) => handleUpdateRow(index, 'credit', e.target.value)}
                             className={cn(
-                              "h-7 text-left text-xs font-mono px-1",
+                              "h-9 text-left text-sm font-mono px-2",
                               row.credit > 0 && "bg-green-50 border-green-200"
                             )}
                             placeholder="0"
                           />
                         </td>
-                        <td className="p-1.5">
+                        <td className="p-2">
                           <Input
                             value={row.description}
                             onChange={(e) => handleUpdateRow(index, 'description', e.target.value)}
-                            className="h-7 text-xs px-1"
+                            className="h-9 text-sm px-2"
                             placeholder="..."
                           />
                         </td>
