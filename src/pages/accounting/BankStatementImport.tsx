@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -61,6 +61,31 @@ export default function BankStatementImport() {
   const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [entryDescription, setEntryDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("المتصفح لا يدعم البحث الصوتي. استخدم Chrome أو Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-SA';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (e: any) => {
+      setIsListening(false);
+      toast.error("خطأ في الإدخال الصوتي: " + (e.error || ""));
+    };
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript.trim();
+      setAccountSearch(transcript);
+      toast.success(`تم: "${transcript}"`);
+    };
+    recognition.start();
+  };
 
   useEffect(() => {
     fetchAccounts();
@@ -724,19 +749,31 @@ export default function BankStatementImport() {
                         <td className="p-3 relative">
                           {activeRowIndex === index ? (
                             <div className="space-y-1">
-                              <Input
-                                placeholder="ابحث عن حساب..."
-                                value={accountSearch}
-                                onChange={(e) => setAccountSearch(e.target.value)}
-                                className="h-8 text-xs"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Escape') {
-                                    setActiveRowIndex(null);
-                                    setAccountSearch("");
-                                  }
-                                }}
-                              />
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  placeholder="ابحث عن حساب..."
+                                  value={accountSearch}
+                                  onChange={(e) => setAccountSearch(e.target.value)}
+                                  className="h-8 text-xs flex-1"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                      setActiveRowIndex(null);
+                                      setAccountSearch("");
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant={isListening ? "destructive" : "outline"}
+                                  size="sm"
+                                  className="h-8 w-8 p-0 shrink-0"
+                                  onClick={startVoiceSearch}
+                                  title="بحث صوتي"
+                                >
+                                  {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                                </Button>
+                              </div>
                               {filteredAccounts.length > 0 && (
                                 <div 
                                   className={cn(
