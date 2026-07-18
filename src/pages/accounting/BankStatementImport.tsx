@@ -596,12 +596,14 @@ export default function BankStatementImport() {
                               placeholder="0"
                             />
                           </td>
-                          <td className="p-2">
+                          <td className="p-2 overflow-hidden">
                             <Input
                               value={row.description}
                               onChange={(e) => handleUpdateRow(index, "description", e.target.value)}
-                              className="h-9 text-sm px-2"
+                              className="h-9 text-sm px-2 w-full min-w-0 truncate"
                               placeholder="..."
+                              dir="rtl"
+                              title={row.description}
                             />
                           </td>
                           <td
