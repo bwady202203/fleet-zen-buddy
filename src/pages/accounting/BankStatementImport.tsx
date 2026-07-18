@@ -66,6 +66,32 @@ export default function BankStatementImport() {
   const [showAccountsGrid, setShowAccountsGrid] = useState(false);
   const [gridSelectedIds, setGridSelectedIds] = useState<string[]>([]);
   const [gridSearch, setGridSearch] = useState("");
+  const [gridLetter, setGridLetter] = useState<string>("");
+  const [hiddenAccountIds, setHiddenAccountIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem("bsi_hidden_accounts");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [showHidden, setShowHidden] = useState(false);
+
+  const persistHidden = (ids: string[]) => {
+    setHiddenAccountIds(ids);
+    try { localStorage.setItem("bsi_hidden_accounts", JSON.stringify(ids)); } catch {}
+  };
+  const toggleHideAccount = (id: string) => {
+    const next = hiddenAccountIds.includes(id)
+      ? hiddenAccountIds.filter(x => x !== id)
+      : [...hiddenAccountIds, id];
+    persistHidden(next);
+  };
+
+  const ARABIC_LETTERS = ["ا","ب","ت","ث","ج","ح","خ","د","ذ","ر","ز","س","ش","ص","ض","ط","ظ","ع","غ","ف","ق","ك","ل","م","ن","ه","و","ي"];
+  const normalizeAr = (s: string) => (s || "")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .trim();
 
   const toggleGridAccount = (id: string) => {
     setGridSelectedIds(prev =>
