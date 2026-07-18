@@ -931,7 +931,8 @@ export default function BankStatementImport() {
                 </tbody>
               </table>
             </div>
-          </Card>
+            </Card>
+          </div>
         )}
 
         {/* Empty State */}
