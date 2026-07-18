@@ -846,19 +846,20 @@ export default function BankStatementImport() {
                       )}>
                         <td className="p-1.5 text-gray-500 text-xs">{index + 1}</td>
                         <td className="p-1 align-middle">
-                          <div className="flex flex-col gap-0.5">
-                            {[0, 1, 2].map(slot => {
-                              const acc = quickAccountIds[slot] ? accounts.find(a => a.id === quickAccountIds[slot]) : null;
-                              if (!acc) {
-                                return <div key={slot} className="h-5 text-[9px] text-gray-300 text-center border border-dashed border-gray-200 rounded">فارغ</div>;
-                              }
+                          <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {quickAccountIds.length === 0 && (
+                              <div className="h-6 text-[11px] text-gray-300 text-center border border-dashed border-gray-200 rounded px-2 w-full">لا مفضلات</div>
+                            )}
+                            {quickAccountIds.map(id => {
+                              const acc = accounts.find(a => a.id === id);
+                              if (!acc) return null;
                               const isSelected = row.selectedAccountId === acc.id;
                               return (
                                 <button
-                                  key={slot}
+                                  key={id}
                                   onClick={() => handleSelectAccount(index, acc.id)}
                                   className={cn(
-                                    "h-5 text-[10px] px-1 rounded border truncate transition",
+                                    "h-7 text-xs px-2 rounded border truncate transition",
                                     isSelected
                                       ? "bg-green-500 text-white border-green-500"
                                       : getAccountTypeColor(acc.type)
