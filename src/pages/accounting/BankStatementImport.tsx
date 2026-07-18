@@ -64,6 +64,8 @@ export default function BankStatementImport() {
   const [isListening, setIsListening] = useState(false);
   const [quickCategory, setQuickCategory] = useState<string>('all');
   const [quickAccountIds, setQuickAccountIds] = useState<string[]>([]);
+  const [sidebarSearch, setSidebarSearch] = useState<string>('');
+  const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -665,7 +667,74 @@ export default function BankStatementImport() {
 
         {/* Parsed Data Table */}
         {parsedBankStatements.length > 0 && (
-          <Card className="overflow-hidden">
+          <div className="flex gap-3" dir="rtl">
+            {/* Accounts Sidebar */}
+            <Card className="w-72 shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
+              <div className="p-2 border-b bg-blue-50/50">
+                <div className="text-sm font-semibold text-gray-700 mb-2">
+                  الحسابات ({accounts.length}) — اسحب للإفلات
+                </div>
+                <Input
+                  placeholder="ابحث..."
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {[
+                    { key: 'all', label: 'الكل' },
+                    { key: 'asset', label: 'أصول' },
+                    { key: 'liability', label: 'خصوم' },
+                    { key: 'equity', label: 'حقوق' },
+                    { key: 'revenue', label: 'إيرادات' },
+                    { key: 'expense', label: 'مصروفات' },
+                  ].map(c => (
+                    <button
+                      key={c.key}
+                      onClick={() => setQuickCategory(c.key)}
+                      className={cn(
+                        "px-2 py-0.5 text-[11px] rounded-full border transition",
+                        quickCategory === c.key
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto p-1.5 space-y-1">
+                {accounts
+                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
+                  .filter(a => {
+                    const q = sidebarSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (a.name_ar || '').toLowerCase().includes(q) ||
+                           (a.code || '').toLowerCase().includes(q);
+                  })
+                  .map(a => (
+                    <div
+                      key={a.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/account-id', a.id);
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      className={cn(
+                        "px-2 py-1.5 text-xs rounded border cursor-grab active:cursor-grabbing hover:shadow-sm flex items-center justify-between gap-1",
+                        getAccountTypeColor(a.type)
+                      )}
+                      title={`${a.code} - ${a.name_ar}`}
+                    >
+                      <span className="truncate">{a.name_ar}</span>
+                      <span className="text-[10px] text-gray-500 shrink-0">{a.code}</span>
+                    </div>
+                  ))}
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden flex-1 min-w-0">
             <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
               <span className="font-medium flex items-center gap-2">
                 <FileSpreadsheet className="h-5 w-5 text-teal-600" />
@@ -690,140 +759,11 @@ export default function BankStatementImport() {
               </div>
             </div>
 
-            {/* Quick Accounts Picker */}
-            <div className="p-3 bg-blue-50/50 border-b space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-gray-700">فئة:</span>
-                {[
-                  { key: 'all', label: 'الكل' },
-                  { key: 'asset', label: 'أصول' },
-                  { key: 'liability', label: 'خصوم' },
-                  { key: 'equity', label: 'حقوق ملكية' },
-                  { key: 'revenue', label: 'إيرادات' },
-                  { key: 'expense', label: 'مصروفات' },
-                ].map(c => (
-                  <button
-                    key={c.key}
-                    onClick={() => setQuickCategory(c.key)}
-                    className={cn(
-                      "px-3 py-1 text-sm rounded-full border transition",
-                      quickCategory === c.key
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                    )}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-                <span className="text-sm text-gray-500 mr-2">المفضلة ({quickAccountIds.length}) — الضغط يعبئ الصفوف الفارغة بالترتيب</span>
-                {quickAccountIds.length > 0 && (
-                  <button
-                    onClick={() => setQuickAccountIds([])}
-                    className="text-sm text-red-600 hover:underline"
-                  >مسح الكل</button>
-                )}
-              </div>
-
-              {/* Selected favorites with delete + reorder */}
-              {quickAccountIds.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap p-2 bg-white rounded border border-blue-200">
-                  {quickAccountIds.map((id, idx) => {
-                    const acc = accounts.find(a => a.id === id);
-                    if (!acc) return null;
-                    return (
-                      <div
-                        key={id}
-                        className={cn(
-                          "flex items-center gap-1 px-2 py-1 rounded border text-sm",
-                          getAccountTypeColor(acc.type)
-                        )}
-                      >
-                        <button
-                          onClick={() => setQuickAccountIds(prev => {
-                            const arr = [...prev];
-                            if (idx > 0) { [arr[idx-1], arr[idx]] = [arr[idx], arr[idx-1]]; }
-                            return arr;
-                          })}
-                          disabled={idx === 0}
-                          className="text-gray-600 hover:text-blue-600 disabled:opacity-30 text-base px-1"
-                          title="نقل لليمين"
-                        >→</button>
-                        <button
-                          onClick={() => {
-                            if (parsedBankStatements.length === 0) {
-                              toast.info("لا توجد صفوف");
-                              return;
-                            }
-                            let targetIdx = activeRowIndex;
-                            if (targetIdx === null) {
-                              targetIdx = parsedBankStatements.findIndex(r => !r.selectedAccountId);
-                            }
-                            if (targetIdx === null || targetIdx === -1) {
-                              targetIdx = 0;
-                            }
-                            setParsedBankStatements(prev => prev.map((r, i) => i === targetIdx ? { ...r, selectedAccountId: acc.id } : r));
-                            setActiveRowIndex(null);
-                            setAccountSearch("");
-                            toast.success(`تم إدراج: ${acc.name_ar}`);
-                          }}
-                          className="font-medium"
-                          title={`${acc.code} - ${acc.name_ar}`}
-                        >
-                          {acc.name_ar}
-                        </button>
-                        <button
-                          onClick={() => setQuickAccountIds(prev => {
-                            const arr = [...prev];
-                            if (idx < arr.length - 1) { [arr[idx+1], arr[idx]] = [arr[idx], arr[idx+1]]; }
-                            return arr;
-                          })}
-                          disabled={idx === quickAccountIds.length - 1}
-                          className="text-gray-600 hover:text-blue-600 disabled:opacity-30 text-base px-1"
-                          title="نقل لليسار"
-                        >←</button>
-                        <button
-                          onClick={() => setQuickAccountIds(prev => prev.filter(x => x !== id))}
-                          className="text-red-600 hover:text-red-800 mr-1"
-                          title="حذف من المفضلة"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* All accounts list to pick favorites */}
-              <div className="flex items-center gap-1.5 flex-wrap max-h-40 overflow-auto">
-                {accounts
-                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
-                  .slice(0, 120)
-                  .map(a => {
-                    const isPicked = quickAccountIds.includes(a.id);
-                    return (
-                      <button
-                        key={a.id}
-                        onClick={() => {
-                          setQuickAccountIds(prev => {
-                            if (prev.includes(a.id)) return prev.filter(x => x !== a.id);
-                            return [...prev, a.id];
-                          });
-                        }}
-                        className={cn(
-                          "px-2.5 py-1 text-xs rounded border transition",
-                          isPicked
-                            ? "bg-green-500 text-white border-green-500"
-                            : getAccountTypeColor(a.type)
-                        )}
-                        title={`${a.code} - ${a.name_ar}`}
-                      >
-                        {a.name_ar}
-                      </button>
-                    );
-                  })}
-              </div>
+            {/* Info bar */}
+            <div className="p-2 bg-blue-50/50 border-b text-xs text-gray-600">
+              اسحب أي حساب من اللوحة الجانبية وأفلته على حقل "اختر حساب" في أي صف
             </div>
+
 
             <div className="overflow-auto max-h-[60vh]">
               <table className="w-full text-sm">
@@ -884,7 +824,32 @@ export default function BankStatementImport() {
                             placeholder="..."
                           />
                         </td>
-                        <td className="p-1.5 relative">
+                        <td
+                          className={cn(
+                            "p-1.5 relative",
+                            dragOverRow === index && "bg-blue-100 ring-2 ring-blue-400"
+                          )}
+                          onDragOver={(e) => {
+                            if (e.dataTransfer.types.includes('text/account-id')) {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'copy';
+                              if (dragOverRow !== index) setDragOverRow(index);
+                            }
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverRow === index) setDragOverRow(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const accId = e.dataTransfer.getData('text/account-id');
+                            setDragOverRow(null);
+                            if (accId) {
+                              handleSelectAccount(index, accId);
+                              const acc = accounts.find(a => a.id === accId);
+                              if (acc) toast.success(`تم إدراج: ${acc.name_ar}`);
+                            }
+                          }}
+                        >
                           {activeRowIndex === index ? (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1">
@@ -989,7 +954,8 @@ export default function BankStatementImport() {
                 </tbody>
               </table>
             </div>
-          </Card>
+            </Card>
+          </div>
         )}
 
         {/* Empty State */}
