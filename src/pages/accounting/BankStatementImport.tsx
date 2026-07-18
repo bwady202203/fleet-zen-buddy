@@ -755,18 +755,29 @@ export default function BankStatementImport() {
               )}>
                 {sidebarExpanded && (
                   <div className="text-sm font-semibold text-gray-700">
-                    الحسابات ({accounts.length}) — اسحب للإفلات
+                    الحسابات ({accounts.length - hiddenAccountIds.length}) — اسحب للإفلات
                   </div>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setSidebarExpanded(v => !v)}
-                  title={sidebarExpanded ? "تصغير" : "توسيع"}
-                >
-                  {sidebarExpanded ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-100"
+                    onClick={openGallery}
+                    title="عرض كل الحسابات في شاشة كبيرة"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setSidebarExpanded(v => !v)}
+                    title={sidebarExpanded ? "تصغير" : "توسيع"}
+                  >
+                    {sidebarExpanded ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               {sidebarExpanded && (
                 <>
