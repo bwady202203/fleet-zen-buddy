@@ -7,8 +7,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff, ChevronLeft, ChevronRight, Maximize2, LayoutGrid, EyeOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+
+const HIDDEN_ACCS_KEY = "bank_import_hidden_accounts_v1";
+
+const CATEGORY_META: Record<string, { label: string; header: string; tile: string; ring: string }> = {
+  asset:     { label: "الأصول",     header: "bg-emerald-600", tile: "bg-emerald-50 hover:bg-emerald-100 border-emerald-300", ring: "ring-emerald-500" },
+  liability: { label: "الخصوم",     header: "bg-rose-600",    tile: "bg-rose-50 hover:bg-rose-100 border-rose-300",       ring: "ring-rose-500" },
+  equity:    { label: "حقوق الملكية", header: "bg-purple-600",  tile: "bg-purple-50 hover:bg-purple-100 border-purple-300", ring: "ring-purple-500" },
+  revenue:   { label: "الإيرادات",  header: "bg-sky-600",     tile: "bg-sky-50 hover:bg-sky-100 border-sky-300",           ring: "ring-sky-500" },
+  expense:   { label: "المصروفات",  header: "bg-amber-600",   tile: "bg-amber-50 hover:bg-amber-100 border-amber-300",     ring: "ring-amber-500" },
+};
 
 interface Account {
   id: string;
