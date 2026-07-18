@@ -535,8 +535,8 @@ export default function BankStatementImport() {
                 </div>
               </div>
 
-              <div className="overflow-auto max-h-[70vh]">
-                <table className="w-full text-sm table-fixed">
+              <div className="overflow-auto max-h-[70vh]" dir="rtl">
+                <table className="w-full text-sm table-fixed" dir="rtl">
                   <colgroup>
                     <col className="w-10" />
                     <col className="w-24" />
