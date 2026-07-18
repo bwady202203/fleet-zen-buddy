@@ -7,19 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff, ChevronLeft, ChevronRight, Maximize2, LayoutGrid, EyeOff, Eye } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-
-const HIDDEN_ACCS_KEY = "bank_import_hidden_accounts_v1";
-
-const CATEGORY_META: Record<string, { label: string; header: string; tile: string; ring: string }> = {
-  asset:     { label: "الأصول",     header: "bg-emerald-600", tile: "bg-emerald-50 hover:bg-emerald-100 border-emerald-300", ring: "ring-emerald-500" },
-  liability: { label: "الخصوم",     header: "bg-rose-600",    tile: "bg-rose-50 hover:bg-rose-100 border-rose-300",       ring: "ring-rose-500" },
-  equity:    { label: "حقوق الملكية", header: "bg-purple-600",  tile: "bg-purple-50 hover:bg-purple-100 border-purple-300", ring: "ring-purple-500" },
-  revenue:   { label: "الإيرادات",  header: "bg-sky-600",     tile: "bg-sky-50 hover:bg-sky-100 border-sky-300",           ring: "ring-sky-500" },
-  expense:   { label: "المصروفات",  header: "bg-amber-600",   tile: "bg-amber-50 hover:bg-amber-100 border-amber-300",     ring: "ring-amber-500" },
-};
 
 interface Account {
   id: string;
@@ -78,70 +67,6 @@ export default function BankStatementImport() {
   const [sidebarSearch, setSidebarSearch] = useState<string>('');
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(true);
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
-  const [galleryOpen, setGalleryOpen] = useState<boolean>(false);
-  const [hiddenAccountIds, setHiddenAccountIds] = useState<string[]>(() => {
-    try {
-      const raw = localStorage.getItem(HIDDEN_ACCS_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
-  const [pendingHidden, setPendingHidden] = useState<string[]>([]);
-  const [selectionQueue, setSelectionQueue] = useState<string[]>([]);
-  const [galleryCategory, setGalleryCategory] = useState<string>('all');
-  const [gallerySearch, setGallerySearch] = useState<string>('');
-
-  const openGallery = () => {
-    setPendingHidden(hiddenAccountIds);
-    setSelectionQueue([]);
-    setGallerySearch('');
-    setGalleryCategory('all');
-    setGalleryOpen(true);
-  };
-
-  const toggleHideAccount = (id: string) => {
-    setPendingHidden(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    setSelectionQueue(prev => prev.filter(x => x !== id));
-  };
-
-  const toggleQueueAccount = (id: string) => {
-    if (pendingHidden.includes(id)) return;
-    setSelectionQueue(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-
-  const applyGallery = () => {
-    // persist hidden
-    localStorage.setItem(HIDDEN_ACCS_KEY, JSON.stringify(pendingHidden));
-    setHiddenAccountIds(pendingHidden);
-
-    // insert queue into rows in order (fill empty rows starting from active/first empty)
-    if (selectionQueue.length > 0) {
-      setParsedBankStatements(prev => {
-        const rows = [...prev];
-        let start = activeRowIndex ?? rows.findIndex(r => !r.selectedAccountId);
-        if (start < 0) start = 0;
-        let queueIdx = 0;
-        for (let i = start; i < rows.length && queueIdx < selectionQueue.length; i++) {
-          if (!rows[i].selectedAccountId) {
-            rows[i] = { ...rows[i], selectedAccountId: selectionQueue[queueIdx] };
-            queueIdx++;
-          }
-        }
-        // if still remaining, overwrite from start
-        if (queueIdx < selectionQueue.length) {
-          for (let i = start; i < rows.length && queueIdx < selectionQueue.length; i++) {
-            rows[i] = { ...rows[i], selectedAccountId: selectionQueue[queueIdx] };
-            queueIdx++;
-          }
-        }
-        toast.success(`تم إدراج ${queueIdx} حساب${queueIdx > 1 ? 'ات' : ''}`);
-        return rows;
-      });
-      setActiveRowIndex(null);
-    } else {
-      toast.success("تم حفظ التعديلات");
-    }
-    setGalleryOpen(false);
-  };
 
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -755,29 +680,18 @@ export default function BankStatementImport() {
               )}>
                 {sidebarExpanded && (
                   <div className="text-sm font-semibold text-gray-700">
-                    الحسابات ({accounts.length - hiddenAccountIds.length}) — اسحب للإفلات
+                    الحسابات ({accounts.length}) — اسحب للإفلات
                   </div>
                 )}
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-100"
-                    onClick={openGallery}
-                    title="عرض كل الحسابات في شاشة كبيرة"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setSidebarExpanded(v => !v)}
-                    title={sidebarExpanded ? "تصغير" : "توسيع"}
-                  >
-                    {sidebarExpanded ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setSidebarExpanded(v => !v)}
+                  title={sidebarExpanded ? "تصغير" : "توسيع"}
+                >
+                  {sidebarExpanded ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                </Button>
               </div>
               {sidebarExpanded && (
                 <>
@@ -812,9 +726,8 @@ export default function BankStatementImport() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex-1 overflow-auto p-2 grid grid-cols-4 gap-2 auto-rows-[104px] content-start">
+                  <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[76px] content-start">
                     {accounts
-                      .filter(a => !hiddenAccountIds.includes(a.id))
                       .filter(a => quickCategory === 'all' || a.type === quickCategory)
                       .filter(a => {
                         const q = sidebarSearch.trim().toLowerCase();
@@ -843,13 +756,13 @@ export default function BankStatementImport() {
                             toast.success(`تم إدراج ${a.name_ar}`);
                           }}
                           className={cn(
-                            "h-full w-full min-w-0 p-2 text-sm rounded-lg border cursor-pointer hover:shadow-lg hover:scale-[1.02] transition flex flex-col items-center justify-center text-center gap-1 overflow-hidden",
+                            "h-full w-full min-w-0 p-1 text-[10px] rounded border cursor-pointer hover:shadow-md transition flex flex-col items-center justify-center text-center gap-0.5 overflow-hidden",
                             getAccountTypeColor(a.type)
                           )}
                           title={`${a.code} - ${a.name_ar} — انقر للإدراج أو اسحب`}
                         >
-                          <span className="leading-snug font-bold text-gray-900 break-words max-h-[60px] overflow-hidden">{a.name_ar || a.name_en || 'بدون اسم'}</span>
-                          <span className="text-xs font-semibold text-gray-700 shrink-0 truncate max-w-full">{a.code}</span>
+                          <span className="leading-tight font-medium text-gray-900 break-words max-h-9 overflow-hidden">{a.name_ar || a.name_en || 'بدون اسم'}</span>
+                          <span className="text-[9px] text-gray-600 shrink-0 truncate max-w-full">{a.code}</span>
                         </div>
 
                       ))}
@@ -890,28 +803,19 @@ export default function BankStatementImport() {
 
 
             <div className="overflow-auto max-h-[60vh]">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col style={{ width: '40px' }} />
-                  <col style={{ width: '90px' }} />
-                  <col style={{ width: '110px' }} />
-                  <col style={{ width: '110px' }} />
-                  <col />
-                  <col style={{ width: '220px' }} />
-                  <col style={{ width: '40px' }} />
-                </colgroup>
+              <table className="w-full text-sm">
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
-                    <th className="p-1.5 text-right border-b">#</th>
-                    <th className="p-1.5 text-right border-b">التاريخ</th>
-                    <th className="p-1.5 text-left border-b">مدين</th>
-                    <th className="p-1.5 text-left border-b">دائن</th>
-                    <th className="p-1.5 text-right border-b">التفاصيل</th>
-                    <th className="p-1.5 text-right border-b">الحساب</th>
-                    <th className="p-1.5 text-center border-b"></th>
+                    <th className="p-1.5 text-right border-b w-8">#</th>
+                    
+                    <th className="p-1.5 text-right border-b w-24">التاريخ</th>
+                    <th className="p-1.5 text-left border-b w-24">مدين</th>
+                    <th className="p-1.5 text-left border-b w-24">دائن</th>
+                    <th className="p-1.5 text-right border-b w-40">التفاصيل</th>
+                    <th className="p-1.5 text-right border-b w-52">الحساب</th>
+                    <th className="p-1.5 text-center border-b w-8"></th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {parsedBankStatements.map((row, index) => {
                     const selectedAccount = row.selectedAccountId 
@@ -1099,128 +1003,6 @@ export default function BankStatementImport() {
             <p>الصق بيانات كشف الحساب البنكي في المربع أعلاه للبدء</p>
           </Card>
         )}
-
-        {/* Full-screen Accounts Gallery Dialog */}
-        <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
-          <DialogContent
-            dir="rtl"
-            className="max-w-[95vw] w-[95vw] h-[92vh] p-0 flex flex-col gap-0"
-          >
-            <DialogHeader className="p-4 border-b bg-gradient-to-l from-blue-50 to-white shrink-0">
-              <DialogTitle className="text-lg flex items-center gap-2">
-                <LayoutGrid className="h-5 w-5 text-blue-600" />
-                معرض الحسابات — اختر عدة حسابات للإدراج بالترتيب أو أخفِ ما لا تحتاجه
-              </DialogTitle>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                <Input
-                  placeholder="ابحث بالاسم أو الرقم..."
-                  value={gallerySearch}
-                  onChange={(e) => setGallerySearch(e.target.value)}
-                  className="h-9 w-64"
-                />
-                <div className="flex flex-wrap gap-1">
-                  {[{ key: 'all', label: 'الكل' }, ...Object.entries(CATEGORY_META).map(([k, v]) => ({ key: k, label: v.label }))].map(c => (
-                    <button
-                      key={c.key}
-                      onClick={() => setGalleryCategory(c.key)}
-                      className={cn(
-                        "px-3 py-1 text-xs rounded-full border transition",
-                        galleryCategory === c.key
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      )}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="mr-auto text-sm text-gray-600 flex items-center gap-3">
-                  <span>محدد للإدراج: <b className="text-blue-700">{selectionQueue.length}</b></span>
-                  <span>مخفي: <b className="text-rose-700">{pendingHidden.length}</b></span>
-                  {selectionQueue.length > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => setSelectionQueue([])}>مسح التحديد</Button>
-                  )}
-                </div>
-              </div>
-            </DialogHeader>
-
-            <div className="flex-1 overflow-auto p-4 space-y-5">
-              {Object.entries(CATEGORY_META)
-                .filter(([type]) => galleryCategory === 'all' || galleryCategory === type)
-                .map(([type, meta]) => {
-                  const q = gallerySearch.trim().toLowerCase();
-                  const list = accounts
-                    .filter(a => a.type === type)
-                    .filter(a => !q ||
-                      (a.name_ar || '').toLowerCase().includes(q) ||
-                      (a.name_en || '').toLowerCase().includes(q) ||
-                      (a.code || '').toLowerCase().includes(q));
-                  if (list.length === 0) return null;
-                  return (
-                    <div key={type} className="border rounded-lg overflow-hidden shadow-sm">
-                      <div className={cn("px-3 py-2 text-white font-semibold text-sm flex items-center justify-between", meta.header)}>
-                        <span>{meta.label} ({list.length})</span>
-                      </div>
-                      <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-                        {list.map(a => {
-                          const isHidden = pendingHidden.includes(a.id);
-                          const queueIdx = selectionQueue.indexOf(a.id);
-                          const selected = queueIdx !== -1;
-                          return (
-                            <div
-                              key={a.id}
-                              onClick={() => toggleQueueAccount(a.id)}
-                              className={cn(
-                                "relative min-h-[80px] p-2 rounded-md border cursor-pointer transition text-center flex flex-col items-center justify-center gap-1",
-                                meta.tile,
-                                isHidden && "opacity-40 grayscale line-through",
-                                selected && `ring-2 ${meta.ring} shadow-md`,
-                              )}
-                              title={`${a.code} - ${a.name_ar}`}
-                            >
-                              {selected && (
-                                <span className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold h-5 min-w-5 px-1 rounded-full flex items-center justify-center">
-                                  {queueIdx + 1}
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); toggleHideAccount(a.id); }}
-                                className="absolute top-1 left-1 h-5 w-5 rounded-full bg-white/80 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center"
-                                title={isHidden ? "إظهار الحساب" : "إخفاء الحساب"}
-                              >
-                                {isHidden ? <Eye className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                              </button>
-                              <span className="text-xs font-bold text-gray-900 leading-tight break-words max-h-[44px] overflow-hidden">
-                                {a.name_ar || a.name_en || 'بدون اسم'}
-                              </span>
-                              <span className="text-[11px] font-semibold text-gray-600">{a.code}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-
-            <DialogFooter className="p-3 border-t bg-gray-50 shrink-0 flex-row-reverse gap-2 sm:justify-start">
-              <Button onClick={applyGallery} className="bg-blue-600 hover:bg-blue-700 gap-2">
-                <Save className="h-4 w-4" />
-                حفظ وإدراج ({selectionQueue.length})
-              </Button>
-              <Button variant="outline" onClick={() => setGalleryOpen(false)}>إلغاء</Button>
-              <Button
-                variant="ghost"
-                className="text-rose-600 hover:bg-rose-50"
-                onClick={() => setPendingHidden([])}
-                disabled={pendingHidden.length === 0}
-              >
-                إظهار كل المخفي ({pendingHidden.length})
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
