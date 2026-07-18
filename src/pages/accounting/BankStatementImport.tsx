@@ -927,7 +927,7 @@ export default function BankStatementImport() {
               كل الحسابات — اختر حساباً أو أكثر
             </DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 shrink-0">
             <Input
               placeholder="ابحث بالاسم أو الكود..."
               value={gridSearch}
@@ -935,10 +935,10 @@ export default function BankStatementImport() {
               className="max-w-sm"
             />
             <div className="text-xs text-gray-500">
-              محدد: <span className="font-bold text-teal-600">{gridSelectedIds.length}</span> — سيتم إسنادهم بالترتيب إلى الصفوف الفارغة
+              إجمالي: <span className="font-bold">{accounts.length}</span> — محدد: <span className="font-bold text-teal-600">{gridSelectedIds.length}</span>
             </div>
           </div>
-          <div className="overflow-auto flex-1 mt-2">
+          <div className="overflow-auto flex-1 min-h-0 mt-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 p-1">
               {gridFilteredAccounts.map(acc => {
                 const order = gridSelectedIds.indexOf(acc.id);
