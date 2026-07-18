@@ -750,14 +750,18 @@ export default function BankStatementImport() {
                         >→</button>
                         <button
                           onClick={() => {
-                            // Fill first empty row sequentially
                             setParsedBankStatements(prev => {
-                              const emptyIdx = prev.findIndex(r => !r.selectedAccountId);
-                              if (emptyIdx === -1) {
+                              let targetIdx = -1;
+                              if (activeRowIndex !== null && !prev[activeRowIndex]?.selectedAccountId) {
+                                targetIdx = activeRowIndex;
+                              } else {
+                                targetIdx = prev.findIndex(r => !r.selectedAccountId);
+                              }
+                              if (targetIdx === -1) {
                                 toast.info("كل الصفوف معبأة");
                                 return prev;
                               }
-                              return prev.map((r, i) => i === emptyIdx ? { ...r, selectedAccountId: acc.id } : r);
+                              return prev.map((r, i) => i === targetIdx ? { ...r, selectedAccountId: acc.id } : r);
                             });
                           }}
                           className="font-medium"
