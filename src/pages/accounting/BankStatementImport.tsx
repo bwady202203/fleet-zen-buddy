@@ -750,19 +750,21 @@ export default function BankStatementImport() {
                         >→</button>
                         <button
                           onClick={() => {
-                            setParsedBankStatements(prev => {
-                              let targetIdx = -1;
-                              if (activeRowIndex !== null && !prev[activeRowIndex]?.selectedAccountId) {
-                                targetIdx = activeRowIndex;
-                              } else {
-                                targetIdx = prev.findIndex(r => !r.selectedAccountId);
-                              }
-                              if (targetIdx === -1) {
-                                toast.info("كل الصفوف معبأة");
-                                return prev;
-                              }
-                              return prev.map((r, i) => i === targetIdx ? { ...r, selectedAccountId: acc.id } : r);
-                            });
+                            if (parsedBankStatements.length === 0) {
+                              toast.info("لا توجد صفوف");
+                              return;
+                            }
+                            let targetIdx = activeRowIndex;
+                            if (targetIdx === null) {
+                              targetIdx = parsedBankStatements.findIndex(r => !r.selectedAccountId);
+                            }
+                            if (targetIdx === null || targetIdx === -1) {
+                              targetIdx = 0;
+                            }
+                            setParsedBankStatements(prev => prev.map((r, i) => i === targetIdx ? { ...r, selectedAccountId: acc.id } : r));
+                            setActiveRowIndex(null);
+                            setAccountSearch("");
+                            toast.success(`تم إدراج: ${acc.name_ar}`);
                           }}
                           className="font-medium"
                           title={`${acc.code} - ${acc.name_ar}`}
