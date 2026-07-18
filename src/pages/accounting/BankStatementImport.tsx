@@ -61,6 +61,31 @@ export default function BankStatementImport() {
   const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [entryDescription, setEntryDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("المتصفح لا يدعم البحث الصوتي. استخدم Chrome أو Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-SA';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (e: any) => {
+      setIsListening(false);
+      toast.error("خطأ في الإدخال الصوتي: " + (e.error || ""));
+    };
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript.trim();
+      setAccountSearch(transcript);
+      toast.success(`تم: "${transcript}"`);
+    };
+    recognition.start();
+  };
 
   useEffect(() => {
     fetchAccounts();
