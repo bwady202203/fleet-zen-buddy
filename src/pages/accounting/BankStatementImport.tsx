@@ -63,6 +63,50 @@ export default function BankStatementImport() {
   const [entryDescription, setEntryDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showAccountsGrid, setShowAccountsGrid] = useState(false);
+  const [gridSelectedIds, setGridSelectedIds] = useState<string[]>([]);
+  const [gridSearch, setGridSearch] = useState("");
+
+  const toggleGridAccount = (id: string) => {
+    setGridSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const applyGridSelection = () => {
+    if (gridSelectedIds.length === 0) {
+      toast.error("لم يتم اختيار أي حساب");
+      return;
+    }
+    if (parsedBankStatements.length === 0) {
+      toast.error("لا توجد صفوف لإسناد الحسابات إليها");
+      return;
+    }
+    setParsedBankStatements(prev => {
+      const emptyIdx: number[] = [];
+      prev.forEach((r, i) => { if (!r.selectedAccountId) emptyIdx.push(i); });
+      const targets = emptyIdx.length > 0 ? emptyIdx : prev.map((_, i) => i);
+      const next = [...prev];
+      gridSelectedIds.forEach((accId, k) => {
+        const idx = targets[k];
+        if (idx === undefined) return;
+        next[idx] = { ...next[idx], selectedAccountId: accId };
+      });
+      return next;
+    });
+    toast.success(`تم إسناد ${gridSelectedIds.length} حساب`);
+    setGridSelectedIds([]);
+    setGridSearch("");
+    setShowAccountsGrid(false);
+  };
+
+  const gridFilteredAccounts = gridSearch
+    ? accounts.filter(a =>
+        a.name_ar.includes(gridSearch) ||
+        a.code.includes(gridSearch) ||
+        a.name_en.toLowerCase().includes(gridSearch.toLowerCase())
+      )
+    : accounts;
 
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
