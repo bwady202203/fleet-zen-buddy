@@ -803,17 +803,16 @@ export default function BankStatementImport() {
 
 
             <div className="overflow-auto max-h-[60vh]">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
-                    <th className="p-1.5 text-right border-b w-8">#</th>
-                    
-                    <th className="p-1.5 text-right border-b w-24">التاريخ</th>
-                    <th className="p-1.5 text-left border-b w-24">مدين</th>
-                    <th className="p-1.5 text-left border-b w-24">دائن</th>
-                    <th className="p-1.5 text-right border-b w-40">التفاصيل</th>
-                    <th className="p-1.5 text-right border-b w-52">الحساب</th>
-                    <th className="p-1.5 text-center border-b w-8"></th>
+                    <th className="p-2 text-right border-b w-10">#</th>
+                    <th className="p-2 text-right border-b w-28">التاريخ</th>
+                    <th className="p-2 text-left border-b w-32">مدين</th>
+                    <th className="p-2 text-left border-b w-32">دائن</th>
+                    <th className="p-2 text-right border-b w-40">التفاصيل</th>
+                    <th className="p-2 text-right border-b w-48">الحساب</th>
+                    <th className="p-2 text-center border-b w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
