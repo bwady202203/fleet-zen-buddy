@@ -689,18 +689,83 @@ export default function BankStatementImport() {
                 </span>
               </div>
             </div>
-            
+
+            {/* Quick Accounts Picker */}
+            <div className="p-2 bg-blue-50/50 border-b space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-gray-700">فئة:</span>
+                {[
+                  { key: 'all', label: 'الكل' },
+                  { key: 'asset', label: 'أصول' },
+                  { key: 'liability', label: 'خصوم' },
+                  { key: 'equity', label: 'حقوق ملكية' },
+                  { key: 'revenue', label: 'إيرادات' },
+                  { key: 'expense', label: 'مصروفات' },
+                ].map(c => (
+                  <button
+                    key={c.key}
+                    onClick={() => setQuickCategory(c.key)}
+                    className={cn(
+                      "px-2 py-0.5 text-[11px] rounded-full border transition",
+                      quickCategory === c.key
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                    )}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+                <span className="text-[11px] text-gray-500 mr-2">اختر حتى 3 حسابات مفضلة للوصول السريع ({quickAccountIds.length}/3)</span>
+                {quickAccountIds.length > 0 && (
+                  <button
+                    onClick={() => setQuickAccountIds([])}
+                    className="text-[11px] text-red-600 hover:underline"
+                  >مسح</button>
+                )}
+              </div>
+              <div className="flex items-center gap-1 flex-wrap max-h-24 overflow-auto">
+                {accounts
+                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
+                  .slice(0, 60)
+                  .map(a => {
+                    const isPicked = quickAccountIds.includes(a.id);
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => {
+                          setQuickAccountIds(prev => {
+                            if (prev.includes(a.id)) return prev.filter(x => x !== a.id);
+                            if (prev.length >= 3) return [prev[1], prev[2], a.id];
+                            return [...prev, a.id];
+                          });
+                        }}
+                        className={cn(
+                          "px-1.5 py-0.5 text-[10px] rounded border transition",
+                          isPicked
+                            ? "bg-green-500 text-white border-green-500"
+                            : getAccountTypeColor(a.type)
+                        )}
+                        title={`${a.code} - ${a.name_ar}`}
+                      >
+                        {a.name_ar}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
             <div className="overflow-auto max-h-[60vh]">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
-                    <th className="p-3 text-right border-b w-10">#</th>
-                    <th className="p-3 text-right border-b w-28">التاريخ</th>
-                    <th className="p-3 text-left border-b w-32">مدين (خصم)</th>
-                    <th className="p-3 text-left border-b w-32">دائن (إيداع)</th>
-                    <th className="p-3 text-right border-b">التفاصيل</th>
-                    <th className="p-3 text-right border-b w-56">الحساب</th>
-                    <th className="p-3 text-center border-b w-12"></th>
+                    <th className="p-1.5 text-right border-b w-8">#</th>
+                    <th className="p-1.5 text-center border-b w-44">اختصار</th>
+                    <th className="p-1.5 text-right border-b w-24">التاريخ</th>
+                    <th className="p-1.5 text-left border-b w-24">مدين</th>
+                    <th className="p-1.5 text-left border-b w-24">دائن</th>
+                    <th className="p-1.5 text-right border-b w-40">التفاصيل</th>
+                    <th className="p-1.5 text-right border-b w-52">الحساب</th>
+                    <th className="p-1.5 text-center border-b w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
