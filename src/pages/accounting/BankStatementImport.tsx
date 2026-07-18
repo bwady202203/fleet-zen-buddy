@@ -721,15 +721,28 @@ export default function BankStatementImport() {
                         e.dataTransfer.setData('text/account-id', a.id);
                         e.dataTransfer.effectAllowed = 'copy';
                       }}
+                      onClick={() => {
+                        let targetIndex = activeRowIndex;
+                        if (targetIndex === null || targetIndex === undefined) {
+                          targetIndex = parsedBankStatements.findIndex(r => !r.selectedAccountId);
+                        }
+                        if (targetIndex === -1 || targetIndex === null) {
+                          toast.error("لا يوجد صف متاح للإدراج");
+                          return;
+                        }
+                        handleSelectAccount(targetIndex, a.id);
+                        toast.success(`تم إدراج ${a.name_ar}`);
+                      }}
                       className={cn(
-                        "p-1 text-[10px] rounded border cursor-grab active:cursor-grabbing hover:shadow-md transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
+                        "p-1 text-[10px] rounded border cursor-pointer hover:shadow-md hover:scale-105 transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
                         getAccountTypeColor(a.type)
                       )}
-                      title={`${a.code} - ${a.name_ar}`}
+                      title={`${a.code} - ${a.name_ar} — انقر للإدراج أو اسحب`}
                     >
                       <span className="line-clamp-2 leading-tight font-medium">{a.name_ar}</span>
                       <span className="text-[9px] text-gray-600 shrink-0">{a.code}</span>
                     </div>
+
                   ))}
               </div>
 
