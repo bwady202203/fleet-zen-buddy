@@ -917,6 +917,72 @@ export default function BankStatementImport() {
           </Card>
         )}
       </div>
+
+      {/* All Accounts Grid Dialog */}
+      <Dialog open={showAccountsGrid} onOpenChange={setShowAccountsGrid}>
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutGrid className="h-5 w-5 text-teal-600" />
+              كل الحسابات — اختر حساباً أو أكثر
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-between gap-2">
+            <Input
+              placeholder="ابحث بالاسم أو الكود..."
+              value={gridSearch}
+              onChange={(e) => setGridSearch(e.target.value)}
+              className="max-w-sm"
+            />
+            <div className="text-xs text-gray-500">
+              محدد: <span className="font-bold text-teal-600">{gridSelectedIds.length}</span> — سيتم إسنادهم بالترتيب إلى الصفوف الفارغة
+            </div>
+          </div>
+          <div className="overflow-auto flex-1 mt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 p-1">
+              {gridFilteredAccounts.map(acc => {
+                const order = gridSelectedIds.indexOf(acc.id);
+                const isSelected = order !== -1;
+                return (
+                  <button
+                    key={acc.id}
+                    onClick={() => toggleGridAccount(acc.id)}
+                    className={cn(
+                      "relative border-2 rounded-lg p-3 text-right transition-all aspect-square flex flex-col justify-between",
+                      getAccountTypeColor(acc.type),
+                      isSelected && "ring-2 ring-teal-500 ring-offset-1 scale-[0.98] shadow-md"
+                    )}
+                  >
+                    {isSelected && (
+                      <span className="absolute top-1 left-1 h-6 w-6 rounded-full bg-teal-600 text-white text-xs font-bold flex items-center justify-center">
+                        {order + 1}
+                      </span>
+                    )}
+                    <div className="text-xs text-gray-500 font-mono">{acc.code}</div>
+                    <div className="text-sm font-semibold text-gray-800 line-clamp-3">{acc.name_ar}</div>
+                    <div className="text-[10px] text-gray-400 truncate">{acc.name_en}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {gridFilteredAccounts.length === 0 && (
+              <div className="text-center text-gray-400 py-8">لا توجد نتائج</div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => { setGridSelectedIds([]); setGridSearch(""); }}>
+              مسح التحديد
+            </Button>
+            <Button variant="outline" onClick={() => setShowAccountsGrid(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={applyGridSelection} className="bg-teal-600 hover:bg-teal-700 gap-2">
+              <Check className="h-4 w-4" />
+              إدراج في حقول الحساب ({gridSelectedIds.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
