@@ -814,6 +814,7 @@ export default function BankStatementImport() {
                   </div>
                   <div className="flex-1 overflow-auto p-2 grid grid-cols-4 gap-2 auto-rows-[104px] content-start">
                     {accounts
+                      .filter(a => !hiddenAccountIds.includes(a.id))
                       .filter(a => quickCategory === 'all' || a.type === quickCategory)
                       .filter(a => {
                         const q = sidebarSearch.trim().toLowerCase();
