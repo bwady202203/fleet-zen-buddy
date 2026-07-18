@@ -4,22 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import {
-  ArrowRight,
-  FileSpreadsheet,
-  Languages,
-  Loader2,
-  Copy,
-  Trash2,
-  Save,
-  RefreshCcw,
-  Mic,
-  MicOff,
-  PanelRightClose,
-  PanelRightOpen,
-} from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -41,63 +29,52 @@ interface BankStatementRow {
   selectedAccountId: string | null;
 }
 
-const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
-
-const typeTile: Record<string, string> = {
-  asset: "bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-900",
-  liability: "bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-900",
-  equity: "bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-900",
-  revenue: "bg-sky-50 hover:bg-sky-100 border-sky-200 text-sky-900",
-  expense: "bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900",
+// Get background color based on account type
+const getAccountTypeColor = (type: string): string => {
+  switch (type) {
+    case 'asset':
+      return "bg-emerald-50 hover:bg-emerald-100 border-emerald-200";
+    case 'liability':
+      return "bg-rose-50 hover:bg-rose-100 border-rose-200";
+    case 'equity':
+      return "bg-purple-50 hover:bg-purple-100 border-purple-200";
+    case 'revenue':
+      return "bg-sky-50 hover:bg-sky-100 border-sky-200";
+    case 'expense':
+      return "bg-amber-50 hover:bg-amber-100 border-amber-200";
+    default:
+      return "bg-gray-50 hover:bg-gray-100 border-gray-200";
+  }
 };
-const tileClass = (t: string) =>
-  typeTile[t] || "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-900";
 
 export default function BankStatementImport() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [bankStatementData, setBankStatementData] = useState("");
-  const [rows, setRows] = useState<BankStatementRow[]>([]);
+  const [parsedBankStatements, setParsedBankStatements] = useState<BankStatementRow[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
   const [accountSearch, setAccountSearch] = useState("");
-  const [entryDate, setEntryDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [expandedDescriptionIndex, setExpandedDescriptionIndex] = useState<number | null>(null);
+  const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [entryDescription, setEntryDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [quickCategory, setQuickCategory] = useState<string>("all");
-  const [sidebarSearch, setSidebarSearch] = useState<string>("");
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [quickCategory, setQuickCategory] = useState<string>('all');
+  const [quickAccountIds, setQuickAccountIds] = useState<string[]>([]);
+  const [sidebarSearch, setSidebarSearch] = useState<string>('');
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("chart_of_accounts")
-          .select("id, code, name_ar, name_en, level, type")
-          .eq("level", 4)
-          .eq("is_active", true)
-          .order("code");
-        if (error) throw error;
-        setAccounts(data || []);
-      } catch (e: any) {
-        toast.error("خطأ في تحميل الحسابات: " + e.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
   const startVoiceSearch = () => {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
       toast.error("المتصفح لا يدعم البحث الصوتي. استخدم Chrome أو Edge.");
       return;
     }
-    const recognition = new SR();
-    recognition.lang = "ar-SA";
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-SA';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onstart = () => setIsListening(true);
@@ -114,209 +91,366 @@ export default function BankStatementImport() {
     recognition.start();
   };
 
-  // ---------- parsing helpers ----------
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const fetchAccounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("chart_of_accounts")
+        .select("id, code, name_ar, name_en, level, type")
+        .eq("level", 4)
+        .eq("is_active", true)
+        .order("code");
+
+      if (error) throw error;
+      setAccounts(data || []);
+    } catch (error: any) {
+      toast.error("خطأ في تحميل الحسابات: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Locale-aware number parsing function
   const parseLocalizedNumber = (value: string, useCommaDecimal?: boolean): number => {
-    if (!value) return 0;
-    let str = String(value).trim().replace(/[¤$\u20AC£¥\s]/g, "");
+    if (!value || value === "") return 0;
+
+    let str = String(value).trim();
+
+    // Remove currency symbols and whitespace
+    str = str.replace(/[¤$\u20AC£¥\s]/g, "");
+
+    // Auto-detect format if not specified
     const lastComma = str.lastIndexOf(",");
     const lastDot = str.lastIndexOf(".");
-    const isCommaDecimal = useCommaDecimal ?? lastComma > lastDot;
+
+    const isCommaDecimal = useCommaDecimal ?? (lastComma > lastDot);
+
     if (isCommaDecimal) {
-      str = str.replace(/\./g, "").replace(",", ".");
+      // Comma as decimal: 1.234,56
+      str = str.replace(/\./g, ""); // Remove thousand separators
+      str = str.replace(",", "."); // Convert decimal separator
     } else {
-      str = str.replace(/,/g, "");
+      // Dot as decimal: 1,234.56
+      str = str.replace(/,/g, ""); // Remove thousand separators
     }
+
     const parsed = parseFloat(str);
     return isNaN(parsed) ? 0 : parsed;
   };
-  const normalizeColumnName = (name: string): string =>
-    name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_\s]+/g, " ").trim();
+
+  // Helper to normalize column names for matching
+  const normalizeColumnName = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[_\s]+/g, " ")
+      .trim();
+  };
+
+  // Find column index by possible names
   const findColumnIndex = (headers: string[], possibleNames: string[]): number => {
-    const nh = headers.map((h) => (h ? normalizeColumnName(String(h)) : ""));
-    const nn = possibleNames.map(normalizeColumnName);
-    for (const n of nn) {
-      const i = nh.indexOf(n);
-      if (i !== -1) return i;
+    const normalizedHeaders = headers.map(h => h ? normalizeColumnName(String(h)) : "");
+    const normalizedNames = possibleNames.map(normalizeColumnName);
+
+    // Priority 1: Exact match
+    for (const name of normalizedNames) {
+      const idx = normalizedHeaders.indexOf(name);
+      if (idx !== -1) return idx;
     }
-    for (const n of nn) {
-      const i = nh.findIndex((h) => h.includes(n));
-      if (i !== -1) return i;
+
+    // Priority 2: Contains
+    for (const name of normalizedNames) {
+      const idx = normalizedHeaders.findIndex(h => h.includes(name));
+      if (idx !== -1) return idx;
     }
+
     return -1;
   };
 
   const handleParseBankStatement = (text: string) => {
     setBankStatementData(text);
-    if (!text.trim()) return setRows([]);
-    const lines = text.split("\n").filter((l) => l.trim());
-    if (!lines.length) return setRows([]);
-    const header = lines[0].split("\t");
-    let debitIdx = findColumnIndex(header, ["مبلغ الخصم", "خصم", "debit", "withdrawal", "مدين"]);
-    let creditIdx = findColumnIndex(header, ["مبلغ الايداع", "مبلغ الإيداع", "ايداع", "إيداع", "credit", "deposit", "دائن"]);
-    let balanceIdx = findColumnIndex(header, ["الرصيد", "رصيد", "balance"]);
-    const descIdx = findColumnIndex(header, ["البيان", "الوصف", "تفاصيل", "description", "details"]);
-    const dateIdx = findColumnIndex(header, ["التاريخ", "تاريخ", "date"]);
-    const firstHasNumbers = header.some((c) => parseLocalizedNumber(c) > 0);
-    const startIndex = firstHasNumbers ? 0 : 1;
-    if (debitIdx === -1 && creditIdx === -1 && header.length >= 3) {
-      debitIdx = header.length - 3;
-      creditIdx = header.length - 2;
-      balanceIdx = header.length - 1;
+    
+    if (!text.trim()) {
+      setParsedBankStatements([]);
+      return;
     }
+
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length === 0) {
+      setParsedBankStatements([]);
+      return;
+    }
+
+    // First line might be headers - detect column positions
+    const headerLine = lines[0].split('\t');
+    
+    // Try to find column indices dynamically
+    let debitColIndex = findColumnIndex(headerLine, ['مبلغ الخصم', 'خصم', 'debit', 'withdrawal', 'مدين']);
+    let creditColIndex = findColumnIndex(headerLine, ['مبلغ الايداع', 'مبلغ الإيداع', 'ايداع', 'إيداع', 'credit', 'deposit', 'دائن']);
+    let balanceColIndex = findColumnIndex(headerLine, ['الرصيد', 'رصيد', 'balance']);
+    let descColIndex = findColumnIndex(headerLine, ['البيان', 'الوصف', 'تفاصيل', 'description', 'details']);
+    let dateColIndex = findColumnIndex(headerLine, ['التاريخ', 'تاريخ', 'date']);
+
+    // Check if first line is a header (has column names, no numbers)
+    const firstLineHasNumbers = headerLine.some(cell => parseLocalizedNumber(cell) > 0);
+    const startIndex = firstLineHasNumbers ? 0 : 1;
+
+    // If no header detection worked, use fallback positions
+    if (debitColIndex === -1 && creditColIndex === -1) {
+      // Fallback: assume last 3 columns are debit, credit, balance
+      if (headerLine.length >= 3) {
+        debitColIndex = headerLine.length - 3;
+        creditColIndex = headerLine.length - 2;
+        balanceColIndex = headerLine.length - 1;
+      }
+    }
+
     const parsed: BankStatementRow[] = [];
+
     for (let i = startIndex; i < lines.length; i++) {
       const line = lines[i];
-      const parts = line.split("\t");
-      if (parts.length < 2) continue;
-      let date = "";
-      if (dateIdx !== -1 && parts[dateIdx]) date = parts[dateIdx].trim();
-      else {
-        const m = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
-        date = m ? m[1] : "";
-      }
-      const debit = debitIdx !== -1 ? parseLocalizedNumber(parts[debitIdx] || "") : 0;
-      const credit = creditIdx !== -1 ? parseLocalizedNumber(parts[creditIdx] || "") : 0;
-      const balance = balanceIdx !== -1 ? parseLocalizedNumber(parts[balanceIdx] || "") : 0;
-      let description = "";
-      if (descIdx !== -1 && parts[descIdx]) description = parts[descIdx].trim();
-      else {
-        description = parts
-          .filter((p, idx) => idx !== debitIdx && idx !== creditIdx && idx !== balanceIdx && idx !== dateIdx && parseLocalizedNumber(p) === 0)
-          .join(" ")
-          .trim();
-      }
-      const refMatch = line.match(/REF\s*([A-Z0-9]+)/i) || line.match(/(\d{10,})/);
-      const reference = refMatch ? refMatch[1] : "";
-      if (date || debit > 0 || credit > 0) {
-        parsed.push({ date, debit, credit, balance, description, reference, selectedAccountId: null });
+      const parts = line.split('\t');
+      
+      if (parts.length >= 2) {
+        // Find date
+        let date = '';
+        if (dateColIndex !== -1 && parts[dateColIndex]) {
+          date = parts[dateColIndex].trim();
+        } else {
+          const dateMatch = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
+          date = dateMatch ? dateMatch[1] : '';
+        }
+        
+        // Get debit and credit from detected columns
+        let debit = 0;
+        let credit = 0;
+        let balance = 0;
+
+        if (debitColIndex !== -1 && parts[debitColIndex]) {
+          debit = parseLocalizedNumber(parts[debitColIndex].trim());
+        }
+        if (creditColIndex !== -1 && parts[creditColIndex]) {
+          credit = parseLocalizedNumber(parts[creditColIndex].trim());
+        }
+        if (balanceColIndex !== -1 && parts[balanceColIndex]) {
+          balance = parseLocalizedNumber(parts[balanceColIndex].trim());
+        }
+
+        // Get description
+        let description = '';
+        if (descColIndex !== -1 && parts[descColIndex]) {
+          description = parts[descColIndex].trim();
+        } else {
+          // Take non-numeric columns as description
+          const descParts = parts.filter((p, idx) => 
+            idx !== debitColIndex && 
+            idx !== creditColIndex && 
+            idx !== balanceColIndex &&
+            idx !== dateColIndex &&
+            parseLocalizedNumber(p) === 0
+          );
+          description = descParts.join(' ').trim();
+        }
+
+        // Extract reference number if present
+        const refMatch = line.match(/REF\s*([A-Z0-9]+)/i) || line.match(/(\d{10,})/);
+        const reference = refMatch ? refMatch[1] : '';
+
+        if (date || debit > 0 || credit > 0) {
+          parsed.push({
+            date,
+            debit,
+            credit,
+            balance,
+            description,
+            reference,
+            selectedAccountId: null,
+          });
+        }
       }
     }
-    setRows(parsed);
+
+    setParsedBankStatements(parsed);
   };
 
-  const handleTranslate = async () => {
-    if (!rows.length) return;
+
+  const handleTranslateDescriptions = async () => {
+    if (parsedBankStatements.length === 0) return;
+
     setIsTranslating(true);
     try {
-      const descriptions = rows.map((r) => r.description).filter((d) => d.trim());
-      const res = await supabase.functions.invoke("translate-text", {
-        body: { texts: descriptions, targetLanguage: "ar" },
+      const descriptions = parsedBankStatements.map(r => r.description).filter(d => d.trim());
+      
+      const response = await supabase.functions.invoke('translate-text', {
+        body: { 
+          texts: descriptions,
+          targetLanguage: 'ar'
+        }
       });
-      if (res.data?.translations) {
-        let k = 0;
-        setRows((prev) =>
-          prev.map((r) => {
-            if (r.description.trim()) {
-              const t = res.data.translations[k] || r.description;
-              k++;
-              return { ...r, description: t };
-            }
-            return r;
-          }),
-        );
+
+      if (response.data?.translations) {
+        let translationIndex = 0;
+        setParsedBankStatements(prev => prev.map(row => {
+          if (row.description.trim()) {
+            const translated = response.data.translations[translationIndex] || row.description;
+            translationIndex++;
+            return { ...row, description: translated };
+          }
+          return row;
+        }));
         toast.success("تم ترجمة التفاصيل بنجاح");
       }
-    } catch (e: any) {
-      toast.error("خطأ في الترجمة: " + e.message);
+    } catch (error: any) {
+      toast.error("خطأ في الترجمة: " + error.message);
     } finally {
       setIsTranslating(false);
     }
   };
 
   const handleSelectAccount = (rowIndex: number, accountId: string) => {
-    setRows((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, selectedAccountId: accountId } : r)));
+    setParsedBankStatements(prev => prev.map((row, i) => 
+      i === rowIndex ? { ...row, selectedAccountId: accountId } : row
+    ));
     setActiveRowIndex(null);
     setAccountSearch("");
   };
+
   const handleDeleteRow = (index: number) => {
-    setRows((prev) => prev.filter((_, i) => i !== index));
-    if (activeRowIndex === index) setActiveRowIndex(null);
+    setParsedBankStatements(prev => prev.filter((_, i) => i !== index));
+    if (activeRowIndex === index) {
+      setActiveRowIndex(null);
+    }
     toast.success("تم حذف السجل");
   };
+
   const handleCopyAccountToNext = (index: number) => {
-    const cur = rows[index];
-    if (cur?.selectedAccountId && index < rows.length - 1) {
-      setRows((prev) => prev.map((r, i) => (i === index + 1 ? { ...r, selectedAccountId: cur.selectedAccountId } : r)));
+    const currentRow = parsedBankStatements[index];
+    if (currentRow?.selectedAccountId && index < parsedBankStatements.length - 1) {
+      setParsedBankStatements(prev => prev.map((row, i) => 
+        i === index + 1 ? { ...row, selectedAccountId: currentRow.selectedAccountId } : row
+      ));
       toast.success("تم نسخ الحساب للصف التالي");
     }
   };
-  const handleUpdateRow = (index: number, field: "debit" | "credit" | "description", value: string) => {
-    setRows((prev) =>
-      prev.map((r, i) => {
-        if (i !== index) return r;
-        if (field === "description") return { ...r, description: value };
-        return { ...r, [field]: parseFloat(value) || 0 };
-      }),
-    );
+
+  const handleUpdateRow = (index: number, field: 'debit' | 'credit' | 'description', value: string) => {
+    setParsedBankStatements(prev => prev.map((row, i) => {
+      if (i !== index) return row;
+      if (field === 'description') {
+        return { ...row, description: value };
+      }
+      const numValue = parseFloat(value) || 0;
+      return { ...row, [field]: numValue };
+    }));
   };
+
+  // Riyadh Bank Al-Remal account ID
+  const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
+
   const handleCreateMirrorRows = () => {
-    if (!rows.length) return toast.error("لا توجد صفوف");
-    const mirror = rows.map((r) => ({
-      ...r,
-      debit: r.credit,
-      credit: r.debit,
+    if (parsedBankStatements.length === 0) {
+      toast.error("لا توجد صفوف لإنشاء صفوف معكوسة");
+      return;
+    }
+
+    // Create mirror rows with reversed debit/credit and Riyadh Bank account
+    const mirrorRows: BankStatementRow[] = parsedBankStatements.map(row => ({
+      date: row.date,
+      debit: row.credit, // Swap: original credit becomes debit
+      credit: row.debit, // Swap: original debit becomes credit
       balance: 0,
+      description: row.description,
+      reference: row.reference,
       selectedAccountId: RIYADH_BANK_ACCOUNT_ID,
     }));
-    setRows((prev) => [...prev, ...mirror]);
-    toast.success(`تم إنشاء ${mirror.length} صف معكوس`);
+
+    // Add mirror rows to the list
+    setParsedBankStatements(prev => [...prev, ...mirrorRows]);
+    toast.success(`تم إنشاء ${mirrorRows.length} صف معكوس بحساب بنك الرياض الرمال`);
   };
 
-  const insertIntoActiveRow = (accountId: string, accountName: string) => {
-    let target = activeRowIndex;
-    if (target === null) target = rows.findIndex((r) => !r.selectedAccountId);
-    if (target === -1 || target === null) return toast.error("لا يوجد صف متاح للإدراج");
-    handleSelectAccount(target, accountId);
-    toast.success(`تم إدراج ${accountName}`);
-  };
+  const filteredAccounts = accountSearch
+    ? accounts.filter(a => 
+        a.name_ar.includes(accountSearch) || 
+        a.code.includes(accountSearch) ||
+        a.name_en.toLowerCase().includes(accountSearch.toLowerCase())
+      )
+    : accounts;
 
+  // Normalize any date string to yyyy-MM-dd; fallback to entryDate
   const normalizeDate = (raw: string): string => {
     if (!raw) return entryDate;
     const s = raw.trim();
+    // yyyy-mm-dd or yyyy/mm/dd
     let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-    if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+    if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    // dd-mm-yyyy or dd/mm/yyyy
     m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-    if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
     const d = new Date(s);
-    if (!isNaN(d.getTime())) return format(d, "yyyy-MM-dd");
+    if (!isNaN(d.getTime())) return format(d, 'yyyy-MM-dd');
     return entryDate;
   };
 
-  const handleSave = async () => {
-    const withAcc = rows.filter((r) => r.selectedAccountId);
-    if (!withAcc.length) return toast.error("لا توجد عمليات محددة للحفظ");
+  const handleSaveAsJournalEntry = async () => {
+    const rowsWithAccounts = parsedBankStatements.filter(r => r.selectedAccountId);
+    
+    if (rowsWithAccounts.length === 0) {
+      toast.error("لا توجد عمليات محددة للحفظ - يرجى اختيار حساب لكل عملية");
+      return;
+    }
+
+    // Group rows by normalized date
     const groups = new Map<string, BankStatementRow[]>();
-    for (const r of withAcc) {
-      const d = normalizeDate(r.date);
+    for (const row of rowsWithAccounts) {
+      const d = normalizeDate(row.date);
       if (!groups.has(d)) groups.set(d, []);
-      groups.get(d)!.push(r);
+      groups.get(d)!.push(row);
     }
+
+    // Validate balance per group
     const unbalanced: string[] = [];
-    for (const [d, rs] of groups) {
-      const td = rs.reduce((s, r) => s + r.debit, 0);
-      const tc = rs.reduce((s, r) => s + r.credit, 0);
-      if (Math.abs(td - tc) > 0.01)
+    for (const [d, rows] of groups) {
+      const td = rows.reduce((s, r) => s + r.debit, 0);
+      const tc = rows.reduce((s, r) => s + r.credit, 0);
+      if (Math.abs(td - tc) > 0.01) {
         unbalanced.push(`${d} (مدين: ${td.toLocaleString()} | دائن: ${tc.toLocaleString()})`);
+      }
     }
-    if (unbalanced.length) return toast.error(`قيود غير متوازنة: ${unbalanced.join(" ، ")}`);
+    if (unbalanced.length > 0) {
+      toast.error(`قيود غير متوازنة في التواريخ التالية: ${unbalanced.join(' ، ')}`);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const saved: string[] = [];
-      for (const dateKey of Array.from(groups.keys()).sort()) {
-        const rs = groups.get(dateKey)!;
-        const year = new Date(dateKey).getFullYear();
-        const { data: existing } = await supabase
+      const sortedDates = Array.from(groups.keys()).sort();
+      const savedNumbers: string[] = [];
+
+      for (const dateKey of sortedDates) {
+        const rows = groups.get(dateKey)!;
+        const yearOfEntry = new Date(dateKey).getFullYear();
+
+        // Get next entry number for this year
+        const { data: existingEntries } = await supabase
           .from("journal_entries")
           .select("entry_number")
-          .like("entry_number", `JE-${year}%`)
+          .like("entry_number", `JE-${yearOfEntry}%`)
           .order("entry_number", { ascending: false })
           .limit(1);
-        let next = 1;
-        if (existing && existing.length > 0) {
-          next = (parseInt(existing[0].entry_number.slice(-6)) || 0) + 1;
+
+        let nextNumber = 1;
+        if (existingEntries && existingEntries.length > 0) {
+          const lastNumber = parseInt(existingEntries[0].entry_number.slice(-6)) || 0;
+          nextNumber = lastNumber + 1;
         }
-        const entryNumber = `JE-${year}${next.toString().padStart(6, "0")}`;
-        const { data: je, error: e1 } = await supabase
+        const entryNumber = `JE-${yearOfEntry}${nextNumber.toString().padStart(6, '0')}`;
+
+        const { data: journalEntry, error: entryError } = await supabase
           .from("journal_entries")
           .insert({
             entry_number: entryNumber,
@@ -326,56 +460,49 @@ export default function BankStatementImport() {
           })
           .select()
           .single();
-        if (e1) throw e1;
-        const lines = rs.map((r) => ({
-          journal_entry_id: je.id,
-          account_id: r.selectedAccountId,
-          debit: r.debit,
-          credit: r.credit,
-          description: r.description,
+
+        if (entryError) throw entryError;
+
+        const lines = rows.map(row => ({
+          journal_entry_id: journalEntry.id,
+          account_id: row.selectedAccountId,
+          debit: row.debit,
+          credit: row.credit,
+          description: row.description,
         }));
-        const { error: e2 } = await supabase.from("journal_entry_lines").insert(lines);
-        if (e2) throw e2;
-        saved.push(entryNumber);
+
+        const { error: linesError } = await supabase
+          .from("journal_entry_lines")
+          .insert(lines);
+
+        if (linesError) throw linesError;
+        savedNumbers.push(entryNumber);
       }
-      toast.success(`تم حفظ ${saved.length} قيد بنجاح (${saved.join("، ")})`);
+
+      toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join('، ')})`);
+      
+      // Clear form
       setBankStatementData("");
-      setRows([]);
+      setParsedBankStatements([]);
       setEntryDescription("");
-    } catch (e: any) {
-      toast.error("خطأ في حفظ القيد: " + e.message);
+      
+    } catch (error: any) {
+      toast.error("خطأ في حفظ القيد: " + error.message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // ---------- derived ----------
-  const totalDebit = rows.reduce((s, r) => s + r.debit, 0);
-  const totalCredit = rows.reduce((s, r) => s + r.credit, 0);
-  const selectedCount = rows.filter((r) => r.selectedAccountId).length;
+  const totalDebit = parsedBankStatements.reduce((sum, r) => sum + r.debit, 0);
+  const totalCredit = parsedBankStatements.reduce((sum, r) => sum + r.credit, 0);
+  const selectedCount = parsedBankStatements.filter(r => r.selectedAccountId).length;
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
   const balanceDifference = totalDebit - totalCredit;
 
-  const filteredAccounts = accountSearch
-    ? accounts.filter(
-        (a) =>
-          a.name_ar.includes(accountSearch) ||
-          a.code.includes(accountSearch) ||
-          a.name_en.toLowerCase().includes(accountSearch.toLowerCase()),
-      )
-    : accounts;
-
-  const sidebarAccounts = accounts
-    .filter((a) => quickCategory === "all" || a.type === quickCategory)
-    .filter((a) => {
-      const q = sidebarSearch.trim().toLowerCase();
-      if (!q) return true;
-      return (a.name_ar || "").toLowerCase().includes(q) || (a.code || "").toLowerCase().includes(q);
-    });
-
+  // Per-date grouping summary (each date = one journal entry)
   const dateGroups = (() => {
     const map = new Map<string, { debit: number; credit: number; count: number; withAccount: number }>();
-    for (const r of rows) {
+    for (const r of parsedBankStatements) {
       const d = normalizeDate(r.date);
       const cur = map.get(d) || { debit: 0, credit: 0, count: 0, withAccount: 0 };
       cur.debit += r.debit;
@@ -398,248 +525,343 @@ export default function BankStatementImport() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
+    <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/accounting")} className="gap-2">
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => navigate('/accounting')} className="gap-2">
               <ArrowRight className="h-4 w-4" />
               رجوع
             </Button>
-            <div className="h-6 w-px bg-slate-200" />
-            <FileSpreadsheet className="h-5 w-5 text-teal-600" />
-            <h1 className="text-lg font-semibold text-slate-900">استيراد كشف حساب بنكي</h1>
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="h-6 w-6 text-teal-600" />
+              <h1 className="text-xl font-semibold text-gray-900">استيراد كشف حساب بنكي</h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Input
               type="date"
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
-              className="w-40 h-9"
+              className="w-40"
             />
             <Button
-              onClick={handleSave}
+              onClick={handleSaveAsJournalEntry}
               disabled={selectedCount === 0 || isSaving}
-              className="bg-blue-600 hover:bg-blue-700 gap-2 h-9"
+              className="bg-blue-500 hover:bg-blue-600 gap-2"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              حفظ {dateGroups.length > 1 ? `${dateGroups.length} قيود` : "كقيد"} ({selectedCount})
+              حفظ {dateGroups.length > 1 ? `${dateGroups.length} قيود` : 'كقيد'} ({selectedCount} عملية)
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="max-w-[1600px] mx-auto p-6 space-y-4">
-        {/* Paste area */}
+      {/* Main Content */}
+      <div className="p-6 space-y-6">
+        {/* Paste Area */}
         <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <label className="text-sm font-medium text-slate-800">الصق بيانات كشف الحساب البنكي</label>
-              <p className="text-xs text-slate-500 mt-0.5">
-                يدعم النظام التعرف التلقائي على أعمدة: التاريخ، المدين، الدائن، الوصف
-              </p>
-            </div>
-            {rows.length > 0 && (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleCreateMirrorRows} className="gap-2 text-teal-700 border-teal-200 hover:bg-teal-50">
-                  <RefreshCcw className="h-4 w-4" />
-                  صفوف معكوسة (بنك الرياض)
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleTranslate} disabled={isTranslating} className="gap-2 text-violet-700 border-violet-200 hover:bg-violet-50">
-                  {isTranslating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
-                  ترجمة التفاصيل
-                </Button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">الصق بيانات كشف الحساب البنكي:</label>
+                <span className="text-xs text-muted-foreground font-light">
+                  (قم بنسخ الجدول من البنك أو ملف إكسيل ولصقه هنا. يدعم النظام التعرف التلقائي على أعمدة: التاريخ، المدين، الدائن، الوصف، والوصول إلى 10 أعمدة)
+                </span>
               </div>
-            )}
+              {parsedBankStatements.length > 0 && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateMirrorRows}
+                    className="gap-2 text-teal-600 border-teal-200 hover:bg-teal-50"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    إنشاء صفوف معكوسة (بنك الرياض)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslateDescriptions}
+                    disabled={isTranslating}
+                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        جاري الترجمة...
+                      </>
+                    ) : (
+                      <>
+                        <Languages className="h-4 w-4" />
+                        ترجمة التفاصيل للعربية
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <textarea
+              className="w-full h-32 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="انسخ بيانات كشف الحساب من البنك والصقها هنا..."
+              value={bankStatementData}
+              onChange={(e) => handleParseBankStatement(e.target.value)}
+              dir="ltr"
+            />
           </div>
-          <textarea
-            className="w-full h-28 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50/50"
-            placeholder="انسخ بيانات كشف الحساب من البنك والصقها هنا..."
-            value={bankStatementData}
-            onChange={(e) => handleParseBankStatement(e.target.value)}
-            dir="ltr"
-          />
         </Card>
 
-        {/* Entry description + date summary */}
-        {rows.length > 0 && (
-          <Card className="p-4 space-y-3">
+        {/* Entry Description */}
+        {parsedBankStatements.length > 0 && (
+          <Card className="p-4">
             <Input
               placeholder="وصف القيد (اختياري)..."
               value={entryDescription}
               onChange={(e) => setEntryDescription(e.target.value)}
-              className="h-10"
+              className="text-lg"
             />
-            {dateGroups.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    ملخص القيود حسب التاريخ ({dateGroups.length} {dateGroups.length > 1 ? "قيود" : "قيد"})
-                  </span>
-                  <span className="text-xs text-slate-500">قيد مستقل لكل تاريخ · يجب توازن كل تاريخ</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                  {dateGroups.map((g) => (
-                    <div
-                      key={g.date}
-                      className={cn(
-                        "border rounded-lg p-2 text-xs",
-                        g.balanced ? "border-emerald-200 bg-emerald-50/50" : "border-rose-200 bg-rose-50/50",
-                      )}
-                    >
-                      <div className="flex items-center justify-between font-medium mb-1">
-                        <span className="text-slate-800">{g.date}</span>
-                        <span className={g.balanced ? "text-emerald-700" : "text-rose-700"}>
-                          {g.balanced ? "✓" : `فرق ${(g.debit - g.credit).toLocaleString()}`}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[11px] text-slate-600">
-                        <span>مدين: <span className="font-mono text-rose-600">{g.debit.toLocaleString()}</span></span>
-                        <span>دائن: <span className="font-mono text-emerald-600">{g.credit.toLocaleString()}</span></span>
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-1">
-                        {g.count} عملية · محدد {g.withAccount}/{g.count}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </Card>
         )}
 
-        {/* Table + Sidebar */}
-        {rows.length > 0 && (
-          <div className="flex gap-4 items-start">
-            {/* Table */}
-            <Card className="flex-1 min-w-0 overflow-hidden">
-              <div className="px-4 py-3 border-b bg-white flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                  <FileSpreadsheet className="h-4 w-4 text-teal-600" />
-                  العمليات المكتشفة ({rows.length})
+        {/* Per-Date Grouping Summary */}
+        {dateGroups.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-medium text-sm flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-blue-600" />
+                ملخص القيود حسب التاريخ ({dateGroups.length} {dateGroups.length > 1 ? 'قيود' : 'قيد'})
+              </span>
+              <span className="text-xs text-gray-500">سيتم إنشاء قيد مستقل لكل تاريخ، ويجب أن يكون المدين = الدائن لكل تاريخ</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {dateGroups.map(g => (
+                <div
+                  key={g.date}
+                  className={cn(
+                    "border rounded-lg p-2 text-xs",
+                    g.balanced ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                  )}
+                >
+                  <div className="flex items-center justify-between font-medium mb-1">
+                    <span>{g.date}</span>
+                    <span className={g.balanced ? "text-green-700" : "text-red-700"}>
+                      {g.balanced ? "✓ متوازن" : `✗ فرق ${(g.debit - g.credit).toLocaleString()}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-gray-600">
+                    <span>مدين: <span className="font-mono text-red-600">{g.debit.toLocaleString()}</span></span>
+                    <span>دائن: <span className="font-mono text-green-600">{g.credit.toLocaleString()}</span></span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">
+                    {g.count} عملية · محدد {g.withAccount}/{g.count}
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="px-2 py-1 rounded bg-rose-50 text-rose-700">
-                    مدين: <span className="font-mono">{totalDebit.toLocaleString()}</span>
-                  </span>
-                  <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700">
-                    دائن: <span className="font-mono">{totalCredit.toLocaleString()}</span>
-                  </span>
-                  <span className={cn("px-2 py-1 rounded font-medium", isBalanced ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800")}>
-                    {isBalanced ? "✓ متوازن" : `فرق: ${balanceDifference.toLocaleString()}`}
-                  </span>
-                  <span className="px-2 py-1 rounded bg-slate-100 text-slate-700">
-                    محدد: {selectedCount}/{rows.length}
-                  </span>
+              ))}
+            </div>
+          </Card>
+        )}
+
+
+
+        {/* Parsed Data Table */}
+        {parsedBankStatements.length > 0 && (
+          <div className="flex gap-3" dir="rtl">
+            {/* Accounts Sidebar */}
+            <Card className="w-[22rem] shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
+              <div className="p-2 border-b bg-blue-50/50">
+                <div className="text-sm font-semibold text-gray-700 mb-2">
+                  الحسابات ({accounts.length}) — اسحب للإفلات
+                </div>
+                <Input
+                  placeholder="ابحث..."
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {[
+                    { key: 'all', label: 'الكل' },
+                    { key: 'asset', label: 'أصول' },
+                    { key: 'liability', label: 'خصوم' },
+                    { key: 'equity', label: 'حقوق' },
+                    { key: 'revenue', label: 'إيرادات' },
+                    { key: 'expense', label: 'مصروفات' },
+                  ].map(c => (
+                    <button
+                      key={c.key}
+                      onClick={() => setQuickCategory(c.key)}
+                      className={cn(
+                        "px-2 py-0.5 text-[11px] rounded-full border transition",
+                        quickCategory === c.key
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[70px]">
+                {accounts
+                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
+                  .filter(a => {
+                    const q = sidebarSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (a.name_ar || '').toLowerCase().includes(q) ||
+                           (a.code || '').toLowerCase().includes(q);
+                  })
+                  .map(a => (
+                    <div
+                      key={a.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/account-id', a.id);
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      className={cn(
+                        "p-1 text-[10px] rounded border cursor-grab active:cursor-grabbing hover:shadow-md transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
+                        getAccountTypeColor(a.type)
+                      )}
+                      title={`${a.code} - ${a.name_ar}`}
+                    >
+                      <span className="line-clamp-2 leading-tight font-medium">{a.name_ar}</span>
+                      <span className="text-[9px] text-gray-600 shrink-0">{a.code}</span>
+                    </div>
+                  ))}
+              </div>
 
-              <div className="overflow-auto max-h-[70vh]" dir="rtl">
-                <table className="w-full text-sm table-fixed" dir="rtl">
-                  <colgroup>
-                    <col className="w-10" />
-                    <col className="w-24" />
-                    <col className="w-28" />
-                    <col className="w-28" />
-                    <col />
-                    <col className="w-56" />
-                    <col className="w-12" />
-                  </colgroup>
-                  <thead className="bg-slate-50 sticky top-0 z-10">
-                    <tr className="text-slate-600 text-xs">
-                      <th className="p-2 text-right border-b font-medium">#</th>
-                      <th className="p-2 text-right border-b font-medium">التاريخ</th>
-                      <th className="p-2 text-left border-b font-medium">مدين</th>
-                      <th className="p-2 text-left border-b font-medium">دائن</th>
-                      <th className="p-2 text-right border-b font-medium">التفاصيل</th>
-                      <th className="p-2 text-right border-b font-medium">الحساب</th>
-                      <th className="p-2 border-b" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, index) => {
-                      const selectedAccount = row.selectedAccountId
-                        ? accounts.find((a) => a.id === row.selectedAccountId)
-                        : null;
-                      return (
-                        <tr
-                          key={index}
-                          className={cn(
-                            "border-b hover:bg-slate-50/70 group transition-colors",
-                            activeRowIndex === index && "bg-blue-50/60",
-                          )}
-                        >
-                          <td className="p-2 text-slate-400 text-center text-xs">{index + 1}</td>
-                          <td className="p-2 text-xs text-slate-700 whitespace-nowrap">{row.date || "-"}</td>
-                          <td className="p-2">
-                            <Input
-                              type="number"
-                              value={row.debit || ""}
-                              onChange={(e) => handleUpdateRow(index, "debit", e.target.value)}
-                              className={cn(
-                                "h-9 text-left text-sm font-mono px-2",
-                                row.debit > 0 && "bg-rose-50 border-rose-200 text-rose-800",
-                              )}
-                              placeholder="0"
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              type="number"
-                              value={row.credit || ""}
-                              onChange={(e) => handleUpdateRow(index, "credit", e.target.value)}
-                              className={cn(
-                                "h-9 text-left text-sm font-mono px-2",
-                                row.credit > 0 && "bg-emerald-50 border-emerald-200 text-emerald-800",
-                              )}
-                              placeholder="0"
-                            />
-                          </td>
-                          <td className="p-2 overflow-hidden">
-                            <Input
-                              value={row.description}
-                              onChange={(e) => handleUpdateRow(index, "description", e.target.value)}
-                              className="h-9 text-sm px-2 w-full min-w-0 truncate"
-                              placeholder="..."
-                              dir="rtl"
-                              title={row.description}
-                            />
-                          </td>
-                          <td
+            </Card>
+
+            <Card className="overflow-hidden flex-1 min-w-0">
+            <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+              <span className="font-medium flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-teal-600" />
+                العمليات المكتشفة ({parsedBankStatements.length} عملية)
+              </span>
+              <div className="flex gap-4 text-sm">
+                <span>
+                  إجمالي الخصم: <span className="font-mono text-red-600">{totalDebit.toLocaleString()}</span>
+                </span>
+                <span>
+                  إجمالي الإيداع: <span className="font-mono text-green-600">{totalCredit.toLocaleString()}</span>
+                </span>
+                <span className={cn(
+                  "font-medium px-2 py-1 rounded",
+                  isBalanced ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                )}>
+                  {isBalanced ? "✓ متوازن" : `✗ فرق: ${balanceDifference.toLocaleString()}`}
+                </span>
+                <span className="text-gray-500">
+                  تم اختيار حساب لـ {selectedCount} من {parsedBankStatements.length} عملية
+                </span>
+              </div>
+            </div>
+
+            {/* Info bar */}
+            <div className="p-2 bg-blue-50/50 border-b text-xs text-gray-600">
+              اسحب أي حساب من اللوحة الجانبية وأفلته على حقل "اختر حساب" في أي صف
+            </div>
+
+
+            <div className="overflow-auto max-h-[60vh]">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="p-1.5 text-right border-b w-8">#</th>
+                    
+                    <th className="p-1.5 text-right border-b w-24">التاريخ</th>
+                    <th className="p-1.5 text-left border-b w-24">مدين</th>
+                    <th className="p-1.5 text-left border-b w-24">دائن</th>
+                    <th className="p-1.5 text-right border-b w-40">التفاصيل</th>
+                    <th className="p-1.5 text-right border-b w-52">الحساب</th>
+                    <th className="p-1.5 text-center border-b w-8"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedBankStatements.map((row, index) => {
+                    const selectedAccount = row.selectedAccountId 
+                      ? accounts.find(a => a.id === row.selectedAccountId)
+                      : null;
+                    
+                    return (
+                      <tr key={index} className={cn(
+                        "border-b hover:bg-gray-50 group",
+                        activeRowIndex === index && "bg-blue-50"
+                      )}>
+                        <td className="p-1.5 text-gray-500 text-xs">{index + 1}</td>
+                        <td className="p-1.5 text-xs whitespace-nowrap">{row.date || '-'}</td>
+                        <td className="p-1.5">
+                          <Input
+                            type="number"
+                            value={row.debit || ""}
+                            onChange={(e) => handleUpdateRow(index, 'debit', e.target.value)}
                             className={cn(
-                              "p-2 relative",
-                              dragOverRow === index && "bg-blue-100 ring-2 ring-blue-400 ring-inset",
+                              "h-7 text-left text-xs font-mono px-1",
+                              row.debit > 0 && "bg-red-50 border-red-200"
                             )}
-                            onDragOver={(e) => {
-                              if (e.dataTransfer.types.includes("text/account-id")) {
-                                e.preventDefault();
-                                e.dataTransfer.dropEffect = "copy";
-                                if (dragOverRow !== index) setDragOverRow(index);
-                              }
-                            }}
-                            onDragLeave={() => dragOverRow === index && setDragOverRow(null)}
-                            onDrop={(e) => {
+                            placeholder="0"
+                          />
+                        </td>
+                        <td className="p-1.5">
+                          <Input
+                            type="number"
+                            value={row.credit || ""}
+                            onChange={(e) => handleUpdateRow(index, 'credit', e.target.value)}
+                            className={cn(
+                              "h-7 text-left text-xs font-mono px-1",
+                              row.credit > 0 && "bg-green-50 border-green-200"
+                            )}
+                            placeholder="0"
+                          />
+                        </td>
+                        <td className="p-1.5">
+                          <Input
+                            value={row.description}
+                            onChange={(e) => handleUpdateRow(index, 'description', e.target.value)}
+                            className="h-7 text-xs px-1"
+                            placeholder="..."
+                          />
+                        </td>
+                        <td
+                          className={cn(
+                            "p-1.5 relative",
+                            dragOverRow === index && "bg-blue-100 ring-2 ring-blue-400"
+                          )}
+                          onDragOver={(e) => {
+                            if (e.dataTransfer.types.includes('text/account-id')) {
                               e.preventDefault();
-                              const accId = e.dataTransfer.getData("text/account-id");
-                              setDragOverRow(null);
-                              if (accId) {
-                                handleSelectAccount(index, accId);
-                                const acc = accounts.find((a) => a.id === accId);
-                                if (acc) toast.success(`تم إدراج: ${acc.name_ar}`);
-                              }
-                            }}
-                          >
-                            {activeRowIndex === index ? (
+                              e.dataTransfer.dropEffect = 'copy';
+                              if (dragOverRow !== index) setDragOverRow(index);
+                            }
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverRow === index) setDragOverRow(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const accId = e.dataTransfer.getData('text/account-id');
+                            setDragOverRow(null);
+                            if (accId) {
+                              handleSelectAccount(index, accId);
+                              const acc = accounts.find(a => a.id === accId);
+                              if (acc) toast.success(`تم إدراج: ${acc.name_ar}`);
+                            }
+                          }}
+                        >
+                          {activeRowIndex === index ? (
+                            <div className="space-y-1">
                               <div className="flex items-center gap-1">
                                 <Input
                                   placeholder="ابحث عن حساب..."
                                   value={accountSearch}
                                   onChange={(e) => setAccountSearch(e.target.value)}
-                                  className="h-9 text-sm flex-1"
+                                  className="h-8 text-xs flex-1"
                                   autoFocus
                                   onKeyDown={(e) => {
-                                    if (e.key === "Escape") {
+                                    if (e.key === 'Escape') {
                                       setActiveRowIndex(null);
                                       setAccountSearch("");
                                     }
@@ -649,198 +871,100 @@ export default function BankStatementImport() {
                                   type="button"
                                   variant={isListening ? "destructive" : "outline"}
                                   size="sm"
-                                  className="h-9 w-9 p-0 shrink-0"
+                                  className="h-10 w-10 p-0 shrink-0"
                                   onClick={startVoiceSearch}
                                   title="بحث صوتي"
                                 >
-                                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                  {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                                 </Button>
-                                {filteredAccounts.length > 0 && (
-                                  <div
-                                    className={cn(
-                                      "absolute z-[100] bg-white border rounded-lg shadow-xl max-h-60 overflow-auto w-72 right-2",
-                                      index >= rows.length - 5 ? "bottom-full mb-1" : "top-full mt-1",
-                                    )}
-                                  >
-                                    {filteredAccounts.slice(0, 30).map((a) => (
-                                      <button
-                                        key={a.id}
-                                        className={cn(
-                                          "w-full text-right px-3 py-2 text-sm flex items-center justify-between border-b last:border-b-0",
-                                          tileClass(a.type),
-                                        )}
-                                        onClick={() => handleSelectAccount(index, a.id)}
-                                      >
-                                        <span className="truncate">{a.name_ar}</span>
-                                        <span className="text-slate-500 text-xs shrink-0 ml-2">{a.code}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
                               </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
+                              {filteredAccounts.length > 0 && (
+                                <div 
+                                  className={cn(
+                                    "absolute z-[100] bg-white border rounded-lg shadow-xl max-h-48 overflow-auto w-64 right-3",
+                                    index >= parsedBankStatements.length - 5 ? "bottom-full mb-1" : "top-full mt-1"
+                                  )}
+                                >
+                                  {filteredAccounts.slice(0, 20).map(account => (
+                                    <button
+                                      key={account.id}
+                                      className={cn(
+                                        "w-full text-right px-3 py-2 text-xs hover:bg-blue-50 flex items-center justify-between",
+                                        getAccountTypeColor(account.type)
+                                      )}
+                                      onClick={() => handleSelectAccount(index, account.id)}
+                                    >
+                                      <span>{account.name_ar}</span>
+                                      <span className="text-gray-400">{account.code}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant={selectedAccount ? "outline" : "ghost"}
+                                size="sm"
+                                className={cn(
+                                  "h-8 text-xs gap-1 flex-1 justify-between",
+                                  selectedAccount && "border-green-300 bg-green-50 text-green-700"
+                                )}
+                                onClick={() => {
+                                  setActiveRowIndex(index);
+                                  setAccountSearch("");
+                                }}
+                              >
+                                {selectedAccount ? (
+                                  <>
+                                    <span className="truncate">{selectedAccount.name_ar}</span>
+                                    <span className="text-gray-400">{selectedAccount.code}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400">اختر حساب</span>
+                                )}
+                              </Button>
+                              {selectedAccount && index < parsedBankStatements.length - 1 && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className={cn(
-                                    "h-9 text-sm flex-1 justify-between gap-2 px-2",
-                                    selectedAccount
-                                      ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                                      : "border-dashed text-slate-500",
-                                  )}
-                                  onClick={() => {
-                                    setActiveRowIndex(index);
-                                    setAccountSearch("");
-                                  }}
+                                  className="h-8 px-2 text-xs text-violet-600 border-violet-200 hover:bg-violet-50"
+                                  onClick={() => handleCopyAccountToNext(index)}
+                                  title="نسخ الحساب للصف التالي"
                                 >
-                                  {selectedAccount ? (
-                                    <>
-                                      <span className="truncate">{selectedAccount.name_ar}</span>
-                                      <span className="text-slate-500 text-xs shrink-0">{selectedAccount.code}</span>
-                                    </>
-                                  ) : (
-                                    <span>اختر حساب</span>
-                                  )}
+                                  <Copy className="h-3 w-3" />
                                 </Button>
-                                {selectedAccount && index < rows.length - 1 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-9 w-9 p-0 text-violet-600 hover:bg-violet-50 shrink-0"
-                                    onClick={() => handleCopyAccountToNext(index)}
-                                    title="نسخ للصف التالي"
-                                  >
-                                    <Copy className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-2 text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 hover:text-rose-600 hover:bg-rose-50"
-                              onClick={() => handleDeleteRow(index)}
-                              title="حذف"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-
-            {/* Sidebar */}
-            <Card
-              className={cn(
-                "self-start sticky top-[76px] flex flex-col overflow-hidden transition-all duration-300 shadow-sm",
-                sidebarOpen ? "w-[360px]" : "w-12",
-                "max-h-[calc(100vh-100px)]",
-              )}
-            >
-              <div
-                className={cn(
-                  "border-b bg-slate-50/80 flex items-center",
-                  sidebarOpen ? "p-2 justify-between" : "p-1 justify-center h-12",
-                )}
-              >
-                {sidebarOpen && (
-                  <div className="text-xs font-semibold text-slate-700 px-1">
-                    الحسابات · {accounts.length}
-                  </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setSidebarOpen((v) => !v)}
-                  title={sidebarOpen ? "إخفاء" : "إظهار"}
-                >
-                  {sidebarOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-                </Button>
-              </div>
-              {sidebarOpen && (
-                <>
-                  <div className="p-2 border-b space-y-2 bg-white">
-                    <Input
-                      placeholder="ابحث في الحسابات..."
-                      value={sidebarSearch}
-                      onChange={(e) => setSidebarSearch(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                    <div className="flex flex-wrap gap-1">
-                      {[
-                        { key: "all", label: "الكل" },
-                        { key: "asset", label: "أصول" },
-                        { key: "liability", label: "خصوم" },
-                        { key: "equity", label: "حقوق" },
-                        { key: "revenue", label: "إيرادات" },
-                        { key: "expense", label: "مصروفات" },
-                      ].map((c) => (
-                        <button
-                          key={c.key}
-                          onClick={() => setQuickCategory(c.key)}
-                          className={cn(
-                            "px-2 py-0.5 text-[11px] rounded-full border transition",
-                            quickCategory === c.key
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100",
+                              )}
+                            </div>
                           )}
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-[10px] text-slate-500 text-center">
-                      اسحب أو انقر لإدراج في الصف النشط
-                    </div>
-                  </div>
-                  <div className="flex-1 overflow-auto p-2">
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {sidebarAccounts.map((a) => (
-                        <div
-                          key={a.id}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData("text/account-id", a.id);
-                            e.dataTransfer.effectAllowed = "copy";
-                          }}
-                          onClick={() => insertIntoActiveRow(a.id, a.name_ar || a.name_en)}
-                          className={cn(
-                            "min-h-[54px] p-1.5 rounded-md border cursor-pointer hover:shadow-sm transition flex flex-col items-center justify-center text-center gap-0.5",
-                            tileClass(a.type),
-                          )}
-                          title={`${a.code} - ${a.name_ar}`}
-                        >
-                          <span className="leading-tight font-medium text-[11px] break-words line-clamp-2">
-                            {a.name_ar || a.name_en || "بدون اسم"}
-                          </span>
-                          <span className="text-[9px] opacity-70 font-mono">{a.code}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {sidebarAccounts.length === 0 && (
-                      <div className="text-center text-xs text-slate-400 py-6">لا توجد نتائج</div>
-                    )}
-                  </div>
-                </>
-              )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeleteRow(index)}
+                            title="حذف السجل"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             </Card>
           </div>
         )}
 
-        {/* Empty state */}
-        {rows.length === 0 && !bankStatementData && (
-          <Card className="p-16 text-center">
-            <FileSpreadsheet className="h-14 w-14 mx-auto mb-4 text-slate-300" />
-            <h3 className="text-base font-medium text-slate-700 mb-1">لا توجد بيانات</h3>
-            <p className="text-sm text-slate-500">الصق بيانات كشف الحساب البنكي في المربع أعلاه للبدء</p>
+        {/* Empty State */}
+        {parsedBankStatements.length === 0 && !bankStatementData && (
+          <Card className="p-12 text-center text-gray-500">
+            <FileSpreadsheet className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">لا توجد بيانات</h3>
+            <p>الصق بيانات كشف الحساب البنكي في المربع أعلاه للبدء</p>
           </Card>
         )}
       </div>
