@@ -828,7 +828,7 @@ export default function BankStatementImport() {
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
                     <th className="p-1.5 text-right border-b w-8">#</th>
-                    <th className="p-1.5 text-center border-b w-44">اختصار</th>
+                    
                     <th className="p-1.5 text-right border-b w-24">التاريخ</th>
                     <th className="p-1.5 text-left border-b w-24">مدين</th>
                     <th className="p-1.5 text-left border-b w-24">دائن</th>
