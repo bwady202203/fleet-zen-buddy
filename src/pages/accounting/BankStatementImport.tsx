@@ -824,7 +824,32 @@ export default function BankStatementImport() {
                             placeholder="..."
                           />
                         </td>
-                        <td className="p-1.5 relative">
+                        <td
+                          className={cn(
+                            "p-1.5 relative",
+                            dragOverRow === index && "bg-blue-100 ring-2 ring-blue-400"
+                          )}
+                          onDragOver={(e) => {
+                            if (e.dataTransfer.types.includes('text/account-id')) {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'copy';
+                              if (dragOverRow !== index) setDragOverRow(index);
+                            }
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverRow === index) setDragOverRow(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const accId = e.dataTransfer.getData('text/account-id');
+                            setDragOverRow(null);
+                            if (accId) {
+                              handleSelectAccount(index, accId);
+                              const acc = accounts.find(a => a.id === accId);
+                              if (acc) toast.success(`تم إدراج: ${acc.name_ar}`);
+                            }
+                          }}
+                        >
                           {activeRowIndex === index ? (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1">
