@@ -691,9 +691,9 @@ export default function BankStatementImport() {
             </div>
 
             {/* Quick Accounts Picker */}
-            <div className="p-2 bg-blue-50/50 border-b space-y-2">
+            <div className="p-3 bg-blue-50/50 border-b space-y-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-gray-700">فئة:</span>
+                <span className="text-sm font-semibold text-gray-700">فئة:</span>
                 {[
                   { key: 'all', label: 'الكل' },
                   { key: 'asset', label: 'أصول' },
@@ -706,7 +706,7 @@ export default function BankStatementImport() {
                     key={c.key}
                     onClick={() => setQuickCategory(c.key)}
                     className={cn(
-                      "px-2 py-0.5 text-[11px] rounded-full border transition",
+                      "px-3 py-1 text-sm rounded-full border transition",
                       quickCategory === c.key
                         ? "bg-blue-500 text-white border-blue-500"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
@@ -715,18 +715,84 @@ export default function BankStatementImport() {
                     {c.label}
                   </button>
                 ))}
-                <span className="text-[11px] text-gray-500 mr-2">اختر حتى 3 حسابات مفضلة للوصول السريع ({quickAccountIds.length}/3)</span>
+                <span className="text-sm text-gray-500 mr-2">المفضلة ({quickAccountIds.length}) — الضغط يعبئ الصفوف الفارغة بالترتيب</span>
                 {quickAccountIds.length > 0 && (
                   <button
                     onClick={() => setQuickAccountIds([])}
-                    className="text-[11px] text-red-600 hover:underline"
-                  >مسح</button>
+                    className="text-sm text-red-600 hover:underline"
+                  >مسح الكل</button>
                 )}
               </div>
-              <div className="flex items-center gap-1 flex-wrap max-h-24 overflow-auto">
+
+              {/* Selected favorites with delete + reorder */}
+              {quickAccountIds.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap p-2 bg-white rounded border border-blue-200">
+                  {quickAccountIds.map((id, idx) => {
+                    const acc = accounts.find(a => a.id === id);
+                    if (!acc) return null;
+                    return (
+                      <div
+                        key={id}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1 rounded border text-sm",
+                          getAccountTypeColor(acc.type)
+                        )}
+                      >
+                        <button
+                          onClick={() => setQuickAccountIds(prev => {
+                            const arr = [...prev];
+                            if (idx > 0) { [arr[idx-1], arr[idx]] = [arr[idx], arr[idx-1]]; }
+                            return arr;
+                          })}
+                          disabled={idx === 0}
+                          className="text-gray-600 hover:text-blue-600 disabled:opacity-30 text-base px-1"
+                          title="نقل لليمين"
+                        >→</button>
+                        <button
+                          onClick={() => {
+                            // Fill first empty row sequentially
+                            setParsedBankStatements(prev => {
+                              const emptyIdx = prev.findIndex(r => !r.selectedAccountId);
+                              if (emptyIdx === -1) {
+                                toast.info("كل الصفوف معبأة");
+                                return prev;
+                              }
+                              return prev.map((r, i) => i === emptyIdx ? { ...r, selectedAccountId: acc.id } : r);
+                            });
+                          }}
+                          className="font-medium"
+                          title={`${acc.code} - ${acc.name_ar}`}
+                        >
+                          {acc.name_ar}
+                        </button>
+                        <button
+                          onClick={() => setQuickAccountIds(prev => {
+                            const arr = [...prev];
+                            if (idx < arr.length - 1) { [arr[idx+1], arr[idx]] = [arr[idx], arr[idx+1]]; }
+                            return arr;
+                          })}
+                          disabled={idx === quickAccountIds.length - 1}
+                          className="text-gray-600 hover:text-blue-600 disabled:opacity-30 text-base px-1"
+                          title="نقل لليسار"
+                        >←</button>
+                        <button
+                          onClick={() => setQuickAccountIds(prev => prev.filter(x => x !== id))}
+                          className="text-red-600 hover:text-red-800 mr-1"
+                          title="حذف من المفضلة"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* All accounts list to pick favorites */}
+              <div className="flex items-center gap-1.5 flex-wrap max-h-40 overflow-auto">
                 {accounts
                   .filter(a => quickCategory === 'all' || a.type === quickCategory)
-                  .slice(0, 60)
+                  .slice(0, 120)
                   .map(a => {
                     const isPicked = quickAccountIds.includes(a.id);
                     return (
@@ -735,12 +801,11 @@ export default function BankStatementImport() {
                         onClick={() => {
                           setQuickAccountIds(prev => {
                             if (prev.includes(a.id)) return prev.filter(x => x !== a.id);
-                            if (prev.length >= 3) return [prev[1], prev[2], a.id];
                             return [...prev, a.id];
                           });
                         }}
                         className={cn(
-                          "px-1.5 py-0.5 text-[10px] rounded border transition",
+                          "px-2.5 py-1 text-xs rounded border transition",
                           isPicked
                             ? "bg-green-500 text-white border-green-500"
                             : getAccountTypeColor(a.type)
