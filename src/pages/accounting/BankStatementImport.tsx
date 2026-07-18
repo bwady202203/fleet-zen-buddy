@@ -1,13 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff } from "lucide-react";
+import {
+  ArrowRight, FileSpreadsheet, Languages, Loader2, Copy, Trash2, Save,
+  RefreshCcw, Mic, MicOff, LayoutList, CheckCircle2, AlertTriangle,
+  TrendingUp, TrendingDown, Sigma, CalendarDays, ChevronsUpDown,
+  Search, ChevronLeft, ChevronRight, Eye, EyeOff, ClipboardPaste,
+  Wallet, Building2, Landmark, Receipt, PiggyBank, Users
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -29,23 +39,19 @@ interface BankStatementRow {
   selectedAccountId: string | null;
 }
 
-// Get background color based on account type
-const getAccountTypeColor = (type: string): string => {
-  switch (type) {
-    case 'asset':
-      return "bg-emerald-50 hover:bg-emerald-100 border-emerald-200";
-    case 'liability':
-      return "bg-rose-50 hover:bg-rose-100 border-rose-200";
-    case 'equity':
-      return "bg-purple-50 hover:bg-purple-100 border-purple-200";
-    case 'revenue':
-      return "bg-sky-50 hover:bg-sky-100 border-sky-200";
-    case 'expense':
-      return "bg-amber-50 hover:bg-amber-100 border-amber-200";
-    default:
-      return "bg-gray-50 hover:bg-gray-100 border-gray-200";
-  }
+const TYPE_META: Record<string, { label: string; icon: any; tint: string }> = {
+  asset:     { label: "الأصول",     icon: Wallet,    tint: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  liability: { label: "الخصوم",     icon: Landmark,  tint: "text-rose-600 bg-rose-50 border-rose-200" },
+  equity:    { label: "حقوق الملكية", icon: Building2, tint: "text-violet-600 bg-violet-50 border-violet-200" },
+  revenue:   { label: "الإيرادات",   icon: TrendingUp, tint: "text-sky-600 bg-sky-50 border-sky-200" },
+  expense:   { label: "المصروفات",   icon: Receipt,   tint: "text-amber-600 bg-amber-50 border-amber-200" },
 };
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
+
+const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
+const PAGE_SIZE = 25;
 
 export default function BankStatementImport() {
   const navigate = useNavigate();
@@ -55,45 +61,28 @@ export default function BankStatementImport() {
   const [bankStatementData, setBankStatementData] = useState("");
   const [parsedBankStatements, setParsedBankStatements] = useState<BankStatementRow[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
-  const [accountSearch, setAccountSearch] = useState("");
-  const [expandedDescriptionIndex, setExpandedDescriptionIndex] = useState<number | null>(null);
-  const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [entryDate, setEntryDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [entryDescription, setEntryDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [quickCategory, setQuickCategory] = useState<string>('all');
-  const [quickAccountIds, setQuickAccountIds] = useState<string[]>([]);
-  const [sidebarSearch, setSidebarSearch] = useState<string>('');
+
+  // Drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerCategory, setDrawerCategory] = useState<string>("all");
+  const [drawerSearch, setDrawerSearch] = useState("");
+  const [expandedType, setExpandedType] = useState<string | null>("asset");
+
+  // Table controls
+  const [tableSearch, setTableSearch] = useState("");
+  const [sortKey, setSortKey] = useState<"date" | "debit" | "credit" | "description" | "">("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
+  const [hiddenCols, setHiddenCols] = useState<Record<string, boolean>>({});
+
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+  const [openAccountPopover, setOpenAccountPopover] = useState<number | null>(null);
 
-  const startVoiceSearch = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error("المتصفح لا يدعم البحث الصوتي. استخدم Chrome أو Edge.");
-      return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ar-SA';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = (e: any) => {
-      setIsListening(false);
-      toast.error("خطأ في الإدخال الصوتي: " + (e.error || ""));
-    };
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.trim();
-      setAccountSearch(transcript);
-      toast.success(`تم: "${transcript}"`);
-    };
-    recognition.start();
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
+  useEffect(() => { fetchAccounts(); }, []);
 
   const fetchAccounts = async () => {
     try {
@@ -103,847 +92,772 @@ export default function BankStatementImport() {
         .eq("level", 4)
         .eq("is_active", true)
         .order("code");
-
       if (error) throw error;
       setAccounts(data || []);
-    } catch (error: any) {
-      toast.error("خطأ في تحميل الحسابات: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) {
+      toast.error("خطأ في تحميل الحسابات: " + e.message);
+    } finally { setLoading(false); }
   };
 
-  // Locale-aware number parsing function
+  const startVoiceSearch = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { toast.error("المتصفح لا يدعم البحث الصوتي. استخدم Chrome أو Edge."); return; }
+    const rec = new SR();
+    rec.lang = "ar-SA"; rec.interimResults = false; rec.maxAlternatives = 1;
+    rec.onstart = () => setIsListening(true);
+    rec.onend = () => setIsListening(false);
+    rec.onerror = (e: any) => { setIsListening(false); toast.error("خطأ صوتي: " + (e.error || "")); };
+    rec.onresult = (e: any) => {
+      const t = e.results[0][0].transcript.trim();
+      setDrawerSearch(t);
+      toast.success(`تم: "${t}"`);
+    };
+    rec.start();
+  };
+
+  // ---------- Parsing (unchanged logic) ----------
   const parseLocalizedNumber = (value: string, useCommaDecimal?: boolean): number => {
-    if (!value || value === "") return 0;
-
-    let str = String(value).trim();
-
-    // Remove currency symbols and whitespace
-    str = str.replace(/[¤$\u20AC£¥\s]/g, "");
-
-    // Auto-detect format if not specified
-    const lastComma = str.lastIndexOf(",");
-    const lastDot = str.lastIndexOf(".");
-
-    const isCommaDecimal = useCommaDecimal ?? (lastComma > lastDot);
-
-    if (isCommaDecimal) {
-      // Comma as decimal: 1.234,56
-      str = str.replace(/\./g, ""); // Remove thousand separators
-      str = str.replace(",", "."); // Convert decimal separator
-    } else {
-      // Dot as decimal: 1,234.56
-      str = str.replace(/,/g, ""); // Remove thousand separators
-    }
-
-    const parsed = parseFloat(str);
-    return isNaN(parsed) ? 0 : parsed;
+    if (!value) return 0;
+    let s = String(value).trim().replace(/[¤$\u20AC£¥\s]/g, "");
+    const lastComma = s.lastIndexOf(","), lastDot = s.lastIndexOf(".");
+    const isCD = useCommaDecimal ?? (lastComma > lastDot);
+    s = isCD ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    const p = parseFloat(s); return isNaN(p) ? 0 : p;
   };
-
-  // Helper to normalize column names for matching
-  const normalizeColumnName = (name: string): string => {
-    return name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[_\s]+/g, " ")
-      .trim();
-  };
-
-  // Find column index by possible names
-  const findColumnIndex = (headers: string[], possibleNames: string[]): number => {
-    const normalizedHeaders = headers.map(h => h ? normalizeColumnName(String(h)) : "");
-    const normalizedNames = possibleNames.map(normalizeColumnName);
-
-    // Priority 1: Exact match
-    for (const name of normalizedNames) {
-      const idx = normalizedHeaders.indexOf(name);
-      if (idx !== -1) return idx;
-    }
-
-    // Priority 2: Contains
-    for (const name of normalizedNames) {
-      const idx = normalizedHeaders.findIndex(h => h.includes(name));
-      if (idx !== -1) return idx;
-    }
-
+  const normalizeColumnName = (n: string) =>
+    n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_\s]+/g, " ").trim();
+  const findColumnIndex = (headers: string[], names: string[]) => {
+    const nh = headers.map(h => h ? normalizeColumnName(String(h)) : "");
+    const nn = names.map(normalizeColumnName);
+    for (const n of nn) { const i = nh.indexOf(n); if (i !== -1) return i; }
+    for (const n of nn) { const i = nh.findIndex(h => h.includes(n)); if (i !== -1) return i; }
     return -1;
   };
-
   const handleParseBankStatement = (text: string) => {
     setBankStatementData(text);
-    
-    if (!text.trim()) {
-      setParsedBankStatements([]);
-      return;
+    if (!text.trim()) { setParsedBankStatements([]); return; }
+    const lines = text.split("\n").filter(l => l.trim());
+    if (!lines.length) { setParsedBankStatements([]); return; }
+    const header = lines[0].split("\t");
+    let dCol = findColumnIndex(header, ["مبلغ الخصم", "خصم", "debit", "withdrawal", "مدين"]);
+    let cCol = findColumnIndex(header, ["مبلغ الايداع", "مبلغ الإيداع", "ايداع", "إيداع", "credit", "deposit", "دائن"]);
+    let bCol = findColumnIndex(header, ["الرصيد", "رصيد", "balance"]);
+    let descCol = findColumnIndex(header, ["البيان", "الوصف", "تفاصيل", "description", "details"]);
+    let dateCol = findColumnIndex(header, ["التاريخ", "تاريخ", "date"]);
+    const firstHasNums = header.some(c => parseLocalizedNumber(c) > 0);
+    const start = firstHasNums ? 0 : 1;
+    if (dCol === -1 && cCol === -1 && header.length >= 3) {
+      dCol = header.length - 3; cCol = header.length - 2; bCol = header.length - 1;
     }
-
-    const lines = text.split('\n').filter(line => line.trim());
-    if (lines.length === 0) {
-      setParsedBankStatements([]);
-      return;
+    const out: BankStatementRow[] = [];
+    for (let i = start; i < lines.length; i++) {
+      const parts = lines[i].split("\t");
+      if (parts.length < 2) continue;
+      let date = "";
+      if (dateCol !== -1 && parts[dateCol]) date = parts[dateCol].trim();
+      else { const m = lines[i].match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/); date = m ? m[1] : ""; }
+      const debit = dCol !== -1 && parts[dCol] ? parseLocalizedNumber(parts[dCol]) : 0;
+      const credit = cCol !== -1 && parts[cCol] ? parseLocalizedNumber(parts[cCol]) : 0;
+      const balance = bCol !== -1 && parts[bCol] ? parseLocalizedNumber(parts[bCol]) : 0;
+      let description = "";
+      if (descCol !== -1 && parts[descCol]) description = parts[descCol].trim();
+      else description = parts.filter((p, idx) =>
+        idx !== dCol && idx !== cCol && idx !== bCol && idx !== dateCol && parseLocalizedNumber(p) === 0
+      ).join(" ").trim();
+      const refMatch = lines[i].match(/REF\s*([A-Z0-9]+)/i) || lines[i].match(/(\d{10,})/);
+      const reference = refMatch ? refMatch[1] : "";
+      if (date || debit > 0 || credit > 0) out.push({ date, debit, credit, balance, description, reference, selectedAccountId: null });
     }
-
-    // First line might be headers - detect column positions
-    const headerLine = lines[0].split('\t');
-    
-    // Try to find column indices dynamically
-    let debitColIndex = findColumnIndex(headerLine, ['مبلغ الخصم', 'خصم', 'debit', 'withdrawal', 'مدين']);
-    let creditColIndex = findColumnIndex(headerLine, ['مبلغ الايداع', 'مبلغ الإيداع', 'ايداع', 'إيداع', 'credit', 'deposit', 'دائن']);
-    let balanceColIndex = findColumnIndex(headerLine, ['الرصيد', 'رصيد', 'balance']);
-    let descColIndex = findColumnIndex(headerLine, ['البيان', 'الوصف', 'تفاصيل', 'description', 'details']);
-    let dateColIndex = findColumnIndex(headerLine, ['التاريخ', 'تاريخ', 'date']);
-
-    // Check if first line is a header (has column names, no numbers)
-    const firstLineHasNumbers = headerLine.some(cell => parseLocalizedNumber(cell) > 0);
-    const startIndex = firstLineHasNumbers ? 0 : 1;
-
-    // If no header detection worked, use fallback positions
-    if (debitColIndex === -1 && creditColIndex === -1) {
-      // Fallback: assume last 3 columns are debit, credit, balance
-      if (headerLine.length >= 3) {
-        debitColIndex = headerLine.length - 3;
-        creditColIndex = headerLine.length - 2;
-        balanceColIndex = headerLine.length - 1;
-      }
-    }
-
-    const parsed: BankStatementRow[] = [];
-
-    for (let i = startIndex; i < lines.length; i++) {
-      const line = lines[i];
-      const parts = line.split('\t');
-      
-      if (parts.length >= 2) {
-        // Find date
-        let date = '';
-        if (dateColIndex !== -1 && parts[dateColIndex]) {
-          date = parts[dateColIndex].trim();
-        } else {
-          const dateMatch = line.match(/(\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4})/);
-          date = dateMatch ? dateMatch[1] : '';
-        }
-        
-        // Get debit and credit from detected columns
-        let debit = 0;
-        let credit = 0;
-        let balance = 0;
-
-        if (debitColIndex !== -1 && parts[debitColIndex]) {
-          debit = parseLocalizedNumber(parts[debitColIndex].trim());
-        }
-        if (creditColIndex !== -1 && parts[creditColIndex]) {
-          credit = parseLocalizedNumber(parts[creditColIndex].trim());
-        }
-        if (balanceColIndex !== -1 && parts[balanceColIndex]) {
-          balance = parseLocalizedNumber(parts[balanceColIndex].trim());
-        }
-
-        // Get description
-        let description = '';
-        if (descColIndex !== -1 && parts[descColIndex]) {
-          description = parts[descColIndex].trim();
-        } else {
-          // Take non-numeric columns as description
-          const descParts = parts.filter((p, idx) => 
-            idx !== debitColIndex && 
-            idx !== creditColIndex && 
-            idx !== balanceColIndex &&
-            idx !== dateColIndex &&
-            parseLocalizedNumber(p) === 0
-          );
-          description = descParts.join(' ').trim();
-        }
-
-        // Extract reference number if present
-        const refMatch = line.match(/REF\s*([A-Z0-9]+)/i) || line.match(/(\d{10,})/);
-        const reference = refMatch ? refMatch[1] : '';
-
-        if (date || debit > 0 || credit > 0) {
-          parsed.push({
-            date,
-            debit,
-            credit,
-            balance,
-            description,
-            reference,
-            selectedAccountId: null,
-          });
-        }
-      }
-    }
-
-    setParsedBankStatements(parsed);
+    setParsedBankStatements(out);
+    setPage(1);
   };
 
-
   const handleTranslateDescriptions = async () => {
-    if (parsedBankStatements.length === 0) return;
-
+    if (!parsedBankStatements.length) return;
     setIsTranslating(true);
     try {
       const descriptions = parsedBankStatements.map(r => r.description).filter(d => d.trim());
-      
-      const response = await supabase.functions.invoke('translate-text', {
-        body: { 
-          texts: descriptions,
-          targetLanguage: 'ar'
-        }
-      });
-
-      if (response.data?.translations) {
-        let translationIndex = 0;
-        setParsedBankStatements(prev => prev.map(row => {
-          if (row.description.trim()) {
-            const translated = response.data.translations[translationIndex] || row.description;
-            translationIndex++;
-            return { ...row, description: translated };
-          }
-          return row;
+      const res = await supabase.functions.invoke("translate-text", { body: { texts: descriptions, targetLanguage: "ar" } });
+      if (res.data?.translations) {
+        let k = 0;
+        setParsedBankStatements(prev => prev.map(r => {
+          if (r.description.trim()) { const t = res.data.translations[k] || r.description; k++; return { ...r, description: t }; }
+          return r;
         }));
-        toast.success("تم ترجمة التفاصيل بنجاح");
+        toast.success("تم ترجمة التفاصيل");
       }
-    } catch (error: any) {
-      toast.error("خطأ في الترجمة: " + error.message);
-    } finally {
-      setIsTranslating(false);
-    }
+    } catch (e: any) { toast.error("خطأ في الترجمة: " + e.message); }
+    finally { setIsTranslating(false); }
   };
 
   const handleSelectAccount = (rowIndex: number, accountId: string) => {
-    setParsedBankStatements(prev => prev.map((row, i) => 
-      i === rowIndex ? { ...row, selectedAccountId: accountId } : row
-    ));
-    setActiveRowIndex(null);
-    setAccountSearch("");
+    setParsedBankStatements(prev => prev.map((r, i) => i === rowIndex ? { ...r, selectedAccountId: accountId } : r));
+    setOpenAccountPopover(null);
   };
-
-  const handleDeleteRow = (index: number) => {
-    setParsedBankStatements(prev => prev.filter((_, i) => i !== index));
-    if (activeRowIndex === index) {
-      setActiveRowIndex(null);
-    }
-    toast.success("تم حذف السجل");
-  };
-
-  const handleCopyAccountToNext = (index: number) => {
-    const currentRow = parsedBankStatements[index];
-    if (currentRow?.selectedAccountId && index < parsedBankStatements.length - 1) {
-      setParsedBankStatements(prev => prev.map((row, i) => 
-        i === index + 1 ? { ...row, selectedAccountId: currentRow.selectedAccountId } : row
-      ));
-      toast.success("تم نسخ الحساب للصف التالي");
+  const handleDeleteRow = (i: number) => { setParsedBankStatements(p => p.filter((_, k) => k !== i)); toast.success("تم الحذف"); };
+  const handleCopyAccountToNext = (i: number) => {
+    const cur = parsedBankStatements[i];
+    if (cur?.selectedAccountId && i < parsedBankStatements.length - 1) {
+      setParsedBankStatements(p => p.map((r, k) => k === i + 1 ? { ...r, selectedAccountId: cur.selectedAccountId } : r));
+      toast.success("تم نسخ الحساب");
     }
   };
-
-  const handleUpdateRow = (index: number, field: 'debit' | 'credit' | 'description', value: string) => {
-    setParsedBankStatements(prev => prev.map((row, i) => {
-      if (i !== index) return row;
-      if (field === 'description') {
-        return { ...row, description: value };
-      }
-      const numValue = parseFloat(value) || 0;
-      return { ...row, [field]: numValue };
+  const handleUpdateRow = (i: number, field: "debit" | "credit" | "description", value: string) => {
+    setParsedBankStatements(p => p.map((r, k) => {
+      if (k !== i) return r;
+      if (field === "description") return { ...r, description: value };
+      return { ...r, [field]: parseFloat(value) || 0 };
     }));
   };
-
-  // Riyadh Bank Al-Remal account ID
-  const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
-
   const handleCreateMirrorRows = () => {
-    if (parsedBankStatements.length === 0) {
-      toast.error("لا توجد صفوف لإنشاء صفوف معكوسة");
-      return;
-    }
-
-    // Create mirror rows with reversed debit/credit and Riyadh Bank account
-    const mirrorRows: BankStatementRow[] = parsedBankStatements.map(row => ({
-      date: row.date,
-      debit: row.credit, // Swap: original credit becomes debit
-      credit: row.debit, // Swap: original debit becomes credit
-      balance: 0,
-      description: row.description,
-      reference: row.reference,
-      selectedAccountId: RIYADH_BANK_ACCOUNT_ID,
+    if (!parsedBankStatements.length) { toast.error("لا توجد صفوف"); return; }
+    const mirror: BankStatementRow[] = parsedBankStatements.map(r => ({
+      date: r.date, debit: r.credit, credit: r.debit, balance: 0,
+      description: r.description, reference: r.reference, selectedAccountId: RIYADH_BANK_ACCOUNT_ID,
     }));
-
-    // Add mirror rows to the list
-    setParsedBankStatements(prev => [...prev, ...mirrorRows]);
-    toast.success(`تم إنشاء ${mirrorRows.length} صف معكوس بحساب بنك الرياض الرمال`);
+    setParsedBankStatements(p => [...p, ...mirror]);
+    toast.success(`تم إنشاء ${mirror.length} صف معكوس`);
   };
 
-  const filteredAccounts = accountSearch
-    ? accounts.filter(a => 
-        a.name_ar.includes(accountSearch) || 
-        a.code.includes(accountSearch) ||
-        a.name_en.toLowerCase().includes(accountSearch.toLowerCase())
-      )
-    : accounts;
-
-  // Normalize any date string to yyyy-MM-dd; fallback to entryDate
   const normalizeDate = (raw: string): string => {
     if (!raw) return entryDate;
     const s = raw.trim();
-    // yyyy-mm-dd or yyyy/mm/dd
     let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-    if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
-    // dd-mm-yyyy or dd/mm/yyyy
+    if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
     m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
     const d = new Date(s);
-    if (!isNaN(d.getTime())) return format(d, 'yyyy-MM-dd');
+    if (!isNaN(d.getTime())) return format(d, "yyyy-MM-dd");
     return entryDate;
   };
 
   const handleSaveAsJournalEntry = async () => {
     const rowsWithAccounts = parsedBankStatements.filter(r => r.selectedAccountId);
-    
-    if (rowsWithAccounts.length === 0) {
-      toast.error("لا توجد عمليات محددة للحفظ - يرجى اختيار حساب لكل عملية");
-      return;
-    }
-
-    // Group rows by normalized date
+    if (!rowsWithAccounts.length) { toast.error("لم يتم اختيار حساب لأي عملية"); return; }
     const groups = new Map<string, BankStatementRow[]>();
-    for (const row of rowsWithAccounts) {
-      const d = normalizeDate(row.date);
+    for (const r of rowsWithAccounts) {
+      const d = normalizeDate(r.date);
       if (!groups.has(d)) groups.set(d, []);
-      groups.get(d)!.push(row);
+      groups.get(d)!.push(r);
     }
-
-    // Validate balance per group
-    const unbalanced: string[] = [];
+    const unbal: string[] = [];
     for (const [d, rows] of groups) {
       const td = rows.reduce((s, r) => s + r.debit, 0);
       const tc = rows.reduce((s, r) => s + r.credit, 0);
-      if (Math.abs(td - tc) > 0.01) {
-        unbalanced.push(`${d} (مدين: ${td.toLocaleString()} | دائن: ${tc.toLocaleString()})`);
-      }
+      if (Math.abs(td - tc) > 0.01) unbal.push(`${d}`);
     }
-    if (unbalanced.length > 0) {
-      toast.error(`قيود غير متوازنة في التواريخ التالية: ${unbalanced.join(' ، ')}`);
-      return;
-    }
-
+    if (unbal.length) { toast.error(`قيود غير متوازنة: ${unbal.join("، ")}`); return; }
     setIsSaving(true);
     try {
       const sortedDates = Array.from(groups.keys()).sort();
       const savedNumbers: string[] = [];
-
       for (const dateKey of sortedDates) {
         const rows = groups.get(dateKey)!;
-        const yearOfEntry = new Date(dateKey).getFullYear();
-
-        // Get next entry number for this year
-        const { data: existingEntries } = await supabase
-          .from("journal_entries")
-          .select("entry_number")
-          .like("entry_number", `JE-${yearOfEntry}%`)
-          .order("entry_number", { ascending: false })
-          .limit(1);
-
-        let nextNumber = 1;
-        if (existingEntries && existingEntries.length > 0) {
-          const lastNumber = parseInt(existingEntries[0].entry_number.slice(-6)) || 0;
-          nextNumber = lastNumber + 1;
-        }
-        const entryNumber = `JE-${yearOfEntry}${nextNumber.toString().padStart(6, '0')}`;
-
-        const { data: journalEntry, error: entryError } = await supabase
-          .from("journal_entries")
-          .insert({
-            entry_number: entryNumber,
-            date: dateKey,
-            description: entryDescription || `استيراد كشف حساب بنكي - ${dateKey}`,
-            reference: "bank_statement_import",
-          })
-          .select()
-          .single();
-
-        if (entryError) throw entryError;
-
-        const lines = rows.map(row => ({
-          journal_entry_id: journalEntry.id,
-          account_id: row.selectedAccountId,
-          debit: row.debit,
-          credit: row.credit,
-          description: row.description,
+        const y = new Date(dateKey).getFullYear();
+        const { data: exist } = await supabase.from("journal_entries")
+          .select("entry_number").like("entry_number", `JE-${y}%`)
+          .order("entry_number", { ascending: false }).limit(1);
+        let n = 1;
+        if (exist && exist.length) n = (parseInt(exist[0].entry_number.slice(-6)) || 0) + 1;
+        const entryNumber = `JE-${y}${n.toString().padStart(6, "0")}`;
+        const { data: je, error: eErr } = await supabase.from("journal_entries").insert({
+          entry_number: entryNumber, date: dateKey,
+          description: entryDescription || `استيراد كشف حساب بنكي - ${dateKey}`,
+          reference: "bank_statement_import",
+        }).select().single();
+        if (eErr) throw eErr;
+        const lines = rows.map(r => ({
+          journal_entry_id: je.id, account_id: r.selectedAccountId,
+          debit: r.debit, credit: r.credit, description: r.description,
         }));
-
-        const { error: linesError } = await supabase
-          .from("journal_entry_lines")
-          .insert(lines);
-
-        if (linesError) throw linesError;
+        const { error: lErr } = await supabase.from("journal_entry_lines").insert(lines);
+        if (lErr) throw lErr;
         savedNumbers.push(entryNumber);
       }
-
-      toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join('، ')})`);
-      
-      // Clear form
-      setBankStatementData("");
-      setParsedBankStatements([]);
-      setEntryDescription("");
-      
-    } catch (error: any) {
-      toast.error("خطأ في حفظ القيد: " + error.message);
-    } finally {
-      setIsSaving(false);
-    }
+      toast.success(`تم حفظ ${savedNumbers.length} قيد (${savedNumbers.join("، ")})`);
+      setBankStatementData(""); setParsedBankStatements([]); setEntryDescription("");
+    } catch (e: any) { toast.error("خطأ في الحفظ: " + e.message); }
+    finally { setIsSaving(false); }
   };
 
-  const totalDebit = parsedBankStatements.reduce((sum, r) => sum + r.debit, 0);
-  const totalCredit = parsedBankStatements.reduce((sum, r) => sum + r.credit, 0);
+  // ---------- Derived ----------
+  const totalDebit = parsedBankStatements.reduce((s, r) => s + r.debit, 0);
+  const totalCredit = parsedBankStatements.reduce((s, r) => s + r.credit, 0);
   const selectedCount = parsedBankStatements.filter(r => r.selectedAccountId).length;
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
   const balanceDifference = totalDebit - totalCredit;
+  const isBalanced = Math.abs(balanceDifference) < 0.01;
 
-  // Per-date grouping summary (each date = one journal entry)
-  const dateGroups = (() => {
+  const dateGroups = useMemo(() => {
     const map = new Map<string, { debit: number; credit: number; count: number; withAccount: number }>();
     for (const r of parsedBankStatements) {
       const d = normalizeDate(r.date);
       const cur = map.get(d) || { debit: 0, credit: 0, count: 0, withAccount: 0 };
-      cur.debit += r.debit;
-      cur.credit += r.credit;
-      cur.count += 1;
-      if (r.selectedAccountId) cur.withAccount += 1;
+      cur.debit += r.debit; cur.credit += r.credit; cur.count++;
+      if (r.selectedAccountId) cur.withAccount++;
       map.set(d, cur);
     }
-    return Array.from(map.entries())
-      .map(([date, v]) => ({ date, ...v, balanced: Math.abs(v.debit - v.credit) < 0.01 }))
+    return Array.from(map.entries()).map(([date, v]) => ({ date, ...v, balanced: Math.abs(v.debit - v.credit) < 0.01 }))
       .sort((a, b) => a.date.localeCompare(b.date));
-  })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedBankStatements, entryDate]);
+
+  const accountsByType = useMemo(() => {
+    const g: Record<string, Account[]> = {};
+    for (const a of accounts) { (g[a.type] ||= []).push(a); }
+    return g;
+  }, [accounts]);
+
+  // Filter + sort + paginate table
+  const displayed = useMemo(() => {
+    let list = parsedBankStatements.map((r, i) => ({ ...r, __i: i }));
+    if (tableSearch.trim()) {
+      const q = tableSearch.trim().toLowerCase();
+      list = list.filter(r =>
+        (r.description || "").toLowerCase().includes(q) ||
+        (r.date || "").includes(q) ||
+        (r.reference || "").toLowerCase().includes(q) ||
+        String(r.debit).includes(q) || String(r.credit).includes(q)
+      );
+    }
+    if (sortKey) {
+      list = [...list].sort((a: any, b: any) => {
+        const av = a[sortKey], bv = b[sortKey];
+        if (typeof av === "number") return sortDir === "asc" ? av - bv : bv - av;
+        return sortDir === "asc" ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+      });
+    }
+    return list;
+  }, [parsedBankStatements, tableSearch, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(displayed.length / PAGE_SIZE));
+  const pageRows = displayed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
+
+  const toggleSort = (k: typeof sortKey) => {
+    if (sortKey === k) setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir("asc"); }
+  };
+  const toggleCol = (c: string) => setHiddenCols(h => ({ ...h, [c]: !h[c] }));
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" dir="rtl">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50" dir="rtl">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
+  // Column definitions
+  const columns = [
+    { key: "num", label: "#" },
+    { key: "date", label: "التاريخ" },
+    { key: "debit", label: "مدين" },
+    { key: "credit", label: "دائن" },
+    { key: "description", label: "التفاصيل" },
+    { key: "account", label: "الحساب" },
+    { key: "actions", label: "" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/accounting')} className="gap-2">
-              <ArrowRight className="h-4 w-4" />
-              رجوع
+    <div
+      className="min-h-screen bg-slate-50 text-slate-800"
+      dir="rtl"
+      style={{ fontFamily: "Cairo, 'IBM Plex Arabic', system-ui, sans-serif", fontSize: 15 }}
+    >
+      {/* ============ HEADER ============ */}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/accounting")} className="gap-1.5 text-slate-600">
+              <ArrowRight className="h-4 w-4" /> رجوع
             </Button>
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-6 w-6 text-teal-600" />
-              <h1 className="text-xl font-semibold text-gray-900">استيراد كشف حساب بنكي</h1>
+            <div className="h-6 w-px bg-slate-200" />
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 grid place-items-center shadow-sm">
+                <FileSpreadsheet className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-slate-900 leading-tight">مطابقة القيود المحاسبية</h1>
+                <p className="text-[11px] text-slate-500 leading-tight">استيراد وتوزيع كشف الحساب البنكي</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={entryDate}
-              onChange={(e) => setEntryDate(e.target.value)}
-              className="w-40"
-            />
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white">
+              <CalendarDays className="h-4 w-4 text-slate-500" />
+              <Input
+                type="date" value={entryDate}
+                onChange={(e) => setEntryDate(e.target.value)}
+                className="h-7 border-0 p-0 focus-visible:ring-0 w-32 text-sm"
+              />
+            </div>
+
+            <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 border-slate-300">
+                  <LayoutList className="h-4 w-4" /> شجرة الحسابات
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[420px] sm:w-[520px] p-0 flex flex-col" dir="rtl">
+                <SheetHeader className="px-5 py-4 border-b bg-gradient-to-l from-blue-50 to-white">
+                  <SheetTitle className="flex items-center gap-2 text-right">
+                    <LayoutList className="h-5 w-5 text-blue-600" />
+                    شجرة الحسابات ({accounts.length})
+                  </SheetTitle>
+                  <p className="text-xs text-slate-500 text-right">اسحب أي حساب وأفلته على حقل "الحساب" في الجدول</p>
+                </SheetHeader>
+                <div className="p-4 border-b space-y-3 bg-white">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="ابحث بالاسم أو الرقم..."
+                        value={drawerSearch}
+                        onChange={(e) => setDrawerSearch(e.target.value)}
+                        className="pr-9 h-9"
+                      />
+                    </div>
+                    <Button
+                      type="button" variant={isListening ? "destructive" : "outline"} size="icon"
+                      className="h-9 w-9 shrink-0" onClick={startVoiceSearch} title="بحث صوتي"
+                    >
+                      {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { k: "all", label: "الكل", icon: Sigma },
+                      { k: "asset", label: "الأصول", icon: Wallet },
+                      { k: "liability", label: "الخصوم", icon: Landmark },
+                      { k: "equity", label: "حقوق الملكية", icon: Building2 },
+                      { k: "revenue", label: "الإيرادات", icon: TrendingUp },
+                      { k: "expense", label: "المصروفات", icon: Receipt },
+                    ].map(c => (
+                      <button
+                        key={c.k} onClick={() => setDrawerCategory(c.k)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-full text-xs border flex items-center gap-1 transition",
+                          drawerCategory === c.k
+                            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        <c.icon className="h-3 w-3" /> {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-auto p-3 space-y-2 bg-slate-50">
+                  {Object.entries(accountsByType)
+                    .filter(([type]) => drawerCategory === "all" || type === drawerCategory)
+                    .map(([type, list]) => {
+                      const meta = TYPE_META[type] || { label: type, icon: PiggyBank, tint: "" };
+                      const q = drawerSearch.trim().toLowerCase();
+                      const filtered = list.filter(a =>
+                        !q || (a.name_ar || "").toLowerCase().includes(q) || (a.code || "").toLowerCase().includes(q)
+                      );
+                      if (!filtered.length) return null;
+                      const expanded = drawerCategory !== "all" || expandedType === type || !!q;
+                      return (
+                        <div key={type} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                          <button
+                            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50"
+                            onClick={() => setExpandedType(expandedType === type ? null : type)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={cn("h-7 w-7 rounded-lg grid place-items-center", meta.tint)}>
+                                <meta.icon className="h-4 w-4" />
+                              </div>
+                              <span className="font-semibold text-sm text-slate-800">{meta.label}</span>
+                              <Badge variant="secondary" className="h-5 text-[10px]">{filtered.length}</Badge>
+                            </div>
+                            <ChevronsUpDown className="h-4 w-4 text-slate-400" />
+                          </button>
+                          {expanded && (
+                            <div className="border-t border-slate-100 p-2 space-y-1 max-h-72 overflow-auto">
+                              {filtered.map(a => (
+                                <div
+                                  key={a.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData("text/account-id", a.id);
+                                    e.dataTransfer.effectAllowed = "copy";
+                                  }}
+                                  className={cn(
+                                    "px-2.5 py-1.5 rounded-lg text-xs cursor-grab active:cursor-grabbing",
+                                    "flex items-center justify-between gap-2 border transition hover:shadow-sm",
+                                    meta.tint
+                                  )}
+                                  title={`${a.code} — ${a.name_ar}`}
+                                >
+                                  <span className="truncate font-medium">{a.name_ar}</span>
+                                  <span className="text-[10px] font-mono opacity-70 shrink-0">{a.code}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </SheetContent>
+            </Sheet>
+
             <Button
               onClick={handleSaveAsJournalEntry}
-              disabled={selectedCount === 0 || isSaving}
-              className="bg-blue-500 hover:bg-blue-600 gap-2"
+              disabled={selectedCount === 0 || isSaving || !isBalanced}
+              className="gap-1.5 bg-blue-600 hover:bg-blue-700 shadow-sm"
+              size="sm"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              حفظ {dateGroups.length > 1 ? `${dateGroups.length} قيود` : 'كقيد'} ({selectedCount} عملية)
+              حفظ {dateGroups.length > 1 ? `${dateGroups.length} قيود` : "القيد"} ({selectedCount})
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="p-6 space-y-6">
-        {/* Paste Area */}
-        <Card className="p-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">الصق بيانات كشف الحساب البنكي:</label>
-                <span className="text-xs text-muted-foreground font-light">
-                  (قم بنسخ الجدول من البنك أو ملف إكسيل ولصقه هنا. يدعم النظام التعرف التلقائي على أعمدة: التاريخ، المدين، الدائن، الوصف، والوصول إلى 10 أعمدة)
-                </span>
+      <div className="max-w-[1600px] mx-auto p-5 space-y-5">
+        {/* ============ KPI DASHBOARD ============ */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KpiCard tone="blue" icon={Sigma} label="إجمالي العمليات" value={parsedBankStatements.length.toString()} hint={`محدد ${selectedCount} من ${parsedBankStatements.length}`} />
+          <KpiCard tone="rose" icon={TrendingDown} label="إجمالي المدين" value={fmt(totalDebit)} hint="ريال سعودي" />
+          <KpiCard tone="emerald" icon={TrendingUp} label="إجمالي الدائن" value={fmt(totalCredit)} hint="ريال سعودي" />
+          <KpiCard
+            tone={isBalanced && parsedBankStatements.length > 0 ? "green" : parsedBankStatements.length === 0 ? "slate" : "orange"}
+            icon={isBalanced ? CheckCircle2 : AlertTriangle}
+            label="الحالة"
+            value={parsedBankStatements.length === 0 ? "—" : isBalanced ? "متوازن" : fmt(Math.abs(balanceDifference))}
+            hint={parsedBankStatements.length === 0 ? "بانتظار البيانات" : isBalanced ? "لا يوجد فرق" : "فرق يحتاج مراجعة"}
+          />
+        </div>
+
+        {/* ============ BIG BALANCE CARD ============ */}
+        {parsedBankStatements.length > 0 && (
+          <Card className={cn(
+            "p-5 border-2 rounded-2xl shadow-sm transition",
+            isBalanced
+              ? "bg-gradient-to-l from-emerald-50 via-white to-emerald-50 border-emerald-200"
+              : "bg-gradient-to-l from-orange-50 via-white to-orange-50 border-orange-300"
+          )}>
+            <div className="flex items-center gap-4">
+              <div className={cn(
+                "h-14 w-14 rounded-2xl grid place-items-center shadow-sm shrink-0",
+                isBalanced ? "bg-emerald-500" : "bg-orange-500"
+              )}>
+                {isBalanced ? <CheckCircle2 className="h-8 w-8 text-white" /> : <AlertTriangle className="h-8 w-8 text-white" />}
               </div>
-              {parsedBankStatements.length > 0 && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCreateMirrorRows}
-                    className="gap-2 text-teal-600 border-teal-200 hover:bg-teal-50"
-                  >
-                    <RefreshCcw className="h-4 w-4" />
-                    إنشاء صفوف معكوسة (بنك الرياض)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleTranslateDescriptions}
-                    disabled={isTranslating}
-                    className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50"
-                  >
-                    {isTranslating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        جاري الترجمة...
-                      </>
-                    ) : (
-                      <>
-                        <Languages className="h-4 w-4" />
-                        ترجمة التفاصيل للعربية
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              <div className="flex-1">
+                <h3 className={cn("text-xl font-bold", isBalanced ? "text-emerald-900" : "text-orange-900")}>
+                  {isBalanced ? "القيود متوازنة" : "يوجد فرق يحتاج للمراجعة"}
+                </h3>
+                <p className={cn("text-sm mt-0.5", isBalanced ? "text-emerald-700" : "text-orange-700")}>
+                  {isBalanced
+                    ? "إجمالي المدين يساوي إجمالي الدائن — جاهز للحفظ"
+                    : `الفرق: ${fmt(Math.abs(balanceDifference))} ريال ${balanceDifference > 0 ? "(المدين أكبر)" : "(الدائن أكبر)"}`}
+                </p>
+              </div>
             </div>
-            <textarea
-              className="w-full h-32 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="انسخ بيانات كشف الحساب من البنك والصقها هنا..."
-              value={bankStatementData}
-              onChange={(e) => handleParseBankStatement(e.target.value)}
-              dir="ltr"
-            />
+          </Card>
+        )}
+
+        {/* ============ PASTE AREA ============ */}
+        <Card className="p-5 rounded-2xl shadow-sm border-slate-200">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-blue-50 border border-blue-200 grid place-items-center">
+                <ClipboardPaste className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 text-sm">لصق بيانات كشف الحساب</h3>
+                <p className="text-[11px] text-slate-500">انسخ الجدول من البنك أو Excel — يتم التعرف التلقائي على الأعمدة</p>
+              </div>
+            </div>
+            {parsedBankStatements.length > 0 && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCreateMirrorRows}
+                  className="gap-1.5 border-teal-200 text-teal-700 hover:bg-teal-50">
+                  <RefreshCcw className="h-4 w-4" /> صفوف معكوسة
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleTranslateDescriptions} disabled={isTranslating}
+                  className="gap-1.5 border-violet-200 text-violet-700 hover:bg-violet-50">
+                  {isTranslating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
+                  ترجمة عربية
+                </Button>
+              </div>
+            )}
           </div>
+          <textarea
+            className="w-full h-28 p-3 border border-slate-200 rounded-xl text-sm font-mono resize-none bg-slate-50/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition"
+            placeholder="الصق البيانات هنا (TSV) — التاريخ، البيان، المدين، الدائن، الرصيد..."
+            value={bankStatementData}
+            onChange={(e) => handleParseBankStatement(e.target.value)}
+            dir="ltr"
+          />
         </Card>
 
-        {/* Entry Description */}
+        {/* ============ ENTRY DESCRIPTION ============ */}
         {parsedBankStatements.length > 0 && (
-          <Card className="p-4">
+          <Card className="p-4 rounded-2xl shadow-sm border-slate-200">
+            <label className="text-xs font-medium text-slate-500 mb-1.5 block">وصف القيد (اختياري)</label>
             <Input
-              placeholder="وصف القيد (اختياري)..."
+              placeholder="اكتب وصفاً موحداً لجميع القيود المُنشأة..."
               value={entryDescription}
               onChange={(e) => setEntryDescription(e.target.value)}
-              className="text-lg"
+              className="h-10"
             />
           </Card>
         )}
 
-        {/* Per-Date Grouping Summary */}
+        {/* ============ TIMELINE ============ */}
         {dateGroups.length > 0 && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-medium text-sm flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4 text-blue-600" />
-                ملخص القيود حسب التاريخ ({dateGroups.length} {dateGroups.length > 1 ? 'قيود' : 'قيد'})
-              </span>
-              <span className="text-xs text-gray-500">سيتم إنشاء قيد مستقل لكل تاريخ، ويجب أن يكون المدين = الدائن لكل تاريخ</span>
+          <Card className="p-5 rounded-2xl shadow-sm border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-slate-900">ملخص القيود حسب التاريخ</h3>
+                <Badge variant="secondary">{dateGroups.length}</Badge>
+              </div>
+              <p className="text-xs text-slate-500">قيد مستقل لكل تاريخ — يجب أن يتوازن</p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {dateGroups.map(g => (
-                <div
-                  key={g.date}
-                  className={cn(
-                    "border rounded-lg p-2 text-xs",
-                    g.balanced ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
-                  )}
-                >
-                  <div className="flex items-center justify-between font-medium mb-1">
-                    <span>{g.date}</span>
-                    <span className={g.balanced ? "text-green-700" : "text-red-700"}>
-                      {g.balanced ? "✓ متوازن" : `✗ فرق ${(g.debit - g.credit).toLocaleString()}`}
-                    </span>
+            <div className="relative">
+              <div className="absolute right-3.5 top-2 bottom-2 w-px bg-slate-200" />
+              <div className="space-y-3">
+                {dateGroups.map(g => (
+                  <div key={g.date} className="relative pr-10">
+                    <div className={cn(
+                      "absolute right-1 top-3 h-6 w-6 rounded-full grid place-items-center ring-4 ring-white",
+                      g.balanced ? "bg-emerald-500" : "bg-orange-500"
+                    )}>
+                      {g.balanced
+                        ? <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                        : <AlertTriangle className="h-3.5 w-3.5 text-white" />}
+                    </div>
+                    <div className={cn(
+                      "rounded-xl border p-3 flex items-center justify-between gap-3 flex-wrap",
+                      g.balanced ? "border-emerald-200 bg-emerald-50/50" : "border-orange-200 bg-orange-50/50"
+                    )}>
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-bold text-slate-800">{g.date}</div>
+                        <Badge className={g.balanced ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" : "bg-orange-100 text-orange-800 hover:bg-orange-100"}>
+                          {g.balanced ? "متوازن" : `فرق ${fmt(Math.abs(g.debit - g.credit))}`}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-slate-500">{g.count} عملية</span>
+                        <span className="text-slate-500">محدد {g.withAccount}/{g.count}</span>
+                        <span className="font-mono">مدين: <span className="text-rose-600 font-semibold">{fmt(g.debit)}</span></span>
+                        <span className="font-mono">دائن: <span className="text-emerald-600 font-semibold">{fmt(g.credit)}</span></span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-gray-600">
-                    <span>مدين: <span className="font-mono text-red-600">{g.debit.toLocaleString()}</span></span>
-                    <span>دائن: <span className="font-mono text-green-600">{g.credit.toLocaleString()}</span></span>
-                  </div>
-                  <div className="text-[10px] text-gray-500 mt-1">
-                    {g.count} عملية · محدد {g.withAccount}/{g.count}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </Card>
         )}
 
-
-
-        {/* Parsed Data Table */}
+        {/* ============ TABLE ============ */}
         {parsedBankStatements.length > 0 && (
-          <div className="flex gap-3" dir="rtl">
-            {/* Accounts Sidebar */}
-            <Card className="w-72 shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
-              <div className="p-2 border-b bg-blue-50/50">
-                <div className="text-sm font-semibold text-gray-700 mb-2">
-                  الحسابات ({accounts.length}) — اسحب للإفلات
-                </div>
-                <Input
-                  placeholder="ابحث..."
-                  value={sidebarSearch}
-                  onChange={(e) => setSidebarSearch(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {[
-                    { key: 'all', label: 'الكل' },
-                    { key: 'asset', label: 'أصول' },
-                    { key: 'liability', label: 'خصوم' },
-                    { key: 'equity', label: 'حقوق' },
-                    { key: 'revenue', label: 'إيرادات' },
-                    { key: 'expense', label: 'مصروفات' },
-                  ].map(c => (
-                    <button
-                      key={c.key}
-                      onClick={() => setQuickCategory(c.key)}
-                      className={cn(
-                        "px-2 py-0.5 text-[11px] rounded-full border transition",
-                        quickCategory === c.key
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      )}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
+          <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+            {/* Table toolbar */}
+            <div className="p-4 border-b bg-slate-50/70 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="بحث في العمليات..."
+                    value={tableSearch}
+                    onChange={(e) => { setTableSearch(e.target.value); setPage(1); }}
+                    className="pr-9 h-9 bg-white"
+                  />
                 </div>
               </div>
-              <div className="flex-1 overflow-auto p-1.5 space-y-1">
-                {accounts
-                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
-                  .filter(a => {
-                    const q = sidebarSearch.trim().toLowerCase();
-                    if (!q) return true;
-                    return (a.name_ar || '').toLowerCase().includes(q) ||
-                           (a.code || '').toLowerCase().includes(q);
-                  })
-                  .map(a => (
-                    <div
-                      key={a.id}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('text/account-id', a.id);
-                        e.dataTransfer.effectAllowed = 'copy';
-                      }}
-                      className={cn(
-                        "px-2 py-1.5 text-xs rounded border cursor-grab active:cursor-grabbing hover:shadow-sm flex items-center justify-between gap-1",
-                        getAccountTypeColor(a.type)
-                      )}
-                      title={`${a.code} - ${a.name_ar}`}
-                    >
-                      <span className="truncate">{a.name_ar}</span>
-                      <span className="text-[10px] text-gray-500 shrink-0">{a.code}</span>
-                    </div>
-                  ))}
-              </div>
-            </Card>
-
-            <Card className="overflow-hidden flex-1 min-w-0">
-            <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
-              <span className="font-medium flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-teal-600" />
-                العمليات المكتشفة ({parsedBankStatements.length} عملية)
-              </span>
-              <div className="flex gap-4 text-sm">
-                <span>
-                  إجمالي الخصم: <span className="font-mono text-red-600">{totalDebit.toLocaleString()}</span>
-                </span>
-                <span>
-                  إجمالي الإيداع: <span className="font-mono text-green-600">{totalCredit.toLocaleString()}</span>
-                </span>
-                <span className={cn(
-                  "font-medium px-2 py-1 rounded",
-                  isBalanced ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                )}>
-                  {isBalanced ? "✓ متوازن" : `✗ فرق: ${balanceDifference.toLocaleString()}`}
-                </span>
-                <span className="text-gray-500">
-                  تم اختيار حساب لـ {selectedCount} من {parsedBankStatements.length} عملية
-                </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 border-slate-300">
+                      <Eye className="h-4 w-4" /> الأعمدة
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-52 p-2" dir="rtl">
+                    {columns.filter(c => c.key !== "num" && c.key !== "actions" && c.key !== "account").map(c => (
+                      <button
+                        key={c.key}
+                        onClick={() => toggleCol(c.key)}
+                        className="w-full flex items-center justify-between px-2 py-1.5 text-sm rounded hover:bg-slate-100"
+                      >
+                        <span>{c.label}</span>
+                        {hiddenCols[c.key]
+                          ? <EyeOff className="h-4 w-4 text-slate-400" />
+                          : <Eye className="h-4 w-4 text-blue-600" />}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+                <Badge variant="secondary" className="h-8 px-3 gap-1.5">
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  {displayed.length} من {parsedBankStatements.length}
+                </Badge>
               </div>
             </div>
 
-            {/* Info bar */}
-            <div className="p-2 bg-blue-50/50 border-b text-xs text-gray-600">
-              اسحب أي حساب من اللوحة الجانبية وأفلته على حقل "اختر حساب" في أي صف
-            </div>
-
-
-            <div className="overflow-auto max-h-[60vh]">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th className="p-1.5 text-right border-b w-8">#</th>
-                    
-                    <th className="p-1.5 text-right border-b w-24">التاريخ</th>
-                    <th className="p-1.5 text-left border-b w-24">مدين</th>
-                    <th className="p-1.5 text-left border-b w-24">دائن</th>
-                    <th className="p-1.5 text-right border-b w-40">التفاصيل</th>
-                    <th className="p-1.5 text-right border-b w-52">الحساب</th>
-                    <th className="p-1.5 text-center border-b w-8"></th>
+            <div className="overflow-auto max-h-[62vh]">
+              <table className="w-full text-sm border-separate border-spacing-0">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-slate-100">
+                    <Th className="w-10 text-center">#</Th>
+                    {!hiddenCols.date && <Th sortable onClick={() => toggleSort("date")} active={sortKey === "date"} dir={sortDir} className="w-28">التاريخ</Th>}
+                    {!hiddenCols.debit && <Th sortable onClick={() => toggleSort("debit")} active={sortKey === "debit"} dir={sortDir} className="w-36 text-left">مدين (ريال)</Th>}
+                    {!hiddenCols.credit && <Th sortable onClick={() => toggleSort("credit")} active={sortKey === "credit"} dir={sortDir} className="w-36 text-left">دائن (ريال)</Th>}
+                    {!hiddenCols.description && <Th sortable onClick={() => toggleSort("description")} active={sortKey === "description"} dir={sortDir}>التفاصيل</Th>}
+                    <Th className="w-72">الحساب</Th>
+                    <Th className="w-12" />
                   </tr>
                 </thead>
                 <tbody>
-                  {parsedBankStatements.map((row, index) => {
-                    const selectedAccount = row.selectedAccountId 
-                      ? accounts.find(a => a.id === row.selectedAccountId)
-                      : null;
-                    
+                  {pageRows.map((row, idx) => {
+                    const globalIndex = row.__i;
+                    const selectedAccount = row.selectedAccountId ? accounts.find(a => a.id === row.selectedAccountId) : null;
+                    const rowIsEven = idx % 2 === 0;
                     return (
-                      <tr key={index} className={cn(
-                        "border-b hover:bg-gray-50 group",
-                        activeRowIndex === index && "bg-blue-50"
-                      )}>
-                        <td className="p-1.5 text-gray-500 text-xs">{index + 1}</td>
-                        <td className="p-1.5 text-xs whitespace-nowrap">{row.date || '-'}</td>
-                        <td className="p-1.5">
-                          <Input
-                            type="number"
-                            value={row.debit || ""}
-                            onChange={(e) => handleUpdateRow(index, 'debit', e.target.value)}
-                            className={cn(
-                              "h-7 text-left text-xs font-mono px-1",
-                              row.debit > 0 && "bg-red-50 border-red-200"
-                            )}
-                            placeholder="0"
-                          />
-                        </td>
-                        <td className="p-1.5">
-                          <Input
-                            type="number"
-                            value={row.credit || ""}
-                            onChange={(e) => handleUpdateRow(index, 'credit', e.target.value)}
-                            className={cn(
-                              "h-7 text-left text-xs font-mono px-1",
-                              row.credit > 0 && "bg-green-50 border-green-200"
-                            )}
-                            placeholder="0"
-                          />
-                        </td>
-                        <td className="p-1.5">
-                          <Input
-                            value={row.description}
-                            onChange={(e) => handleUpdateRow(index, 'description', e.target.value)}
-                            className="h-7 text-xs px-1"
-                            placeholder="..."
-                          />
-                        </td>
+                      <tr
+                        key={globalIndex}
+                        className={cn(
+                          "group border-b border-slate-100 transition",
+                          rowIsEven ? "bg-white" : "bg-slate-50/40",
+                          "hover:bg-blue-50/40"
+                        )}
+                      >
+                        <td className="px-2 py-2 text-center text-slate-400 text-xs font-mono border-b border-slate-100">{(page - 1) * PAGE_SIZE + idx + 1}</td>
+                        {!hiddenCols.date && (
+                          <td className="px-2 py-2 text-xs whitespace-nowrap border-b border-slate-100">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono">
+                              {row.date || "—"}
+                            </span>
+                          </td>
+                        )}
+                        {!hiddenCols.debit && (
+                          <td className="px-2 py-2 border-b border-slate-100">
+                            <NumberInput
+                              value={row.debit}
+                              tone="rose"
+                              onChange={(v) => handleUpdateRow(globalIndex, "debit", v)}
+                            />
+                          </td>
+                        )}
+                        {!hiddenCols.credit && (
+                          <td className="px-2 py-2 border-b border-slate-100">
+                            <NumberInput
+                              value={row.credit}
+                              tone="emerald"
+                              onChange={(v) => handleUpdateRow(globalIndex, "credit", v)}
+                            />
+                          </td>
+                        )}
+                        {!hiddenCols.description && (
+                          <td className="px-2 py-2 border-b border-slate-100">
+                            <Input
+                              value={row.description}
+                              onChange={(e) => handleUpdateRow(globalIndex, "description", e.target.value)}
+                              className="h-8 text-xs bg-transparent border-transparent hover:border-slate-200 focus:border-blue-400"
+                              placeholder="..."
+                            />
+                          </td>
+                        )}
                         <td
                           className={cn(
-                            "p-1.5 relative",
-                            dragOverRow === index && "bg-blue-100 ring-2 ring-blue-400"
+                            "px-2 py-2 border-b border-slate-100 relative",
+                            dragOverRow === globalIndex && "bg-blue-100 ring-2 ring-blue-400 ring-inset"
                           )}
                           onDragOver={(e) => {
-                            if (e.dataTransfer.types.includes('text/account-id')) {
+                            if (e.dataTransfer.types.includes("text/account-id")) {
                               e.preventDefault();
-                              e.dataTransfer.dropEffect = 'copy';
-                              if (dragOverRow !== index) setDragOverRow(index);
+                              e.dataTransfer.dropEffect = "copy";
+                              if (dragOverRow !== globalIndex) setDragOverRow(globalIndex);
                             }
                           }}
-                          onDragLeave={() => {
-                            if (dragOverRow === index) setDragOverRow(null);
-                          }}
+                          onDragLeave={() => { if (dragOverRow === globalIndex) setDragOverRow(null); }}
                           onDrop={(e) => {
                             e.preventDefault();
-                            const accId = e.dataTransfer.getData('text/account-id');
+                            const accId = e.dataTransfer.getData("text/account-id");
                             setDragOverRow(null);
                             if (accId) {
-                              handleSelectAccount(index, accId);
+                              handleSelectAccount(globalIndex, accId);
                               const acc = accounts.find(a => a.id === accId);
                               if (acc) toast.success(`تم إدراج: ${acc.name_ar}`);
                             }
                           }}
                         >
-                          {activeRowIndex === index ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  placeholder="ابحث عن حساب..."
-                                  value={accountSearch}
-                                  onChange={(e) => setAccountSearch(e.target.value)}
-                                  className="h-8 text-xs flex-1"
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Escape') {
-                                      setActiveRowIndex(null);
-                                      setAccountSearch("");
-                                    }
-                                  }}
-                                />
-                                <Button
-                                  type="button"
-                                  variant={isListening ? "destructive" : "outline"}
-                                  size="sm"
-                                  className="h-10 w-10 p-0 shrink-0"
-                                  onClick={startVoiceSearch}
-                                  title="بحث صوتي"
-                                >
-                                  {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-                                </Button>
-                              </div>
-                              {filteredAccounts.length > 0 && (
-                                <div 
-                                  className={cn(
-                                    "absolute z-[100] bg-white border rounded-lg shadow-xl max-h-48 overflow-auto w-64 right-3",
-                                    index >= parsedBankStatements.length - 5 ? "bottom-full mb-1" : "top-full mt-1"
-                                  )}
-                                >
-                                  {filteredAccounts.slice(0, 20).map(account => (
-                                    <button
-                                      key={account.id}
-                                      className={cn(
-                                        "w-full text-right px-3 py-2 text-xs hover:bg-blue-50 flex items-center justify-between",
-                                        getAccountTypeColor(account.type)
-                                      )}
-                                      onClick={() => handleSelectAccount(index, account.id)}
-                                    >
-                                      <span>{account.name_ar}</span>
-                                      <span className="text-gray-400">{account.code}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant={selectedAccount ? "outline" : "ghost"}
-                                size="sm"
-                                className={cn(
-                                  "h-8 text-xs gap-1 flex-1 justify-between",
-                                  selectedAccount && "border-green-300 bg-green-50 text-green-700"
-                                )}
-                                onClick={() => {
-                                  setActiveRowIndex(index);
-                                  setAccountSearch("");
-                                }}
-                              >
-                                {selectedAccount ? (
-                                  <>
-                                    <span className="truncate">{selectedAccount.name_ar}</span>
-                                    <span className="text-gray-400">{selectedAccount.code}</span>
-                                  </>
-                                ) : (
-                                  <span className="text-gray-400">اختر حساب</span>
-                                )}
-                              </Button>
-                              {selectedAccount && index < parsedBankStatements.length - 1 && (
+                          <div className="flex items-center gap-1">
+                            <Popover
+                              open={openAccountPopover === globalIndex}
+                              onOpenChange={(o) => setOpenAccountPopover(o ? globalIndex : null)}
+                            >
+                              <PopoverTrigger asChild>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 px-2 text-xs text-violet-600 border-violet-200 hover:bg-violet-50"
-                                  onClick={() => handleCopyAccountToNext(index)}
-                                  title="نسخ الحساب للصف التالي"
+                                  className={cn(
+                                    "h-8 flex-1 justify-between text-xs gap-1 font-normal",
+                                    selectedAccount
+                                      ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                                      : "border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600"
+                                  )}
                                 >
-                                  <Copy className="h-3 w-3" />
+                                  {selectedAccount ? (
+                                    <>
+                                      <span className="truncate">{selectedAccount.name_ar}</span>
+                                      <span className="text-[10px] font-mono opacity-70">{selectedAccount.code}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>اختر حساب...</span>
+                                      <ChevronsUpDown className="h-3 w-3" />
+                                    </>
+                                  )}
                                 </Button>
-                              )}
-                            </div>
-                          )}
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72 p-0" align="end" dir="rtl">
+                                <Command>
+                                  <CommandInput placeholder="بحث بالاسم أو الرقم..." />
+                                  <CommandList>
+                                    <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                                    <CommandGroup>
+                                      {accounts.map(a => (
+                                        <CommandItem
+                                          key={a.id}
+                                          value={`${a.code} ${a.name_ar} ${a.name_en}`}
+                                          onSelect={() => handleSelectAccount(globalIndex, a.id)}
+                                          className="flex items-center justify-between gap-2 text-xs"
+                                        >
+                                          <span className="truncate">{a.name_ar}</span>
+                                          <span className="text-[10px] font-mono text-slate-400">{a.code}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                            {selectedAccount && globalIndex < parsedBankStatements.length - 1 && (
+                              <Button
+                                variant="ghost" size="icon"
+                                className="h-8 w-8 text-violet-600 hover:bg-violet-50"
+                                onClick={() => handleCopyAccountToNext(globalIndex)}
+                                title="نسخ للتالي"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="px-2 py-2 text-center border-b border-slate-100">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => handleDeleteRow(index)}
-                            title="حذف السجل"
+                            variant="ghost" size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-opacity"
+                            onClick={() => handleDeleteRow(globalIndex)}
+                            title="حذف"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -954,19 +868,128 @@ export default function BankStatementImport() {
                 </tbody>
               </table>
             </div>
-            </Card>
-          </div>
+
+            {/* Pagination */}
+            <div className="px-4 py-3 border-t bg-slate-50/70 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs text-slate-500">
+                عرض {(page - 1) * PAGE_SIZE + 1} — {Math.min(page * PAGE_SIZE, displayed.length)} من {displayed.length}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" className="h-8 gap-1"
+                  disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+                  <ChevronRight className="h-4 w-4" /> السابق
+                </Button>
+                <div className="px-3 h-8 rounded-md border border-slate-200 bg-white grid place-items-center text-xs font-medium">
+                  {page} / {totalPages}
+                </div>
+                <Button variant="outline" size="sm" className="h-8 gap-1"
+                  disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
+                  التالي <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </Card>
         )}
 
-        {/* Empty State */}
+        {/* ============ EMPTY STATE ============ */}
         {parsedBankStatements.length === 0 && !bankStatementData && (
-          <Card className="p-12 text-center text-gray-500">
-            <FileSpreadsheet className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium mb-2">لا توجد بيانات</h3>
-            <p>الصق بيانات كشف الحساب البنكي في المربع أعلاه للبدء</p>
+          <Card className="p-16 text-center rounded-2xl border-dashed border-2 border-slate-200 bg-white">
+            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 mx-auto mb-4 grid place-items-center">
+              <FileSpreadsheet className="h-10 w-10 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">جاهز لاستيراد كشف الحساب</h3>
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
+              الصق بيانات كشف الحساب البنكي في المربع أعلاه للبدء بمطابقة العمليات وإنشاء القيود المحاسبية تلقائياً.
+            </p>
           </Card>
         )}
       </div>
+    </div>
+  );
+}
+
+/* =================== helpers =================== */
+
+function Th({
+  children, className, sortable, onClick, active, dir,
+}: {
+  children?: React.ReactNode; className?: string;
+  sortable?: boolean; onClick?: () => void; active?: boolean; dir?: "asc" | "desc";
+}) {
+  return (
+    <th
+      onClick={sortable ? onClick : undefined}
+      className={cn(
+        "text-right px-3 py-2.5 text-xs font-semibold text-slate-600 border-b border-slate-200 bg-slate-100 whitespace-nowrap",
+        sortable && "cursor-pointer select-none hover:bg-slate-200/70",
+        className
+      )}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {sortable && (
+          <ChevronsUpDown className={cn("h-3 w-3", active ? "text-blue-600" : "text-slate-400")} />
+        )}
+      </span>
+    </th>
+  );
+}
+
+function KpiCard({
+  tone, icon: Icon, label, value, hint,
+}: {
+  tone: "blue" | "emerald" | "rose" | "green" | "orange" | "slate";
+  icon: any; label: string; value: string; hint?: string;
+}) {
+  const tones: Record<string, string> = {
+    blue: "from-blue-500 to-blue-600 text-blue-600 bg-blue-50 border-blue-200",
+    emerald: "from-emerald-500 to-emerald-600 text-emerald-600 bg-emerald-50 border-emerald-200",
+    rose: "from-rose-500 to-rose-600 text-rose-600 bg-rose-50 border-rose-200",
+    green: "from-emerald-500 to-green-600 text-emerald-600 bg-emerald-50 border-emerald-200",
+    orange: "from-orange-500 to-amber-600 text-orange-600 bg-orange-50 border-orange-200",
+    slate: "from-slate-400 to-slate-500 text-slate-600 bg-slate-50 border-slate-200",
+  };
+  const [grad, textCol, bgCol, borderCol] = tones[tone].split(" ");
+  return (
+    <Card className={cn("p-4 rounded-2xl border shadow-sm bg-white hover:shadow-md transition")}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-slate-500 mb-1">{label}</div>
+          <div className={cn("text-2xl font-bold font-mono truncate", textCol)}>{value}</div>
+          {hint && <div className="text-[11px] text-slate-500 mt-1">{hint}</div>}
+        </div>
+        <div className={cn("h-11 w-11 rounded-xl grid place-items-center shrink-0 bg-gradient-to-br shadow-sm", grad)}>
+          <Icon className="h-5 w-5 text-white" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function NumberInput({
+  value, onChange, tone,
+}: { value: number; onChange: (v: string) => void; tone: "rose" | "emerald" }) {
+  const [focused, setFocused] = useState(false);
+  const display = focused ? (value || "") : (value ? fmt(value) : "");
+  const toneClass = value > 0
+    ? tone === "rose"
+      ? "bg-rose-50/60 border-rose-200 text-rose-700"
+      : "bg-emerald-50/60 border-emerald-200 text-emerald-700"
+    : "bg-white border-slate-200 text-slate-500";
+  return (
+    <div className="relative">
+      <Input
+        type={focused ? "number" : "text"}
+        value={display}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn("h-8 text-left text-xs font-mono pl-12 pr-2 transition", toneClass)}
+        placeholder="0.00"
+      />
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400 pointer-events-none">
+        SAR
+      </span>
     </div>
   );
 }
