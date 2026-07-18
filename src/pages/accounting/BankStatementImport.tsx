@@ -749,19 +749,31 @@ export default function BankStatementImport() {
                         <td className="p-3 relative">
                           {activeRowIndex === index ? (
                             <div className="space-y-1">
-                              <Input
-                                placeholder="ابحث عن حساب..."
-                                value={accountSearch}
-                                onChange={(e) => setAccountSearch(e.target.value)}
-                                className="h-8 text-xs"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Escape') {
-                                    setActiveRowIndex(null);
-                                    setAccountSearch("");
-                                  }
-                                }}
-                              />
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  placeholder="ابحث عن حساب..."
+                                  value={accountSearch}
+                                  onChange={(e) => setAccountSearch(e.target.value)}
+                                  className="h-8 text-xs flex-1"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                      setActiveRowIndex(null);
+                                      setAccountSearch("");
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant={isListening ? "destructive" : "outline"}
+                                  size="sm"
+                                  className="h-8 w-8 p-0 shrink-0"
+                                  onClick={startVoiceSearch}
+                                  title="بحث صوتي"
+                                >
+                                  {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                                </Button>
+                              </div>
                               {filteredAccounts.length > 0 && (
                                 <div 
                                   className={cn(
