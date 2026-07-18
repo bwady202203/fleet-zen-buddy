@@ -1090,6 +1090,128 @@ export default function BankStatementImport() {
             <p>الصق بيانات كشف الحساب البنكي في المربع أعلاه للبدء</p>
           </Card>
         )}
+
+        {/* Full-screen Accounts Gallery Dialog */}
+        <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+          <DialogContent
+            dir="rtl"
+            className="max-w-[95vw] w-[95vw] h-[92vh] p-0 flex flex-col gap-0"
+          >
+            <DialogHeader className="p-4 border-b bg-gradient-to-l from-blue-50 to-white shrink-0">
+              <DialogTitle className="text-lg flex items-center gap-2">
+                <LayoutGrid className="h-5 w-5 text-blue-600" />
+                معرض الحسابات — اختر عدة حسابات للإدراج بالترتيب أو أخفِ ما لا تحتاجه
+              </DialogTitle>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Input
+                  placeholder="ابحث بالاسم أو الرقم..."
+                  value={gallerySearch}
+                  onChange={(e) => setGallerySearch(e.target.value)}
+                  className="h-9 w-64"
+                />
+                <div className="flex flex-wrap gap-1">
+                  {[{ key: 'all', label: 'الكل' }, ...Object.entries(CATEGORY_META).map(([k, v]) => ({ key: k, label: v.label }))].map(c => (
+                    <button
+                      key={c.key}
+                      onClick={() => setGalleryCategory(c.key)}
+                      className={cn(
+                        "px-3 py-1 text-xs rounded-full border transition",
+                        galleryCategory === c.key
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mr-auto text-sm text-gray-600 flex items-center gap-3">
+                  <span>محدد للإدراج: <b className="text-blue-700">{selectionQueue.length}</b></span>
+                  <span>مخفي: <b className="text-rose-700">{pendingHidden.length}</b></span>
+                  {selectionQueue.length > 0 && (
+                    <Button size="sm" variant="outline" onClick={() => setSelectionQueue([])}>مسح التحديد</Button>
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-auto p-4 space-y-5">
+              {Object.entries(CATEGORY_META)
+                .filter(([type]) => galleryCategory === 'all' || galleryCategory === type)
+                .map(([type, meta]) => {
+                  const q = gallerySearch.trim().toLowerCase();
+                  const list = accounts
+                    .filter(a => a.type === type)
+                    .filter(a => !q ||
+                      (a.name_ar || '').toLowerCase().includes(q) ||
+                      (a.name_en || '').toLowerCase().includes(q) ||
+                      (a.code || '').toLowerCase().includes(q));
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={type} className="border rounded-lg overflow-hidden shadow-sm">
+                      <div className={cn("px-3 py-2 text-white font-semibold text-sm flex items-center justify-between", meta.header)}>
+                        <span>{meta.label} ({list.length})</span>
+                      </div>
+                      <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                        {list.map(a => {
+                          const isHidden = pendingHidden.includes(a.id);
+                          const queueIdx = selectionQueue.indexOf(a.id);
+                          const selected = queueIdx !== -1;
+                          return (
+                            <div
+                              key={a.id}
+                              onClick={() => toggleQueueAccount(a.id)}
+                              className={cn(
+                                "relative min-h-[80px] p-2 rounded-md border cursor-pointer transition text-center flex flex-col items-center justify-center gap-1",
+                                meta.tile,
+                                isHidden && "opacity-40 grayscale line-through",
+                                selected && `ring-2 ${meta.ring} shadow-md`,
+                              )}
+                              title={`${a.code} - ${a.name_ar}`}
+                            >
+                              {selected && (
+                                <span className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold h-5 min-w-5 px-1 rounded-full flex items-center justify-center">
+                                  {queueIdx + 1}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); toggleHideAccount(a.id); }}
+                                className="absolute top-1 left-1 h-5 w-5 rounded-full bg-white/80 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center"
+                                title={isHidden ? "إظهار الحساب" : "إخفاء الحساب"}
+                              >
+                                {isHidden ? <Eye className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                              </button>
+                              <span className="text-xs font-bold text-gray-900 leading-tight break-words max-h-[44px] overflow-hidden">
+                                {a.name_ar || a.name_en || 'بدون اسم'}
+                              </span>
+                              <span className="text-[11px] font-semibold text-gray-600">{a.code}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <DialogFooter className="p-3 border-t bg-gray-50 shrink-0 flex-row-reverse gap-2 sm:justify-start">
+              <Button onClick={applyGallery} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                <Save className="h-4 w-4" />
+                حفظ وإدراج ({selectionQueue.length})
+              </Button>
+              <Button variant="outline" onClick={() => setGalleryOpen(false)}>إلغاء</Button>
+              <Button
+                variant="ghost"
+                className="text-rose-600 hover:bg-rose-50"
+                onClick={() => setPendingHidden([])}
+                disabled={pendingHidden.length === 0}
+              >
+                إظهار كل المخفي ({pendingHidden.length})
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
