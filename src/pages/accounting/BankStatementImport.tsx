@@ -893,7 +893,7 @@ export default function BankStatementImport() {
                                   placeholder="ابحث عن حساب..."
                                   value={accountSearch}
                                   onChange={(e) => setAccountSearch(e.target.value)}
-                                  className="h-8 text-xs flex-1"
+                                  className="h-9 text-sm flex-1"
                                   autoFocus
                                   onKeyDown={(e) => {
                                     if (e.key === 'Escape') {
@@ -906,11 +906,11 @@ export default function BankStatementImport() {
                                   type="button"
                                   variant={isListening ? "destructive" : "outline"}
                                   size="sm"
-                                  className="h-10 w-10 p-0 shrink-0"
+                                  className="h-9 w-9 p-0 shrink-0"
                                   onClick={startVoiceSearch}
                                   title="بحث صوتي"
                                 >
-                                  {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                                  {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                                 </Button>
                               </div>
                               {filteredAccounts.length > 0 && (
@@ -924,7 +924,7 @@ export default function BankStatementImport() {
                                     <button
                                       key={account.id}
                                       className={cn(
-                                        "w-full text-right px-3 py-2 text-xs hover:bg-blue-50 flex items-center justify-between",
+                                        "w-full text-right px-3 py-2 text-sm hover:bg-blue-50 flex items-center justify-between",
                                         getAccountTypeColor(account.type)
                                       )}
                                       onClick={() => handleSelectAccount(index, account.id)}
@@ -942,7 +942,7 @@ export default function BankStatementImport() {
                                 variant={selectedAccount ? "outline" : "ghost"}
                                 size="sm"
                                 className={cn(
-                                  "h-8 text-xs gap-1 flex-1 justify-between",
+                                  "h-9 text-sm gap-1 flex-1 justify-between",
                                   selectedAccount && "border-green-300 bg-green-50 text-green-700"
                                 )}
                                 onClick={() => {
@@ -963,25 +963,25 @@ export default function BankStatementImport() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 px-2 text-xs text-violet-600 border-violet-200 hover:bg-violet-50"
+                                  className="h-9 px-2 text-sm text-violet-600 border-violet-200 hover:bg-violet-50"
                                   onClick={() => handleCopyAccountToNext(index)}
                                   title="نسخ الحساب للصف التالي"
                                 >
-                                  <Copy className="h-3 w-3" />
+                                  <Copy className="h-4 w-4" />
                                 </Button>
                               )}
                             </div>
                           )}
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-2 text-center">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleDeleteRow(index)}
                             title="حذف السجل"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </Button>
                         </td>
                       </tr>
