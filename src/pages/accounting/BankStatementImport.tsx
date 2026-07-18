@@ -672,7 +672,7 @@ export default function BankStatementImport() {
             {/* Accounts Sidebar */}
             <Card className={cn(
               "self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh] transition-all duration-300",
-              sidebarExpanded ? "flex-1" : "w-12"
+              sidebarExpanded ? "w-80" : "w-12"
             )}>
               <div className={cn(
                 "border-b bg-blue-50/50 flex items-center transition-all",
