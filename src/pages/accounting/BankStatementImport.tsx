@@ -65,7 +65,7 @@ export default function BankStatementImport() {
   const [quickCategory, setQuickCategory] = useState<string>('all');
   const [quickAccountIds, setQuickAccountIds] = useState<string[]>([]);
   const [sidebarSearch, setSidebarSearch] = useState<string>('');
-  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(true);
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const startVoiceSearch = () => {
