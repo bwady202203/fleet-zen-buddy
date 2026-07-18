@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -65,6 +65,7 @@ export default function BankStatementImport() {
   const [quickCategory, setQuickCategory] = useState<string>('all');
   const [quickAccountIds, setQuickAccountIds] = useState<string[]>([]);
   const [sidebarSearch, setSidebarSearch] = useState<string>('');
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(false);
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const startVoiceSearch = () => {
@@ -669,83 +670,105 @@ export default function BankStatementImport() {
         {parsedBankStatements.length > 0 && (
           <div className="flex gap-3" dir="rtl">
             {/* Accounts Sidebar */}
-            <Card className="w-[22rem] shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
-              <div className="p-2 border-b bg-blue-50/50">
-                <div className="text-sm font-semibold text-gray-700 mb-2">
-                  الحسابات ({accounts.length}) — اسحب للإفلات
-                </div>
-                <Input
-                  placeholder="ابحث..."
-                  value={sidebarSearch}
-                  onChange={(e) => setSidebarSearch(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {[
-                    { key: 'all', label: 'الكل' },
-                    { key: 'asset', label: 'أصول' },
-                    { key: 'liability', label: 'خصوم' },
-                    { key: 'equity', label: 'حقوق' },
-                    { key: 'revenue', label: 'إيرادات' },
-                    { key: 'expense', label: 'مصروفات' },
-                  ].map(c => (
-                    <button
-                      key={c.key}
-                      onClick={() => setQuickCategory(c.key)}
-                      className={cn(
-                        "px-2 py-0.5 text-[11px] rounded-full border transition",
-                        quickCategory === c.key
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      )}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
+            <Card className={cn(
+              "shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh] transition-all duration-300",
+              sidebarExpanded ? "w-80" : "w-12"
+            )}>
+              <div className={cn(
+                "border-b bg-blue-50/50 flex items-center transition-all",
+                sidebarExpanded ? "p-2 justify-between" : "p-1 justify-center h-12"
+              )}>
+                {sidebarExpanded && (
+                  <div className="text-sm font-semibold text-gray-700">
+                    الحسابات ({accounts.length}) — اسحب للإفلات
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setSidebarExpanded(v => !v)}
+                  title={sidebarExpanded ? "تصغير" : "توسيع"}
+                >
+                  {sidebarExpanded ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                </Button>
               </div>
-              <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[70px]">
-                {accounts
-                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
-                  .filter(a => {
-                    const q = sidebarSearch.trim().toLowerCase();
-                    if (!q) return true;
-                    return (a.name_ar || '').toLowerCase().includes(q) ||
-                           (a.code || '').toLowerCase().includes(q);
-                  })
-                  .map(a => (
-                    <div
-                      key={a.id}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('text/account-id', a.id);
-                        e.dataTransfer.effectAllowed = 'copy';
-                      }}
-                      onClick={() => {
-                        let targetIndex = activeRowIndex;
-                        if (targetIndex === null || targetIndex === undefined) {
-                          targetIndex = parsedBankStatements.findIndex(r => !r.selectedAccountId);
-                        }
-                        if (targetIndex === -1 || targetIndex === null) {
-                          toast.error("لا يوجد صف متاح للإدراج");
-                          return;
-                        }
-                        handleSelectAccount(targetIndex, a.id);
-                        toast.success(`تم إدراج ${a.name_ar}`);
-                      }}
-                      className={cn(
-                        "p-1 text-[10px] rounded border cursor-pointer hover:shadow-md hover:scale-105 transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
-                        getAccountTypeColor(a.type)
-                      )}
-                      title={`${a.code} - ${a.name_ar} — انقر للإدراج أو اسحب`}
-                    >
-                      <span className="line-clamp-2 leading-tight font-medium">{a.name_ar}</span>
-                      <span className="text-[9px] text-gray-600 shrink-0">{a.code}</span>
+              {sidebarExpanded && (
+                <>
+                  <div className="p-2 border-b bg-blue-50/50">
+                    <Input
+                      placeholder="ابحث..."
+                      value={sidebarSearch}
+                      onChange={(e) => setSidebarSearch(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {[
+                        { key: 'all', label: 'الكل' },
+                        { key: 'asset', label: 'أصول' },
+                        { key: 'liability', label: 'خصوم' },
+                        { key: 'equity', label: 'حقوق' },
+                        { key: 'revenue', label: 'إيرادات' },
+                        { key: 'expense', label: 'مصروفات' },
+                      ].map(c => (
+                        <button
+                          key={c.key}
+                          onClick={() => setQuickCategory(c.key)}
+                          className={cn(
+                            "px-2 py-0.5 text-[11px] rounded-full border transition",
+                            quickCategory === c.key
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                          )}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
                     </div>
+                  </div>
+                  <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[70px]">
+                    {accounts
+                      .filter(a => quickCategory === 'all' || a.type === quickCategory)
+                      .filter(a => {
+                        const q = sidebarSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (a.name_ar || '').toLowerCase().includes(q) ||
+                               (a.code || '').toLowerCase().includes(q);
+                      })
+                      .map(a => (
+                        <div
+                          key={a.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/account-id', a.id);
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
+                          onClick={() => {
+                            let targetIndex = activeRowIndex;
+                            if (targetIndex === null || targetIndex === undefined) {
+                              targetIndex = parsedBankStatements.findIndex(r => !r.selectedAccountId);
+                            }
+                            if (targetIndex === -1 || targetIndex === null) {
+                              toast.error("لا يوجد صف متاح للإدراج");
+                              return;
+                            }
+                            handleSelectAccount(targetIndex, a.id);
+                            toast.success(`تم إدراج ${a.name_ar}`);
+                          }}
+                          className={cn(
+                            "p-1 text-[10px] rounded border cursor-pointer hover:shadow-md hover:scale-105 transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
+                            getAccountTypeColor(a.type)
+                          )}
+                          title={`${a.code} - ${a.name_ar} — انقر للإدراج أو اسحب`}
+                        >
+                          <span className="line-clamp-2 leading-tight font-medium">{a.name_ar}</span>
+                          <span className="text-[9px] text-gray-600 shrink-0">{a.code}</span>
+                        </div>
 
-                  ))}
-              </div>
-
+                      ))}
+                  </div>
+                </>
+              )}
             </Card>
 
             <Card className="overflow-hidden flex-1 min-w-0">
