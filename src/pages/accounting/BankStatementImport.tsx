@@ -668,6 +668,75 @@ export default function BankStatementImport() {
         {/* Parsed Data Table */}
         {parsedBankStatements.length > 0 && (
           <Card className="overflow-hidden">
+          <div className="flex gap-3" dir="rtl">
+            {/* Accounts Sidebar */}
+            <Card className="w-72 shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
+              <div className="p-2 border-b bg-blue-50/50">
+                <div className="text-sm font-semibold text-gray-700 mb-2">
+                  الحسابات ({accounts.length}) — اسحب للإفلات
+                </div>
+                <Input
+                  placeholder="ابحث..."
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {[
+                    { key: 'all', label: 'الكل' },
+                    { key: 'asset', label: 'أصول' },
+                    { key: 'liability', label: 'خصوم' },
+                    { key: 'equity', label: 'حقوق' },
+                    { key: 'revenue', label: 'إيرادات' },
+                    { key: 'expense', label: 'مصروفات' },
+                  ].map(c => (
+                    <button
+                      key={c.key}
+                      onClick={() => setQuickCategory(c.key)}
+                      className={cn(
+                        "px-2 py-0.5 text-[11px] rounded-full border transition",
+                        quickCategory === c.key
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      )}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto p-1.5 space-y-1">
+                {accounts
+                  .filter(a => quickCategory === 'all' || a.type === quickCategory)
+                  .filter(a => {
+                    const q = sidebarSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return (a.name_ar || '').toLowerCase().includes(q) ||
+                           (a.name || '').toLowerCase().includes(q) ||
+                           (a.code || '').toLowerCase().includes(q);
+                  })
+                  .map(a => (
+                    <div
+                      key={a.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/account-id', a.id);
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      className={cn(
+                        "px-2 py-1.5 text-xs rounded border cursor-grab active:cursor-grabbing hover:shadow-sm flex items-center justify-between gap-1",
+                        getAccountTypeColor(a.type)
+                      )}
+                      title={`${a.code} - ${a.name_ar}`}
+                    >
+                      <span className="truncate">{a.name_ar}</span>
+                      <span className="text-[10px] text-gray-500 shrink-0">{a.code}</span>
+                    </div>
+                  ))}
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden flex-1 min-w-0">
             <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
               <span className="font-medium flex items-center gap-2">
                 <FileSpreadsheet className="h-5 w-5 text-teal-600" />
