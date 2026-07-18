@@ -581,6 +581,15 @@ export default function BankStatementImport() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowAccountsGrid(true)}
+              title="عرض كل الحسابات كمربعات"
+              className="h-9 w-9"
+            >
+              <LayoutGrid className="h-4 w-4 text-teal-600" />
+            </Button>
             <Input
               type="date"
               value={entryDate}
