@@ -669,7 +669,7 @@ export default function BankStatementImport() {
         {parsedBankStatements.length > 0 && (
           <div className="flex gap-3" dir="rtl">
             {/* Accounts Sidebar */}
-            <Card className="w-[22rem] shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
+            <Card className="w-72 shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
               <div className="p-2 border-b bg-blue-50/50">
                 <div className="text-sm font-semibold text-gray-700 mb-2">
                   الحسابات ({accounts.length}) — اسحب للإفلات
@@ -704,7 +704,7 @@ export default function BankStatementImport() {
                   ))}
                 </div>
               </div>
-              <div className="flex-1 overflow-auto p-1.5 grid grid-cols-4 gap-1.5 auto-rows-[70px]">
+              <div className="flex-1 overflow-auto p-1.5 space-y-1">
                 {accounts
                   .filter(a => quickCategory === 'all' || a.type === quickCategory)
                   .filter(a => {
@@ -722,17 +722,16 @@ export default function BankStatementImport() {
                         e.dataTransfer.effectAllowed = 'copy';
                       }}
                       className={cn(
-                        "p-1 text-[10px] rounded border cursor-grab active:cursor-grabbing hover:shadow-md transition flex flex-col items-center justify-center text-center gap-0.5 aspect-square",
+                        "px-2 py-1.5 text-xs rounded border cursor-grab active:cursor-grabbing hover:shadow-sm flex items-center justify-between gap-1",
                         getAccountTypeColor(a.type)
                       )}
                       title={`${a.code} - ${a.name_ar}`}
                     >
-                      <span className="line-clamp-2 leading-tight font-medium">{a.name_ar}</span>
-                      <span className="text-[9px] text-gray-600 shrink-0">{a.code}</span>
+                      <span className="truncate">{a.name_ar}</span>
+                      <span className="text-[10px] text-gray-500 shrink-0">{a.code}</span>
                     </div>
                   ))}
               </div>
-
             </Card>
 
             <Card className="overflow-hidden flex-1 min-w-0">
