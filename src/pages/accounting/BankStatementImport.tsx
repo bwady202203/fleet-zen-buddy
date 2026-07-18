@@ -78,6 +78,70 @@ export default function BankStatementImport() {
   const [sidebarSearch, setSidebarSearch] = useState<string>('');
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(true);
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState<boolean>(false);
+  const [hiddenAccountIds, setHiddenAccountIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(HIDDEN_ACCS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [pendingHidden, setPendingHidden] = useState<string[]>([]);
+  const [selectionQueue, setSelectionQueue] = useState<string[]>([]);
+  const [galleryCategory, setGalleryCategory] = useState<string>('all');
+  const [gallerySearch, setGallerySearch] = useState<string>('');
+
+  const openGallery = () => {
+    setPendingHidden(hiddenAccountIds);
+    setSelectionQueue([]);
+    setGallerySearch('');
+    setGalleryCategory('all');
+    setGalleryOpen(true);
+  };
+
+  const toggleHideAccount = (id: string) => {
+    setPendingHidden(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setSelectionQueue(prev => prev.filter(x => x !== id));
+  };
+
+  const toggleQueueAccount = (id: string) => {
+    if (pendingHidden.includes(id)) return;
+    setSelectionQueue(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const applyGallery = () => {
+    // persist hidden
+    localStorage.setItem(HIDDEN_ACCS_KEY, JSON.stringify(pendingHidden));
+    setHiddenAccountIds(pendingHidden);
+
+    // insert queue into rows in order (fill empty rows starting from active/first empty)
+    if (selectionQueue.length > 0) {
+      setParsedBankStatements(prev => {
+        const rows = [...prev];
+        let start = activeRowIndex ?? rows.findIndex(r => !r.selectedAccountId);
+        if (start < 0) start = 0;
+        let queueIdx = 0;
+        for (let i = start; i < rows.length && queueIdx < selectionQueue.length; i++) {
+          if (!rows[i].selectedAccountId) {
+            rows[i] = { ...rows[i], selectedAccountId: selectionQueue[queueIdx] };
+            queueIdx++;
+          }
+        }
+        // if still remaining, overwrite from start
+        if (queueIdx < selectionQueue.length) {
+          for (let i = start; i < rows.length && queueIdx < selectionQueue.length; i++) {
+            rows[i] = { ...rows[i], selectedAccountId: selectionQueue[queueIdx] };
+            queueIdx++;
+          }
+        }
+        toast.success(`تم إدراج ${queueIdx} حساب${queueIdx > 1 ? 'ات' : ''}`);
+        return rows;
+      });
+      setActiveRowIndex(null);
+    } else {
+      toast.success("تم حفظ التعديلات");
+    }
+    setGalleryOpen(false);
+  };
 
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
