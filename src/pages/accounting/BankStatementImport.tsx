@@ -925,11 +925,11 @@ export default function BankStatementImport() {
                                   type="button"
                                   variant={isListening ? "destructive" : "outline"}
                                   size="sm"
-                                  className="h-8 w-8 p-0 shrink-0"
+                                  className="h-10 w-10 p-0 shrink-0"
                                   onClick={startVoiceSearch}
                                   title="بحث صوتي"
                                 >
-                                  {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                                  {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                                 </Button>
                               </div>
                               {filteredAccounts.length > 0 && (
