@@ -966,34 +966,82 @@ export default function BankStatementImport() {
               onChange={(e) => setGridSearch(e.target.value)}
               className="max-w-sm"
             />
-            <div className="text-xs text-gray-500">
-              إجمالي: <span className="font-bold">{accounts.length}</span> — محدد: <span className="font-bold text-teal-600">{gridSelectedIds.length}</span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={showHidden ? "default" : "outline"}
+                onClick={() => setShowHidden(v => !v)}
+                className="gap-1 h-8"
+              >
+                {showHidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                {showHidden ? `المخفية (${hiddenAccountIds.length})` : `عرض المخفية (${hiddenAccountIds.length})`}
+              </Button>
+              <div className="text-xs text-gray-500">
+                إجمالي: <span className="font-bold">{accounts.length}</span> — محدد: <span className="font-bold text-teal-600">{gridSelectedIds.length}</span>
+              </div>
             </div>
+          </div>
+          {/* Arabic letter quick filter */}
+          <div className="flex flex-wrap gap-1 shrink-0 mt-2 justify-center" dir="rtl">
+            <button
+              type="button"
+              onClick={() => setGridLetter("")}
+              className={cn(
+                "px-2 py-1 text-xs rounded border transition-all",
+                gridLetter === "" ? "bg-teal-600 text-white border-teal-600" : "bg-white hover:bg-gray-100 border-gray-300"
+              )}
+            >
+              الكل
+            </button>
+            {ARABIC_LETTERS.map(l => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setGridLetter(prev => prev === l ? "" : l)}
+                className={cn(
+                  "w-7 h-7 text-sm rounded border transition-all font-bold",
+                  gridLetter === l ? "bg-teal-600 text-white border-teal-600" : "bg-white hover:bg-teal-50 border-gray-300 text-gray-700"
+                )}
+              >
+                {l}
+              </button>
+            ))}
           </div>
           <div className="overflow-auto flex-1 min-h-0 mt-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 p-1">
               {gridFilteredAccounts.map(acc => {
                 const order = gridSelectedIds.indexOf(acc.id);
                 const isSelected = order !== -1;
+                const isHidden = hiddenAccountIds.includes(acc.id);
                 return (
-                  <button
+                  <div
                     key={acc.id}
-                    onClick={() => toggleGridAccount(acc.id)}
                     className={cn(
-                      "relative border-2 rounded-lg p-3 text-right transition-all aspect-square flex flex-col justify-between",
+                      "relative border-2 rounded-lg p-3 text-right transition-all aspect-square flex flex-col justify-between cursor-pointer",
                       getAccountTypeColor(acc.type),
-                      isSelected && "ring-2 ring-teal-500 ring-offset-1 scale-[0.98] shadow-md"
+                      isSelected && "ring-2 ring-teal-500 ring-offset-1 scale-[0.98] shadow-md",
+                      isHidden && "opacity-60"
                     )}
+                    onClick={() => toggleGridAccount(acc.id)}
                   >
                     {isSelected && (
                       <span className="absolute top-1 left-1 h-6 w-6 rounded-full bg-teal-600 text-white text-xs font-bold flex items-center justify-center">
                         {order + 1}
                       </span>
                     )}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleHideAccount(acc.id); }}
+                      title={isHidden ? "إظهار" : "إخفاء"}
+                      className="absolute bottom-1 left-1 h-6 w-6 rounded-full bg-white/80 hover:bg-white border border-gray-300 flex items-center justify-center text-gray-600 hover:text-teal-700"
+                    >
+                      {isHidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    </button>
                     <div className="text-xs text-gray-500 font-mono">{acc.code}</div>
                     <div className="text-sm font-semibold text-gray-800 line-clamp-3">{acc.name_ar}</div>
                     <div className="text-[10px] text-gray-400 truncate">{acc.name_en}</div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
