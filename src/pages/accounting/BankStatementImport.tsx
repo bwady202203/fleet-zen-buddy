@@ -711,7 +711,6 @@ export default function BankStatementImport() {
                     const q = sidebarSearch.trim().toLowerCase();
                     if (!q) return true;
                     return (a.name_ar || '').toLowerCase().includes(q) ||
-                           (a.name || '').toLowerCase().includes(q) ||
                            (a.code || '').toLowerCase().includes(q);
                   })
                   .map(a => (
