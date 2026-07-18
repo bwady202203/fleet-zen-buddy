@@ -1069,7 +1069,7 @@ export default function BankStatementImport() {
                             </div>
                           )}
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-1.5 text-center">
                           <Button
                             variant="ghost"
                             size="icon"
