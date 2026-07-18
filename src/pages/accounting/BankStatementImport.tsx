@@ -667,7 +667,6 @@ export default function BankStatementImport() {
 
         {/* Parsed Data Table */}
         {parsedBankStatements.length > 0 && (
-          <Card className="overflow-hidden">
           <div className="flex gap-3" dir="rtl">
             {/* Accounts Sidebar */}
             <Card className="w-72 shrink-0 self-start sticky top-2 overflow-hidden flex flex-col max-h-[85vh]">
