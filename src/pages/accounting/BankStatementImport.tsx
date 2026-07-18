@@ -126,13 +126,19 @@ export default function BankStatementImport() {
     setShowAccountsGrid(false);
   };
 
-  const gridFilteredAccounts = gridSearch
-    ? accounts.filter(a =>
-        a.name_ar.includes(gridSearch) ||
-        a.code.includes(gridSearch) ||
-        a.name_en.toLowerCase().includes(gridSearch.toLowerCase())
-      )
-    : accounts;
+  const gridFilteredAccounts = accounts.filter(a => {
+    if (!showHidden && hiddenAccountIds.includes(a.id)) return false;
+    if (showHidden && !hiddenAccountIds.includes(a.id)) return false;
+    if (gridLetter) {
+      const first = normalizeAr(a.name_ar).charAt(0);
+      if (first !== gridLetter) return false;
+    }
+    if (gridSearch) {
+      const q = gridSearch.toLowerCase();
+      if (!a.name_ar.includes(gridSearch) && !a.code.includes(gridSearch) && !a.name_en.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   const startVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
