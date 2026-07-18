@@ -862,7 +862,7 @@ export default function BankStatementImport() {
                         </td>
                         <td
                           className={cn(
-                            "p-1.5 relative",
+                            "p-2 relative",
                             dragOverRow === index && "bg-blue-100 ring-2 ring-blue-400"
                           )}
                           onDragOver={(e) => {
