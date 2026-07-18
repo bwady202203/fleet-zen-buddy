@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Languages, Loader2, Check, X, Copy, Trash2, Search, Save, RefreshCcw, Mic, MicOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -65,6 +65,7 @@ export default function BankStatementImport() {
   const [quickCategory, setQuickCategory] = useState<string>('all');
   const [quickAccountIds, setQuickAccountIds] = useState<string[]>([]);
   const [sidebarSearch, setSidebarSearch] = useState<string>('');
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(false);
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
 
   const startVoiceSearch = () => {
