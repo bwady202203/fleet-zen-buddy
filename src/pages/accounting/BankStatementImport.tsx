@@ -192,8 +192,24 @@ export default function BankStatementImport() {
 
     let str = String(value).trim();
 
-    // Remove currency symbols and whitespace
-    str = str.replace(/[¤$\u20AC£¥\s]/g, "");
+    // Convert Arabic-Indic and Persian digits to Western digits
+    const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+    const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+    str = str.replace(/[٠-٩]/g, (d) => String(arabicDigits.indexOf(d)));
+    str = str.replace(/[۰-۹]/g, (d) => String(persianDigits.indexOf(d)));
+    // Arabic decimal & thousands separators
+    str = str.replace(/٫/g, ".").replace(/٬/g, ",");
+
+    // Handle parentheses as negative and trailing/leading minus
+    let negative = false;
+    if (/^\(.*\)$/.test(str)) { negative = true; str = str.slice(1, -1); }
+    if (str.endsWith("-")) { negative = true; str = str.slice(0, -1); }
+
+    // Remove currency symbols, RTL marks, and whitespace
+    str = str.replace(/[¤$\u20AC£¥\u200e\u200f\u202a-\u202e\s]/g, "");
+    str = str.replace(/ر\.?س\.?|SAR|ريال/gi, "");
+
+    if (!str) return 0;
 
     // Auto-detect format if not specified
     const lastComma = str.lastIndexOf(",");
@@ -202,16 +218,15 @@ export default function BankStatementImport() {
     const isCommaDecimal = useCommaDecimal ?? (lastComma > lastDot);
 
     if (isCommaDecimal) {
-      // Comma as decimal: 1.234,56
-      str = str.replace(/\./g, ""); // Remove thousand separators
-      str = str.replace(",", "."); // Convert decimal separator
+      str = str.replace(/\./g, "");
+      str = str.replace(",", ".");
     } else {
-      // Dot as decimal: 1,234.56
-      str = str.replace(/,/g, ""); // Remove thousand separators
+      str = str.replace(/,/g, "");
     }
 
     const parsed = parseFloat(str);
-    return isNaN(parsed) ? 0 : parsed;
+    if (isNaN(parsed)) return 0;
+    return negative ? -parsed : parsed;
   };
 
   // Helper to normalize column names for matching
