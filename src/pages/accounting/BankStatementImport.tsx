@@ -780,9 +780,9 @@ export default function BankStatementImport() {
                   <tr>
                     <th className="p-3 text-right border-b w-10">#</th>
                     <th className="p-3 text-right border-b w-28">التاريخ</th>
-                    <th className="p-3 text-left border-b w-32">مدين (خصم)</th>
-                    <th className="p-3 text-left border-b w-32">دائن (إيداع)</th>
-                    <th className="p-3 text-right border-b">التفاصيل</th>
+                    <th className="p-3 text-left border-b w-32">مدين</th>
+                    <th className="p-3 text-left border-b w-32">دائن</th>
+                    <th className="p-3 text-right border-b">الوصف</th>
                     <th className="p-3 text-right border-b w-56">الحساب</th>
                     <th className="p-3 text-center border-b w-12"></th>
                   </tr>
