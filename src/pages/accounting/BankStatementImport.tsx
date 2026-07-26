@@ -277,8 +277,8 @@ export default function BankStatementImport() {
     const headerLine = lines[0].split('\t');
     
     // Try to find column indices dynamically
-    let debitColIndex = findColumnIndex(headerLine, ['مبلغ الخصم', 'خصم', 'debit', 'withdrawal', 'مدين']);
-    let creditColIndex = findColumnIndex(headerLine, ['مبلغ الايداع', 'مبلغ الإيداع', 'ايداع', 'إيداع', 'credit', 'deposit', 'دائن']);
+    let debitColIndex = findColumnIndex(headerLine, ['مدين', 'المدين', 'مبلغ الخصم', 'خصم', 'debit', 'withdrawal']);
+    let creditColIndex = findColumnIndex(headerLine, ['دائن', 'الدائن', 'مبلغ الايداع', 'مبلغ الإيداع', 'ايداع', 'إيداع', 'credit', 'deposit']);
     let balanceColIndex = findColumnIndex(headerLine, ['الرصيد', 'رصيد', 'balance']);
     let descColIndex = findColumnIndex(headerLine, ['البيان', 'الوصف', 'تفاصيل', 'description', 'details']);
     let dateColIndex = findColumnIndex(headerLine, ['التاريخ', 'تاريخ', 'date']);
