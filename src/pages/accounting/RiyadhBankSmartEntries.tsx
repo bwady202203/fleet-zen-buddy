@@ -366,10 +366,10 @@ export default function RiyadhBankSmartEntries() {
         }
         lines.push({
           journal_entry_id: journalEntry.id,
-          account_id: RIYADH_BANK_ACCOUNT_ID,
+          account_id: creditAccountId,
           debit: 0,
           credit: groupTotal,
-          description: `تحويلات بنك الرياض - ${dateKey}`,
+          description: `تحويلات ${getAccount(creditAccountId)?.name_ar || "بنك الرياض"} - ${dateKey}`,
         });
 
         const { error: linesError } = await supabase.from("journal_entry_lines").insert(lines);
@@ -407,8 +407,17 @@ export default function RiyadhBankSmartEntries() {
             <div>
               <h1 className="text-xl font-bold">قيود بنك الرياض الذكية</h1>
               <p className="text-xs text-muted-foreground">
-                لصق مدفوعات بنك الرياض من إكسل وإنشاء قيد لكل تاريخ (الطرف الدائن: بنك الرياض)
+                لصق مدفوعات بنك الرياض من إكسل وإنشاء قيد لكل تاريخ
               </p>
+              <button
+                type="button"
+                onClick={() => { setCreditPickerOpen(true); setCreditSearch(""); }}
+                className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-1 rounded border bg-primary/5 hover:bg-primary/10"
+                title="تغيير الحساب الدائن الافتراضي"
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                الطرف الدائن: {getAccount(creditAccountId)?.name_ar || "بنك الرياض"}
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -474,6 +483,51 @@ export default function RiyadhBankSmartEntries() {
         )}
 
         {rows.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-amber-500" />
+                <span className="font-semibold text-sm">الحسابات الأكثر اختياراً</span>
+                <span className="text-xs text-muted-foreground">
+                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط على حقل الحساب في أي صف ثم اختر من هنا"}
+                </span>
+              </div>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
+                <Settings2 className="h-3.5 w-3.5 ml-1" /> تحديد الحسابات
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 max-h-[9.5rem] overflow-y-auto">
+              {favIds.map((id) => {
+                const a = getAccount(id);
+                if (!a) return null;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (focusedRow === null) {
+                        toast.error("اختر صفاً أولاً بالضغط على حقل الحساب");
+                        return;
+                      }
+                      setRowAccount(focusedRow, id);
+                    }}
+                    className="rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 px-2 py-2 text-right h-16 flex flex-col justify-center"
+                  >
+                    <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
+                    <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                  </button>
+                );
+              })}
+              {favIds.length === 0 && (
+                <div className="col-span-full text-xs text-muted-foreground py-2">
+                  لم يتم تحديد حسابات — اضغط "تحديد الحسابات"
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {rows.length > 0 && (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -505,16 +559,28 @@ export default function RiyadhBankSmartEntries() {
                             <button
                               type="button"
                               onClick={() => {
+                                setFocusedRow(index);
                                 setActiveRowIndex(activeRowIndex === index ? null : index);
                                 setAccountSearch("");
                               }}
                               className={cn(
                                 "flex-1 text-right px-2 py-1.5 rounded border text-xs",
-                                acc ? "bg-emerald-50 border-emerald-200" : "bg-background"
+                                acc ? "bg-emerald-50 border-emerald-200" : "bg-background",
+                                focusedRow === index && "ring-2 ring-primary"
                               )}
                             >
                               {acc ? `${acc.code} - ${acc.name_ar}` : "اختر الحساب..."}
                             </button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              title="نسخ الحساب لكل الصفوف التالية"
+                              disabled={!acc}
+                              onClick={() => copyAccountDown(index)}
+                            >
+                              <ArrowDownToLine className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="icon"
@@ -577,7 +643,7 @@ export default function RiyadhBankSmartEntries() {
                         </td>
                         <td className="p-2 text-xs font-mono">{row.reference}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
-                        <td className="p-2 text-xs text-muted-foreground">بنك الرياض</td>
+                        <td className="p-2 text-xs text-muted-foreground">{getAccount(creditAccountId)?.name_ar || "بنك الرياض"}</td>
                         <td className="p-2">
                           <Button
                             variant="ghost"
