@@ -457,20 +457,31 @@ export default function RiyadhBankSmartEntries() {
                         <td className="p-2 font-semibold">
                           {row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="p-2 relative min-w-[220px]">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveRowIndex(activeRowIndex === index ? null : index);
-                              setAccountSearch("");
-                            }}
-                            className={cn(
-                              "w-full text-right px-2 py-1.5 rounded border text-xs",
-                              acc ? "bg-emerald-50 border-emerald-200" : "bg-background"
-                            )}
-                          >
-                            {acc ? `${acc.code} - ${acc.name_ar}` : "اختر الحساب..."}
-                          </button>
+                        <td className="p-2 relative min-w-[240px]">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveRowIndex(activeRowIndex === index ? null : index);
+                                setAccountSearch("");
+                              }}
+                              className={cn(
+                                "flex-1 text-right px-2 py-1.5 rounded border text-xs",
+                                acc ? "bg-emerald-50 border-emerald-200" : "bg-background"
+                              )}
+                            >
+                              {acc ? `${acc.code} - ${acc.name_ar}` : "اختر الحساب..."}
+                            </button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              title="اختيار من شاشة المربعات"
+                              onClick={() => setGridRowIndex(index)}
+                            >
+                              <LayoutGrid className="h-4 w-4" />
+                            </Button>
+                          </div>
                           {activeRowIndex === index && (
                             <div className="absolute z-50 mt-1 w-80 max-h-72 overflow-hidden bg-popover border rounded-md shadow-lg flex flex-col">
                               <div className="p-2 border-b flex items-center gap-2 shrink-0">
