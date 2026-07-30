@@ -440,6 +440,7 @@ export default function RiyadhBankSmartEntries() {
                     <th className="p-2 text-right">إيداع الى</th>
                     <th className="p-2 text-right">المبلغ (مدين)</th>
                     <th className="p-2 text-right">الحساب المدين</th>
+                    <th className="p-2 text-right">الوصف</th>
                     <th className="p-2 text-right">رقم المرجع</th>
                     <th className="p-2 text-right">نوع الدفع</th>
                     <th className="p-2 text-right">الطرف الدائن</th>
