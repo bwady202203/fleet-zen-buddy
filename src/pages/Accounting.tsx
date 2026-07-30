@@ -281,6 +281,13 @@ const Accounting = () => {
       color: "from-teal-500 to-teal-600"
     },
     {
+      title: "قيود بنك الرياض الذكية",
+      description: "لصق مدفوعات بنك الرياض من إكسل وإنشاء قيد لكل تاريخ",
+      icon: Sparkles,
+      link: "/accounting/riyadh-bank-smart",
+      color: "from-blue-500 to-indigo-600"
+    },
+    {
       title: "طلبات التحويل",
       description: "إدارة وتسجيل طلبات التحويل المالية",
       icon: SendHorizontal,
