@@ -108,6 +108,11 @@ export default function RiyadhBankSmartEntries() {
   const [creditPickerOpen, setCreditPickerOpen] = useState(false);
   const [creditSearch, setCreditSearch] = useState("");
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
+  const copyClicksRef = useRef<Record<number, number>>({});
+
+  useEffect(() => {
+    copyClicksRef.current = {};
+  }, [rows.length]);
 
   useEffect(() => {
     try {
