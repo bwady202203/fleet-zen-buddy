@@ -554,6 +554,131 @@ export default function RiyadhBankSmartEntries() {
           </Card>
         )}
       </div>
+
+      {/* شاشة المربعات لاختيار الحساب */}
+      <Dialog open={gridRowIndex !== null} onOpenChange={(o) => !o && setGridRowIndex(null)}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">اختيار الحساب من المربعات</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-6 pl-1">
+            {TILE_GROUPS.map((g) => (
+              <div key={g.key}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-sm">
+                    {g.label}{" "}
+                    <span className="text-xs text-muted-foreground">({tileGroups[g.key].length})</span>
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setAddToGroup(g.key);
+                      setAddSearch("");
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5 ml-1" /> إضافة حساب
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {tileGroups[g.key].map((id, idx) => {
+                    const a = getAccount(id);
+                    if (!a) return null;
+                    return (
+                      <div
+                        key={id}
+                        draggable
+                        onDragStart={() => setDragInfo({ group: g.key, index: idx })}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          if (dragInfo && dragInfo.group === g.key) moveTile(g.key, dragInfo.index, idx);
+                          setDragInfo(null);
+                        }}
+                        className={cn(
+                          "relative group rounded-lg border p-2 text-right cursor-pointer transition-colors",
+                          g.color
+                        )}
+                        onClick={() => {
+                          if (gridRowIndex === null) return;
+                          setRows((prev) =>
+                            prev.map((r, i) => (i === gridRowIndex ? { ...r, selectedAccountId: id } : r))
+                          );
+                          setGridRowIndex(null);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 cursor-grab" />
+                          <button
+                            type="button"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTile(g.key, id);
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5 text-destructive" />
+                          </button>
+                        </div>
+                        <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
+                        <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                      </div>
+                    );
+                  })}
+                  {tileGroups[g.key].length === 0 && (
+                    <div className="col-span-full text-xs text-muted-foreground py-3">
+                      لا توجد حسابات — أضف حساباً من زر "إضافة حساب"
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* إضافة حساب إلى مجموعة */}
+      <Dialog open={addToGroup !== null} onOpenChange={(o) => !o && setAddToGroup(null)}>
+        <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">
+              إضافة حساب إلى {TILE_GROUPS.find((g) => g.key === addToGroup)?.label}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={addSearch}
+              onChange={(e) => setAddSearch(e.target.value)}
+              placeholder="بحث بالاسم أو الرقم..."
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-2 border rounded-md">
+            {accounts
+              .filter((a) => {
+                const q = normalizeAr(addSearch);
+                if (!q) return true;
+                return normalizeAr(a.name_ar).includes(q) || a.code.includes(addSearch);
+              })
+              .slice(0, 300)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => {
+                    if (addToGroup) addTile(addToGroup, a.id);
+                    setAddToGroup(null);
+                  }}
+                  className="w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0"
+                >
+                  <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
