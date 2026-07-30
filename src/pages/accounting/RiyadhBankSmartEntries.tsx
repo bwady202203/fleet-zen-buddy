@@ -144,8 +144,15 @@ export default function RiyadhBankSmartEntries() {
   const copyAccountDown = (index: number) => {
     const id = rows[index]?.selectedAccountId;
     if (!id) return;
-    setRows((prev) => prev.map((r, i) => (i > index ? { ...r, selectedAccountId: id } : r)));
-    toast.success("تم نسخ الحساب إلى كل الصفوف التالية");
+    const nextCount = (copyClicksRef.current[index] || 0) + 1;
+    const targetIndex = index + nextCount;
+    if (targetIndex >= rows.length) {
+      toast.error("لا يوجد صف تالي لنسخ الحساب إليه");
+      return;
+    }
+    copyClicksRef.current = { ...copyClicksRef.current, [index]: nextCount };
+    setRows((prev) => prev.map((r, i) => (i === targetIndex ? { ...r, selectedAccountId: id } : r)));
+    toast.success(`تم نسخ الحساب إلى الصف ${targetIndex + 1}`);
   };
 
   // تحميل/حفظ ترتيب المربعات
