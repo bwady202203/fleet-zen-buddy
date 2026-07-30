@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +108,11 @@ export default function RiyadhBankSmartEntries() {
   const [creditPickerOpen, setCreditPickerOpen] = useState(false);
   const [creditSearch, setCreditSearch] = useState("");
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
+  const copyClicksRef = useRef<Record<number, number>>({});
+
+  useEffect(() => {
+    copyClicksRef.current = {};
+  }, [rows.length]);
 
   useEffect(() => {
     try {
@@ -139,8 +144,15 @@ export default function RiyadhBankSmartEntries() {
   const copyAccountDown = (index: number) => {
     const id = rows[index]?.selectedAccountId;
     if (!id) return;
-    setRows((prev) => prev.map((r, i) => (i > index ? { ...r, selectedAccountId: id } : r)));
-    toast.success("تم نسخ الحساب إلى كل الصفوف التالية");
+    const nextCount = (copyClicksRef.current[index] || 0) + 1;
+    const targetIndex = index + nextCount;
+    if (targetIndex >= rows.length) {
+      toast.error("لا يوجد صف تالي لنسخ الحساب إليه");
+      return;
+    }
+    copyClicksRef.current = { ...copyClicksRef.current, [index]: nextCount };
+    setRows((prev) => prev.map((r, i) => (i === targetIndex ? { ...r, selectedAccountId: id } : r)));
+    toast.success(`تم نسخ الحساب إلى الصف ${targetIndex + 1}`);
   };
 
   // تحميل/حفظ ترتيب المربعات
@@ -574,8 +586,8 @@ export default function RiyadhBankSmartEntries() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7 shrink-0"
-                              title="نسخ الحساب لكل الصفوف التالية"
+                              className="h-7 w-7 shrink-0 relative"
+                              title="كل ضغطة تنسخ الحساب إلى الصف التالي (ليس كل الصفوف)"
                               disabled={!acc}
                               onClick={() => copyAccountDown(index)}
                             >
