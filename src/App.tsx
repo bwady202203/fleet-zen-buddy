@@ -53,6 +53,7 @@ import PurchaseOrder from "./pages/accounting/PurchaseOrder";
 import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
+import RiyadhBankSmartEntries from "./pages/accounting/RiyadhBankSmartEntries";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
