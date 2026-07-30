@@ -174,6 +174,7 @@ const App = () => {
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
+                                  <Route path="/accounting/riyadh-bank-smart" element={<RiyadhBankSmartEntries />} />
                                  <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
                                  <Route path="/accounting/bank-collection-receipt" element={<BankCollectionReceipt />} />
                                   <Route path="/hr" element={<HR />} />
