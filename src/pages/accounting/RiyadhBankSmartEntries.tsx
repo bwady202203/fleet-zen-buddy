@@ -318,7 +318,7 @@ export default function RiyadhBankSmartEntries() {
             account_id: r.selectedAccountId,
             debit: r.amount,
             credit: 0,
-            description: `${r.toName}${r.reference ? " - " + r.reference : ""}`,
+            description: r.description?.trim() || `${r.toName}${r.reference ? " - " + r.reference : ""}`,
           });
         }
         lines.push({
