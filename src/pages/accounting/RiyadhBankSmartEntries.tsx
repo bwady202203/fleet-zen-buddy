@@ -586,8 +586,8 @@ export default function RiyadhBankSmartEntries() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7 shrink-0"
-                              title="نسخ الحساب لكل الصفوف التالية"
+                              className="h-7 w-7 shrink-0 relative"
+                              title="كل ضغطة تنسخ الحساب إلى الصف التالي (ليس كل الصفوف)"
                               disabled={!acc}
                               onClick={() => copyAccountDown(index)}
                             >
