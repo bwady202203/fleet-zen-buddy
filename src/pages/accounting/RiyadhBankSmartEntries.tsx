@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,8 @@ const TILE_GROUPS: { key: TileGroupKey; label: string; color: string }[] = [
 ];
 
 const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
-
+const FAV_STORAGE_KEY = "riyadh_bank_fav_accounts_v1";
+const CREDIT_STORAGE_KEY = "riyadh_bank_credit_account_v1";
 
 // حساب بنك الرياض (الرمال)
 const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
@@ -99,6 +100,48 @@ export default function RiyadhBankSmartEntries() {
   const [addToGroup, setAddToGroup] = useState<TileGroupKey | null>(null);
   const [addSearch, setAddSearch] = useState("");
   const [dragInfo, setDragInfo] = useState<{ group: TileGroupKey; index: number } | null>(null);
+  // الحسابات الأكثر استخداماً + الحساب الدائن الافتراضي
+  const [favIds, setFavIds] = useState<string[]>([]);
+  const [favPickerOpen, setFavPickerOpen] = useState(false);
+  const [favSearch, setFavSearch] = useState("");
+  const [creditAccountId, setCreditAccountId] = useState<string>(RIYADH_BANK_ACCOUNT_ID);
+  const [creditPickerOpen, setCreditPickerOpen] = useState(false);
+  const [creditSearch, setCreditSearch] = useState("");
+  const [focusedRow, setFocusedRow] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const f = localStorage.getItem(FAV_STORAGE_KEY);
+      if (f) setFavIds(JSON.parse(f));
+      const c = localStorage.getItem(CREDIT_STORAGE_KEY);
+      if (c) setCreditAccountId(c);
+    } catch {
+      // تجاهل
+    }
+  }, []);
+
+  const toggleFav = (id: string) =>
+    setFavIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 16);
+      localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+
+  const chooseCreditAccount = (id: string) => {
+    setCreditAccountId(id);
+    localStorage.setItem(CREDIT_STORAGE_KEY, id);
+    setCreditPickerOpen(false);
+  };
+
+  const setRowAccount = (index: number, id: string) =>
+    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
+
+  const copyAccountDown = (index: number) => {
+    const id = rows[index]?.selectedAccountId;
+    if (!id) return;
+    setRows((prev) => prev.map((r, i) => (i > index ? { ...r, selectedAccountId: id } : r)));
+    toast.success("تم نسخ الحساب إلى كل الصفوف التالية");
+  };
 
   // تحميل/حفظ ترتيب المربعات
   useEffect(() => {
