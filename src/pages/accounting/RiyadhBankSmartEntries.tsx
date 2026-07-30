@@ -788,6 +788,82 @@ export default function RiyadhBankSmartEntries() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* تحديد الحسابات الأكثر اختياراً */}
+      <Dialog open={favPickerOpen} onOpenChange={setFavPickerOpen}>
+        <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">تحديد الحسابات الأكثر اختياراً ({favIds.length}/16)</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input autoFocus value={favSearch} onChange={(e) => setFavSearch(e.target.value)} placeholder="بحث بالاسم أو الرقم..." className="h-9 text-sm" />
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-2 border rounded-md">
+            {accounts
+              .filter((a) => {
+                const q = normalizeAr(favSearch);
+                if (!q) return true;
+                return normalizeAr(a.name_ar).includes(q) || a.code.includes(favSearch);
+              })
+              .slice(0, 300)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => toggleFav(a.id)}
+                  className={cn(
+                    "w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0 flex items-center justify-between",
+                    favIds.includes(a.id) && "bg-amber-50"
+                  )}
+                >
+                  <span>
+                    <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
+                  </span>
+                  {favIds.includes(a.id) && <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-400" />}
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* تحديد الحساب الدائن الافتراضي */}
+      <Dialog open={creditPickerOpen} onOpenChange={setCreditPickerOpen}>
+        <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">اختيار الحساب الدائن الافتراضي</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input autoFocus value={creditSearch} onChange={(e) => setCreditSearch(e.target.value)} placeholder="بحث بالاسم أو الرقم..." className="h-9 text-sm" />
+            <Button variant="outline" size="sm" className="h-9 text-xs shrink-0" onClick={() => chooseCreditAccount(RIYADH_BANK_ACCOUNT_ID)}>
+              بنك الرياض
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-2 border rounded-md">
+            {accounts
+              .filter((a) => {
+                const q = normalizeAr(creditSearch);
+                if (!q) return true;
+                return normalizeAr(a.name_ar).includes(q) || a.code.includes(creditSearch);
+              })
+              .slice(0, 300)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => chooseCreditAccount(a.id)}
+                  className={cn(
+                    "w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0",
+                    creditAccountId === a.id && "bg-emerald-50 font-semibold"
+                  )}
+                >
+                  <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
