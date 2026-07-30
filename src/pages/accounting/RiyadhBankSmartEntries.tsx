@@ -88,6 +88,66 @@ export default function RiyadhBankSmartEntries() {
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
   const [accountSearch, setAccountSearch] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  // شاشة المربعات
+  const [gridRowIndex, setGridRowIndex] = useState<number | null>(null);
+  const [tileGroups, setTileGroups] = useState<Record<TileGroupKey, string[]>>({
+    custody: [],
+    expenses: [],
+    other: [],
+  });
+  const [tilesReady, setTilesReady] = useState(false);
+  const [addToGroup, setAddToGroup] = useState<TileGroupKey | null>(null);
+  const [addSearch, setAddSearch] = useState("");
+  const [dragInfo, setDragInfo] = useState<{ group: TileGroupKey; index: number } | null>(null);
+
+  // تحميل/حفظ ترتيب المربعات
+  useEffect(() => {
+    if (!accounts.length || tilesReady) return;
+    const stored = localStorage.getItem(TILES_STORAGE_KEY);
+    const valid = (ids: string[]) => ids.filter((id) => accounts.some((a) => a.id === id));
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setTileGroups({
+          custody: valid(parsed.custody || []),
+          expenses: valid(parsed.expenses || []),
+          other: valid(parsed.other || []),
+        });
+        setTilesReady(true);
+        return;
+      } catch {
+        // تجاهل
+      }
+    }
+    setTileGroups({
+      custody: accounts.filter((a) => a.code.startsWith("1111")).map((a) => a.id),
+      expenses: accounts.filter((a) => a.type === "expense").slice(0, 40).map((a) => a.id),
+      other: [],
+    });
+    setTilesReady(true);
+  }, [accounts, tilesReady]);
+
+  useEffect(() => {
+    if (tilesReady) localStorage.setItem(TILES_STORAGE_KEY, JSON.stringify(tileGroups));
+  }, [tileGroups, tilesReady]);
+
+  const moveTile = (group: TileGroupKey, from: number, to: number) => {
+    setTileGroups((prev) => {
+      const list = [...prev[group]];
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+      return { ...prev, [group]: list };
+    });
+  };
+
+  const removeTile = (group: TileGroupKey, id: string) =>
+    setTileGroups((prev) => ({ ...prev, [group]: prev[group].filter((x) => x !== id) }));
+
+  const addTile = (group: TileGroupKey, id: string) =>
+    setTileGroups((prev) =>
+      prev[group].includes(id) ? prev : { ...prev, [group]: [...prev[group], id] }
+    );
+
 
   useEffect(() => {
     (async () => {
