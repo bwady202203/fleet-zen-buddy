@@ -156,6 +156,7 @@ export default function RiyadhBankSmartEntries() {
         currency: currency || "SAR",
         fromName,
         toName,
+        description: `${toName}${reference ? " - " + reference : ""}`,
         selectedAccountId: findAccountByName(toName),
       });
     }
