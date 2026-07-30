@@ -520,6 +520,18 @@ export default function RiyadhBankSmartEntries() {
                             </div>
                           )}
                         </td>
+                        <td className="p-2 min-w-[220px]">
+                          <Input
+                            value={row.description}
+                            onChange={(e) =>
+                              setRows((prev) =>
+                                prev.map((r, i) => (i === index ? { ...r, description: e.target.value } : r))
+                              )
+                            }
+                            placeholder="اكتب وصف القيد..."
+                            className="h-8 text-xs"
+                          />
+                        </td>
                         <td className="p-2 text-xs font-mono">{row.reference}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
                         <td className="p-2 text-xs text-muted-foreground">بنك الرياض</td>
