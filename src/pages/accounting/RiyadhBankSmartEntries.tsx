@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface Account {
@@ -27,8 +28,20 @@ interface PaymentRow {
   currency: string;
   fromName: string;
   toName: string;
+  description: string;
   selectedAccountId: string | null;
 }
+
+type TileGroupKey = "custody" | "expenses" | "other";
+
+const TILE_GROUPS: { key: TileGroupKey; label: string; color: string }[] = [
+  { key: "custody", label: "العهد", color: "bg-amber-50 border-amber-200 hover:bg-amber-100" },
+  { key: "expenses", label: "المصروفات", color: "bg-sky-50 border-sky-200 hover:bg-sky-100" },
+  { key: "other", label: "حسابات أخرى", color: "bg-emerald-50 border-emerald-200 hover:bg-emerald-100" },
+];
+
+const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
+
 
 // حساب بنك الرياض (الرمال)
 const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
@@ -75,6 +88,66 @@ export default function RiyadhBankSmartEntries() {
   const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
   const [accountSearch, setAccountSearch] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  // شاشة المربعات
+  const [gridRowIndex, setGridRowIndex] = useState<number | null>(null);
+  const [tileGroups, setTileGroups] = useState<Record<TileGroupKey, string[]>>({
+    custody: [],
+    expenses: [],
+    other: [],
+  });
+  const [tilesReady, setTilesReady] = useState(false);
+  const [addToGroup, setAddToGroup] = useState<TileGroupKey | null>(null);
+  const [addSearch, setAddSearch] = useState("");
+  const [dragInfo, setDragInfo] = useState<{ group: TileGroupKey; index: number } | null>(null);
+
+  // تحميل/حفظ ترتيب المربعات
+  useEffect(() => {
+    if (!accounts.length || tilesReady) return;
+    const stored = localStorage.getItem(TILES_STORAGE_KEY);
+    const valid = (ids: string[]) => ids.filter((id) => accounts.some((a) => a.id === id));
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setTileGroups({
+          custody: valid(parsed.custody || []),
+          expenses: valid(parsed.expenses || []),
+          other: valid(parsed.other || []),
+        });
+        setTilesReady(true);
+        return;
+      } catch {
+        // تجاهل
+      }
+    }
+    setTileGroups({
+      custody: accounts.filter((a) => a.code.startsWith("1111")).map((a) => a.id),
+      expenses: accounts.filter((a) => a.type === "expense").slice(0, 40).map((a) => a.id),
+      other: [],
+    });
+    setTilesReady(true);
+  }, [accounts, tilesReady]);
+
+  useEffect(() => {
+    if (tilesReady) localStorage.setItem(TILES_STORAGE_KEY, JSON.stringify(tileGroups));
+  }, [tileGroups, tilesReady]);
+
+  const moveTile = (group: TileGroupKey, from: number, to: number) => {
+    setTileGroups((prev) => {
+      const list = [...prev[group]];
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+      return { ...prev, [group]: list };
+    });
+  };
+
+  const removeTile = (group: TileGroupKey, id: string) =>
+    setTileGroups((prev) => ({ ...prev, [group]: prev[group].filter((x) => x !== id) }));
+
+  const addTile = (group: TileGroupKey, id: string) =>
+    setTileGroups((prev) =>
+      prev[group].includes(id) ? prev : { ...prev, [group]: [...prev[group], id] }
+    );
+
 
   useEffect(() => {
     (async () => {
@@ -143,6 +216,7 @@ export default function RiyadhBankSmartEntries() {
         currency: currency || "SAR",
         fromName,
         toName,
+        description: `${toName}${reference ? " - " + reference : ""}`,
         selectedAccountId: findAccountByName(toName),
       });
     }
@@ -244,7 +318,7 @@ export default function RiyadhBankSmartEntries() {
             account_id: r.selectedAccountId,
             debit: r.amount,
             credit: 0,
-            description: `${r.toName}${r.reference ? " - " + r.reference : ""}`,
+            description: r.description?.trim() || `${r.toName}${r.reference ? " - " + r.reference : ""}`,
           });
         }
         lines.push({
@@ -366,6 +440,7 @@ export default function RiyadhBankSmartEntries() {
                     <th className="p-2 text-right">إيداع الى</th>
                     <th className="p-2 text-right">المبلغ (مدين)</th>
                     <th className="p-2 text-right">الحساب المدين</th>
+                    <th className="p-2 text-right">الوصف</th>
                     <th className="p-2 text-right">رقم المرجع</th>
                     <th className="p-2 text-right">نوع الدفع</th>
                     <th className="p-2 text-right">الطرف الدائن</th>
@@ -382,20 +457,31 @@ export default function RiyadhBankSmartEntries() {
                         <td className="p-2 font-semibold">
                           {row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="p-2 relative min-w-[220px]">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveRowIndex(activeRowIndex === index ? null : index);
-                              setAccountSearch("");
-                            }}
-                            className={cn(
-                              "w-full text-right px-2 py-1.5 rounded border text-xs",
-                              acc ? "bg-emerald-50 border-emerald-200" : "bg-background"
-                            )}
-                          >
-                            {acc ? `${acc.code} - ${acc.name_ar}` : "اختر الحساب..."}
-                          </button>
+                        <td className="p-2 relative min-w-[240px]">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveRowIndex(activeRowIndex === index ? null : index);
+                                setAccountSearch("");
+                              }}
+                              className={cn(
+                                "flex-1 text-right px-2 py-1.5 rounded border text-xs",
+                                acc ? "bg-emerald-50 border-emerald-200" : "bg-background"
+                              )}
+                            >
+                              {acc ? `${acc.code} - ${acc.name_ar}` : "اختر الحساب..."}
+                            </button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              title="اختيار من شاشة المربعات"
+                              onClick={() => setGridRowIndex(index)}
+                            >
+                              <LayoutGrid className="h-4 w-4" />
+                            </Button>
+                          </div>
                           {activeRowIndex === index && (
                             <div className="absolute z-50 mt-1 w-80 max-h-72 overflow-hidden bg-popover border rounded-md shadow-lg flex flex-col">
                               <div className="p-2 border-b flex items-center gap-2 shrink-0">
@@ -434,6 +520,18 @@ export default function RiyadhBankSmartEntries() {
                             </div>
                           )}
                         </td>
+                        <td className="p-2 min-w-[220px]">
+                          <Input
+                            value={row.description}
+                            onChange={(e) =>
+                              setRows((prev) =>
+                                prev.map((r, i) => (i === index ? { ...r, description: e.target.value } : r))
+                              )
+                            }
+                            placeholder="اكتب وصف القيد..."
+                            className="h-8 text-xs"
+                          />
+                        </td>
                         <td className="p-2 text-xs font-mono">{row.reference}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
                         <td className="p-2 text-xs text-muted-foreground">بنك الرياض</td>
@@ -456,6 +554,131 @@ export default function RiyadhBankSmartEntries() {
           </Card>
         )}
       </div>
+
+      {/* شاشة المربعات لاختيار الحساب */}
+      <Dialog open={gridRowIndex !== null} onOpenChange={(o) => !o && setGridRowIndex(null)}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">اختيار الحساب من المربعات</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-6 pl-1">
+            {TILE_GROUPS.map((g) => (
+              <div key={g.key}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-sm">
+                    {g.label}{" "}
+                    <span className="text-xs text-muted-foreground">({tileGroups[g.key].length})</span>
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setAddToGroup(g.key);
+                      setAddSearch("");
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5 ml-1" /> إضافة حساب
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {tileGroups[g.key].map((id, idx) => {
+                    const a = getAccount(id);
+                    if (!a) return null;
+                    return (
+                      <div
+                        key={id}
+                        draggable
+                        onDragStart={() => setDragInfo({ group: g.key, index: idx })}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          if (dragInfo && dragInfo.group === g.key) moveTile(g.key, dragInfo.index, idx);
+                          setDragInfo(null);
+                        }}
+                        className={cn(
+                          "relative group rounded-lg border p-2 text-right cursor-pointer transition-colors",
+                          g.color
+                        )}
+                        onClick={() => {
+                          if (gridRowIndex === null) return;
+                          setRows((prev) =>
+                            prev.map((r, i) => (i === gridRowIndex ? { ...r, selectedAccountId: id } : r))
+                          );
+                          setGridRowIndex(null);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 cursor-grab" />
+                          <button
+                            type="button"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTile(g.key, id);
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5 text-destructive" />
+                          </button>
+                        </div>
+                        <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
+                        <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                      </div>
+                    );
+                  })}
+                  {tileGroups[g.key].length === 0 && (
+                    <div className="col-span-full text-xs text-muted-foreground py-3">
+                      لا توجد حسابات — أضف حساباً من زر "إضافة حساب"
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* إضافة حساب إلى مجموعة */}
+      <Dialog open={addToGroup !== null} onOpenChange={(o) => !o && setAddToGroup(null)}>
+        <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">
+              إضافة حساب إلى {TILE_GROUPS.find((g) => g.key === addToGroup)?.label}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={addSearch}
+              onChange={(e) => setAddSearch(e.target.value)}
+              placeholder="بحث بالاسم أو الرقم..."
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-2 border rounded-md">
+            {accounts
+              .filter((a) => {
+                const q = normalizeAr(addSearch);
+                if (!q) return true;
+                return normalizeAr(a.name_ar).includes(q) || a.code.includes(addSearch);
+              })
+              .slice(0, 300)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => {
+                    if (addToGroup) addTile(addToGroup, a.id);
+                    setAddToGroup(null);
+                  }}
+                  className="w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0"
+                >
+                  <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
