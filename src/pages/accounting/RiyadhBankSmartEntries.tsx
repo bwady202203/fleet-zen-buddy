@@ -28,8 +28,20 @@ interface PaymentRow {
   currency: string;
   fromName: string;
   toName: string;
+  description: string;
   selectedAccountId: string | null;
 }
+
+type TileGroupKey = "custody" | "expenses" | "other";
+
+const TILE_GROUPS: { key: TileGroupKey; label: string; color: string }[] = [
+  { key: "custody", label: "العهد", color: "bg-amber-50 border-amber-200 hover:bg-amber-100" },
+  { key: "expenses", label: "المصروفات", color: "bg-sky-50 border-sky-200 hover:bg-sky-100" },
+  { key: "other", label: "حسابات أخرى", color: "bg-emerald-50 border-emerald-200 hover:bg-emerald-100" },
+];
+
+const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
+
 
 // حساب بنك الرياض (الرمال)
 const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
