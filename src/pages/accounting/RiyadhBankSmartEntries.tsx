@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,8 @@ const TILE_GROUPS: { key: TileGroupKey; label: string; color: string }[] = [
 ];
 
 const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
-
+const FAV_STORAGE_KEY = "riyadh_bank_fav_accounts_v1";
+const CREDIT_STORAGE_KEY = "riyadh_bank_credit_account_v1";
 
 // حساب بنك الرياض (الرمال)
 const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
@@ -99,6 +100,48 @@ export default function RiyadhBankSmartEntries() {
   const [addToGroup, setAddToGroup] = useState<TileGroupKey | null>(null);
   const [addSearch, setAddSearch] = useState("");
   const [dragInfo, setDragInfo] = useState<{ group: TileGroupKey; index: number } | null>(null);
+  // الحسابات الأكثر استخداماً + الحساب الدائن الافتراضي
+  const [favIds, setFavIds] = useState<string[]>([]);
+  const [favPickerOpen, setFavPickerOpen] = useState(false);
+  const [favSearch, setFavSearch] = useState("");
+  const [creditAccountId, setCreditAccountId] = useState<string>(RIYADH_BANK_ACCOUNT_ID);
+  const [creditPickerOpen, setCreditPickerOpen] = useState(false);
+  const [creditSearch, setCreditSearch] = useState("");
+  const [focusedRow, setFocusedRow] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const f = localStorage.getItem(FAV_STORAGE_KEY);
+      if (f) setFavIds(JSON.parse(f));
+      const c = localStorage.getItem(CREDIT_STORAGE_KEY);
+      if (c) setCreditAccountId(c);
+    } catch {
+      // تجاهل
+    }
+  }, []);
+
+  const toggleFav = (id: string) =>
+    setFavIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 16);
+      localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+
+  const chooseCreditAccount = (id: string) => {
+    setCreditAccountId(id);
+    localStorage.setItem(CREDIT_STORAGE_KEY, id);
+    setCreditPickerOpen(false);
+  };
+
+  const setRowAccount = (index: number, id: string) =>
+    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
+
+  const copyAccountDown = (index: number) => {
+    const id = rows[index]?.selectedAccountId;
+    if (!id) return;
+    setRows((prev) => prev.map((r, i) => (i > index ? { ...r, selectedAccountId: id } : r)));
+    toast.success("تم نسخ الحساب إلى كل الصفوف التالية");
+  };
 
   // تحميل/حفظ ترتيب المربعات
   useEffect(() => {
@@ -323,10 +366,10 @@ export default function RiyadhBankSmartEntries() {
         }
         lines.push({
           journal_entry_id: journalEntry.id,
-          account_id: RIYADH_BANK_ACCOUNT_ID,
+          account_id: creditAccountId,
           debit: 0,
           credit: groupTotal,
-          description: `تحويلات بنك الرياض - ${dateKey}`,
+          description: `تحويلات ${getAccount(creditAccountId)?.name_ar || "بنك الرياض"} - ${dateKey}`,
         });
 
         const { error: linesError } = await supabase.from("journal_entry_lines").insert(lines);
@@ -364,8 +407,17 @@ export default function RiyadhBankSmartEntries() {
             <div>
               <h1 className="text-xl font-bold">قيود بنك الرياض الذكية</h1>
               <p className="text-xs text-muted-foreground">
-                لصق مدفوعات بنك الرياض من إكسل وإنشاء قيد لكل تاريخ (الطرف الدائن: بنك الرياض)
+                لصق مدفوعات بنك الرياض من إكسل وإنشاء قيد لكل تاريخ
               </p>
+              <button
+                type="button"
+                onClick={() => { setCreditPickerOpen(true); setCreditSearch(""); }}
+                className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-1 rounded border bg-primary/5 hover:bg-primary/10"
+                title="تغيير الحساب الدائن الافتراضي"
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                الطرف الدائن: {getAccount(creditAccountId)?.name_ar || "بنك الرياض"}
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -431,6 +483,51 @@ export default function RiyadhBankSmartEntries() {
         )}
 
         {rows.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-amber-500" />
+                <span className="font-semibold text-sm">الحسابات الأكثر اختياراً</span>
+                <span className="text-xs text-muted-foreground">
+                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط على حقل الحساب في أي صف ثم اختر من هنا"}
+                </span>
+              </div>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
+                <Settings2 className="h-3.5 w-3.5 ml-1" /> تحديد الحسابات
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 max-h-[9.5rem] overflow-y-auto">
+              {favIds.map((id) => {
+                const a = getAccount(id);
+                if (!a) return null;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (focusedRow === null) {
+                        toast.error("اختر صفاً أولاً بالضغط على حقل الحساب");
+                        return;
+                      }
+                      setRowAccount(focusedRow, id);
+                    }}
+                    className="rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 px-2 py-2 text-right h-16 flex flex-col justify-center"
+                  >
+                    <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
+                    <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                  </button>
+                );
+              })}
+              {favIds.length === 0 && (
+                <div className="col-span-full text-xs text-muted-foreground py-2">
+                  لم يتم تحديد حسابات — اضغط "تحديد الحسابات"
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {rows.length > 0 && (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -462,16 +559,28 @@ export default function RiyadhBankSmartEntries() {
                             <button
                               type="button"
                               onClick={() => {
+                                setFocusedRow(index);
                                 setActiveRowIndex(activeRowIndex === index ? null : index);
                                 setAccountSearch("");
                               }}
                               className={cn(
                                 "flex-1 text-right px-2 py-1.5 rounded border text-xs",
-                                acc ? "bg-emerald-50 border-emerald-200" : "bg-background"
+                                acc ? "bg-emerald-50 border-emerald-200" : "bg-background",
+                                focusedRow === index && "ring-2 ring-primary"
                               )}
                             >
                               {acc ? `${acc.code} - ${acc.name_ar}` : "اختر الحساب..."}
                             </button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              title="نسخ الحساب لكل الصفوف التالية"
+                              disabled={!acc}
+                              onClick={() => copyAccountDown(index)}
+                            >
+                              <ArrowDownToLine className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="icon"
@@ -534,7 +643,7 @@ export default function RiyadhBankSmartEntries() {
                         </td>
                         <td className="p-2 text-xs font-mono">{row.reference}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
-                        <td className="p-2 text-xs text-muted-foreground">بنك الرياض</td>
+                        <td className="p-2 text-xs text-muted-foreground">{getAccount(creditAccountId)?.name_ar || "بنك الرياض"}</td>
                         <td className="p-2">
                           <Button
                             variant="ghost"
@@ -672,6 +781,82 @@ export default function RiyadhBankSmartEntries() {
                     setAddToGroup(null);
                   }}
                   className="w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0"
+                >
+                  <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* تحديد الحسابات الأكثر اختياراً */}
+      <Dialog open={favPickerOpen} onOpenChange={setFavPickerOpen}>
+        <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">تحديد الحسابات الأكثر اختياراً ({favIds.length}/16)</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input autoFocus value={favSearch} onChange={(e) => setFavSearch(e.target.value)} placeholder="بحث بالاسم أو الرقم..." className="h-9 text-sm" />
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-2 border rounded-md">
+            {accounts
+              .filter((a) => {
+                const q = normalizeAr(favSearch);
+                if (!q) return true;
+                return normalizeAr(a.name_ar).includes(q) || a.code.includes(favSearch);
+              })
+              .slice(0, 300)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => toggleFav(a.id)}
+                  className={cn(
+                    "w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0 flex items-center justify-between",
+                    favIds.includes(a.id) && "bg-amber-50"
+                  )}
+                >
+                  <span>
+                    <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
+                  </span>
+                  {favIds.includes(a.id) && <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-400" />}
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* تحديد الحساب الدائن الافتراضي */}
+      <Dialog open={creditPickerOpen} onOpenChange={setCreditPickerOpen}>
+        <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">اختيار الحساب الدائن الافتراضي</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input autoFocus value={creditSearch} onChange={(e) => setCreditSearch(e.target.value)} placeholder="بحث بالاسم أو الرقم..." className="h-9 text-sm" />
+            <Button variant="outline" size="sm" className="h-9 text-xs shrink-0" onClick={() => chooseCreditAccount(RIYADH_BANK_ACCOUNT_ID)}>
+              بنك الرياض
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-2 border rounded-md">
+            {accounts
+              .filter((a) => {
+                const q = normalizeAr(creditSearch);
+                if (!q) return true;
+                return normalizeAr(a.name_ar).includes(q) || a.code.includes(creditSearch);
+              })
+              .slice(0, 300)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => chooseCreditAccount(a.id)}
+                  className={cn(
+                    "w-full text-right px-3 py-2 text-xs hover:bg-accent border-b last:border-0",
+                    creditAccountId === a.id && "bg-emerald-50 font-semibold"
+                  )}
                 >
                   <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
                 </button>
