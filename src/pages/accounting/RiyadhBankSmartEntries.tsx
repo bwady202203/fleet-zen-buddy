@@ -532,33 +532,67 @@ export default function RiyadhBankSmartEntries() {
                 <Star className="h-4 w-4 text-amber-500" />
                 <span className="font-semibold text-sm">الحسابات الأكثر اختياراً</span>
                 <span className="text-xs text-muted-foreground">
-                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط على حقل الحساب في أي صف ثم اختر من هنا"}
+                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط حساباً لإدراجه تلقائياً في أول صف فارغ"}
                 </span>
               </div>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
                 <Settings2 className="h-3.5 w-3.5 ml-1" /> تحديد الحسابات
               </Button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 max-h-[9.5rem] overflow-y-auto">
-              {favIds.map((id) => {
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 max-h-[19rem] overflow-y-auto">
+              {favIds.map((id, favIdx) => {
                 const a = getAccount(id);
                 if (!a) return null;
                 return (
-                  <button
+                  <div
                     key={id}
-                    type="button"
-                    onClick={() => {
-                      if (focusedRow === null) {
-                        toast.error("اختر صفاً أولاً بالضغط على حقل الحساب");
-                        return;
-                      }
-                      setRowAccount(focusedRow, id);
+                    draggable
+                    onDragStart={() => setFavDrag(favIdx)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (favDrag !== null) moveFav(favDrag, favIdx);
+                      setFavDrag(null);
                     }}
-                    className="rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 px-2 py-2 text-right h-16 flex flex-col justify-center"
+                    className={cn(
+                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-16",
+                      favDrag === favIdx && "opacity-50"
+                    )}
                   >
-                    <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
-                    <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => applyFavoriteAccount(id)}
+                      className="w-full h-full px-2 py-2 text-right flex flex-col justify-center"
+                    >
+                      <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
+                      <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                    </button>
+                    <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        title="تحريك لليمين"
+                        onClick={() => moveFav(favIdx, favIdx - 1)}
+                        className="rounded bg-white/90 border p-0.5 hover:bg-white"
+                      >
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title="تحريك لليسار"
+                        onClick={() => moveFav(favIdx, favIdx + 1)}
+                        className="rounded bg-white/90 border p-0.5 hover:bg-white rotate-180"
+                      >
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        title="حذف"
+                        onClick={() => removeFav(id)}
+                        className="rounded bg-white/90 border p-0.5 text-destructive hover:bg-white"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
               {favIds.length === 0 && (
@@ -567,6 +601,7 @@ export default function RiyadhBankSmartEntries() {
                 </div>
               )}
             </div>
+
           </Card>
         )}
 
