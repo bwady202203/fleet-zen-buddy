@@ -583,7 +583,7 @@ export default function RiyadhBankPaymentEntries() {
                 <Star className="h-4 w-4 text-amber-500" />
                 <span className="font-semibold text-sm">الحسابات الأكثر اختياراً</span>
                 <span className="text-xs text-muted-foreground">
-                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط على حقل الحساب في أي صف ثم اختر من هنا"}
+                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط حساباً لإدراجه تلقائياً في أول صف فارغ"}
                 </span>
               </div>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
