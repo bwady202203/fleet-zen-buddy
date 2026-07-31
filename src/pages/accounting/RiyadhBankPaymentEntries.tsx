@@ -280,29 +280,23 @@ export default function RiyadhBankPaymentEntries() {
     // نص ملتصق بدون Tab: استخراج العمليات عبر نمط (مبلغ · حالة · تاريخ · مرجع · رقم الحساب · نوع الخدمة · اسم المفوتر)
     if (parsed.length === 0) {
       const flat = rawData.replace(/\s+/g, " ");
-      const re = /([\d,]+\.\d{2})\s*(تمت[^\d]*?)\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*(TBC\d+?)(\d{13})\s*(.+?)(?=\s*[\d,]+\.\d{2}\s*تمت|$)/g;
+      const re = /([\d,]+\.\d{2})\s*(تمت[^\d]*?)\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*TBC(\d+)\s*(سداد المدفوعات الحكومية|مدفوعات سداد|سداد فواتير|تحويل)?\s*(.*?)(?=\s*[\d,]+\.\d{2}\s*تمت|$)/g;
       let m: RegExpExecArray | null;
       while ((m = re.exec(flat)) !== null) {
         const value = parseAmount(m[1]);
         if (!value) continue;
-        let rest = (m[6] || "").trim();
-        let payType = "";
-        for (const t of ["سداد المدفوعات الحكومية", "مدفوعات سداد", "سداد فواتير"]) {
-          if (rest.startsWith(t)) {
-            payType = t;
-            rest = rest.slice(t.length).trim();
-            break;
-          }
-        }
-        const toName = rest;
+        const digits = m[4] || "";
+        const accountNo = digits.length > 13 ? digits.slice(-13) : "";
+        const reference = "TBC" + (digits.length > 13 ? digits.slice(0, -13) : digits);
+        const toName = (m[6] || "").trim();
         parsed.push({
           payDate: normalizeDate(m[3]),
           status: (m[2] || "").trim(),
           amount: value,
-          reference: m[4],
-          payType,
+          reference,
+          payType: (m[5] || "").trim(),
           currency: "SAR",
-          fromName: m[5],
+          fromName: accountNo,
           toName,
           description: toName,
           selectedAccountId: findAccountByName(toName),
