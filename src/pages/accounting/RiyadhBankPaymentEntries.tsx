@@ -277,8 +277,41 @@ export default function RiyadhBankPaymentEntries() {
       });
     }
 
+    // نص ملتصق بدون Tab: استخراج العمليات عبر نمط (مبلغ · حالة · تاريخ · مرجع · رقم الحساب · نوع الخدمة · اسم المفوتر)
     if (parsed.length === 0) {
-      toast.error("تعذّر قراءة أي صف — تأكد من اللصق مباشرة من إكسل (مفصول بـ Tab)");
+      const flat = rawData.replace(/\s+/g, " ");
+      const re = /([\d,]+\.\d{2})\s*(تمت[^\d]*?)\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*(TBC\d+?)(\d{13})\s*(.+?)(?=\s*[\d,]+\.\d{2}\s*تمت|$)/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(flat)) !== null) {
+        const value = parseAmount(m[1]);
+        if (!value) continue;
+        let rest = (m[6] || "").trim();
+        let payType = "";
+        for (const t of ["سداد المدفوعات الحكومية", "مدفوعات سداد", "سداد فواتير"]) {
+          if (rest.startsWith(t)) {
+            payType = t;
+            rest = rest.slice(t.length).trim();
+            break;
+          }
+        }
+        const toName = rest;
+        parsed.push({
+          payDate: normalizeDate(m[3]),
+          status: (m[2] || "").trim(),
+          amount: value,
+          reference: m[4],
+          payType,
+          currency: "SAR",
+          fromName: m[5],
+          toName,
+          description: toName,
+          selectedAccountId: findAccountByName(toName),
+        });
+      }
+    }
+
+    if (parsed.length === 0) {
+      toast.error("تعذّر قراءة أي صف — الصق البيانات من إكسل أو من كشف البنك مباشرة");
       return;
     }
 
