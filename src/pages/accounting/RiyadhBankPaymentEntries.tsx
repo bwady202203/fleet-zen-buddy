@@ -579,13 +579,14 @@ export default function RiyadhBankPaymentEntries() {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="p-2 text-right">التاريخ</th>
-                    <th className="p-2 text-right">اسم المفوتر</th>
                     <th className="p-2 text-right">المبلغ (مدين)</th>
-                    <th className="p-2 text-right">الحساب المدين</th>
+                    <th className="p-2 text-right">الحالة</th>
+                    <th className="p-2 text-right">التاريخ</th>
                     <th className="p-2 text-right">رقم المرجع</th>
+                    <th className="p-2 text-right">رقم الحساب</th>
                     <th className="p-2 text-right">نوع الخدمة</th>
-                    <th className="p-2 text-right">من</th>
+                    <th className="p-2 text-right">اسم المفوتر</th>
+                    <th className="p-2 text-right">الحساب المدين</th>
                     <th className="p-2 text-right">الطرف الدائن</th>
                     <th className="p-2"></th>
                   </tr>
@@ -595,11 +596,15 @@ export default function RiyadhBankPaymentEntries() {
                     const acc = getAccount(row.selectedAccountId);
                     return (
                       <tr key={index} className="border-t hover:bg-muted/40">
-                        <td className="p-2 whitespace-nowrap">{row.payDate}</td>
-                        <td className="p-2">{row.toName}</td>
-                        <td className="p-2 font-semibold">
+                        <td className="p-2 font-semibold whitespace-nowrap">
                           {row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
+                        <td className="p-2 text-xs">{row.status}</td>
+                        <td className="p-2 whitespace-nowrap">{row.payDate}</td>
+                        <td className="p-2 text-xs font-mono">{row.reference}</td>
+                        <td className="p-2 text-xs font-mono">{row.fromName}</td>
+                        <td className="p-2 text-xs">{row.payType}</td>
+                        <td className="p-2">{row.toName}</td>
                         <td className="p-2 relative min-w-[240px]">
                           <div className="flex items-center gap-1">
                             <button
@@ -675,9 +680,6 @@ export default function RiyadhBankPaymentEntries() {
                             </div>
                           )}
                         </td>
-                        <td className="p-2 text-xs font-mono">{row.reference}</td>
-                        <td className="p-2 text-xs">{row.payType}</td>
-                        <td className="p-2 text-xs">{row.fromName}</td>
                         <td className="p-2 text-xs text-muted-foreground">{getAccount(creditAccountId)?.name_ar || "بنك الرياض"}</td>
                         <td className="p-2">
                           <Button
