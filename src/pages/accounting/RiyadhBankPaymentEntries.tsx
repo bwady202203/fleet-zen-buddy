@@ -645,7 +645,7 @@ export default function RiyadhBankPaymentEntries() {
         )}
 
         {rows.length > 0 && (
-          <Card className="p-3 sticky top-2 z-30 shadow-md bg-background/95 backdrop-blur">
+          <Card className="p-3 sticky top-0 z-40 shadow-lg bg-background border-b">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Star className="h-3.5 w-3.5 text-amber-500" />
