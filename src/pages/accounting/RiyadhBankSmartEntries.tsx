@@ -43,6 +43,12 @@ const TILE_GROUPS: { key: TileGroupKey; label: string; color: string }[] = [
 const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
 const FAV_STORAGE_KEY = "riyadh_bank_fav_accounts_v1";
 const CREDIT_STORAGE_KEY = "riyadh_bank_credit_account_v1";
+const FAV_SETS_STORAGE_KEY = "riyadh_bank_fav_sets_v1";
+
+interface FavSet {
+  name: string;
+  ids: string[];
+}
 
 // حساب بنك الرياض (الرمال)
 const RIYADH_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
