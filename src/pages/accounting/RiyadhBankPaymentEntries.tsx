@@ -126,12 +126,27 @@ export default function RiyadhBankPaymentEntries() {
     }
   }, []);
 
+  const persistFavs = (next: string[]) => {
+    localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
+    return next;
+  };
+
   const toggleFav = (id: string) =>
+    setFavIds((prev) =>
+      persistFavs(prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 32))
+    );
+
+  const removeFav = (id: string) => setFavIds((prev) => persistFavs(prev.filter((x) => x !== id)));
+
+  const moveFav = (from: number, to: number) =>
     setFavIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 16);
-      localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
-      return next;
+      if (to < 0 || to >= prev.length || from === to) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return persistFavs(next);
     });
+
 
   const chooseCreditAccount = (id: string) => {
     setCreditAccountId(id);
