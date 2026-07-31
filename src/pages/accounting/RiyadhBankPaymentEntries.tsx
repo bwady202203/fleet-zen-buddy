@@ -600,7 +600,7 @@ export default function RiyadhBankPaymentEntries() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, index) => {
+                  {sortedRows.map((row, index) => {
                     const acc = getAccount(row.selectedAccountId);
                     return (
                       <tr key={index} className="border-t hover:bg-muted/40">
