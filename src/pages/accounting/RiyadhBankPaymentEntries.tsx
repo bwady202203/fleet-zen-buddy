@@ -550,7 +550,6 @@ export default function RiyadhBankPaymentEntries() {
                     <th className="p-2 text-right">اسم المفوتر</th>
                     <th className="p-2 text-right">المبلغ (مدين)</th>
                     <th className="p-2 text-right">الحساب المدين</th>
-                    <th className="p-2 text-right">الوصف</th>
                     <th className="p-2 text-right">رقم المرجع</th>
                     <th className="p-2 text-right">نوع الخدمة</th>
                     <th className="p-2 text-right">من</th>
@@ -642,18 +641,6 @@ export default function RiyadhBankPaymentEntries() {
                               </div>
                             </div>
                           )}
-                        </td>
-                        <td className="p-2 min-w-[220px]">
-                          <Input
-                            value={row.description}
-                            onChange={(e) =>
-                              setRows((prev) =>
-                                prev.map((r, i) => (i === index ? { ...r, description: e.target.value } : r))
-                              )
-                            }
-                            placeholder="اكتب وصف القيد..."
-                            className="h-8 text-xs"
-                          />
                         </td>
                         <td className="p-2 text-xs font-mono">{row.reference}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
