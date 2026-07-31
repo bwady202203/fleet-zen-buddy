@@ -596,12 +596,15 @@ export default function RiyadhBankPaymentEntries() {
                     const acc = getAccount(row.selectedAccountId);
                     return (
                       <tr key={index} className="border-t hover:bg-muted/40">
-                        <td className="p-2 whitespace-nowrap">{row.payDate}</td>
-                        <td className="p-2">{row.toName}</td>
-                        <td className="p-2 font-semibold">
+                        <td className="p-2 font-semibold whitespace-nowrap">
                           {row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="p-2 relative min-w-[240px]">
+                        <td className="p-2 text-xs">{row.status}</td>
+                        <td className="p-2 whitespace-nowrap">{row.payDate}</td>
+                        <td className="p-2 text-xs font-mono">{row.reference}</td>
+                        <td className="p-2 text-xs font-mono">{row.fromName}</td>
+                        <td className="p-2 text-xs">{row.payType}</td>
+                        <td className="p-2">{row.toName}</td>
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
