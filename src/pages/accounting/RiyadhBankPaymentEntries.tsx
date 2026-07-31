@@ -142,6 +142,31 @@ export default function RiyadhBankPaymentEntries() {
   const setRowAccount = (index: number, id: string) =>
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
 
+  const applyFavoriteAccount = (id: string) => {
+    const sortedToOriginal = sortedRows.map((sr) => rows.findIndex((r) => r === sr));
+
+    let currentSortedIdx = focusedRow !== null ? sortedToOriginal.indexOf(focusedRow) : -1;
+    if (currentSortedIdx === -1 || sortedRows[currentSortedIdx]?.selectedAccountId) {
+      currentSortedIdx = sortedRows.findIndex((r) => !r.selectedAccountId);
+    }
+
+    if (currentSortedIdx === -1) {
+      toast.error("لا يوجد صف فارغ لإدراج الحساب");
+      return;
+    }
+
+    const originalIdx = sortedToOriginal[currentSortedIdx];
+    setRowAccount(originalIdx, id);
+
+    const nextEmpty = sortedRows.findIndex((r, i) => i > currentSortedIdx && !r.selectedAccountId);
+    if (nextEmpty !== -1) {
+      setFocusedRow(sortedToOriginal[nextEmpty]);
+    } else {
+      const nextIdx = currentSortedIdx + 1;
+      setFocusedRow(nextIdx < sortedRows.length ? sortedToOriginal[nextIdx] : null);
+    }
+  };
+
   const copyAccountDown = (index: number) => {
     const id = rows[index]?.selectedAccountId;
     if (!id) return;
@@ -558,7 +583,7 @@ export default function RiyadhBankPaymentEntries() {
                 <Star className="h-4 w-4 text-amber-500" />
                 <span className="font-semibold text-sm">الحسابات الأكثر اختياراً</span>
                 <span className="text-xs text-muted-foreground">
-                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط على حقل الحساب في أي صف ثم اختر من هنا"}
+                  {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط حساباً لإدراجه تلقائياً في أول صف فارغ"}
                 </span>
               </div>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
@@ -573,13 +598,7 @@ export default function RiyadhBankPaymentEntries() {
                   <button
                     key={id}
                     type="button"
-                    onClick={() => {
-                      if (focusedRow === null) {
-                        toast.error("اختر صفاً أولاً بالضغط على حقل الحساب");
-                        return;
-                      }
-                      setRowAccount(focusedRow, id);
-                    }}
+                    onClick={() => applyFavoriteAccount(id)}
                     className="rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 px-2 py-2 text-right h-16 flex flex-col justify-center"
                   >
                     <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
