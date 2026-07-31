@@ -407,7 +407,7 @@ export default function RiyadhBankPaymentEntries() {
             account_id: r.selectedAccountId,
             debit: r.amount,
             credit: 0,
-            description: r.toName?.trim() || r.description?.trim() || "",
+            description: r.description?.trim() || r.toName?.trim() || "",
           });
         }
         lines.push({
