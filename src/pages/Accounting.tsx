@@ -288,6 +288,13 @@ const Accounting = () => {
       color: "from-blue-500 to-indigo-600"
     },
     {
+      title: "قيود بنك الرياض للسداد",
+      description: "لصق عمليات السداد من بنك الرياض وإنشاء قيد لكل تاريخ",
+      icon: Sparkles,
+      link: "/accounting/riyadh-bank-payment",
+      color: "from-indigo-500 to-purple-600"
+    },
+    {
       title: "طلبات التحويل",
       description: "إدارة وتسجيل طلبات التحويل المالية",
       icon: SendHorizontal,

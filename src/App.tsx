@@ -54,6 +54,7 @@ import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
 import RiyadhBankSmartEntries from "./pages/accounting/RiyadhBankSmartEntries";
+import RiyadhBankPaymentEntries from "./pages/accounting/RiyadhBankPaymentEntries";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
@@ -176,6 +177,7 @@ const App = () => {
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
                                   <Route path="/accounting/riyadh-bank-smart" element={<RiyadhBankSmartEntries />} />
+                                  <Route path="/accounting/riyadh-bank-payment" element={<RiyadhBankPaymentEntries />} />
                                  <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
                                  <Route path="/accounting/bank-collection-receipt" element={<BankCollectionReceipt />} />
                                   <Route path="/hr" element={<HR />} />
