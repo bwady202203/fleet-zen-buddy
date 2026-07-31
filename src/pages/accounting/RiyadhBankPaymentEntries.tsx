@@ -512,9 +512,25 @@ export default function RiyadhBankPaymentEntries() {
 
         {dateGroups.length > 0 && (
           <Card className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarDays className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-sm">ملخص القيود حسب التاريخ</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">ملخص القيود حسب التاريخ</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={() => setSortDir((prev) => (prev === "asc" ? "desc" : "asc"))}
+                title={sortDir === "asc" ? "الأقدم أولاً" : "الأحدث أولاً"}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {sortDir === "asc" ? (
+                  <><ArrowUp className="h-3 w-3" /> تصاعدي</>
+                ) : (
+                  <><ArrowDown className="h-3 w-3" /> تنازلي</>
+                )}
+              </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {dateGroups.map((g) => (
