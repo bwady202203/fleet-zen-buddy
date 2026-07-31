@@ -108,6 +108,7 @@ export default function RiyadhBankPaymentEntries() {
   const [creditPickerOpen, setCreditPickerOpen] = useState(false);
   const [creditSearch, setCreditSearch] = useState("");
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const copyClicksRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
