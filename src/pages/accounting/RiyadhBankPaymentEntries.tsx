@@ -272,7 +272,7 @@ export default function RiyadhBankPaymentEntries() {
         currency: currency || "SAR",
         fromName,
         toName,
-        description: `${toName}${reference ? " - " + reference : ""}`,
+        description: toName,
         selectedAccountId: findAccountByName(toName),
       });
     }
@@ -374,7 +374,7 @@ export default function RiyadhBankPaymentEntries() {
             account_id: r.selectedAccountId,
             debit: r.amount,
             credit: 0,
-            description: r.description?.trim() || `${r.toName}${r.reference ? " - " + r.reference : ""}`,
+            description: r.toName?.trim() || r.description?.trim() || "",
           });
         }
         lines.push({
