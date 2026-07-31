@@ -689,6 +689,27 @@ export default function RiyadhBankSmartEntries() {
           </Card>
         )}
 
+        <Dialog open={saveSetOpen} onOpenChange={setSaveSetOpen}>
+          <DialogContent dir="rtl" className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base">حفظ مجموعة الحسابات</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                placeholder="اسم المجموعة (مثال: مصروفات شهرية)"
+                value={newSetName}
+                onChange={(e) => setNewSetName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveCurrentAsSet()}
+              />
+              <div className="text-xs text-muted-foreground">سيتم حفظ {favIds.length} حساباً بالترتيب الحالي</div>
+              <Button className="w-full" onClick={saveCurrentAsSet}>
+                <Save className="h-4 w-4 ml-2" /> حفظ
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
         {rows.length > 0 && (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
