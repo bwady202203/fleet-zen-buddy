@@ -599,12 +599,7 @@ export default function RiyadhBankPaymentEntries() {
                     key={id}
                     type="button"
                     onClick={() => applyFavoriteAccount(id)}
-                    className={cn(
-                      "rounded-md border px-2 py-2 text-right h-16 flex flex-col justify-center transition-colors",
-                      focusedRow !== null && !sortedRows[sortedRows.map((sr) => rows.findIndex((r) => r === sr)).indexOf(focusedRow)]?.selectedAccountId
-                        ? "bg-sky-100 border-sky-300 ring-1 ring-sky-300"
-                        : "bg-sky-50 hover:bg-sky-100 border-sky-200"
-                    )}
+                    className="rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 px-2 py-2 text-right h-16 flex flex-col justify-center"
                   >
                     <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
                     <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
