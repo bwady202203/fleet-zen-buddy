@@ -606,6 +606,18 @@ export default function RiyadhBankPaymentEntries() {
                         <td className="p-2 text-xs font-mono">{row.fromName}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
                         <td className="p-2">{row.toName}</td>
+                        <td className="p-2 min-w-[200px]">
+                          <Input
+                            value={row.description}
+                            onChange={(e) =>
+                              setRows((prev) =>
+                                prev.map((r, i) => (i === index ? { ...r, description: e.target.value } : r))
+                              )
+                            }
+                            className="h-8 text-xs"
+                            placeholder="الوصف"
+                          />
+                        </td>
                         <td className="p-2 relative min-w-[240px]">
                           <div className="flex items-center gap-1">
                             <button
