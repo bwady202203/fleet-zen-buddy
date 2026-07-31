@@ -248,7 +248,8 @@ export default function RiyadhBankPaymentEntries() {
       // تخطي صف العناوين
       if (cells[0].includes("تاريخ")) continue;
 
-      const [payDate, status, amount, reference, payType, currency, fromName, toName] = [
+      // الترتيب: المبلغ · الحالة · التاريخ · رقم المرجع · من · نوع الخدمة · اسم المفوتر
+      const [amount, status, payDate, reference, fromName, payType, toName] = [
         cells[0] || "",
         cells[1] || "",
         cells[2] || "",
@@ -256,8 +257,8 @@ export default function RiyadhBankPaymentEntries() {
         cells[4] || "",
         cells[5] || "",
         cells[6] || "",
-        cells[7] || "",
       ];
+      const currency = "SAR";
 
       const value = parseAmount(amount);
       if (!value) continue;
