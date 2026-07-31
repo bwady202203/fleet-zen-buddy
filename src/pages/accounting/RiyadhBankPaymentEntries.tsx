@@ -246,7 +246,7 @@ export default function RiyadhBankPaymentEntries() {
       const cells = line.split("\t").map((c) => c.trim());
       if (cells.length < 3) continue;
       // تخطي صف العناوين
-      if (cells[0].includes("تاريخ")) continue;
+      if (cells[0].includes("المبلغ") || cells[0].includes("مبلغ")) continue;
 
       // الترتيب: المبلغ · الحالة · التاريخ · رقم المرجع · من · نوع الخدمة · اسم المفوتر
       const [amount, status, payDate, reference, fromName, payType, toName] = [
@@ -420,7 +420,7 @@ export default function RiyadhBankPaymentEntries() {
             <div>
               <h1 className="text-xl font-bold">قيود بنك الرياض للسداد</h1>
               <p className="text-xs text-muted-foreground">
-                لصق مدفوعات بنك الرياض من إكسل وإنشاء قيد لكل تاريخ
+                لصق عمليات السداد من بنك الرياض وإنشاء قيد لكل تاريخ
               </p>
               <button
                 type="button"
@@ -453,13 +453,13 @@ export default function RiyadhBankPaymentEntries() {
             <Wand2 className="h-4 w-4 text-primary" />
             <span className="font-semibold text-sm">الصق البيانات من إكسل</span>
             <span className="text-xs text-muted-foreground">
-              (تاريخ الدفع · الحالة · المبلغ · رقم المرجع · نوع الدفع · العملة · الخصم من · إيداع الى)
+              (المبلغ · الحالة · التاريخ · رقم المرجع · من · نوع الخدمة · اسم المفوتر)
             </span>
           </div>
           <textarea
             value={rawData}
             onChange={(e) => setRawData(e.target.value)}
-            placeholder={"30-07-2026\tتمت المعالجة عن طريق البنك\t200\tTBC2607301714686\tداخل بنك الرياض\tSAR\tNAJI ALJOHANI\tعمر محمد عمر ابراهيم"}
+            placeholder={"200.00\tتمت المعالجة\t30-07-2026\tTBC2607301714686\tحساب جاري 1234\tسداد فواتير\tشركة الكهرباء"}
             className="w-full h-36 p-3 border rounded-md text-sm font-mono bg-background"
             dir="rtl"
           />
@@ -547,12 +547,13 @@ export default function RiyadhBankPaymentEntries() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="p-2 text-right">التاريخ</th>
-                    <th className="p-2 text-right">إيداع الى</th>
+                    <th className="p-2 text-right">اسم المفوتر</th>
                     <th className="p-2 text-right">المبلغ (مدين)</th>
                     <th className="p-2 text-right">الحساب المدين</th>
                     <th className="p-2 text-right">الوصف</th>
                     <th className="p-2 text-right">رقم المرجع</th>
-                    <th className="p-2 text-right">نوع الدفع</th>
+                    <th className="p-2 text-right">نوع الخدمة</th>
+                    <th className="p-2 text-right">من</th>
                     <th className="p-2 text-right">الطرف الدائن</th>
                     <th className="p-2"></th>
                   </tr>
@@ -656,6 +657,7 @@ export default function RiyadhBankPaymentEntries() {
                         </td>
                         <td className="p-2 text-xs font-mono">{row.reference}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
+                        <td className="p-2 text-xs">{row.fromName}</td>
                         <td className="p-2 text-xs text-muted-foreground">{getAccount(creditAccountId)?.name_ar || "بنك الرياض"}</td>
                         <td className="p-2">
                           <Button
