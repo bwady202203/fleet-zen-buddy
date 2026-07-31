@@ -249,15 +249,21 @@ export default function RiyadhBankPaymentEntries() {
       if (cells[0].includes("المبلغ") || cells[0].includes("مبلغ")) continue;
 
       // الترتيب: المبلغ · الحالة · التاريخ · رقم المرجع · من · نوع الخدمة · اسم المفوتر
-      const [amount, status, payDate, reference, fromName, payType, toName] = [
-        cells[0] || "",
-        cells[1] || "",
-        cells[2] || "",
-        cells[3] || "",
-        cells[4] || "",
-        cells[5] || "",
-        cells[6] || "",
-      ];
+      const amount = cells[0] || "";
+      const status = cells[1] || "";
+      const payDate = cells[2] || "";
+      const reference = cells[3] || "";
+      const fromName = cells[4] || "";
+      let payType = cells[5] || "";
+      let toName = cells[6] || "";
+
+      // أحياناً تختلف عدد الأعمدة: اعتمد آخر خلية نصية عربية كاسم المفوتر
+      const isNumeric = (v: string) => !v || /^[\d,.\s/-]+$/.test(v);
+      if (isNumeric(toName)) {
+        const textCells = cells.filter((c) => c && !isNumeric(c) && !c.startsWith("TBC") && !c.includes("تمت"));
+        toName = textCells[textCells.length - 1] || toName;
+        if (!payType || isNumeric(payType)) payType = textCells[textCells.length - 2] || payType;
+      }
       const currency = "SAR";
 
       const value = parseAmount(amount);
