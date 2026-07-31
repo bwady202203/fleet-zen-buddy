@@ -579,13 +579,14 @@ export default function RiyadhBankPaymentEntries() {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="p-2 text-right">التاريخ</th>
-                    <th className="p-2 text-right">اسم المفوتر</th>
                     <th className="p-2 text-right">المبلغ (مدين)</th>
-                    <th className="p-2 text-right">الحساب المدين</th>
+                    <th className="p-2 text-right">الحالة</th>
+                    <th className="p-2 text-right">التاريخ</th>
                     <th className="p-2 text-right">رقم المرجع</th>
+                    <th className="p-2 text-right">رقم الحساب</th>
                     <th className="p-2 text-right">نوع الخدمة</th>
-                    <th className="p-2 text-right">من</th>
+                    <th className="p-2 text-right">اسم المفوتر</th>
+                    <th className="p-2 text-right">الحساب المدين</th>
                     <th className="p-2 text-right">الطرف الدائن</th>
                     <th className="p-2"></th>
                   </tr>
