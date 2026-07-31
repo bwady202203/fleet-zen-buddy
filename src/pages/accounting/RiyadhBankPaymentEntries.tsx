@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2 } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +108,7 @@ export default function RiyadhBankPaymentEntries() {
   const [creditPickerOpen, setCreditPickerOpen] = useState(false);
   const [creditSearch, setCreditSearch] = useState("");
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const copyClicksRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
@@ -344,8 +345,14 @@ export default function RiyadhBankPaymentEntries() {
     }
     return Array.from(map.entries())
       .map(([date, v]) => ({ date, ...v }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [rows]);
+      .sort((a, b) => (sortDir === "asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
+  }, [rows, sortDir]);
+
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) =>
+      sortDir === "asc" ? a.payDate.localeCompare(b.payDate) : b.payDate.localeCompare(a.payDate)
+    );
+  }, [rows, sortDir]);
 
   const totalAmount = rows.reduce((s, r) => s + r.amount, 0);
   const selectedCount = rows.filter((r) => r.selectedAccountId).length;
@@ -505,9 +512,25 @@ export default function RiyadhBankPaymentEntries() {
 
         {dateGroups.length > 0 && (
           <Card className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarDays className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-sm">ملخص القيود حسب التاريخ</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">ملخص القيود حسب التاريخ</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={() => setSortDir((prev) => (prev === "asc" ? "desc" : "asc"))}
+                title={sortDir === "asc" ? "الأقدم أولاً" : "الأحدث أولاً"}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {sortDir === "asc" ? (
+                  <><ArrowUp className="h-3 w-3" /> تصاعدي</>
+                ) : (
+                  <><ArrowDown className="h-3 w-3" /> تنازلي</>
+                )}
+              </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {dateGroups.map((g) => (
@@ -593,7 +616,7 @@ export default function RiyadhBankPaymentEntries() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, index) => {
+                  {sortedRows.map((row, index) => {
                     const acc = getAccount(row.selectedAccountId);
                     return (
                       <tr key={index} className="border-t hover:bg-muted/40">
