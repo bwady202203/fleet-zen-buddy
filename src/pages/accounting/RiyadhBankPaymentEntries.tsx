@@ -605,6 +605,7 @@ export default function RiyadhBankPaymentEntries() {
                         <td className="p-2 text-xs font-mono">{row.fromName}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
                         <td className="p-2">{row.toName}</td>
+                        <td className="p-2 relative min-w-[240px]">
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
