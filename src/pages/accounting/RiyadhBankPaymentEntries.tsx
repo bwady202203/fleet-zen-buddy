@@ -142,6 +142,31 @@ export default function RiyadhBankPaymentEntries() {
   const setRowAccount = (index: number, id: string) =>
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
 
+  const applyFavoriteAccount = (id: string) => {
+    const sortedToOriginal = sortedRows.map((sr) => rows.findIndex((r) => r === sr));
+
+    let currentSortedIdx = focusedRow !== null ? sortedToOriginal.indexOf(focusedRow) : -1;
+    if (currentSortedIdx === -1 || sortedRows[currentSortedIdx]?.selectedAccountId) {
+      currentSortedIdx = sortedRows.findIndex((r) => !r.selectedAccountId);
+    }
+
+    if (currentSortedIdx === -1) {
+      toast.error("لا يوجد صف فارغ لإدراج الحساب");
+      return;
+    }
+
+    const originalIdx = sortedToOriginal[currentSortedIdx];
+    setRowAccount(originalIdx, id);
+
+    const nextEmpty = sortedRows.findIndex((r, i) => i > currentSortedIdx && !r.selectedAccountId);
+    if (nextEmpty !== -1) {
+      setFocusedRow(sortedToOriginal[nextEmpty]);
+    } else {
+      const nextIdx = currentSortedIdx + 1;
+      setFocusedRow(nextIdx < sortedRows.length ? sortedToOriginal[nextIdx] : null);
+    }
+  };
+
   const copyAccountDown = (index: number) => {
     const id = rows[index]?.selectedAccountId;
     if (!id) return;
