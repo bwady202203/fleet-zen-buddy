@@ -345,8 +345,14 @@ export default function RiyadhBankPaymentEntries() {
     }
     return Array.from(map.entries())
       .map(([date, v]) => ({ date, ...v }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [rows]);
+      .sort((a, b) => (sortDir === "asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
+  }, [rows, sortDir]);
+
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) =>
+      sortDir === "asc" ? a.payDate.localeCompare(b.payDate) : b.payDate.localeCompare(a.payDate)
+    );
+  }, [rows, sortDir]);
 
   const totalAmount = rows.reduce((s, r) => s + r.amount, 0);
   const selectedCount = rows.filter((r) => r.selectedAccountId).length;
