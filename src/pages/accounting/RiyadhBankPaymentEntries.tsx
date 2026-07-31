@@ -679,9 +679,6 @@ export default function RiyadhBankPaymentEntries() {
                             </div>
                           )}
                         </td>
-                        <td className="p-2 text-xs font-mono">{row.reference}</td>
-                        <td className="p-2 text-xs">{row.payType}</td>
-                        <td className="p-2 text-xs">{row.fromName}</td>
                         <td className="p-2 text-xs text-muted-foreground">{getAccount(creditAccountId)?.name_ar || "بنك الرياض"}</td>
                         <td className="p-2">
                           <Button
