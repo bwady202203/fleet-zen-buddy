@@ -109,6 +109,7 @@ export default function RiyadhBankPaymentEntries() {
   const [creditSearch, setCreditSearch] = useState("");
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [favDrag, setFavDrag] = useState<number | null>(null);
   const copyClicksRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
