@@ -622,7 +622,7 @@ export default function RiyadhBankSmartEntries() {
                 ))}
               </div>
             )}
-            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-1.5 max-h-[13rem] overflow-y-auto">
+            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-1.5">
               {favIds.map((id, favIdx) => {
                 const a = getAccount(id);
                 if (!a) return null;
