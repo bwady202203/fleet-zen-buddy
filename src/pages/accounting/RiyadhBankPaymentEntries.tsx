@@ -927,7 +927,7 @@ export default function RiyadhBankPaymentEntries() {
       <Dialog open={favPickerOpen} onOpenChange={setFavPickerOpen}>
         <DialogContent className="max-w-lg h-[70vh] flex flex-col" dir="rtl">
           <DialogHeader className="shrink-0">
-            <DialogTitle className="text-right">تحديد الحسابات الأكثر اختياراً ({favIds.length}/16)</DialogTitle>
+            <DialogTitle className="text-right">تحديد الحسابات الأكثر اختياراً ({favIds.length}/32)</DialogTitle>
           </DialogHeader>
           <div className="flex items-center gap-2 shrink-0">
             <Search className="h-4 w-4 text-muted-foreground" />
