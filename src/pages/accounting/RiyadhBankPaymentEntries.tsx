@@ -110,6 +110,10 @@ export default function RiyadhBankPaymentEntries() {
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [favDrag, setFavDrag] = useState<number | null>(null);
+  const [favSets, setFavSets] = useState<FavSet[]>([]);
+  const [activeFavSet, setActiveFavSet] = useState<string | null>(null);
+  const [saveSetOpen, setSaveSetOpen] = useState(false);
+  const [newSetName, setNewSetName] = useState("");
   const copyClicksRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
@@ -122,6 +126,8 @@ export default function RiyadhBankPaymentEntries() {
       if (f) setFavIds(JSON.parse(f));
       const c = localStorage.getItem(CREDIT_STORAGE_KEY);
       if (c) setCreditAccountId(c);
+      const s = localStorage.getItem(FAV_SETS_STORAGE_KEY);
+      if (s) setFavSets(JSON.parse(s));
     } catch {
       // تجاهل
     }
@@ -131,6 +137,46 @@ export default function RiyadhBankPaymentEntries() {
     localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
     return next;
   };
+
+  const persistSets = (next: FavSet[]) => {
+    localStorage.setItem(FAV_SETS_STORAGE_KEY, JSON.stringify(next));
+    setFavSets(next);
+  };
+
+  const saveCurrentAsSet = () => {
+    const name = newSetName.trim();
+    if (!name) {
+      toast.error("اكتب اسماً للمجموعة");
+      return;
+    }
+    if (favIds.length === 0) {
+      toast.error("لا توجد حسابات محددة للحفظ");
+      return;
+    }
+    persistSets([...favSets.filter((s) => s.name !== name), { name, ids: [...favIds] }]);
+    setActiveFavSet(name);
+    setSaveSetOpen(false);
+    setNewSetName("");
+    toast.success(`تم حفظ المجموعة: ${name}`);
+  };
+
+  const loadFavSet = (set: FavSet) => {
+    setFavIds(persistFavs([...set.ids]));
+    setActiveFavSet(set.name);
+    toast.success(`تم استدعاء المجموعة: ${set.name}`);
+  };
+
+  const deleteFavSet = (name: string) => {
+    persistSets(favSets.filter((s) => s.name !== name));
+    if (activeFavSet === name) setActiveFavSet(null);
+  };
+
+  const updateActiveSet = () => {
+    if (!activeFavSet) return;
+    persistSets(favSets.map((s) => (s.name === activeFavSet ? { ...s, ids: [...favIds] } : s)));
+    toast.success(`تم تحديث المجموعة: ${activeFavSet}`);
+  };
+
 
   const toggleFav = (id: string) =>
     setFavIds((prev) =>
