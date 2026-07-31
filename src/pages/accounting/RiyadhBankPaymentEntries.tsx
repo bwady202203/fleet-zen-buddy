@@ -593,20 +593,50 @@ export default function RiyadhBankPaymentEntries() {
         )}
 
         {rows.length > 0 && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
+          <Card className="p-3 sticky top-2 z-30 shadow-md bg-background/95 backdrop-blur">
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-500" />
-                <span className="font-semibold text-sm">الحسابات الأكثر اختياراً</span>
-                <span className="text-xs text-muted-foreground">
+                <Star className="h-3.5 w-3.5 text-amber-500" />
+                <span className="font-semibold text-xs">الحسابات الأكثر اختياراً</span>
+                <span className="text-[10px] text-muted-foreground">
                   {focusedRow !== null ? `الصف المحدد: ${focusedRow + 1}` : "اضغط حساباً لإدراجه تلقائياً في أول صف فارغ"}
                 </span>
               </div>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
-                <Settings2 className="h-3.5 w-3.5 ml-1" /> تحديد الحسابات
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setNewSetName(activeFavSet || ""); setSaveSetOpen(true); }}>
+                  <Save className="h-3 w-3 ml-1" /> حفظ مجموعة
+                </Button>
+                {activeFavSet && (
+                  <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={updateActiveSet}>
+                    تحديث «{activeFavSet}»
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => { setFavPickerOpen(true); setFavSearch(""); }}>
+                  <Settings2 className="h-3 w-3 ml-1" /> تحديد الحسابات
+                </Button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 max-h-[19rem] overflow-y-auto">
+            {favSets.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap mb-2">
+                {favSets.map((s) => (
+                  <div
+                    key={s.name}
+                    className={cn(
+                      "flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px]",
+                      activeFavSet === s.name ? "bg-primary/10 border-primary/40" : "bg-muted/40"
+                    )}
+                  >
+                    <button type="button" onClick={() => loadFavSet(s)} className="font-semibold">
+                      {s.name} ({s.ids.length})
+                    </button>
+                    <button type="button" title="حذف المجموعة" onClick={() => deleteFavSet(s.name)} className="text-destructive">
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-1.5 max-h-[13rem] overflow-y-auto">
               {favIds.map((id, favIdx) => {
                 const a = getAccount(id);
                 if (!a) return null;
@@ -621,17 +651,17 @@ export default function RiyadhBankPaymentEntries() {
                       setFavDrag(null);
                     }}
                     className={cn(
-                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-16",
+                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-11",
                       favDrag === favIdx && "opacity-50"
                     )}
                   >
                     <button
                       type="button"
                       onClick={() => applyFavoriteAccount(id)}
-                      className="w-full h-full px-2 py-2 text-right flex flex-col justify-center"
+                      className="w-full h-full px-1.5 py-1 text-right flex flex-col justify-center"
                     >
-                      <div className="font-mono text-[10px] text-muted-foreground">{a.code}</div>
-                      <div className="text-xs font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                      <div className="font-mono text-[8px] text-muted-foreground">{a.code}</div>
+                      <div className="text-[10px] font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
                     </button>
                     <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button type="button" title="تحريك لليمين" onClick={() => moveFav(favIdx, favIdx - 1)} className="rounded bg-white/90 border p-0.5 hover:bg-white">
@@ -656,6 +686,27 @@ export default function RiyadhBankPaymentEntries() {
             </div>
           </Card>
         )}
+
+        <Dialog open={saveSetOpen} onOpenChange={setSaveSetOpen}>
+          <DialogContent dir="rtl" className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base">حفظ مجموعة الحسابات</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                placeholder="اسم المجموعة (مثال: مصروفات شهرية)"
+                value={newSetName}
+                onChange={(e) => setNewSetName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveCurrentAsSet()}
+              />
+              <div className="text-xs text-muted-foreground">سيتم حفظ {favIds.length} حساباً بالترتيب الحالي</div>
+              <Button className="w-full" onClick={saveCurrentAsSet}>
+                <Save className="h-4 w-4 ml-2" /> حفظ
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
 
         {rows.length > 0 && (
           <Card className="overflow-hidden">
