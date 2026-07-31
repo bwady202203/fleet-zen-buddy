@@ -586,6 +586,7 @@ export default function RiyadhBankPaymentEntries() {
                     <th className="p-2 text-right">رقم الحساب</th>
                     <th className="p-2 text-right">نوع الخدمة</th>
                     <th className="p-2 text-right">اسم المفوتر</th>
+                    <th className="p-2 text-right">الوصف</th>
                     <th className="p-2 text-right">الحساب المدين</th>
                     <th className="p-2 text-right">الطرف الدائن</th>
                     <th className="p-2"></th>
