@@ -125,11 +125,25 @@ export default function RiyadhBankSmartEntries() {
     }
   }, []);
 
+  const persistFavs = (next: string[]) => {
+    localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
+    return next;
+  };
+
   const toggleFav = (id: string) =>
+    setFavIds((prev) =>
+      persistFavs(prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 32))
+    );
+
+  const removeFav = (id: string) => setFavIds((prev) => persistFavs(prev.filter((x) => x !== id)));
+
+  const moveFav = (from: number, to: number) =>
     setFavIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(0, 16);
-      localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
-      return next;
+      if (to < 0 || to >= prev.length || from === to) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return persistFavs(next);
     });
 
   const chooseCreditAccount = (id: string) => {
@@ -140,6 +154,21 @@ export default function RiyadhBankSmartEntries() {
 
   const setRowAccount = (index: number, id: string) =>
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
+
+  const applyFavoriteAccount = (id: string) => {
+    let idx = focusedRow;
+    if (idx === null || idx < 0 || idx >= rows.length || rows[idx]?.selectedAccountId) {
+      idx = rows.findIndex((r) => !r.selectedAccountId);
+    }
+    if (idx === -1 || idx === null) {
+      toast.error("لا يوجد صف فارغ لإدراج الحساب");
+      return;
+    }
+    setRowAccount(idx, id);
+    const nextEmpty = rows.findIndex((r, i) => i > idx! && !r.selectedAccountId);
+    setFocusedRow(nextEmpty !== -1 ? nextEmpty : idx + 1 < rows.length ? idx + 1 : null);
+  };
+
 
   const copyAccountDown = (index: number) => {
     const id = rows[index]?.selectedAccountId;
