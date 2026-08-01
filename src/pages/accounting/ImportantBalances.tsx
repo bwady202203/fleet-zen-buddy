@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays, LayoutGrid, CalendarRange, ChevronRight, ChevronLeft } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays, LayoutGrid, CalendarRange, ChevronRight, ChevronLeft, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -314,6 +314,37 @@ const ImportantBalances = () => {
     () => monthlyDays.filter(d => d.debit === 0 && d.credit === 0),
     [monthlyDays]
   );
+
+  const exportMonthlyExcel = async () => {
+    if (!monthlyDays.length) {
+      toast({ title: "لا توجد بيانات للتصدير", variant: "destructive" });
+      return;
+    }
+    const XLSX = await import("xlsx");
+    const acc = allAccountsList.find(a => a.id === monthlyAccountId);
+    const rows = monthlyDays.map(d => ({
+      "التاريخ": d.date,
+      "الرصيد الافتتاحي": Number(d.opening.toFixed(2)),
+      "الحركة المدينة": Number(d.debit.toFixed(2)),
+      "الحركة الدائنة": Number(d.credit.toFixed(2)),
+      "الرصيد الختامي": Number(d.closing.toFixed(2)),
+      "حركة": d.debit !== 0 || d.credit !== 0 ? "يوجد" : "بدون حركة",
+    }));
+    rows.push({
+      "التاريخ": "الإجمالي",
+      "الرصيد الافتتاحي": Number((monthlyDays[0]?.opening || 0).toFixed(2)),
+      "الحركة المدينة": Number(monthlyDays.reduce((s, d) => s + d.debit, 0).toFixed(2)),
+      "الحركة الدائنة": Number(monthlyDays.reduce((s, d) => s + d.credit, 0).toFixed(2)),
+      "الرصيد الختامي": Number((monthlyDays[monthlyDays.length - 1]?.closing || 0).toFixed(2)),
+      "حركة": "",
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "الأرصدة");
+    const name = `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_ارصدة.xlsx`;
+    XLSX.writeFile(wb, name);
+  };
 
   const handleOpenAdd = () => {
     loadAllAccounts();
@@ -744,6 +775,10 @@ const ImportantBalances = () => {
                       أيام بدون حركة: {noMovementDays.length}
                     </span>
                   </div>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={exportMonthlyExcel}>
+                    <Download className="h-4 w-4" />
+                    تحميل اكسل
+                  </Button>
                 </div>
 
                 {/* Days grid */}
@@ -780,24 +815,24 @@ const ImportantBalances = () => {
                         title={`${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
                       >
                         <div className="flex items-center justify-between leading-none">
-                          <span className="text-base font-bold">{dateObj.getDate()}</span>
-                          {!hasMovement && <span className="text-[9px] text-red-600/80">بدون حركة</span>}
+                          <span className="text-3xl font-bold">{dateObj.getDate()}</span>
+                          {!hasMovement && <span className="text-sm text-red-600/80">بدون حركة</span>}
                         </div>
-                        <div className="space-y-0.5 text-[9px] leading-tight">
+                        <div className="space-y-1 text-lg leading-tight">
                           <div className="flex items-center justify-between gap-1">
-                            <span className="opacity-70">افتتاحي</span>
+                            <span className="opacity-70 text-sm">افتتاحي</span>
                             <span className="font-semibold font-mono">{formatNum(Math.abs(day.opening))}</span>
                           </div>
                           <div className="flex items-center justify-between gap-1">
-                            <span className="opacity-70">مدين</span>
+                            <span className="opacity-70 text-sm">مدين</span>
                             <span className="font-semibold font-mono text-red-600">{formatNum(day.debit)}</span>
                           </div>
                           <div className="flex items-center justify-between gap-1">
-                            <span className="opacity-70">دائن</span>
+                            <span className="opacity-70 text-sm">دائن</span>
                             <span className="font-semibold font-mono text-emerald-600">{formatNum(day.credit)}</span>
                           </div>
-                          <div className="flex items-center justify-between gap-1 border-t pt-0.5">
-                            <span className="opacity-70">ختامي</span>
+                          <div className="flex items-center justify-between gap-1 border-t pt-1">
+                            <span className="opacity-70 text-sm">ختامي</span>
                             <span className="font-bold font-mono">{formatNum(Math.abs(day.closing))}</span>
                           </div>
                         </div>
