@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Plus, Printer, Save, Trash2, X, FileX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +65,16 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
     accounts.forEach((a) => m.set(a.id, a));
     return m;
   }, [accounts]);
+
+  const accountOptions = useMemo(
+    () =>
+      accounts.map((a) => ({
+        value: a.id,
+        label: `${a.code} - ${a.name_ar}`,
+        searchLabel: `${a.code} ${a.name_ar}`,
+      })),
+    [accounts]
+  );
 
   const currentAccount = accountMap.get(accountId);
 
@@ -425,22 +435,17 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
                       {entry.lines.map((line, lIdx) =>
                         line._deleted ? null : (
                           <div key={line.id || `l-${lIdx}`} className="flex flex-wrap items-center gap-2">
-                            <Select
-                              value={line.account_id}
-                              onValueChange={(v) => updateLine(eIdx, lIdx, { account_id: v })}
-                            >
-                              <SelectTrigger className="w-[260px] h-9">
-                                <SelectValue placeholder="اختر الحساب" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-[300px]">
-                                {accounts.map((a) => (
-                                  <SelectItem key={a.id} value={a.id}>
-                                    <span className="font-mono text-xs ml-2">{a.code}</span>
-                                    {a.name_ar}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <div className="w-[260px]">
+                              <Combobox
+                                options={accountOptions}
+                                value={line.account_id}
+                                onValueChange={(v) => updateLine(eIdx, lIdx, { account_id: v })}
+                                placeholder="اختر الحساب"
+                                searchPlaceholder="بحث بالاسم أو رقم الحساب..."
+                                emptyText="لا توجد نتائج"
+                                className="h-9"
+                              />
+                            </div>
                             <Input
                               placeholder="بيان السطر"
                               value={line.description}
