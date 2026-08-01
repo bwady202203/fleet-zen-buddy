@@ -780,24 +780,24 @@ const ImportantBalances = () => {
                         title={`${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
                       >
                         <div className="flex items-center justify-between leading-none">
-                          <span className="text-base font-bold">{dateObj.getDate()}</span>
-                          {!hasMovement && <span className="text-[9px] text-red-600/80">بدون حركة</span>}
+                          <span className="text-3xl font-bold">{dateObj.getDate()}</span>
+                          {!hasMovement && <span className="text-sm text-red-600/80">بدون حركة</span>}
                         </div>
-                        <div className="space-y-0.5 text-[9px] leading-tight">
+                        <div className="space-y-1 text-lg leading-tight">
                           <div className="flex items-center justify-between gap-1">
-                            <span className="opacity-70">افتتاحي</span>
+                            <span className="opacity-70 text-sm">افتتاحي</span>
                             <span className="font-semibold font-mono">{formatNum(Math.abs(day.opening))}</span>
                           </div>
                           <div className="flex items-center justify-between gap-1">
-                            <span className="opacity-70">مدين</span>
+                            <span className="opacity-70 text-sm">مدين</span>
                             <span className="font-semibold font-mono text-red-600">{formatNum(day.debit)}</span>
                           </div>
                           <div className="flex items-center justify-between gap-1">
-                            <span className="opacity-70">دائن</span>
+                            <span className="opacity-70 text-sm">دائن</span>
                             <span className="font-semibold font-mono text-emerald-600">{formatNum(day.credit)}</span>
                           </div>
-                          <div className="flex items-center justify-between gap-1 border-t pt-0.5">
-                            <span className="opacity-70">ختامي</span>
+                          <div className="flex items-center justify-between gap-1 border-t pt-1">
+                            <span className="opacity-70 text-sm">ختامي</span>
                             <span className="font-bold font-mono">{formatNum(Math.abs(day.closing))}</span>
                           </div>
                         </div>
