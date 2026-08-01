@@ -103,6 +103,12 @@ const ImportantBalances = () => {
     setDateFilter('specificDay');
   };
 
+  const openDayEntries = (dateStr: string) => {
+    setDayEntriesDate(dateStr);
+    setDayEntriesOpen(true);
+  };
+
+
   const loadData = async () => {
     setLoading(true);
     try {
