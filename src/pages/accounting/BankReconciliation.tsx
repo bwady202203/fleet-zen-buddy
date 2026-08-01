@@ -525,8 +525,9 @@ const BankReconciliation = () => {
                         <TableCell>{r.count}</TableCell>
                         <TableCell>{fmt(r.bankDebit)}</TableCell>
                         <TableCell>{fmt(r.bankCredit)}</TableCell>
-                        <TableCell>{fmt(r.bookDebit)}</TableCell>
-                        <TableCell>{fmt(r.bookCredit)}</TableCell>
+                        <TableCell>{r.bookCount}</TableCell>
+                        <TableCell className="font-semibold text-red-700">{fmt(r.bookDebit)}</TableCell>
+                        <TableCell className="font-semibold text-emerald-700">{fmt(r.bookCredit)}</TableCell>
                         <TableCell className={Math.abs(dd) < 0.01 ? "" : "text-amber-700 font-bold"}>{fmt(dd)}</TableCell>
                         <TableCell className={Math.abs(dc) < 0.01 ? "" : "text-amber-700 font-bold"}>{fmt(dc)}</TableCell>
                         <TableCell>
