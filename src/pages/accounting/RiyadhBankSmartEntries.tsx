@@ -332,7 +332,7 @@ export default function RiyadhBankSmartEntries() {
       // تخطي صف العناوين
       if (cells[0].includes("تاريخ")) continue;
 
-      const [payDate, status, amount, reference, payType, currency, fromName, toName] = [
+      const [payDate, status, amount, reference, payType, currency, fromName] = [
         cells[0] || "",
         cells[1] || "",
         cells[2] || "",
@@ -340,8 +340,9 @@ export default function RiyadhBankSmartEntries() {
         cells[4] || "",
         cells[5] || "",
         cells[6] || "",
-        cells[7] || "",
       ];
+      // العمود الأخير (رقم 8) = إيداع إلى
+      const toName = cells[7] || cells[cells.length - 1] || "";
 
       const value = parseAmount(amount);
       if (!value) continue;
@@ -355,7 +356,8 @@ export default function RiyadhBankSmartEntries() {
         currency: currency || "SAR",
         fromName,
         toName,
-        description: `${toName}${reference ? " - " + reference : ""}`,
+        // الوصف دائماً من العمود رقم 2
+        description: status,
         selectedAccountId: findAccountByName(toName),
       });
     }
