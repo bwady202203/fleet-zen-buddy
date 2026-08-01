@@ -433,7 +433,7 @@ const BankReconciliation = () => {
             />
             <div className="flex gap-2">
               <Button onClick={parsePaste}>تحليل البيانات</Button>
-              <Button variant="secondary" onClick={loadBookTotals} disabled={loading}>
+              <Button variant="secondary" onClick={() => loadBookTotals()} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ml-1 ${loading ? "animate-spin" : ""}`} /> مقارنة مع قيود اليومية
               </Button>
               <Button
