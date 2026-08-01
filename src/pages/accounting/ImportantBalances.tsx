@@ -772,26 +772,35 @@ const ImportantBalances = () => {
                     return (
                       <div
                         key={day.date}
-                        className={`aspect-square rounded-lg border flex flex-col items-center justify-center gap-1 transition-colors ${
+                        className={`rounded-lg border p-1.5 flex flex-col gap-1 transition-colors ${
                           hasMovement
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100'
                             : 'bg-red-50 border-red-300 text-red-900 hover:bg-red-100'
                         } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
                         title={`${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
                       >
-                        <span className="text-lg font-bold leading-none">{dateObj.getDate()}</span>
-                        {hasMovement ? (
-                          <div className="flex flex-col items-center leading-none gap-0.5">
-                            {(day.debit > 0) && (
-                              <span className="text-[10px] font-medium text-red-600">مدين</span>
-                            )}
-                            {(day.credit > 0) && (
-                              <span className="text-[10px] font-medium text-emerald-600">دائن</span>
-                            )}
+                        <div className="flex items-center justify-between leading-none">
+                          <span className="text-base font-bold">{dateObj.getDate()}</span>
+                          {!hasMovement && <span className="text-[9px] text-red-600/80">بدون حركة</span>}
+                        </div>
+                        <div className="space-y-0.5 text-[9px] leading-tight">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="opacity-70">افتتاحي</span>
+                            <span className="font-semibold font-mono">{formatNum(Math.abs(day.opening))}</span>
                           </div>
-                        ) : (
-                          <span className="text-[10px] text-red-600/80">بدون حركة</span>
-                        )}
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="opacity-70">مدين</span>
+                            <span className="font-semibold font-mono text-red-600">{formatNum(day.debit)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="opacity-70">دائن</span>
+                            <span className="font-semibold font-mono text-emerald-600">{formatNum(day.credit)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-1 border-t pt-0.5">
+                            <span className="opacity-70">ختامي</span>
+                            <span className="font-bold font-mono">{formatNum(Math.abs(day.closing))}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
