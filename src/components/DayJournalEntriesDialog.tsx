@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Printer, Save, Trash2, X } from "lucide-react";
+import { Plus, Printer, Save, Trash2, X, FileX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -53,9 +54,11 @@ const fmt = (n: number) =>
 
 const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts, onChanged }: Props) => {
   const { toast } = useToast();
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [entries, setEntries] = useState<EntryDraft[]>([]);
+
 
   const accountMap = useMemo(() => {
     const m = new Map<string, AccountOption>();
@@ -259,6 +262,42 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
     }
   };
 
+  const deleteEntry = (idx: number) => {
+    const entry = entries[idx];
+    if (!entry.id) {
+      setEntries((prev) => prev.filter((_, i) => i !== idx));
+      return;
+    }
+    requestDelete(
+      async () => {
+        setSaving(true);
+        try {
+          const { error: lErr } = await supabase
+            .from("journal_entry_lines")
+            .delete()
+            .eq("journal_entry_id", entry.id as string);
+          if (lErr) throw lErr;
+          const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id as string);
+          if (error) throw error;
+          toast({ title: "تم حذف القيد بنجاح" });
+          await load();
+          onChanged?.();
+        } catch (err: any) {
+          console.error(err);
+          toast({ title: "خطأ في الحذف", description: err?.message, variant: "destructive" });
+        } finally {
+          setSaving(false);
+        }
+      },
+      {
+        title: "تأكيد حذف القيد",
+        description: `سيتم حذف القيد ${entry.entry_number} وكل سطوره نهائياً. أدخل كود الأمان للمتابعة.`,
+      }
+    );
+  };
+
+
+
   const printDay = () => {
     const rows = entries
       .filter((e) => !e.isNew)
@@ -371,6 +410,15 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
                       <Button size="sm" className="gap-1" disabled={saving} onClick={() => saveEntry(eIdx)}>
                         <Save className="h-4 w-4" /> حفظ
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="gap-1"
+                        disabled={saving}
+                        onClick={() => deleteEntry(eIdx)}
+                      >
+                        <FileX className="h-4 w-4" /> حذف القيد
+                      </Button>
                     </div>
 
                     <div className="space-y-2">
@@ -450,7 +498,9 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
             })
           )}
         </div>
+        <DeleteDialog />
       </DialogContent>
+
     </Dialog>
   );
 };
