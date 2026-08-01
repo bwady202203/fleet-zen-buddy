@@ -236,6 +236,7 @@ const App = () => {
                                  <Route path="/custody/combined-statement" element={<CustodyCombinedStatement />} />
                                   <Route path="/accounting/transfer-requests" element={<TransferRequests />} />
                                   <Route path="/accounting/important-balances" element={<ImportantBalances />} />
+                                  <Route path="/accounting/bank-reconciliation" element={<BankReconciliation />} />
                                   {/* ZATCA - الفوترة الإلكترونية */}
                                   <Route path="/zatca" element={<ZatcaHome />} />
                                   <Route path="/zatca/invoices" element={<ZatcaInvoices />} />
