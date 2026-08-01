@@ -262,6 +262,42 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
     }
   };
 
+  const deleteEntry = (idx: number) => {
+    const entry = entries[idx];
+    if (!entry.id) {
+      setEntries((prev) => prev.filter((_, i) => i !== idx));
+      return;
+    }
+    requestDelete(
+      async () => {
+        setSaving(true);
+        try {
+          const { error: lErr } = await supabase
+            .from("journal_entry_lines")
+            .delete()
+            .eq("journal_entry_id", entry.id as string);
+          if (lErr) throw lErr;
+          const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id as string);
+          if (error) throw error;
+          toast({ title: "تم حذف القيد بنجاح" });
+          await load();
+          onChanged?.();
+        } catch (err: any) {
+          console.error(err);
+          toast({ title: "خطأ في الحذف", description: err?.message, variant: "destructive" });
+        } finally {
+          setSaving(false);
+        }
+      },
+      {
+        title: "تأكيد حذف القيد",
+        description: `سيتم حذف القيد ${entry.entry_number} وكل سطوره نهائياً. أدخل كود الأمان للمتابعة.`,
+      }
+    );
+  };
+
+
+
   const printDay = () => {
     const rows = entries
       .filter((e) => !e.isNew)
