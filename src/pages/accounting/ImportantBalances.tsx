@@ -315,6 +315,37 @@ const ImportantBalances = () => {
     [monthlyDays]
   );
 
+  const exportMonthlyExcel = async () => {
+    if (!monthlyDays.length) {
+      toast({ title: "لا توجد بيانات للتصدير", variant: "destructive" });
+      return;
+    }
+    const XLSX = await import("xlsx");
+    const acc = allAccountsList.find(a => a.id === monthlyAccountId);
+    const rows = monthlyDays.map(d => ({
+      "التاريخ": d.date,
+      "الرصيد الافتتاحي": Number(d.opening.toFixed(2)),
+      "الحركة المدينة": Number(d.debit.toFixed(2)),
+      "الحركة الدائنة": Number(d.credit.toFixed(2)),
+      "الرصيد الختامي": Number(d.closing.toFixed(2)),
+      "حركة": d.debit !== 0 || d.credit !== 0 ? "يوجد" : "بدون حركة",
+    }));
+    rows.push({
+      "التاريخ": "الإجمالي",
+      "الرصيد الافتتاحي": Number((monthlyDays[0]?.opening || 0).toFixed(2)),
+      "الحركة المدينة": Number(monthlyDays.reduce((s, d) => s + d.debit, 0).toFixed(2)),
+      "الحركة الدائنة": Number(monthlyDays.reduce((s, d) => s + d.credit, 0).toFixed(2)),
+      "الرصيد الختامي": Number((monthlyDays[monthlyDays.length - 1]?.closing || 0).toFixed(2)),
+      "حركة": "",
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "الأرصدة");
+    const name = `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_ارصدة.xlsx`;
+    XLSX.writeFile(wb, name);
+  };
+
   const handleOpenAdd = () => {
     loadAllAccounts();
     setAccountSearch("");
