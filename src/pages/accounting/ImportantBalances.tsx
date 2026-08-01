@@ -816,12 +816,13 @@ const ImportantBalances = () => {
                     return (
                       <div
                         key={day.date}
-                        className={`rounded-lg border p-1.5 flex flex-col gap-1 transition-colors ${
+                        onClick={() => openDayEntries(day.date)}
+                        className={`rounded-lg border p-1.5 flex flex-col gap-1 transition-all cursor-pointer hover:shadow-md ${
                           hasMovement
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100'
                             : 'bg-red-50 border-red-300 text-red-900 hover:bg-red-100'
                         } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
-                        title={`${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
+                        title={`اضغط لعرض قيود ${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
                       >
                         <div className="flex items-center justify-between leading-none">
                           <span className="text-3xl font-bold">{dateObj.getDate()}</span>
