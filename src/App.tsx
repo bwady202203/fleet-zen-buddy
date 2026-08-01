@@ -54,6 +54,7 @@ import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
 import RiyadhBankSmartEntries from "./pages/accounting/RiyadhBankSmartEntries";
+import BankReconciliation from "./pages/accounting/BankReconciliation";
 import RiyadhBankPaymentEntries from "./pages/accounting/RiyadhBankPaymentEntries";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
