@@ -795,10 +795,12 @@ export default function RiyadhBankPaymentEntries() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedRows.map((row, index) => {
+                  {sortedRows.map((row, sIdx) => {
+                    const index = sortedOrder[sIdx];
                     const acc = getAccount(row.selectedAccountId);
                     return (
                       <tr key={index} className="border-t hover:bg-muted/40">
+
                         <td className="p-2">{row.toName}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
                         <td className="p-2 text-xs font-mono">{row.fromName}</td>
