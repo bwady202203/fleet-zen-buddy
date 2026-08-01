@@ -211,43 +211,45 @@ export default function RiyadhBankPaymentEntries() {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
 
   const applyFavoriteAccount = (id: string) => {
-    const sortedToOriginal = sortedRows.map((sr) => rows.findIndex((r) => r === sr));
+    const order = sortedOrder;
 
-    let currentSortedIdx = focusedRow !== null ? sortedToOriginal.indexOf(focusedRow) : -1;
-    if (currentSortedIdx === -1 || sortedRows[currentSortedIdx]?.selectedAccountId) {
-      currentSortedIdx = sortedRows.findIndex((r) => !r.selectedAccountId);
+    let pos = focusedRow !== null ? order.indexOf(focusedRow) : -1;
+    if (pos === -1 || rows[order[pos]]?.selectedAccountId) {
+      pos = order.findIndex((oi) => !rows[oi].selectedAccountId);
     }
 
-    if (currentSortedIdx === -1) {
+    if (pos === -1) {
       toast.error("لا يوجد صف فارغ لإدراج الحساب");
       return;
     }
 
-    const originalIdx = sortedToOriginal[currentSortedIdx];
-    setRowAccount(originalIdx, id);
+    setRowAccount(order[pos], id);
 
-    const nextEmpty = sortedRows.findIndex((r, i) => i > currentSortedIdx && !r.selectedAccountId);
+    const nextEmpty = order.findIndex((oi, i) => i > pos && !rows[oi].selectedAccountId);
     if (nextEmpty !== -1) {
-      setFocusedRow(sortedToOriginal[nextEmpty]);
+      setFocusedRow(order[nextEmpty]);
     } else {
-      const nextIdx = currentSortedIdx + 1;
-      setFocusedRow(nextIdx < sortedRows.length ? sortedToOriginal[nextIdx] : null);
+      setFocusedRow(pos + 1 < order.length ? order[pos + 1] : null);
     }
   };
 
   const copyAccountDown = (index: number) => {
     const id = rows[index]?.selectedAccountId;
     if (!id) return;
+    const order = sortedOrder;
+    const pos = order.indexOf(index);
     const nextCount = (copyClicksRef.current[index] || 0) + 1;
-    const targetIndex = index + nextCount;
-    if (targetIndex >= rows.length) {
+    const targetPos = pos + nextCount;
+    if (pos === -1 || targetPos >= order.length) {
       toast.error("لا يوجد صف تالي لنسخ الحساب إليه");
       return;
     }
+    const targetIndex = order[targetPos];
     copyClicksRef.current = { ...copyClicksRef.current, [index]: nextCount };
     setRows((prev) => prev.map((r, i) => (i === targetIndex ? { ...r, selectedAccountId: id } : r)));
-    toast.success(`تم نسخ الحساب إلى الصف ${targetIndex + 1}`);
+    toast.success(`تم نسخ الحساب إلى الصف ${targetPos + 1}`);
   };
+
 
   // تحميل/حفظ ترتيب المربعات
   useEffect(() => {
@@ -441,11 +443,24 @@ export default function RiyadhBankPaymentEntries() {
       .sort((a, b) => (sortDir === "asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
   }, [rows, sortDir]);
 
-  const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) =>
-      sortDir === "asc" ? a.payDate.localeCompare(b.payDate) : b.payDate.localeCompare(a.payDate)
-    );
+  const toSortKey = (d: string) => {
+    const m = (d || "").match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : d || "";
+  };
+
+  const sortedOrder = useMemo(() => {
+    return rows
+      .map((_, i) => i)
+      .sort((a, b) => {
+        const ka = toSortKey(rows[a].payDate);
+        const kb = toSortKey(rows[b].payDate);
+        const cmp = ka.localeCompare(kb);
+        return sortDir === "asc" ? cmp || a - b : -cmp || a - b;
+      });
   }, [rows, sortDir]);
+
+  const sortedRows = useMemo(() => sortedOrder.map((i) => rows[i]), [sortedOrder, rows]);
+
 
   const totalAmount = rows.reduce((s, r) => s + r.amount, 0);
   const selectedCount = rows.filter((r) => r.selectedAccountId).length;
@@ -688,7 +703,7 @@ export default function RiyadhBankPaymentEntries() {
                 ))}
               </div>
             )}
-            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
               {favIds.map((id, favIdx) => {
                 const a = getAccount(id);
                 if (!a) return null;
@@ -703,32 +718,34 @@ export default function RiyadhBankPaymentEntries() {
                       setFavDrag(null);
                     }}
                     className={cn(
-                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-11",
+                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-16",
                       favDrag === favIdx && "opacity-50"
                     )}
                   >
                     <button
                       type="button"
                       onClick={() => applyFavoriteAccount(id)}
-                      className="w-full h-full px-1.5 py-1 text-right flex flex-col justify-center"
+                      className="w-full h-full px-2 py-1.5 text-right flex flex-col justify-center"
                     >
-                      <div className="font-mono text-[8px] text-muted-foreground">{a.code}</div>
-                      <div className="text-[10px] font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                      <div className="font-mono text-[11px] text-muted-foreground">{a.code}</div>
+                      <div className="text-sm font-bold leading-tight line-clamp-2">{a.name_ar}</div>
                     </button>
-                    <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" title="تحريك لليمين" onClick={() => moveFav(favIdx, favIdx - 1)} className="rounded bg-white/90 border p-0.5 hover:bg-white">
-                        <ArrowRight className="h-3 w-3" />
+                    <div className="absolute top-1 left-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" title="تحريك لليمين" onClick={() => moveFav(favIdx, favIdx - 1)} className="rounded bg-white/90 border p-1 hover:bg-white">
+                        <ArrowRight className="h-4 w-4" />
                       </button>
-                      <button type="button" title="تحريك لليسار" onClick={() => moveFav(favIdx, favIdx + 1)} className="rounded bg-white/90 border p-0.5 hover:bg-white rotate-180">
-                        <ArrowRight className="h-3 w-3" />
+                      <button type="button" title="تحريك لليسار" onClick={() => moveFav(favIdx, favIdx + 1)} className="rounded bg-white/90 border p-1 hover:bg-white rotate-180">
+                        <ArrowRight className="h-4 w-4" />
                       </button>
-                      <button type="button" title="حذف" onClick={() => removeFav(id)} className="rounded bg-white/90 border p-0.5 text-destructive hover:bg-white">
-                        <X className="h-3 w-3" />
+                      <button type="button" title="حذف" onClick={() => removeFav(id)} className="rounded bg-white/90 border p-1 text-destructive hover:bg-white">
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                 );
               })}
+
+
 
               {favIds.length === 0 && (
                 <div className="col-span-full text-xs text-muted-foreground py-2">
@@ -780,10 +797,12 @@ export default function RiyadhBankPaymentEntries() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedRows.map((row, index) => {
+                  {sortedRows.map((row, sIdx) => {
+                    const index = sortedOrder[sIdx];
                     const acc = getAccount(row.selectedAccountId);
                     return (
                       <tr key={index} className="border-t hover:bg-muted/40">
+
                         <td className="p-2">{row.toName}</td>
                         <td className="p-2 text-xs">{row.payType}</td>
                         <td className="p-2 text-xs font-mono">{row.fromName}</td>
