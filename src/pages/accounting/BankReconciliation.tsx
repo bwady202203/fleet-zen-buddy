@@ -36,6 +36,7 @@ interface CompareRow {
   bookDebit: number;
   bookCredit: number;
   count: number;
+  bookCount: number;
 }
 
 const AR_DIGITS: Record<string, string> = {
