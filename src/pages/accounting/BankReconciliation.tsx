@@ -170,13 +170,13 @@ const BankReconciliation = () => {
     return Array.from(new Set([...selectedDays, ...fromBank])).sort();
   }, [selectedDays, bankRows]);
 
-  const loadBookTotals = async () => {
+  const loadBookTotals = async (silent = false) => {
     if (!selectedAccount) {
-      toast({ title: "اختر حساب البنك أولاً", variant: "destructive" });
+      if (!silent) toast({ title: "اختر حساب البنك أولاً", variant: "destructive" });
       return;
     }
     if (!compareDates.length) {
-      toast({ title: "اختر التواريخ أو الصق البيانات أولاً", variant: "destructive" });
+      if (!silent) toast({ title: "اختر التواريخ أو الصق البيانات أولاً", variant: "destructive" });
       return;
     }
     setLoading(true);
