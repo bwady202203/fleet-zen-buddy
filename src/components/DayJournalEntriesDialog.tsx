@@ -490,6 +490,9 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
               <Button size="sm" variant="outline" className="gap-1" onClick={printDay}>
                 <Printer className="h-4 w-4" /> طباعة
               </Button>
+              <Button size="sm" variant="outline" className="gap-1 text-emerald-700" onClick={exportExcel}>
+                <FileSpreadsheet className="h-4 w-4" /> تصدير Excel
+              </Button>
               <Button size="sm" className="gap-1" onClick={addNewEntry}>
                 <Plus className="h-4 w-4" /> قيد جديد
               </Button>
