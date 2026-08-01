@@ -505,6 +505,7 @@ const BankReconciliation = () => {
                     <TableHead className="text-right">حركات البنك</TableHead>
                     <TableHead className="text-right">مدين البنك</TableHead>
                     <TableHead className="text-right">دائن البنك</TableHead>
+                    <TableHead className="text-right">سطور القيود</TableHead>
                     <TableHead className="text-right">مدين القيود</TableHead>
                     <TableHead className="text-right">دائن القيود</TableHead>
                     <TableHead className="text-right">فرق المدين</TableHead>
