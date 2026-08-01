@@ -239,6 +239,7 @@ const BankReconciliation = () => {
         bookDebit: book.debit,
         bookCredit: book.credit,
         count: rows.length,
+        bookCount: book.count,
       };
     });
   }, [compareDates, bankRows, bookTotals]);
