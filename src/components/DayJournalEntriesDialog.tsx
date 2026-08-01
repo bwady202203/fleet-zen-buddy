@@ -66,6 +66,16 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
     return m;
   }, [accounts]);
 
+  const accountOptions = useMemo(
+    () =>
+      accounts.map((a) => ({
+        value: a.id,
+        label: `${a.code} - ${a.name_ar}`,
+        searchLabel: `${a.code} ${a.name_ar}`,
+      })),
+    [accounts]
+  );
+
   const currentAccount = accountMap.get(accountId);
 
   useEffect(() => {
