@@ -36,6 +36,7 @@ interface CompareRow {
   bookDebit: number;
   bookCredit: number;
   count: number;
+  bookCount: number;
 }
 
 const AR_DIGITS: Record<string, string> = {
@@ -170,13 +171,13 @@ const BankReconciliation = () => {
     return Array.from(new Set([...selectedDays, ...fromBank])).sort();
   }, [selectedDays, bankRows]);
 
-  const loadBookTotals = async () => {
+  const loadBookTotals = async (silent = false) => {
     if (!selectedAccount) {
-      toast({ title: "اختر حساب البنك أولاً", variant: "destructive" });
+      if (!silent) toast({ title: "اختر حساب البنك أولاً", variant: "destructive" });
       return;
     }
     if (!compareDates.length) {
-      toast({ title: "اختر التواريخ أو الصق البيانات أولاً", variant: "destructive" });
+      if (!silent) toast({ title: "اختر التواريخ أو الصق البيانات أولاً", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -207,7 +208,7 @@ const BankReconciliation = () => {
         from += batch;
       }
       setBookTotals(totals);
-      toast({ title: "تم تحميل قيود اليومية", description: `الفترة: ${start} → ${end}` });
+      if (!silent) toast({ title: "تم تحميل قيود اليومية", description: `الفترة: ${start} → ${end}` });
     } catch (e: any) {
       console.error(e);
       toast({ title: "خطأ في تحميل القيود", description: e.message, variant: "destructive" });
@@ -215,6 +216,15 @@ const BankReconciliation = () => {
       setLoading(false);
     }
   };
+
+  // تحميل تلقائي لقيم القيود المدينة والدائنة عند اختيار الحساب أو تغيّر التواريخ
+  useEffect(() => {
+    if (!selectedAccount || !compareDates.length) return;
+    loadBookTotals(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAccount, compareDates.join(",")]);
+
+
 
   const compareRows: CompareRow[] = useMemo(() => {
     return compareDates.map((date) => {
@@ -229,6 +239,7 @@ const BankReconciliation = () => {
         bookDebit: book.debit,
         bookCredit: book.credit,
         count: rows.length,
+        bookCount: book.count,
       };
     });
   }, [compareDates, bankRows, bookTotals]);
@@ -433,7 +444,7 @@ const BankReconciliation = () => {
             />
             <div className="flex gap-2">
               <Button onClick={parsePaste}>تحليل البيانات</Button>
-              <Button variant="secondary" onClick={loadBookTotals} disabled={loading}>
+              <Button variant="secondary" onClick={() => loadBookTotals()} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ml-1 ${loading ? "animate-spin" : ""}`} /> مقارنة مع قيود اليومية
               </Button>
               <Button
@@ -494,6 +505,7 @@ const BankReconciliation = () => {
                     <TableHead className="text-right">حركات البنك</TableHead>
                     <TableHead className="text-right">مدين البنك</TableHead>
                     <TableHead className="text-right">دائن البنك</TableHead>
+                    <TableHead className="text-right">سطور القيود</TableHead>
                     <TableHead className="text-right">مدين القيود</TableHead>
                     <TableHead className="text-right">دائن القيود</TableHead>
                     <TableHead className="text-right">فرق المدين</TableHead>
@@ -513,8 +525,9 @@ const BankReconciliation = () => {
                         <TableCell>{r.count}</TableCell>
                         <TableCell>{fmt(r.bankDebit)}</TableCell>
                         <TableCell>{fmt(r.bankCredit)}</TableCell>
-                        <TableCell>{fmt(r.bookDebit)}</TableCell>
-                        <TableCell>{fmt(r.bookCredit)}</TableCell>
+                        <TableCell>{r.bookCount}</TableCell>
+                        <TableCell className="font-semibold text-red-700">{fmt(r.bookDebit)}</TableCell>
+                        <TableCell className="font-semibold text-emerald-700">{fmt(r.bookCredit)}</TableCell>
                         <TableCell className={Math.abs(dd) < 0.01 ? "" : "text-amber-700 font-bold"}>{fmt(dd)}</TableCell>
                         <TableCell className={Math.abs(dc) < 0.01 ? "" : "text-amber-700 font-bold"}>{fmt(dc)}</TableCell>
                         <TableCell>
