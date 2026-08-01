@@ -309,60 +309,169 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
 
 
 
-  const printDay = () => {
-    const rows = entries
+  const exportExcel = () => {
+    const rows: any[] = [];
+    let gd = 0;
+    let gc = 0;
+    entries
       .filter((e) => !e.isNew)
+      .forEach((e) => {
+        const active = e.lines.filter((l) => !l._deleted);
+        active.forEach((l) => {
+          const acc = accountMap.get(l.account_id);
+          gd += num(l.debit);
+          gc += num(l.credit);
+          rows.push({
+            "رقم القيد": e.entry_number,
+            التاريخ: e.date,
+            "بيان القيد": e.description || "",
+            "كود الحساب": acc?.code || "",
+            الحساب: acc?.name_ar || "",
+            "بيان السطر": l.description || "",
+            مدين: num(l.debit) || 0,
+            دائن: num(l.credit) || 0,
+          });
+        });
+        rows.push({
+          "رقم القيد": "",
+          التاريخ: "",
+          "بيان القيد": "",
+          "كود الحساب": "",
+          الحساب: "",
+          "بيان السطر": `إجمالي القيد ${e.entry_number}`,
+          مدين: active.reduce((s, l) => s + num(l.debit), 0),
+          دائن: active.reduce((s, l) => s + num(l.credit), 0),
+        });
+      });
+
+    if (rows.length === 0) {
+      toast({ title: "لا توجد قيود للتصدير", variant: "destructive" });
+      return;
+    }
+
+    rows.push({
+      "رقم القيد": "",
+      التاريخ: "",
+      "بيان القيد": "",
+      "كود الحساب": "",
+      الحساب: "",
+      "بيان السطر": "الإجمالي العام",
+      مدين: gd,
+      دائن: gc,
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 28 }, { wch: 30 }, { wch: 14 }, { wch: 14 }];
+    (ws as any)["!views"] = [{ RTL: true }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "قيود اليوم");
+    const accPart = currentAccount ? `-${currentAccount.code}` : "";
+    XLSX.writeFile(wb, `قيود-${date}${accPart}.xlsx`);
+    toast({ title: "تم تصدير ملف الإكسل" });
+  };
+
+  const printDay = () => {
+    const visible = entries.filter((e) => !e.isNew);
+    let gd = 0;
+    let gc = 0;
+
+    const rows = visible
       .map((e) => {
-        const lines = e.lines
-          .filter((l) => !l._deleted)
+        const active = e.lines.filter((l) => !l._deleted);
+        const lines = active
           .map((l) => {
             const acc = accountMap.get(l.account_id);
+            const d = num(l.debit);
+            const c = num(l.credit);
             return `<tr>
-              <td>${acc?.code || ""}</td>
+              <td class="code">${acc?.code || ""}</td>
               <td>${acc?.name_ar || ""}</td>
-              <td>${l.description || ""}</td>
-              <td style="text-align:left">${num(l.debit) ? fmt(num(l.debit)) : "-"}</td>
-              <td style="text-align:left">${num(l.credit) ? fmt(num(l.credit)) : "-"}</td>
+              <td class="desc">${l.description || ""}</td>
+              <td class="amt debit">${d ? fmt(d) : "-"}</td>
+              <td class="amt credit">${c ? fmt(c) : "-"}</td>
             </tr>`;
           })
           .join("");
-        const td = e.lines.filter((l) => !l._deleted).reduce((s, l) => s + num(l.debit), 0);
-        const tc = e.lines.filter((l) => !l._deleted).reduce((s, l) => s + num(l.credit), 0);
+        const td = active.reduce((s, l) => s + num(l.debit), 0);
+        const tc = active.reduce((s, l) => s + num(l.credit), 0);
+        gd += td;
+        gc += tc;
         return `<div class="entry">
-          <div class="ehead"><strong>قيد رقم: ${e.entry_number}</strong><span>${e.date}</span></div>
-          <div class="edesc">${e.description || ""}</div>
-          <table><thead><tr><th>الكود</th><th>الحساب</th><th>البيان</th><th>مدين</th><th>دائن</th></tr></thead>
-          <tbody>${lines}</tbody>
-          <tfoot><tr><td colspan="3">الإجمالي</td><td style="text-align:left">${fmt(td)}</td><td style="text-align:left">${fmt(tc)}</td></tr></tfoot>
-          </table></div>`;
+          <div class="ehead">
+            <span class="enum">قيد رقم: ${e.entry_number}</span>
+            <span class="edate">${e.date}</span>
+          </div>
+          ${e.description ? `<div class="edesc">${e.description}</div>` : ""}
+          <table>
+            <thead><tr><th style="width:14%">الكود</th><th style="width:28%">الحساب</th><th>البيان</th><th style="width:15%">مدين</th><th style="width:15%">دائن</th></tr></thead>
+            <tbody>${lines}</tbody>
+            <tfoot><tr><td colspan="3">إجمالي القيد</td><td class="amt debit">${fmt(td)}</td><td class="amt credit">${fmt(tc)}</td></tr></tfoot>
+          </table>
+        </div>`;
       })
       .join("");
+
+    const summary = visible.length
+      ? `<table class="grand">
+          <tr>
+            <td>عدد القيود: <strong>${visible.length}</strong></td>
+            <td>إجمالي المدين: <strong class="debit">${fmt(gd)}</strong></td>
+            <td>إجمالي الدائن: <strong class="credit">${fmt(gc)}</strong></td>
+          </tr>
+        </table>`
+      : "";
 
     const w = window.open("", "_blank");
     if (!w) return;
     w.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">
       <title>قيود يوم ${date}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
       <style>
-        @page { size: A4; margin: 12mm; }
-        body { font-family: 'Cairo', sans-serif; color:#111; }
-        h1 { text-align:center; font-size:18pt; margin:0 0 2mm; }
-        h2 { text-align:center; font-size:13pt; font-weight:600; margin:0 0 6mm; color:#0a4a8a; }
-        .entry { margin-bottom:8mm; page-break-inside:avoid; }
-        .ehead { display:flex; justify-content:space-between; font-size:11pt; margin-bottom:1mm; }
-        .edesc { font-size:10pt; color:#444; margin-bottom:2mm; }
+        @page { size: A4; margin: 12mm 10mm; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: 'Cairo', sans-serif; color:#111; margin:0; direction:rtl; }
+        .sheet { width: 190mm; margin: 0 auto; }
+        .head { border-bottom:2.5px solid #0a4a8a; padding-bottom:3mm; margin-bottom:5mm; }
+        h1 { text-align:center; font-size:19pt; font-weight:800; margin:0 0 1.5mm; color:#0a4a8a; }
+        .sub { text-align:center; font-size:12pt; font-weight:600; color:#243b53; }
+        .sub .acc { background:#eef4fb; border:1px solid #cfe0f2; border-radius:3mm; padding:0.8mm 3mm; }
+        .meta { text-align:center; font-size:9.5pt; color:#5b6b7c; margin-top:1.5mm; }
+        .grand { width:100%; border-collapse:collapse; margin-bottom:5mm; font-size:11pt; }
+        .grand td { border:1px solid #cfe0f2; background:#f6f9fd; padding:2.4mm; text-align:center; }
+        .entry { margin-bottom:7mm; page-break-inside:avoid; break-inside:avoid; border:1px solid #d6dee8; border-radius:2mm; overflow:hidden; }
+        .ehead { display:flex; justify-content:space-between; align-items:center; font-size:11pt; font-weight:700; background:#f2f6fb; padding:2mm 3mm; border-bottom:1px solid #d6dee8; }
+        .edate { font-family:'Cairo'; color:#5b6b7c; font-weight:600; }
+        .edesc { font-size:10pt; color:#3b4b5c; padding:2mm 3mm 0; }
         table { width:100%; border-collapse:collapse; font-size:10pt; }
-        th,td { border:1px solid #999; padding:1.8mm; text-align:right; }
+        th,td { border:1px solid #b9c4d1; padding:2mm 2.2mm; text-align:right; vertical-align:middle; }
         thead tr { background:#0a4a8a; color:#fff; }
+        thead th { font-weight:700; font-size:10pt; }
+        thead { display: table-header-group; }
+        tbody tr:nth-child(even) { background:#fafcfe; }
         tfoot tr { background:#e8eef7; font-weight:700; }
+        .amt { text-align:left; font-variant-numeric: tabular-nums; white-space:nowrap; }
+        .code { font-weight:600; }
+        .debit { color:#b91c1c; }
+        .credit { color:#047857; }
+        .empty { text-align:center; padding:20mm 0; color:#5b6b7c; }
+        .foot { margin-top:6mm; border-top:1px solid #d6dee8; padding-top:2mm; font-size:8.5pt; color:#7a8794; display:flex; justify-content:space-between; }
       </style></head><body>
-      <h1>قيود يومية</h1>
-      <h2>${currentAccount ? `${currentAccount.code} - ${currentAccount.name_ar}` : ""} — ${format(new Date(date), "PPP", { locale: ar })}</h2>
-      ${rows || "<p style='text-align:center'>لا توجد قيود</p>"}
+      <div class="sheet">
+        <div class="head">
+          <h1>قيود اليومية</h1>
+          <div class="sub">
+            ${currentAccount ? `<span class="acc">${currentAccount.code} - ${currentAccount.name_ar}</span>` : ""}
+          </div>
+          <div class="meta">${format(new Date(date), "PPPP", { locale: ar })} — ${date}</div>
+        </div>
+        ${summary}
+        ${rows || "<p class='empty'>لا توجد قيود لهذا اليوم</p>"}
+        <div class="foot"><span>تم الطباعة: ${format(new Date(), "yyyy-MM-dd HH:mm")}</span><span>نظام المحاسبة</span></div>
+      </div>
       </body></html>`);
     w.document.close();
     w.focus();
-    setTimeout(() => w.print(), 500);
+    setTimeout(() => w.print(), 700);
   };
 
   return (
