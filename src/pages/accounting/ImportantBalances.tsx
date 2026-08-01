@@ -744,6 +744,10 @@ const ImportantBalances = () => {
                       أيام بدون حركة: {noMovementDays.length}
                     </span>
                   </div>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={exportMonthlyExcel}>
+                    <Download className="h-4 w-4" />
+                    تحميل اكسل
+                  </Button>
                 </div>
 
                 {/* Days grid */}
