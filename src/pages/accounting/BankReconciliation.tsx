@@ -500,18 +500,26 @@ const BankReconciliation = () => {
               </div>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">حركات البنك</TableHead>
-                    <TableHead className="text-right">مدين البنك</TableHead>
-                    <TableHead className="text-right">دائن البنك</TableHead>
-                    <TableHead className="text-right">سطور القيود</TableHead>
-                    <TableHead className="text-right">مدين القيود</TableHead>
-                    <TableHead className="text-right">دائن القيود</TableHead>
-                    <TableHead className="text-right">فرق المدين</TableHead>
-                    <TableHead className="text-right">فرق الدائن</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right print:hidden">القيود</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-center" rowSpan={2}>التاريخ</TableHead>
+                    <TableHead className="text-center border-r bg-red-50 dark:bg-red-950/20" colSpan={3}>
+                      المدين (إيداع)
+                    </TableHead>
+                    <TableHead className="text-center border-r bg-emerald-50 dark:bg-emerald-950/20" colSpan={3}>
+                      الدائن (خصم)
+                    </TableHead>
+                    <TableHead className="text-center border-r" rowSpan={2}>حركات البنك</TableHead>
+                    <TableHead className="text-center" rowSpan={2}>سطور القيود</TableHead>
+                    <TableHead className="text-center" rowSpan={2}>الحالة</TableHead>
+                    <TableHead className="text-center print:hidden" rowSpan={2}>القيود</TableHead>
+                  </TableRow>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-center border-r text-xs">مدين الإكسل</TableHead>
+                    <TableHead className="text-center text-xs">مدين القيود</TableHead>
+                    <TableHead className="text-center text-xs">الفرق</TableHead>
+                    <TableHead className="text-center border-r text-xs">دائن الإكسل</TableHead>
+                    <TableHead className="text-center text-xs">دائن القيود</TableHead>
+                    <TableHead className="text-center text-xs">الفرق</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,14 +530,15 @@ const BankReconciliation = () => {
                     return (
                       <TableRow key={r.date} className={ok ? "" : "bg-amber-50 dark:bg-amber-950/20"}>
                         <TableCell className="font-semibold">{r.date}</TableCell>
-                        <TableCell>{r.count}</TableCell>
-                        <TableCell>{fmt(r.bankDebit)}</TableCell>
-                        <TableCell>{fmt(r.bankCredit)}</TableCell>
-                        <TableCell>{r.bookCount}</TableCell>
-                        <TableCell className="font-semibold text-red-700">{fmt(r.bookDebit)}</TableCell>
-                        <TableCell className="font-semibold text-emerald-700">{fmt(r.bookCredit)}</TableCell>
-                        <TableCell className={Math.abs(dd) < 0.01 ? "" : "text-amber-700 font-bold"}>{fmt(dd)}</TableCell>
-                        <TableCell className={Math.abs(dc) < 0.01 ? "" : "text-amber-700 font-bold"}>{fmt(dc)}</TableCell>
+                        <TableCell className="text-center border-r font-semibold text-red-700">{fmt(r.bankDebit)}</TableCell>
+                        <TableCell className="text-center font-semibold text-red-700">{fmt(r.bookDebit)}</TableCell>
+                        <TableCell className={`text-center ${Math.abs(dd) < 0.01 ? "text-muted-foreground" : "text-amber-700 font-bold"}`}>{fmt(dd)}</TableCell>
+                        <TableCell className="text-center border-r font-semibold text-emerald-700">{fmt(r.bankCredit)}</TableCell>
+                        <TableCell className="text-center font-semibold text-emerald-700">{fmt(r.bookCredit)}</TableCell>
+                        <TableCell className={`text-center ${Math.abs(dc) < 0.01 ? "text-muted-foreground" : "text-amber-700 font-bold"}`}>{fmt(dc)}</TableCell>
+                        <TableCell className="text-center border-r">{r.count}</TableCell>
+                        <TableCell className="text-center">{r.bookCount}</TableCell>
+
                         <TableCell>
                           {ok ? (
                             <span className="inline-flex items-center gap-1 text-emerald-600 text-xs font-bold">
@@ -557,7 +566,21 @@ const BankReconciliation = () => {
                       </TableRow>
                     );
                   })}
+                  <TableRow className="bg-muted font-bold">
+                    <TableCell>الإجمالي</TableCell>
+                    <TableCell className="text-center border-r text-red-700">{fmt(totals.bankDebit)}</TableCell>
+                    <TableCell className="text-center text-red-700">{fmt(totals.bookDebit)}</TableCell>
+                    <TableCell className="text-center text-amber-700">{fmt(totals.bankDebit - totals.bookDebit)}</TableCell>
+                    <TableCell className="text-center border-r text-emerald-700">{fmt(totals.bankCredit)}</TableCell>
+                    <TableCell className="text-center text-emerald-700">{fmt(totals.bookCredit)}</TableCell>
+                    <TableCell className="text-center text-amber-700">{fmt(totals.bankCredit - totals.bookCredit)}</TableCell>
+                    <TableCell className="text-center border-r">-</TableCell>
+                    <TableCell className="text-center">-</TableCell>
+                    <TableCell className="text-center">{totals.diff === 0 ? "مطابق" : `${totals.diff} اختلاف`}</TableCell>
+                    <TableCell className="print:hidden" />
+                  </TableRow>
                 </TableBody>
+
               </Table>
             </CardContent>
           </Card>
