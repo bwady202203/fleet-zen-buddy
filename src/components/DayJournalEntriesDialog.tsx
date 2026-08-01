@@ -498,7 +498,9 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
             })
           )}
         </div>
+        <DeleteDialog />
       </DialogContent>
+
     </Dialog>
   );
 };
