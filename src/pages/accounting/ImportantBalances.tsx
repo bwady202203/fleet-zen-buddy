@@ -454,6 +454,23 @@ const ImportantBalances = () => {
   const today = new Date();
   const dayNames = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
 
+  const monthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  const monthDayNumbers = Array.from({ length: getDaysInMonth(monthlyDate) }, (_, i) => i + 1);
+  const bankQuickAccounts = useMemo(
+    () => allAccountsList.filter(a => String(a.code).startsWith('111')),
+    [allAccountsList]
+  );
+  const dayMovementMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    monthlyDays.forEach(d => m.set(d.date, d.debit > 0 || d.credit > 0));
+    return m;
+  }, [monthlyDays]);
+
+  const selectQuickDay = (dayNum: number) => {
+    const d = new Date(monthlyDate.getFullYear(), monthlyDate.getMonth(), dayNum);
+    openDayEntries(format(d, 'yyyy-MM-dd'));
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
