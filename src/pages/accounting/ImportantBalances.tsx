@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, getDaysInMonth, isSameDay, addMonths } from "date-fns";
 import { ar } from "date-fns/locale";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import DayJournalEntriesDialog from "@/components/DayJournalEntriesDialog";
 
 interface WatchedAccount {
   id: string;
@@ -58,6 +59,8 @@ const ImportantBalances = () => {
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [monthlyDays, setMonthlyDays] = useState<Array<{ date: string; opening: number; debit: number; credit: number; closing: number }>>([]);
   const [allAccountsList, setAllAccountsList] = useState<any[]>([]);
+  const [dayEntriesOpen, setDayEntriesOpen] = useState(false);
+  const [dayEntriesDate, setDayEntriesDate] = useState<string>('');
 
   // Generate current month days
   const currentMonthDays = useMemo(() => {
@@ -99,6 +102,12 @@ const ImportantBalances = () => {
     setSpecificDay(day);
     setDateFilter('specificDay');
   };
+
+  const openDayEntries = (dateStr: string) => {
+    setDayEntriesDate(dateStr);
+    setDayEntriesOpen(true);
+  };
+
 
   const loadData = async () => {
     setLoading(true);
@@ -681,7 +690,7 @@ const ImportantBalances = () => {
                     const isToday = isSameDay(dateObj, today);
                     const hasMovement = day.debit > 0 || day.credit > 0;
                     return (
-                      <Card key={day.date} className={`overflow-hidden ${isToday ? 'ring-2 ring-primary' : ''} ${!hasMovement ? 'bg-blue-50/70 border-blue-100' : ''}`}>
+                      <Card key={day.date} onClick={() => openDayEntries(day.date)} title="اضغط لعرض وتعديل قيود هذا اليوم" className={`overflow-hidden cursor-pointer hover:shadow-lg hover:ring-1 hover:ring-primary/40 transition-all ${isToday ? 'ring-2 ring-primary' : ''} ${!hasMovement ? 'bg-blue-50/70 border-blue-100' : ''}`}>
                         <div className="bg-muted/60 px-3 py-1.5 flex items-center justify-between border-b">
                           <span className="text-xs font-bold">{dayNames[dow]} {dateObj.getDate()}</span>
                           <span className="text-[10px] text-muted-foreground font-mono">{day.date}</span>
@@ -807,12 +816,13 @@ const ImportantBalances = () => {
                     return (
                       <div
                         key={day.date}
-                        className={`rounded-lg border p-1.5 flex flex-col gap-1 transition-colors ${
+                        onClick={() => openDayEntries(day.date)}
+                        className={`rounded-lg border p-1.5 flex flex-col gap-1 transition-all cursor-pointer hover:shadow-md ${
                           hasMovement
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100'
                             : 'bg-red-50 border-red-300 text-red-900 hover:bg-red-100'
                         } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
-                        title={`${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
+                        title={`اضغط لعرض قيود ${day.date} | مدين: ${formatNum(day.debit)} | دائن: ${formatNum(day.credit)}`}
                       >
                         <div className="flex items-center justify-between leading-none">
                           <span className="text-3xl font-bold">{dateObj.getDate()}</span>
@@ -954,6 +964,16 @@ const ImportantBalances = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Day journal entries dialog */}
+      <DayJournalEntriesDialog
+        open={dayEntriesOpen}
+        onOpenChange={setDayEntriesOpen}
+        date={dayEntriesDate}
+        accountId={monthlyAccountId}
+        accounts={allAccountsList}
+        onChanged={loadMonthlyView}
+      />
     </div>
   );
 };
