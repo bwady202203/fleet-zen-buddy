@@ -59,6 +59,8 @@ const ImportantBalances = () => {
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [monthlyDays, setMonthlyDays] = useState<Array<{ date: string; opening: number; debit: number; credit: number; closing: number }>>([]);
   const [allAccountsList, setAllAccountsList] = useState<any[]>([]);
+  const [dayEntriesOpen, setDayEntriesOpen] = useState(false);
+  const [dayEntriesDate, setDayEntriesDate] = useState<string>('');
 
   // Generate current month days
   const currentMonthDays = useMemo(() => {
