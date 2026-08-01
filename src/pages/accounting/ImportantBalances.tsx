@@ -964,6 +964,16 @@ const ImportantBalances = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Day journal entries dialog */}
+      <DayJournalEntriesDialog
+        open={dayEntriesOpen}
+        onOpenChange={setDayEntriesOpen}
+        date={dayEntriesDate}
+        accountId={monthlyAccountId}
+        accounts={allAccountsList}
+        onChanged={loadMonthlyView}
+      />
     </div>
   );
 };
