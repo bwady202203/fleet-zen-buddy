@@ -441,11 +441,24 @@ export default function RiyadhBankPaymentEntries() {
       .sort((a, b) => (sortDir === "asc" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
   }, [rows, sortDir]);
 
-  const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) =>
-      sortDir === "asc" ? a.payDate.localeCompare(b.payDate) : b.payDate.localeCompare(a.payDate)
-    );
+  const toSortKey = (d: string) => {
+    const m = (d || "").match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : d || "";
+  };
+
+  const sortedOrder = useMemo(() => {
+    return rows
+      .map((_, i) => i)
+      .sort((a, b) => {
+        const ka = toSortKey(rows[a].payDate);
+        const kb = toSortKey(rows[b].payDate);
+        const cmp = ka.localeCompare(kb);
+        return sortDir === "asc" ? cmp || a - b : -cmp || a - b;
+      });
   }, [rows, sortDir]);
+
+  const sortedRows = useMemo(() => sortedOrder.map((i) => rows[i]), [sortedOrder, rows]);
+
 
   const totalAmount = rows.reduce((s, r) => s + r.amount, 0);
   const selectedCount = rows.filter((r) => r.selectedAccountId).length;
