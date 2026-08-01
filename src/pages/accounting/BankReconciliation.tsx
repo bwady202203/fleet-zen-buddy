@@ -566,7 +566,21 @@ const BankReconciliation = () => {
                       </TableRow>
                     );
                   })}
+                  <TableRow className="bg-muted font-bold">
+                    <TableCell>الإجمالي</TableCell>
+                    <TableCell className="text-center border-r text-red-700">{fmt(totals.bankDebit)}</TableCell>
+                    <TableCell className="text-center text-red-700">{fmt(totals.bookDebit)}</TableCell>
+                    <TableCell className="text-center text-amber-700">{fmt(totals.bankDebit - totals.bookDebit)}</TableCell>
+                    <TableCell className="text-center border-r text-emerald-700">{fmt(totals.bankCredit)}</TableCell>
+                    <TableCell className="text-center text-emerald-700">{fmt(totals.bookCredit)}</TableCell>
+                    <TableCell className="text-center text-amber-700">{fmt(totals.bankCredit - totals.bookCredit)}</TableCell>
+                    <TableCell className="text-center border-r">-</TableCell>
+                    <TableCell className="text-center">-</TableCell>
+                    <TableCell className="text-center">{totals.diff === 0 ? "مطابق" : `${totals.diff} اختلاف`}</TableCell>
+                    <TableCell className="print:hidden" />
+                  </TableRow>
                 </TableBody>
+
               </Table>
             </CardContent>
           </Card>
