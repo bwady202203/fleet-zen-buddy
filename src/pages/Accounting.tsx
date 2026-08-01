@@ -309,6 +309,13 @@ const Accounting = () => {
       color: "from-amber-600 to-yellow-500"
     },
     {
+      title: "مطابقة البنوك",
+      description: "مقارنة كشف حساب البنك مع قيود اليومية لكل تاريخ",
+      icon: BarChart3,
+      link: "/accounting/bank-reconciliation",
+      color: "from-sky-600 to-blue-500"
+    },
+    {
       title: "شجرة الحسابات",
       description: "إدارة الدليل المحاسبي - 4 مستويات",
       icon: BookOpen,

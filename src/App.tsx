@@ -54,6 +54,7 @@ import Level4Balances from "./pages/accounting/Level4Balances";
 import SmartJournalEntries from "./pages/accounting/SmartJournalEntries";
 import BankStatementImport from "./pages/accounting/BankStatementImport";
 import RiyadhBankSmartEntries from "./pages/accounting/RiyadhBankSmartEntries";
+import BankReconciliation from "./pages/accounting/BankReconciliation";
 import RiyadhBankPaymentEntries from "./pages/accounting/RiyadhBankPaymentEntries";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
@@ -235,6 +236,7 @@ const App = () => {
                                  <Route path="/custody/combined-statement" element={<CustodyCombinedStatement />} />
                                   <Route path="/accounting/transfer-requests" element={<TransferRequests />} />
                                   <Route path="/accounting/important-balances" element={<ImportantBalances />} />
+                                  <Route path="/accounting/bank-reconciliation" element={<BankReconciliation />} />
                                   {/* ZATCA - الفوترة الإلكترونية */}
                                   <Route path="/zatca" element={<ZatcaHome />} />
                                   <Route path="/zatca/invoices" element={<ZatcaInvoices />} />
