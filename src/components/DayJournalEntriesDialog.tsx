@@ -410,6 +410,15 @@ const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts
                       <Button size="sm" className="gap-1" disabled={saving} onClick={() => saveEntry(eIdx)}>
                         <Save className="h-4 w-4" /> حفظ
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="gap-1"
+                        disabled={saving}
+                        onClick={() => deleteEntry(eIdx)}
+                      >
+                        <FileX className="h-4 w-4" /> حذف القيد
+                      </Button>
                     </div>
 
                     <div className="space-y-2">
