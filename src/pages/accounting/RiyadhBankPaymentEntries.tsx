@@ -745,9 +745,7 @@ export default function RiyadhBankPaymentEntries() {
                 );
               })}
 
-                  </div>
-                );
-              })}
+
 
               {favIds.length === 0 && (
                 <div className="col-span-full text-xs text-muted-foreground py-2">
