@@ -207,7 +207,7 @@ const BankReconciliation = () => {
         from += batch;
       }
       setBookTotals(totals);
-      toast({ title: "تم تحميل قيود اليومية", description: `الفترة: ${start} → ${end}` });
+      if (!silent) toast({ title: "تم تحميل قيود اليومية", description: `الفترة: ${start} → ${end}` });
     } catch (e: any) {
       console.error(e);
       toast({ title: "خطأ في تحميل القيود", description: e.message, variant: "destructive" });
@@ -215,6 +215,15 @@ const BankReconciliation = () => {
       setLoading(false);
     }
   };
+
+  // تحميل تلقائي لقيم القيود المدينة والدائنة عند اختيار الحساب أو تغيّر التواريخ
+  useEffect(() => {
+    if (!selectedAccount || !compareDates.length) return;
+    loadBookTotals(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAccount, compareDates.join(",")]);
+
+
 
   const compareRows: CompareRow[] = useMemo(() => {
     return compareDates.map((date) => {
