@@ -703,7 +703,7 @@ export default function RiyadhBankPaymentEntries() {
                 ))}
               </div>
             )}
-            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
               {favIds.map((id, favIdx) => {
                 const a = getAccount(id);
                 if (!a) return null;
@@ -718,29 +718,33 @@ export default function RiyadhBankPaymentEntries() {
                       setFavDrag(null);
                     }}
                     className={cn(
-                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-11",
+                      "relative group rounded-md border bg-sky-50 hover:bg-sky-100 border-sky-200 h-16",
                       favDrag === favIdx && "opacity-50"
                     )}
                   >
                     <button
                       type="button"
                       onClick={() => applyFavoriteAccount(id)}
-                      className="w-full h-full px-1.5 py-1 text-right flex flex-col justify-center"
+                      className="w-full h-full px-2 py-1.5 text-right flex flex-col justify-center"
                     >
-                      <div className="font-mono text-[8px] text-muted-foreground">{a.code}</div>
-                      <div className="text-[10px] font-semibold leading-tight line-clamp-2">{a.name_ar}</div>
+                      <div className="font-mono text-[11px] text-muted-foreground">{a.code}</div>
+                      <div className="text-sm font-bold leading-tight line-clamp-2">{a.name_ar}</div>
                     </button>
-                    <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" title="تحريك لليمين" onClick={() => moveFav(favIdx, favIdx - 1)} className="rounded bg-white/90 border p-0.5 hover:bg-white">
-                        <ArrowRight className="h-3 w-3" />
+                    <div className="absolute top-1 left-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" title="تحريك لليمين" onClick={() => moveFav(favIdx, favIdx - 1)} className="rounded bg-white/90 border p-1 hover:bg-white">
+                        <ArrowRight className="h-4 w-4" />
                       </button>
-                      <button type="button" title="تحريك لليسار" onClick={() => moveFav(favIdx, favIdx + 1)} className="rounded bg-white/90 border p-0.5 hover:bg-white rotate-180">
-                        <ArrowRight className="h-3 w-3" />
+                      <button type="button" title="تحريك لليسار" onClick={() => moveFav(favIdx, favIdx + 1)} className="rounded bg-white/90 border p-1 hover:bg-white rotate-180">
+                        <ArrowRight className="h-4 w-4" />
                       </button>
-                      <button type="button" title="حذف" onClick={() => removeFav(id)} className="rounded bg-white/90 border p-0.5 text-destructive hover:bg-white">
-                        <X className="h-3 w-3" />
+                      <button type="button" title="حذف" onClick={() => removeFav(id)} className="rounded bg-white/90 border p-1 text-destructive hover:bg-white">
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
+                  </div>
+                );
+              })}
+
                   </div>
                 );
               })}
