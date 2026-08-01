@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, getDaysInMonth, isSameDay, addMonths } from "date-fns";
 import { ar } from "date-fns/locale";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import DayJournalEntriesDialog from "@/components/DayJournalEntriesDialog";
 
 interface WatchedAccount {
   id: string;
