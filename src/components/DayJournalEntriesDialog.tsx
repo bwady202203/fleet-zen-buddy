@@ -54,9 +54,11 @@ const fmt = (n: number) =>
 
 const DayJournalEntriesDialog = ({ open, onOpenChange, date, accountId, accounts, onChanged }: Props) => {
   const { toast } = useToast();
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [entries, setEntries] = useState<EntryDraft[]>([]);
+
 
   const accountMap = useMemo(() => {
     const m = new Map<string, AccountOption>();
