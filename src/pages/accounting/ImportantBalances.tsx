@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays, LayoutGrid, CalendarRange, ChevronRight, ChevronLeft, Download } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Search, Eye, TrendingUp, TrendingDown, Minus, CalendarDays, LayoutGrid, CalendarRange, ChevronRight, ChevronLeft, Download, Landmark, Wallet, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -631,21 +631,25 @@ const ImportantBalances = () => {
 
       {bankQuickAccounts.length > 0 && (
         <div className="flex items-start gap-2 border-t pt-3">
-          <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">البنوك</span>
-          <div className="flex flex-wrap gap-1.5">
+          <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-2 w-[70px]">البنوك</span>
+          <div className="flex flex-wrap gap-2">
             {bankQuickAccounts.map(a => {
               const isActive = monthlyAccountId === a.id;
               return (
-                <Button
+                <button
                   key={a.id}
-                  size="sm"
-                  variant={isActive ? 'default' : 'outline'}
-                  className="h-8 px-2.5 text-xs gap-1.5"
                   onClick={() => setMonthlyAccountId(a.id)}
+                  title={a.name_ar}
+                  className={`flex flex-col items-center justify-center min-w-[5.5rem] w-24 px-2 py-2 rounded-xl border text-[10px] transition-all hover:scale-105 ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                      : 'bg-card border-border text-muted-foreground hover:bg-muted hover:border-primary/40'
+                  }`}
                 >
-                  <span className="font-mono opacity-70">{a.code}</span>
-                  {a.name_ar}
-                </Button>
+                  <Landmark className={`h-5 w-5 mb-1 ${isActive ? 'text-primary-foreground' : 'text-primary/70'}`} />
+                  <span className="font-mono opacity-80 leading-tight">{a.code}</span>
+                  <span className="font-medium text-foreground/90 truncate w-full text-center leading-tight">{a.name_ar}</span>
+                </button>
               );
             })}
           </div>
@@ -654,21 +658,26 @@ const ImportantBalances = () => {
 
       {custodyQuickAccounts.length > 0 && (
         <div className="flex items-start gap-2 border-t pt-3">
-          <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">العهد</span>
-          <div className="flex flex-wrap gap-1.5">
+          <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-2 w-[70px]">العهد</span>
+          <div className="flex flex-wrap gap-2">
             {custodyQuickAccounts.map(a => {
               const isActive = monthlyAccountId === a.id;
+              const Icon = String(a.name_ar).includes('بنك') || String(a.name_ar).includes('بنكية') ? Building2 : Wallet;
               return (
-                <Button
+                <button
                   key={a.id}
-                  size="sm"
-                  variant={isActive ? 'default' : 'outline'}
-                  className="h-8 px-2.5 text-xs gap-1.5"
                   onClick={() => setMonthlyAccountId(a.id)}
+                  title={a.name_ar}
+                  className={`flex flex-col items-center justify-center min-w-[5.5rem] w-24 px-2 py-2 rounded-xl border text-[10px] transition-all hover:scale-105 ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                      : 'bg-card border-border text-muted-foreground hover:bg-muted hover:border-primary/40'
+                  }`}
                 >
-                  <span className="font-mono opacity-70">{a.code}</span>
-                  {a.name_ar}
-                </Button>
+                  <Icon className={`h-5 w-5 mb-1 ${isActive ? 'text-primary-foreground' : 'text-primary/70'}`} />
+                  <span className="font-mono opacity-80 leading-tight">{a.code}</span>
+                  <span className="font-medium text-foreground/90 truncate w-full text-center leading-tight">{a.name_ar}</span>
+                </button>
               );
             })}
           </div>
