@@ -723,6 +723,29 @@ const ImportantBalances = () => {
                   </div>
                 </div>
               )}
+
+              {custodyQuickAccounts.length > 0 && (
+                <div className="flex items-start gap-2 border-t pt-3">
+                  <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">العهد</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {custodyQuickAccounts.map(a => {
+                      const isActive = monthlyAccountId === a.id;
+                      return (
+                        <Button
+                          key={a.id}
+                          size="sm"
+                          variant={isActive ? 'default' : 'outline'}
+                          className="h-8 px-2.5 text-xs gap-1.5"
+                          onClick={() => setMonthlyAccountId(a.id)}
+                        >
+                          <span className="font-mono opacity-70">{a.code}</span>
+                          {a.name_ar}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Controls: account select + month nav */}
