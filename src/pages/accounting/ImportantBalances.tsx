@@ -956,6 +956,150 @@ const ImportantBalances = () => {
             )}
           </div>
         </TabsContent>
+
+        <TabsContent value="revenueExpense" className="mt-0" dir="rtl">
+          <div className="container mx-auto px-4 py-4 space-y-4" dir="rtl">
+            {/* Controls: account select + month nav + filter */}
+            <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
+              <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">الحساب:</span>
+                <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="اختر حساباً" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[400px]">
+                    {allAccountsList.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        <span className="font-mono text-xs ml-2">{a.code}</span>
+                        {a.name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => subMonths(d, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <div className="min-w-[140px] text-center font-bold">
+                  {format(monthlyDate, 'MMMM yyyy', { locale: ar })}
+                </div>
+                <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => addMonths(d, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
+                  الشهر الحالي
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <Button
+                size="sm"
+                variant={revenueExpenseFilter === 'revenue' ? 'default' : 'outline'}
+                onClick={() => setRevenueExpenseFilter('revenue')}
+                className="gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                إيرادات فقط (دائن)
+              </Button>
+              <Button
+                size="sm"
+                variant={revenueExpenseFilter === 'expense' ? 'default' : 'outline'}
+                onClick={() => setRevenueExpenseFilter('expense')}
+                className="gap-2"
+              >
+                <TrendingDown className="h-4 w-4" />
+                مصروفات فقط (مدين)
+              </Button>
+            </div>
+
+            {!monthlyAccountId ? (
+              <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب</div>
+            ) : monthlyLoading ? (
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
+            ) : (
+              <div className="space-y-4">
+                {/* Summary stats */}
+                <div className="flex flex-wrap gap-3">
+                  <div className={`border rounded-lg px-4 py-2 flex items-center gap-2 ${
+                    revenueExpenseFilter === 'revenue' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
+                  }`}>
+                    <div className={`w-3 h-3 rounded-sm ${revenueExpenseFilter === 'revenue' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    <span className="text-sm font-medium">
+                      عدد الأيام: {
+                        revenueExpenseFilter === 'revenue'
+                          ? monthlyDays.filter(d => d.credit > 0 && d.debit === 0).length
+                          : monthlyDays.filter(d => d.debit > 0 && d.credit === 0).length
+                      }
+                    </span>
+                  </div>
+                  <div className="bg-primary/5 border rounded-lg px-4 py-2 flex items-center gap-2">
+                    <span className="text-sm font-medium text-primary">
+                      الإجمالي: {formatNum(
+                        revenueExpenseFilter === 'revenue'
+                          ? monthlyDays.filter(d => d.credit > 0 && d.debit === 0).reduce((s, d) => s + d.credit, 0)
+                          : monthlyDays.filter(d => d.debit > 0 && d.credit === 0).reduce((s, d) => s + d.debit, 0)
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Days grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {monthlyDays
+                    .filter(d =>
+                      revenueExpenseFilter === 'revenue'
+                        ? d.credit > 0 && d.debit === 0
+                        : d.debit > 0 && d.credit === 0
+                    )
+                    .map(day => {
+                      const dateObj = new Date(day.date);
+                      const dow = dateObj.getDay();
+                      const isToday = isSameDay(dateObj, today);
+                      const isRevenue = revenueExpenseFilter === 'revenue';
+                      return (
+                        <Card
+                          key={day.date}
+                          onClick={() => openDayEntries(day.date)}
+                          title="اضغط لعرض قيود هذا اليوم"
+                          className={`overflow-hidden cursor-pointer hover:shadow-lg hover:ring-1 hover:ring-primary/40 transition-all ${isToday ? 'ring-2 ring-primary' : ''} ${isRevenue ? 'bg-emerald-50/70 border-emerald-100' : 'bg-red-50/70 border-red-100'}`}
+                        >
+                          <div className={`px-3 py-1.5 flex items-center justify-between border-b ${isRevenue ? 'bg-emerald-100/60' : 'bg-red-100/60'}`}>
+                            <span className="text-xs font-bold">{dayNames[dow]} {dateObj.getDate()}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{day.date}</span>
+                          </div>
+                          <CardContent className="p-3 space-y-3">
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">{isRevenue ? 'إيرادات اليوم' : 'مصروفات اليوم'}</span>
+                              <span className={`font-bold ${isRevenue ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {formatNum(isRevenue ? day.credit : day.debit)}
+                                <span className="text-[10px] mr-1">{isRevenue ? 'دائن' : 'مدين'}</span>
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground border-t pt-2">
+                              {isRevenue ? 'لا توجد حركات مدينة' : 'لا توجد حركات دائنة'}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                </div>
+
+                {monthlyDays.filter(d =>
+                  revenueExpenseFilter === 'revenue'
+                    ? d.credit > 0 && d.debit === 0
+                    : d.debit > 0 && d.credit === 0
+                ).length === 0 && (
+                  <div className="text-center py-20 text-muted-foreground">
+                    لا توجد أيام {revenueExpenseFilter === 'revenue' ? 'بإيرادات فقط' : 'بمصروفات فقط'} في هذا الشهر
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
 
