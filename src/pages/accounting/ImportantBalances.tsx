@@ -1345,6 +1345,10 @@ const ImportantBalances = () => {
                 <LayoutGrid className="h-4 w-4" />
                 نسخ
               </Button>
+              <Button variant="ghost" className="gap-2 text-destructive" onClick={clearManualCells}>
+                <Trash2 className="h-4 w-4" />
+                تفريغ الأعمدة اليدوية
+              </Button>
             </div>
 
             {/* Months icons */}
@@ -1379,45 +1383,140 @@ const ImportantBalances = () => {
               </div>
             </div>
 
+            {/* Banks & custody icons (all shown at top) */}
+            {(bankQuickAccounts.length > 0 || custodyQuickAccounts.length > 0) && (
+              <div className="bg-card border rounded-lg p-3 space-y-3 print:hidden">
+                {bankQuickAccounts.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-muted-foreground mb-2">البنوك</div>
+                    <div className="flex flex-wrap gap-2">
+                      {bankQuickAccounts.map(a => {
+                        const isActive = monthlyAccountId === a.id;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => setMonthlyAccountId(a.id)}
+                            title={a.name_ar}
+                            className={`flex flex-col items-center justify-center h-20 w-24 px-2 rounded-lg border text-[10px] transition-all hover:scale-105 ${
+                              isActive ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 hover:bg-muted'
+                            }`}
+                          >
+                            <Landmark className="h-5 w-5 mb-1 opacity-80" />
+                            <span className="font-mono opacity-80 leading-tight">{a.code}</span>
+                            <span className="font-bold truncate w-full text-center leading-tight">{a.name_ar}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {custodyQuickAccounts.length > 0 && (
+                  <div className="border-t pt-3">
+                    <div className="text-xs font-bold text-muted-foreground mb-2">العهد</div>
+                    <div className="flex flex-wrap gap-2">
+                      {custodyQuickAccounts.map(a => {
+                        const isActive = monthlyAccountId === a.id;
+                        const Icon = String(a.name_ar).includes('بنك') ? Building2 : Wallet;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => setMonthlyAccountId(a.id)}
+                            title={a.name_ar}
+                            className={`flex flex-col items-center justify-center h-20 w-24 px-2 rounded-lg border text-[10px] transition-all hover:scale-105 ${
+                              isActive ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 hover:bg-muted'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5 mb-1 opacity-80" />
+                            <span className="font-mono opacity-80 leading-tight">{a.code}</span>
+                            <span className="font-bold truncate w-full text-center leading-tight">{a.name_ar}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {!monthlyAccountId ? (
               <div className="text-center py-20 text-muted-foreground">اختر حساباً لعرض الحركة اليومية</div>
             ) : monthlyLoading ? (
               <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/60">
-                      <TableHead className="text-right w-[60px]">اليوم</TableHead>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">الإجمالي المدين</TableHead>
-                      <TableHead className="text-right">الإجمالي الدائن</TableHead>
-                      <TableHead className="text-right">الرصيد</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dailyTotalsRows.map(r => (
-                      <TableRow
-                        key={r.date}
-                        className={`cursor-pointer ${r.hasMovement ? '' : 'opacity-60'}`}
-                        onClick={() => openDayEntries(r.date)}
-                      >
-                        <TableCell className="font-bold">{r.day}</TableCell>
-                        <TableCell className="font-mono text-xs">{r.date}</TableCell>
-                        <TableCell className={`text-base font-semibold ${r.debit > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>{r.debit > 0 ? formatNum(r.debit) : '-'}</TableCell>
-                        <TableCell className={`text-base font-semibold ${r.credit > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>{r.credit > 0 ? formatNum(r.credit) : '-'}</TableCell>
-                        <TableCell className={`text-base font-bold ${r.balance > 0 ? 'text-red-600' : r.balance < 0 ? 'text-emerald-600' : ''}`}>{formatNum(r.balance)}</TableCell>
+              <>
+                <p className="text-xs text-muted-foreground print:hidden">
+                  الأعمدة اليدوية (مدين / دائن) تقبل الكتابة أو اللصق مباشرة من Excel — الصق في أول خلية وسيتم التوزيع على بقية الأيام تلقائياً.
+                </p>
+                <div className="border rounded-lg overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/60">
+                        <TableHead className="text-right w-[60px]">اليوم</TableHead>
+                        <TableHead className="text-right">التاريخ</TableHead>
+                        <TableHead className="text-right">الإجمالي المدين</TableHead>
+                        <TableHead className="text-right">الإجمالي الدائن</TableHead>
+                        <TableHead className="text-right bg-amber-50/70">مدين (يدوي)</TableHead>
+                        <TableHead className="text-right bg-amber-50/70">دائن (يدوي)</TableHead>
+                        <TableHead className="text-right">فرق مدين</TableHead>
+                        <TableHead className="text-right">فرق دائن</TableHead>
+                        <TableHead className="text-right">الرصيد</TableHead>
                       </TableRow>
-                    ))}
-                    <TableRow className="bg-muted/60 font-bold border-t-2">
-                      <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
-                      <TableCell className="text-red-600 text-base">{formatNum(dailyTotalsSummary.debit)}</TableCell>
-                      <TableCell className="text-emerald-600 text-base">{formatNum(dailyTotalsSummary.credit)}</TableCell>
-                      <TableCell className={`text-base ${dailyTotalsSummary.closing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNum(dailyTotalsSummary.closing)}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {dailyTotalsRows.map((r, idx) => {
+                        const m = getManual(r.date);
+                        const md = parseManualNum(m.debit);
+                        const mc = parseManualNum(m.credit);
+                        const diffD = md - r.debit;
+                        const diffC = mc - r.credit;
+                        return (
+                          <TableRow key={r.date} className={r.hasMovement ? '' : 'opacity-70'}>
+                            <TableCell className="font-bold cursor-pointer" onClick={() => openDayEntries(r.date)}>{r.day}</TableCell>
+                            <TableCell className="font-mono text-xs cursor-pointer" onClick={() => openDayEntries(r.date)}>{r.date}</TableCell>
+                            <TableCell className={`text-base font-semibold cursor-pointer ${r.debit > 0 ? 'text-red-600' : 'text-muted-foreground'}`} onClick={() => openDayEntries(r.date)}>{r.debit > 0 ? formatNum(r.debit) : '-'}</TableCell>
+                            <TableCell className={`text-base font-semibold cursor-pointer ${r.credit > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`} onClick={() => openDayEntries(r.date)}>{r.credit > 0 ? formatNum(r.credit) : '-'}</TableCell>
+                            <TableCell className="p-0 bg-amber-50/40">
+                              <Input
+                                value={m.debit}
+                                onChange={(e) => setManual(r.date, 'debit', e.target.value)}
+                                onPaste={(e) => handleManualPaste(e, idx, 'debit')}
+                                inputMode="decimal"
+                                type="text"
+                                className="h-9 w-full rounded-none border-0 bg-transparent text-right font-mono text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background"
+                                placeholder="0.00"
+                              />
+                            </TableCell>
+                            <TableCell className="p-0 bg-amber-50/40">
+                              <Input
+                                value={m.credit}
+                                onChange={(e) => setManual(r.date, 'credit', e.target.value)}
+                                onPaste={(e) => handleManualPaste(e, idx, 'credit')}
+                                inputMode="decimal"
+                                type="text"
+                                className="h-9 w-full rounded-none border-0 bg-transparent text-right font-mono text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background"
+                                placeholder="0.00"
+                              />
+                            </TableCell>
+                            <TableCell className={`font-mono text-sm font-bold ${Math.abs(diffD) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{md || r.debit ? formatNum(diffD) : '-'}</TableCell>
+                            <TableCell className={`font-mono text-sm font-bold ${Math.abs(diffC) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{mc || r.credit ? formatNum(diffC) : '-'}</TableCell>
+                            <TableCell className={`text-base font-bold ${r.balance > 0 ? 'text-red-600' : r.balance < 0 ? 'text-emerald-600' : ''}`}>{formatNum(r.balance)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      <TableRow className="bg-muted/60 font-bold border-t-2">
+                        <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                        <TableCell className="text-red-600 text-base">{formatNum(dailyTotalsSummary.debit)}</TableCell>
+                        <TableCell className="text-emerald-600 text-base">{formatNum(dailyTotalsSummary.credit)}</TableCell>
+                        <TableCell className="text-red-600 text-base">{formatNum(manualSummary.debit)}</TableCell>
+                        <TableCell className="text-emerald-600 text-base">{formatNum(manualSummary.credit)}</TableCell>
+                        <TableCell className={`text-base ${Math.abs(manualSummary.debit - dailyTotalsSummary.debit) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{formatNum(manualSummary.debit - dailyTotalsSummary.debit)}</TableCell>
+                        <TableCell className={`text-base ${Math.abs(manualSummary.credit - dailyTotalsSummary.credit) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{formatNum(manualSummary.credit - dailyTotalsSummary.credit)}</TableCell>
+                        <TableCell className={`text-base ${dailyTotalsSummary.closing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNum(dailyTotalsSummary.closing)}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </div>
         </TabsContent>
