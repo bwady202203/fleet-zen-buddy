@@ -180,7 +180,8 @@ const App = () => {
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
                                   <Route path="/accounting/riyadh-bank-smart" element={<RiyadhBankSmartEntries />} />
                                   <Route path="/accounting/riyadh-bank-payment" element={<RiyadhBankPaymentEntries />} />
-                                 <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
+                                  <Route path="/accounting/bank-deposits" element={<BankDepositsEntries />} />
+                                  <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
                                  <Route path="/accounting/bank-collection-receipt" element={<BankCollectionReceipt />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />
