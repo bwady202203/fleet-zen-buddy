@@ -472,20 +472,32 @@ const ImportantBalances = () => {
     }
     const XLSX = await import("xlsx");
     const acc = allAccountsList.find(a => a.id === monthlyAccountId);
-    const rows: any[] = dailyTotalsRows.map(r => ({
-      "التاريخ": r.date,
-      "الإجمالي المدين": Number(r.debit.toFixed(2)),
-      "الإجمالي الدائن": Number(r.credit.toFixed(2)),
-      "الرصيد": Number(r.balance.toFixed(2)),
-    }));
+    const rows: any[] = dailyTotalsRows.map(r => {
+      const m = getManual(r.date);
+      const md = parseManualNum(m.debit), mc = parseManualNum(m.credit);
+      return {
+        "التاريخ": r.date,
+        "الإجمالي المدين": Number(r.debit.toFixed(2)),
+        "الإجمالي الدائن": Number(r.credit.toFixed(2)),
+        "مدين يدوي": Number(md.toFixed(2)),
+        "دائن يدوي": Number(mc.toFixed(2)),
+        "فرق مدين": Number((md - r.debit).toFixed(2)),
+        "فرق دائن": Number((mc - r.credit).toFixed(2)),
+        "الرصيد": Number(r.balance.toFixed(2)),
+      };
+    });
     rows.push({
       "التاريخ": "الإجمالي",
       "الإجمالي المدين": Number(dailyTotalsSummary.debit.toFixed(2)),
       "الإجمالي الدائن": Number(dailyTotalsSummary.credit.toFixed(2)),
+      "مدين يدوي": Number(manualSummary.debit.toFixed(2)),
+      "دائن يدوي": Number(manualSummary.credit.toFixed(2)),
+      "فرق مدين": Number((manualSummary.debit - dailyTotalsSummary.debit).toFixed(2)),
+      "فرق دائن": Number((manualSummary.credit - dailyTotalsSummary.credit).toFixed(2)),
       "الرصيد": Number(dailyTotalsSummary.closing.toFixed(2)),
     });
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    ws["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "الحركة اليومية");
     XLSX.writeFile(wb, `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_حركة_يومية.xlsx`);
@@ -497,9 +509,13 @@ const ImportantBalances = () => {
       return;
     }
     const lines = [
-      ['التاريخ', 'الإجمالي المدين', 'الإجمالي الدائن', 'الرصيد'].join('\t'),
-      ...dailyTotalsRows.map(r => [r.date, r.debit.toFixed(2), r.credit.toFixed(2), r.balance.toFixed(2)].join('\t')),
-      ['الإجمالي', dailyTotalsSummary.debit.toFixed(2), dailyTotalsSummary.credit.toFixed(2), dailyTotalsSummary.closing.toFixed(2)].join('\t'),
+      ['التاريخ', 'الإجمالي المدين', 'الإجمالي الدائن', 'مدين يدوي', 'دائن يدوي', 'فرق مدين', 'فرق دائن', 'الرصيد'].join('\t'),
+      ...dailyTotalsRows.map(r => {
+        const m = getManual(r.date);
+        const md = parseManualNum(m.debit), mc = parseManualNum(m.credit);
+        return [r.date, r.debit.toFixed(2), r.credit.toFixed(2), md.toFixed(2), mc.toFixed(2), (md - r.debit).toFixed(2), (mc - r.credit).toFixed(2), r.balance.toFixed(2)].join('\t');
+      }),
+      ['الإجمالي', dailyTotalsSummary.debit.toFixed(2), dailyTotalsSummary.credit.toFixed(2), manualSummary.debit.toFixed(2), manualSummary.credit.toFixed(2), (manualSummary.debit - dailyTotalsSummary.debit).toFixed(2), (manualSummary.credit - dailyTotalsSummary.credit).toFixed(2), dailyTotalsSummary.closing.toFixed(2)].join('\t'),
     ].join('\n');
     try {
       await navigator.clipboard.writeText(lines);
