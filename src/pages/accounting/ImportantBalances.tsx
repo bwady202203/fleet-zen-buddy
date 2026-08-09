@@ -388,6 +388,71 @@ const ImportantBalances = () => {
     XLSX.writeFile(wb, name);
   };
 
+  // ===== Daily totals tab (debit / credit / balance per day) =====
+  const dailyTotalsRows = useMemo(
+    () => monthlyDays.map(d => ({
+      date: d.date,
+      day: Number(d.date.slice(8, 10)),
+      debit: d.debit,
+      credit: d.credit,
+      balance: d.closing,
+      hasMovement: d.debit !== 0 || d.credit !== 0,
+    })),
+    [monthlyDays]
+  );
+
+  const dailyTotalsSummary = useMemo(() => ({
+    debit: dailyTotalsRows.reduce((s, r) => s + r.debit, 0),
+    credit: dailyTotalsRows.reduce((s, r) => s + r.credit, 0),
+    closing: dailyTotalsRows.length ? dailyTotalsRows[dailyTotalsRows.length - 1].balance : 0,
+  }), [dailyTotalsRows]);
+
+  const exportDailyTotalsExcel = async () => {
+    if (!dailyTotalsRows.length) {
+      toast({ title: "لا توجد بيانات للتصدير", variant: "destructive" });
+      return;
+    }
+    const XLSX = await import("xlsx");
+    const acc = allAccountsList.find(a => a.id === monthlyAccountId);
+    const rows: any[] = dailyTotalsRows.map(r => ({
+      "التاريخ": r.date,
+      "الإجمالي المدين": Number(r.debit.toFixed(2)),
+      "الإجمالي الدائن": Number(r.credit.toFixed(2)),
+      "الرصيد": Number(r.balance.toFixed(2)),
+    }));
+    rows.push({
+      "التاريخ": "الإجمالي",
+      "الإجمالي المدين": Number(dailyTotalsSummary.debit.toFixed(2)),
+      "الإجمالي الدائن": Number(dailyTotalsSummary.credit.toFixed(2)),
+      "الرصيد": Number(dailyTotalsSummary.closing.toFixed(2)),
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "الحركة اليومية");
+    XLSX.writeFile(wb, `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_حركة_يومية.xlsx`);
+  };
+
+  const copyDailyTotals = async () => {
+    if (!dailyTotalsRows.length) {
+      toast({ title: "لا توجد بيانات للنسخ", variant: "destructive" });
+      return;
+    }
+    const lines = [
+      ['التاريخ', 'الإجمالي المدين', 'الإجمالي الدائن', 'الرصيد'].join('\t'),
+      ...dailyTotalsRows.map(r => [r.date, r.debit.toFixed(2), r.credit.toFixed(2), r.balance.toFixed(2)].join('\t')),
+      ['الإجمالي', dailyTotalsSummary.debit.toFixed(2), dailyTotalsSummary.credit.toFixed(2), dailyTotalsSummary.closing.toFixed(2)].join('\t'),
+    ].join('\n');
+    try {
+      await navigator.clipboard.writeText(lines);
+      toast({ title: "تم النسخ", description: "تم نسخ البيانات للحافظة" });
+    } catch {
+      toast({ title: "تعذر النسخ", variant: "destructive" });
+    }
+  };
+
+
+
   const handleOpenAdd = () => {
     loadAllAccounts();
     setAccountSearch("");
