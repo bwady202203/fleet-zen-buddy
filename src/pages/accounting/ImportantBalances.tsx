@@ -320,6 +320,38 @@ const ImportantBalances = () => {
     }
   }, [activeTab, monthlyAccountId, monthlyDate]);
 
+  // When picking an account whose data ends before the shown month, jump to its latest month with movement
+  useEffect(() => {
+    if (!monthlyAccountId) return;
+    let cancelled = false;
+    (async () => {
+      const monthStartStr = format(startOfMonth(monthlyDate), 'yyyy-MM-dd');
+      const { data: inMonth } = await supabase
+        .from('journal_entry_lines')
+        .select('id, journal_entries!inner(date)')
+        .eq('account_id', monthlyAccountId)
+        .gte('journal_entries.date', monthStartStr)
+        .lte('journal_entries.date', format(endOfMonth(monthlyDate), 'yyyy-MM-dd'))
+        .limit(1);
+      if (cancelled || (inMonth && inMonth.length > 0)) return;
+      const { data: latest } = await supabase
+        .from('journal_entry_lines')
+        .select('journal_entries!inner(date)')
+        .eq('account_id', monthlyAccountId)
+        .order('date', { referencedTable: 'journal_entries', ascending: false })
+        .limit(1);
+      const latestDate = (latest?.[0] as any)?.journal_entries?.date;
+      if (cancelled || !latestDate) return;
+      const ld = new Date(latestDate);
+      if (ld.getFullYear() !== monthlyDate.getFullYear() || ld.getMonth() !== monthlyDate.getMonth()) {
+        setMonthlyDate(new Date(ld.getFullYear(), ld.getMonth(), 1));
+        toast({ title: 'تم الانتقال لآخر شهر به حركة', description: format(ld, 'MMMM yyyy', { locale: ar }) });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [monthlyAccountId]);
+
+
   const noMovementDays = useMemo(
     () => monthlyDays.filter(d => d.debit === 0 && d.credit === 0),
     [monthlyDays]
