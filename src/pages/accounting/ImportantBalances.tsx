@@ -1236,7 +1236,110 @@ const ImportantBalances = () => {
             )}
           </div>
         </TabsContent>
+
+        <TabsContent value="dailyTotals" className="mt-0" dir="rtl">
+          <div className="container mx-auto px-4 py-4 space-y-4">
+            {/* Account selector */}
+            <div className="flex flex-wrap items-center gap-3 print:hidden">
+              <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
+                <SelectTrigger className="w-[320px]">
+                  <SelectValue placeholder="اختر الحساب" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAccountsList.map(a => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="font-mono text-xs opacity-70 ml-2">{a.code}</span>
+                      {a.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" className="gap-2" onClick={exportDailyTotalsExcel}>
+                <Download className="h-4 w-4" />
+                تحميل Excel
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={copyDailyTotals}>
+                <LayoutGrid className="h-4 w-4" />
+                نسخ
+              </Button>
+            </div>
+
+            {/* Months icons */}
+            <div className="bg-card border rounded-lg p-3 print:hidden">
+              <div className="flex flex-wrap items-center gap-2">
+                {monthNamesAr.map((mn, i) => {
+                  const isActive = monthlyDate.getMonth() === i;
+                  return (
+                    <button
+                      key={mn}
+                      onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear(), i, 1))}
+                      className={`flex flex-col items-center justify-center h-16 w-20 rounded-lg border transition-all hover:scale-105 ${
+                        isActive ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 hover:bg-muted'
+                      }`}
+                    >
+                      <CalendarRange className="h-5 w-5 mb-1 opacity-80" />
+                      <span className="text-xs font-bold">{mn}</span>
+                    </button>
+                  );
+                })}
+                <div className="flex items-center gap-1 mr-2">
+                  <Button size="sm" variant="ghost" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() - 1, monthlyDate.getMonth(), 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                    {monthlyDate.getFullYear() - 1}
+                  </Button>
+                  <span className="text-sm font-bold px-1">{monthlyDate.getFullYear()}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() + 1, monthlyDate.getMonth(), 1))}>
+                    {monthlyDate.getFullYear() + 1}
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {!monthlyAccountId ? (
+              <div className="text-center py-20 text-muted-foreground">اختر حساباً لعرض الحركة اليومية</div>
+            ) : monthlyLoading ? (
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/60">
+                      <TableHead className="text-right w-[60px]">اليوم</TableHead>
+                      <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">الإجمالي المدين</TableHead>
+                      <TableHead className="text-right">الإجمالي الدائن</TableHead>
+                      <TableHead className="text-right">الرصيد</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyTotalsRows.map(r => (
+                      <TableRow
+                        key={r.date}
+                        className={`cursor-pointer ${r.hasMovement ? '' : 'opacity-60'}`}
+                        onClick={() => openDayEntries(r.date)}
+                      >
+                        <TableCell className="font-bold">{r.day}</TableCell>
+                        <TableCell className="font-mono text-xs">{r.date}</TableCell>
+                        <TableCell className={`text-base font-semibold ${r.debit > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>{r.debit > 0 ? formatNum(r.debit) : '-'}</TableCell>
+                        <TableCell className={`text-base font-semibold ${r.credit > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>{r.credit > 0 ? formatNum(r.credit) : '-'}</TableCell>
+                        <TableCell className={`text-base font-bold ${r.balance > 0 ? 'text-red-600' : r.balance < 0 ? 'text-emerald-600' : ''}`}>{formatNum(r.balance)}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/60 font-bold border-t-2">
+                      <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                      <TableCell className="text-red-600 text-base">{formatNum(dailyTotalsSummary.debit)}</TableCell>
+                      <TableCell className="text-emerald-600 text-base">{formatNum(dailyTotalsSummary.credit)}</TableCell>
+                      <TableCell className={`text-base ${dailyTotalsSummary.closing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNum(dailyTotalsSummary.closing)}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
+
 
 
       {/* Add Account Dialog */}
