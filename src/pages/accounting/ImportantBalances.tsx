@@ -62,6 +62,8 @@ const ImportantBalances = () => {
   const [allAccountsList, setAllAccountsList] = useState<any[]>([]);
   const [dayEntriesOpen, setDayEntriesOpen] = useState(false);
   const [dayEntriesDate, setDayEntriesDate] = useState<string>('');
+  // Manual (Excel-like) debit/credit input per day
+  const [manualCells, setManualCells] = useState<Record<string, { debit: string; credit: string }>>({});
 
   // Generate current month days
   const currentMonthDays = useMemo(() => {
