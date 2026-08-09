@@ -62,6 +62,8 @@ const ImportantBalances = () => {
   const [allAccountsList, setAllAccountsList] = useState<any[]>([]);
   const [dayEntriesOpen, setDayEntriesOpen] = useState(false);
   const [dayEntriesDate, setDayEntriesDate] = useState<string>('');
+  // Manual (Excel-like) debit/credit input per day
+  const [manualCells, setManualCells] = useState<Record<string, { debit: string; credit: string }>>({});
 
   // Generate current month days
   const currentMonthDays = useMemo(() => {
@@ -407,6 +409,62 @@ const ImportantBalances = () => {
     closing: dailyTotalsRows.length ? dailyTotalsRows[dailyTotalsRows.length - 1].balance : 0,
   }), [dailyTotalsRows]);
 
+  // ===== Manual Excel-like cells helpers =====
+  const parseManualNum = (v: string) => {
+    const n = parseFloat(String(v ?? '').replace(/[^\d.-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
+  const getManual = (date: string) => manualCells[date] || { debit: '', credit: '' };
+  const setManual = (date: string, field: 'debit' | 'credit', value: string) => {
+    setManualCells(prev => ({ ...prev, [date]: { ...(prev[date] || { debit: '', credit: '' }), [field]: value } }));
+  };
+  const manualSummary = useMemo(() => {
+    let debit = 0, credit = 0;
+    dailyTotalsRows.forEach(r => {
+      const m = manualCells[r.date] || { debit: '', credit: '' };
+      debit += parseManualNum(m.debit);
+      credit += parseManualNum(m.credit);
+    });
+    return { debit, credit };
+  }, [manualCells, dailyTotalsRows]);
+
+  const clearManualCells = () => setManualCells({});
+
+  // Paste from Excel: fills down starting at the pasted cell
+  const handleManualPaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    startIndex: number,
+    startField: 'debit' | 'credit'
+  ) => {
+    const text = e.clipboardData.getData('text');
+    if (!text || (!text.includes('\n') && !text.includes('\t'))) return;
+    e.preventDefault();
+    const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
+    setManualCells(prev => {
+      const next = { ...prev };
+      lines.forEach((line, i) => {
+        const row = dailyTotalsRows[startIndex + i];
+        if (!row) return;
+        const cols = line.split('\t');
+        const cur = { ...(next[row.date] || { debit: '', credit: '' }) };
+        if (cols.length > 1) {
+          if (startField === 'debit') {
+            cur.debit = cols[0].trim();
+            cur.credit = (cols[1] ?? '').trim();
+          } else {
+            cur.credit = cols[0].trim();
+          }
+        } else {
+          cur[startField] = cols[0].trim();
+        }
+        next[row.date] = cur;
+      });
+      return next;
+    });
+    toast({ title: 'تم اللصق', description: `تم لصق ${lines.length} سطر` });
+  };
+
+
   const exportDailyTotalsExcel = async () => {
     if (!dailyTotalsRows.length) {
       toast({ title: "لا توجد بيانات للتصدير", variant: "destructive" });
@@ -414,20 +472,32 @@ const ImportantBalances = () => {
     }
     const XLSX = await import("xlsx");
     const acc = allAccountsList.find(a => a.id === monthlyAccountId);
-    const rows: any[] = dailyTotalsRows.map(r => ({
-      "التاريخ": r.date,
-      "الإجمالي المدين": Number(r.debit.toFixed(2)),
-      "الإجمالي الدائن": Number(r.credit.toFixed(2)),
-      "الرصيد": Number(r.balance.toFixed(2)),
-    }));
+    const rows: any[] = dailyTotalsRows.map(r => {
+      const m = getManual(r.date);
+      const md = parseManualNum(m.debit), mc = parseManualNum(m.credit);
+      return {
+        "التاريخ": r.date,
+        "الإجمالي المدين": Number(r.debit.toFixed(2)),
+        "الإجمالي الدائن": Number(r.credit.toFixed(2)),
+        "مدين يدوي": Number(md.toFixed(2)),
+        "دائن يدوي": Number(mc.toFixed(2)),
+        "فرق مدين": Number((md - r.debit).toFixed(2)),
+        "فرق دائن": Number((mc - r.credit).toFixed(2)),
+        "الرصيد": Number(r.balance.toFixed(2)),
+      };
+    });
     rows.push({
       "التاريخ": "الإجمالي",
       "الإجمالي المدين": Number(dailyTotalsSummary.debit.toFixed(2)),
       "الإجمالي الدائن": Number(dailyTotalsSummary.credit.toFixed(2)),
+      "مدين يدوي": Number(manualSummary.debit.toFixed(2)),
+      "دائن يدوي": Number(manualSummary.credit.toFixed(2)),
+      "فرق مدين": Number((manualSummary.debit - dailyTotalsSummary.debit).toFixed(2)),
+      "فرق دائن": Number((manualSummary.credit - dailyTotalsSummary.credit).toFixed(2)),
       "الرصيد": Number(dailyTotalsSummary.closing.toFixed(2)),
     });
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    ws["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "الحركة اليومية");
     XLSX.writeFile(wb, `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_حركة_يومية.xlsx`);
@@ -439,9 +509,13 @@ const ImportantBalances = () => {
       return;
     }
     const lines = [
-      ['التاريخ', 'الإجمالي المدين', 'الإجمالي الدائن', 'الرصيد'].join('\t'),
-      ...dailyTotalsRows.map(r => [r.date, r.debit.toFixed(2), r.credit.toFixed(2), r.balance.toFixed(2)].join('\t')),
-      ['الإجمالي', dailyTotalsSummary.debit.toFixed(2), dailyTotalsSummary.credit.toFixed(2), dailyTotalsSummary.closing.toFixed(2)].join('\t'),
+      ['التاريخ', 'الإجمالي المدين', 'الإجمالي الدائن', 'مدين يدوي', 'دائن يدوي', 'فرق مدين', 'فرق دائن', 'الرصيد'].join('\t'),
+      ...dailyTotalsRows.map(r => {
+        const m = getManual(r.date);
+        const md = parseManualNum(m.debit), mc = parseManualNum(m.credit);
+        return [r.date, r.debit.toFixed(2), r.credit.toFixed(2), md.toFixed(2), mc.toFixed(2), (md - r.debit).toFixed(2), (mc - r.credit).toFixed(2), r.balance.toFixed(2)].join('\t');
+      }),
+      ['الإجمالي', dailyTotalsSummary.debit.toFixed(2), dailyTotalsSummary.credit.toFixed(2), manualSummary.debit.toFixed(2), manualSummary.credit.toFixed(2), (manualSummary.debit - dailyTotalsSummary.debit).toFixed(2), (manualSummary.credit - dailyTotalsSummary.credit).toFixed(2), dailyTotalsSummary.closing.toFixed(2)].join('\t'),
     ].join('\n');
     try {
       await navigator.clipboard.writeText(lines);
@@ -1271,6 +1345,10 @@ const ImportantBalances = () => {
                 <LayoutGrid className="h-4 w-4" />
                 نسخ
               </Button>
+              <Button variant="ghost" className="gap-2 text-destructive" onClick={clearManualCells}>
+                <Trash2 className="h-4 w-4" />
+                تفريغ الأعمدة اليدوية
+              </Button>
             </div>
 
             {/* Months icons */}
@@ -1305,45 +1383,140 @@ const ImportantBalances = () => {
               </div>
             </div>
 
+            {/* Banks & custody icons (all shown at top) */}
+            {(bankQuickAccounts.length > 0 || custodyQuickAccounts.length > 0) && (
+              <div className="bg-card border rounded-lg p-3 space-y-3 print:hidden">
+                {bankQuickAccounts.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-muted-foreground mb-2">البنوك</div>
+                    <div className="flex flex-wrap gap-2">
+                      {bankQuickAccounts.map(a => {
+                        const isActive = monthlyAccountId === a.id;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => setMonthlyAccountId(a.id)}
+                            title={a.name_ar}
+                            className={`flex flex-col items-center justify-center h-20 w-24 px-2 rounded-lg border text-[10px] transition-all hover:scale-105 ${
+                              isActive ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 hover:bg-muted'
+                            }`}
+                          >
+                            <Landmark className="h-5 w-5 mb-1 opacity-80" />
+                            <span className="font-mono opacity-80 leading-tight">{a.code}</span>
+                            <span className="font-bold truncate w-full text-center leading-tight">{a.name_ar}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {custodyQuickAccounts.length > 0 && (
+                  <div className="border-t pt-3">
+                    <div className="text-xs font-bold text-muted-foreground mb-2">العهد</div>
+                    <div className="flex flex-wrap gap-2">
+                      {custodyQuickAccounts.map(a => {
+                        const isActive = monthlyAccountId === a.id;
+                        const Icon = String(a.name_ar).includes('بنك') ? Building2 : Wallet;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => setMonthlyAccountId(a.id)}
+                            title={a.name_ar}
+                            className={`flex flex-col items-center justify-center h-20 w-24 px-2 rounded-lg border text-[10px] transition-all hover:scale-105 ${
+                              isActive ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 hover:bg-muted'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5 mb-1 opacity-80" />
+                            <span className="font-mono opacity-80 leading-tight">{a.code}</span>
+                            <span className="font-bold truncate w-full text-center leading-tight">{a.name_ar}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {!monthlyAccountId ? (
               <div className="text-center py-20 text-muted-foreground">اختر حساباً لعرض الحركة اليومية</div>
             ) : monthlyLoading ? (
               <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : (
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/60">
-                      <TableHead className="text-right w-[60px]">اليوم</TableHead>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">الإجمالي المدين</TableHead>
-                      <TableHead className="text-right">الإجمالي الدائن</TableHead>
-                      <TableHead className="text-right">الرصيد</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dailyTotalsRows.map(r => (
-                      <TableRow
-                        key={r.date}
-                        className={`cursor-pointer ${r.hasMovement ? '' : 'opacity-60'}`}
-                        onClick={() => openDayEntries(r.date)}
-                      >
-                        <TableCell className="font-bold">{r.day}</TableCell>
-                        <TableCell className="font-mono text-xs">{r.date}</TableCell>
-                        <TableCell className={`text-base font-semibold ${r.debit > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>{r.debit > 0 ? formatNum(r.debit) : '-'}</TableCell>
-                        <TableCell className={`text-base font-semibold ${r.credit > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>{r.credit > 0 ? formatNum(r.credit) : '-'}</TableCell>
-                        <TableCell className={`text-base font-bold ${r.balance > 0 ? 'text-red-600' : r.balance < 0 ? 'text-emerald-600' : ''}`}>{formatNum(r.balance)}</TableCell>
+              <>
+                <p className="text-xs text-muted-foreground print:hidden">
+                  الأعمدة اليدوية (مدين / دائن) تقبل الكتابة أو اللصق مباشرة من Excel — الصق في أول خلية وسيتم التوزيع على بقية الأيام تلقائياً.
+                </p>
+                <div className="border rounded-lg overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/60">
+                        <TableHead className="text-right w-[60px]">اليوم</TableHead>
+                        <TableHead className="text-right">التاريخ</TableHead>
+                        <TableHead className="text-right">الإجمالي المدين</TableHead>
+                        <TableHead className="text-right">الإجمالي الدائن</TableHead>
+                        <TableHead className="text-right bg-amber-50/70">مدين (يدوي)</TableHead>
+                        <TableHead className="text-right bg-amber-50/70">دائن (يدوي)</TableHead>
+                        <TableHead className="text-right">فرق مدين</TableHead>
+                        <TableHead className="text-right">فرق دائن</TableHead>
+                        <TableHead className="text-right">الرصيد</TableHead>
                       </TableRow>
-                    ))}
-                    <TableRow className="bg-muted/60 font-bold border-t-2">
-                      <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
-                      <TableCell className="text-red-600 text-base">{formatNum(dailyTotalsSummary.debit)}</TableCell>
-                      <TableCell className="text-emerald-600 text-base">{formatNum(dailyTotalsSummary.credit)}</TableCell>
-                      <TableCell className={`text-base ${dailyTotalsSummary.closing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNum(dailyTotalsSummary.closing)}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {dailyTotalsRows.map((r, idx) => {
+                        const m = getManual(r.date);
+                        const md = parseManualNum(m.debit);
+                        const mc = parseManualNum(m.credit);
+                        const diffD = md - r.debit;
+                        const diffC = mc - r.credit;
+                        return (
+                          <TableRow key={r.date} className={r.hasMovement ? '' : 'opacity-70'}>
+                            <TableCell className="font-bold cursor-pointer" onClick={() => openDayEntries(r.date)}>{r.day}</TableCell>
+                            <TableCell className="font-mono text-xs cursor-pointer" onClick={() => openDayEntries(r.date)}>{r.date}</TableCell>
+                            <TableCell className={`text-base font-semibold cursor-pointer ${r.debit > 0 ? 'text-red-600' : 'text-muted-foreground'}`} onClick={() => openDayEntries(r.date)}>{r.debit > 0 ? formatNum(r.debit) : '-'}</TableCell>
+                            <TableCell className={`text-base font-semibold cursor-pointer ${r.credit > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`} onClick={() => openDayEntries(r.date)}>{r.credit > 0 ? formatNum(r.credit) : '-'}</TableCell>
+                            <TableCell className="p-0 bg-amber-50/40">
+                              <Input
+                                value={m.debit}
+                                onChange={(e) => setManual(r.date, 'debit', e.target.value)}
+                                onPaste={(e) => handleManualPaste(e, idx, 'debit')}
+                                inputMode="decimal"
+                                type="text"
+                                className="h-9 w-full rounded-none border-0 bg-transparent text-right font-mono text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background"
+                                placeholder="0.00"
+                              />
+                            </TableCell>
+                            <TableCell className="p-0 bg-amber-50/40">
+                              <Input
+                                value={m.credit}
+                                onChange={(e) => setManual(r.date, 'credit', e.target.value)}
+                                onPaste={(e) => handleManualPaste(e, idx, 'credit')}
+                                inputMode="decimal"
+                                type="text"
+                                className="h-9 w-full rounded-none border-0 bg-transparent text-right font-mono text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background"
+                                placeholder="0.00"
+                              />
+                            </TableCell>
+                            <TableCell className={`font-mono text-sm font-bold ${Math.abs(diffD) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{md || r.debit ? formatNum(diffD) : '-'}</TableCell>
+                            <TableCell className={`font-mono text-sm font-bold ${Math.abs(diffC) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{mc || r.credit ? formatNum(diffC) : '-'}</TableCell>
+                            <TableCell className={`text-base font-bold ${r.balance > 0 ? 'text-red-600' : r.balance < 0 ? 'text-emerald-600' : ''}`}>{formatNum(r.balance)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      <TableRow className="bg-muted/60 font-bold border-t-2">
+                        <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                        <TableCell className="text-red-600 text-base">{formatNum(dailyTotalsSummary.debit)}</TableCell>
+                        <TableCell className="text-emerald-600 text-base">{formatNum(dailyTotalsSummary.credit)}</TableCell>
+                        <TableCell className="text-red-600 text-base">{formatNum(manualSummary.debit)}</TableCell>
+                        <TableCell className="text-emerald-600 text-base">{formatNum(manualSummary.credit)}</TableCell>
+                        <TableCell className={`text-base ${Math.abs(manualSummary.debit - dailyTotalsSummary.debit) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{formatNum(manualSummary.debit - dailyTotalsSummary.debit)}</TableCell>
+                        <TableCell className={`text-base ${Math.abs(manualSummary.credit - dailyTotalsSummary.credit) < 0.01 ? 'text-muted-foreground' : 'text-red-600'}`}>{formatNum(manualSummary.credit - dailyTotalsSummary.credit)}</TableCell>
+                        <TableCell className={`text-base ${dailyTotalsSummary.closing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNum(dailyTotalsSummary.closing)}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </div>
         </TabsContent>
