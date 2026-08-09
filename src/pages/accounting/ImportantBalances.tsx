@@ -476,6 +476,110 @@ const ImportantBalances = () => {
     openDayEntries(format(d, 'yyyy-MM-dd'));
   };
 
+  const renderQuickPickers = () => (
+    <div className="bg-card border rounded-lg p-3 space-y-3 print:hidden">
+      <div className="flex items-start gap-2">
+        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">الشهور</span>
+        <div className="flex flex-wrap gap-1.5">
+          {monthNamesAr.map((mn, i) => {
+            const isActive = monthlyDate.getMonth() === i;
+            return (
+              <Button
+                key={mn}
+                size="sm"
+                variant={isActive ? 'default' : 'outline'}
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear(), i, 1))}
+              >
+                {mn}
+              </Button>
+            );
+          })}
+          <div className="flex items-center gap-1 ml-2">
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() - 1, monthlyDate.getMonth(), 1))}>
+              {monthlyDate.getFullYear() - 1}
+            </Button>
+            <span className="text-xs font-bold px-1">{monthlyDate.getFullYear()}</span>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() + 1, monthlyDate.getMonth(), 1))}>
+              {monthlyDate.getFullYear() + 1}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-2 border-t pt-3">
+        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">أيام الشهر</span>
+        <div className="flex flex-wrap gap-1">
+          {monthDayNumbers.map(dn => {
+            const dStr = format(new Date(monthlyDate.getFullYear(), monthlyDate.getMonth(), dn), 'yyyy-MM-dd');
+            const hasMovement = dayMovementMap.get(dStr);
+            const isToday = dStr === format(today, 'yyyy-MM-dd');
+            return (
+              <button
+                key={dn}
+                onClick={() => selectQuickDay(dn)}
+                title={`عرض قيود ${dStr}`}
+                className={`h-8 w-8 rounded-md border text-xs font-bold transition-all hover:scale-105 ${
+                  hasMovement
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
+                    : 'bg-muted/40 border-border text-muted-foreground hover:bg-muted'
+                } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+              >
+                {dn}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {bankQuickAccounts.length > 0 && (
+        <div className="flex items-start gap-2 border-t pt-3">
+          <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">البنوك</span>
+          <div className="flex flex-wrap gap-1.5">
+            {bankQuickAccounts.map(a => {
+              const isActive = monthlyAccountId === a.id;
+              return (
+                <Button
+                  key={a.id}
+                  size="sm"
+                  variant={isActive ? 'default' : 'outline'}
+                  className="h-8 px-2.5 text-xs gap-1.5"
+                  onClick={() => setMonthlyAccountId(a.id)}
+                >
+                  <span className="font-mono opacity-70">{a.code}</span>
+                  {a.name_ar}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {custodyQuickAccounts.length > 0 && (
+        <div className="flex items-start gap-2 border-t pt-3">
+          <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">العهد</span>
+          <div className="flex flex-wrap gap-1.5">
+            {custodyQuickAccounts.map(a => {
+              const isActive = monthlyAccountId === a.id;
+              return (
+                <Button
+                  key={a.id}
+                  size="sm"
+                  variant={isActive ? 'default' : 'outline'}
+                  className="h-8 px-2.5 text-xs gap-1.5"
+                  onClick={() => setMonthlyAccountId(a.id)}
+                >
+                  <span className="font-mono opacity-70">{a.code}</span>
+                  {a.name_ar}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
@@ -645,108 +749,7 @@ const ImportantBalances = () => {
 
         <TabsContent value="monthly" className="mt-0" dir="rtl">
           <div className="container mx-auto px-4 py-4 space-y-4" dir="rtl">
-            {/* Quick pickers: months / days / bank accounts */}
-            <div className="bg-card border rounded-lg p-3 space-y-3 print:hidden">
-              <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">الشهور</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {monthNamesAr.map((mn, i) => {
-                    const isActive = monthlyDate.getMonth() === i;
-                    return (
-                      <Button
-                        key={mn}
-                        size="sm"
-                        variant={isActive ? 'default' : 'outline'}
-                        className="h-7 px-2.5 text-xs"
-                        onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear(), i, 1))}
-                      >
-                        {mn}
-                      </Button>
-                    );
-                  })}
-                  <div className="flex items-center gap-1 ml-2">
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() - 1, monthlyDate.getMonth(), 1))}>
-                      {monthlyDate.getFullYear() - 1}
-                    </Button>
-                    <span className="text-xs font-bold px-1">{monthlyDate.getFullYear()}</span>
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() + 1, monthlyDate.getMonth(), 1))}>
-                      {monthlyDate.getFullYear() + 1}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 border-t pt-3">
-                <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">أيام الشهر</span>
-                <div className="flex flex-wrap gap-1">
-                  {monthDayNumbers.map(dn => {
-                    const dStr = format(new Date(monthlyDate.getFullYear(), monthlyDate.getMonth(), dn), 'yyyy-MM-dd');
-                    const hasMovement = dayMovementMap.get(dStr);
-                    const isToday = dStr === format(today, 'yyyy-MM-dd');
-                    return (
-                      <button
-                        key={dn}
-                        onClick={() => selectQuickDay(dn)}
-                        title={`عرض قيود ${dStr}`}
-                        className={`h-8 w-8 rounded-md border text-xs font-bold transition-all hover:scale-105 ${
-                          hasMovement
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
-                            : 'bg-muted/40 border-border text-muted-foreground hover:bg-muted'
-                        } ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}`}
-                      >
-                        {dn}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {bankQuickAccounts.length > 0 && (
-                <div className="flex items-start gap-2 border-t pt-3">
-                  <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">البنوك</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {bankQuickAccounts.map(a => {
-                      const isActive = monthlyAccountId === a.id;
-                      return (
-                        <Button
-                          key={a.id}
-                          size="sm"
-                          variant={isActive ? 'default' : 'outline'}
-                          className="h-8 px-2.5 text-xs gap-1.5"
-                          onClick={() => setMonthlyAccountId(a.id)}
-                        >
-                          <span className="font-mono opacity-70">{a.code}</span>
-                          {a.name_ar}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {custodyQuickAccounts.length > 0 && (
-                <div className="flex items-start gap-2 border-t pt-3">
-                  <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">العهد</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {custodyQuickAccounts.map(a => {
-                      const isActive = monthlyAccountId === a.id;
-                      return (
-                        <Button
-                          key={a.id}
-                          size="sm"
-                          variant={isActive ? 'default' : 'outline'}
-                          className="h-8 px-2.5 text-xs gap-1.5"
-                          onClick={() => setMonthlyAccountId(a.id)}
-                        >
-                          <span className="font-mono opacity-70">{a.code}</span>
-                          {a.name_ar}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            {renderQuickPickers()}
 
             {/* Controls: account select + month nav */}
             <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
@@ -887,11 +890,13 @@ const ImportantBalances = () => {
                 <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => addMonths(d, 1))}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
+              <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
                   الشهر الحالي
                 </Button>
               </div>
             </div>
+
+            {renderQuickPickers()}
 
             {!monthlyAccountId ? (
               <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب</div>
@@ -1015,11 +1020,13 @@ const ImportantBalances = () => {
                 <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => addMonths(d, 1))}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
+              <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
                   الشهر الحالي
                 </Button>
               </div>
             </div>
+
+            {renderQuickPickers()}
 
             <div className="flex flex-wrap gap-2 print:hidden">
               <Button
