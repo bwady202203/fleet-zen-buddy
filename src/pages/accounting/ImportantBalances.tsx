@@ -222,7 +222,7 @@ const ImportantBalances = () => {
 
   // Load accounts list for monthly tab selector
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement') && allAccountsList.length === 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && allAccountsList.length === 0) {
       supabase
         .from('chart_of_accounts')
         .select('id, code, name_ar')
