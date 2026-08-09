@@ -701,8 +701,8 @@ export default function BankStatementImport() {
               )}
             </div>
             <textarea
-              className="w-full h-32 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="انسخ بيانات كشف الحساب من البنك والصقها هنا..."
+              className="w-full h-32 p-3 border rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-muted-foreground/60"
+              placeholder="الأعمدة: التاريخ | الوصف | مدين | دائن | الرصيد | المرجع — انسخ بيانات كشف الحساب والصقها هنا..."
               value={bankStatementData}
               onChange={(e) => handleParseBankStatement(e.target.value)}
               dir="ltr"
