@@ -53,7 +53,7 @@ const ImportantBalances = () => {
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
   // Monthly view state
-  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement' | 'revenueExpense'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals'>('overview');
   const [revenueExpenseFilter, setRevenueExpenseFilter] = useState<'revenue' | 'expense'>('revenue');
   const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
   const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
@@ -222,7 +222,7 @@ const ImportantBalances = () => {
 
   // Load accounts list for monthly tab selector
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && allAccountsList.length === 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense' || activeTab === 'dailyTotals') && allAccountsList.length === 0) {
       supabase
         .from('chart_of_accounts')
         .select('id, code, name_ar')
@@ -234,7 +234,7 @@ const ImportantBalances = () => {
 
   // Default monthly account to first watched if not set
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && !monthlyAccountId && watchedAccounts.length > 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense' || activeTab === 'dailyTotals') && !monthlyAccountId && watchedAccounts.length > 0) {
       setMonthlyAccountId(watchedAccounts[0].account_id);
     }
   }, [activeTab, watchedAccounts]);
@@ -315,7 +315,7 @@ const ImportantBalances = () => {
   };
 
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && monthlyAccountId) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense' || activeTab === 'dailyTotals') && monthlyAccountId) {
       loadMonthlyView();
     }
   }, [activeTab, monthlyAccountId, monthlyDate]);
@@ -387,6 +387,71 @@ const ImportantBalances = () => {
     const name = `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_ارصدة.xlsx`;
     XLSX.writeFile(wb, name);
   };
+
+  // ===== Daily totals tab (debit / credit / balance per day) =====
+  const dailyTotalsRows = useMemo(
+    () => monthlyDays.map(d => ({
+      date: d.date,
+      day: Number(d.date.slice(8, 10)),
+      debit: d.debit,
+      credit: d.credit,
+      balance: d.closing,
+      hasMovement: d.debit !== 0 || d.credit !== 0,
+    })),
+    [monthlyDays]
+  );
+
+  const dailyTotalsSummary = useMemo(() => ({
+    debit: dailyTotalsRows.reduce((s, r) => s + r.debit, 0),
+    credit: dailyTotalsRows.reduce((s, r) => s + r.credit, 0),
+    closing: dailyTotalsRows.length ? dailyTotalsRows[dailyTotalsRows.length - 1].balance : 0,
+  }), [dailyTotalsRows]);
+
+  const exportDailyTotalsExcel = async () => {
+    if (!dailyTotalsRows.length) {
+      toast({ title: "لا توجد بيانات للتصدير", variant: "destructive" });
+      return;
+    }
+    const XLSX = await import("xlsx");
+    const acc = allAccountsList.find(a => a.id === monthlyAccountId);
+    const rows: any[] = dailyTotalsRows.map(r => ({
+      "التاريخ": r.date,
+      "الإجمالي المدين": Number(r.debit.toFixed(2)),
+      "الإجمالي الدائن": Number(r.credit.toFixed(2)),
+      "الرصيد": Number(r.balance.toFixed(2)),
+    }));
+    rows.push({
+      "التاريخ": "الإجمالي",
+      "الإجمالي المدين": Number(dailyTotalsSummary.debit.toFixed(2)),
+      "الإجمالي الدائن": Number(dailyTotalsSummary.credit.toFixed(2)),
+      "الرصيد": Number(dailyTotalsSummary.closing.toFixed(2)),
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "الحركة اليومية");
+    XLSX.writeFile(wb, `${acc?.code || ''}_${format(monthlyDate, 'yyyy-MM')}_حركة_يومية.xlsx`);
+  };
+
+  const copyDailyTotals = async () => {
+    if (!dailyTotalsRows.length) {
+      toast({ title: "لا توجد بيانات للنسخ", variant: "destructive" });
+      return;
+    }
+    const lines = [
+      ['التاريخ', 'الإجمالي المدين', 'الإجمالي الدائن', 'الرصيد'].join('\t'),
+      ...dailyTotalsRows.map(r => [r.date, r.debit.toFixed(2), r.credit.toFixed(2), r.balance.toFixed(2)].join('\t')),
+      ['الإجمالي', dailyTotalsSummary.debit.toFixed(2), dailyTotalsSummary.credit.toFixed(2), dailyTotalsSummary.closing.toFixed(2)].join('\t'),
+    ].join('\n');
+    try {
+      await navigator.clipboard.writeText(lines);
+      toast({ title: "تم النسخ", description: "تم نسخ البيانات للحافظة" });
+    } catch {
+      toast({ title: "تعذر النسخ", variant: "destructive" });
+    }
+  };
+
+
 
   const handleOpenAdd = () => {
     loadAllAccounts();
@@ -634,7 +699,7 @@ const ImportantBalances = () => {
         </div>
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement' | 'revenueExpense')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals')} className="w-full">
         <div className="container mx-auto px-4 pt-3 print:hidden">
           <TabsList>
             <TabsTrigger value="overview" className="gap-2">
@@ -653,7 +718,12 @@ const ImportantBalances = () => {
               <TrendingUp className="h-4 w-4" />
               إيرادات / مصروفات
             </TabsTrigger>
+            <TabsTrigger value="dailyTotals" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              الحركة اليومية
+            </TabsTrigger>
           </TabsList>
+
         </div>
 
         <TabsContent value="overview" className="mt-0">
@@ -1166,7 +1236,110 @@ const ImportantBalances = () => {
             )}
           </div>
         </TabsContent>
+
+        <TabsContent value="dailyTotals" className="mt-0" dir="rtl">
+          <div className="container mx-auto px-4 py-4 space-y-4">
+            {/* Account selector */}
+            <div className="flex flex-wrap items-center gap-3 print:hidden">
+              <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
+                <SelectTrigger className="w-[320px]">
+                  <SelectValue placeholder="اختر الحساب" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAccountsList.map(a => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="font-mono text-xs opacity-70 ml-2">{a.code}</span>
+                      {a.name_ar}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" className="gap-2" onClick={exportDailyTotalsExcel}>
+                <Download className="h-4 w-4" />
+                تحميل Excel
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={copyDailyTotals}>
+                <LayoutGrid className="h-4 w-4" />
+                نسخ
+              </Button>
+            </div>
+
+            {/* Months icons */}
+            <div className="bg-card border rounded-lg p-3 print:hidden">
+              <div className="flex flex-wrap items-center gap-2">
+                {monthNamesAr.map((mn, i) => {
+                  const isActive = monthlyDate.getMonth() === i;
+                  return (
+                    <button
+                      key={mn}
+                      onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear(), i, 1))}
+                      className={`flex flex-col items-center justify-center h-16 w-20 rounded-lg border transition-all hover:scale-105 ${
+                        isActive ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 hover:bg-muted'
+                      }`}
+                    >
+                      <CalendarRange className="h-5 w-5 mb-1 opacity-80" />
+                      <span className="text-xs font-bold">{mn}</span>
+                    </button>
+                  );
+                })}
+                <div className="flex items-center gap-1 mr-2">
+                  <Button size="sm" variant="ghost" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() - 1, monthlyDate.getMonth(), 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                    {monthlyDate.getFullYear() - 1}
+                  </Button>
+                  <span className="text-sm font-bold px-1">{monthlyDate.getFullYear()}</span>
+                  <Button size="sm" variant="ghost" onClick={() => setMonthlyDate(new Date(monthlyDate.getFullYear() + 1, monthlyDate.getMonth(), 1))}>
+                    {monthlyDate.getFullYear() + 1}
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {!monthlyAccountId ? (
+              <div className="text-center py-20 text-muted-foreground">اختر حساباً لعرض الحركة اليومية</div>
+            ) : monthlyLoading ? (
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/60">
+                      <TableHead className="text-right w-[60px]">اليوم</TableHead>
+                      <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">الإجمالي المدين</TableHead>
+                      <TableHead className="text-right">الإجمالي الدائن</TableHead>
+                      <TableHead className="text-right">الرصيد</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyTotalsRows.map(r => (
+                      <TableRow
+                        key={r.date}
+                        className={`cursor-pointer ${r.hasMovement ? '' : 'opacity-60'}`}
+                        onClick={() => openDayEntries(r.date)}
+                      >
+                        <TableCell className="font-bold">{r.day}</TableCell>
+                        <TableCell className="font-mono text-xs">{r.date}</TableCell>
+                        <TableCell className={`text-base font-semibold ${r.debit > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>{r.debit > 0 ? formatNum(r.debit) : '-'}</TableCell>
+                        <TableCell className={`text-base font-semibold ${r.credit > 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>{r.credit > 0 ? formatNum(r.credit) : '-'}</TableCell>
+                        <TableCell className={`text-base font-bold ${r.balance > 0 ? 'text-red-600' : r.balance < 0 ? 'text-emerald-600' : ''}`}>{formatNum(r.balance)}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/60 font-bold border-t-2">
+                      <TableCell colSpan={2} className="text-right">الإجمالي</TableCell>
+                      <TableCell className="text-red-600 text-base">{formatNum(dailyTotalsSummary.debit)}</TableCell>
+                      <TableCell className="text-emerald-600 text-base">{formatNum(dailyTotalsSummary.credit)}</TableCell>
+                      <TableCell className={`text-base ${dailyTotalsSummary.closing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNum(dailyTotalsSummary.closing)}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
+
 
 
       {/* Add Account Dialog */}
