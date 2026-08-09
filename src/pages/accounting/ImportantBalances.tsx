@@ -409,6 +409,62 @@ const ImportantBalances = () => {
     closing: dailyTotalsRows.length ? dailyTotalsRows[dailyTotalsRows.length - 1].balance : 0,
   }), [dailyTotalsRows]);
 
+  // ===== Manual Excel-like cells helpers =====
+  const parseManualNum = (v: string) => {
+    const n = parseFloat(String(v ?? '').replace(/[^\d.-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
+  const getManual = (date: string) => manualCells[date] || { debit: '', credit: '' };
+  const setManual = (date: string, field: 'debit' | 'credit', value: string) => {
+    setManualCells(prev => ({ ...prev, [date]: { ...(prev[date] || { debit: '', credit: '' }), [field]: value } }));
+  };
+  const manualSummary = useMemo(() => {
+    let debit = 0, credit = 0;
+    dailyTotalsRows.forEach(r => {
+      const m = manualCells[r.date] || { debit: '', credit: '' };
+      debit += parseManualNum(m.debit);
+      credit += parseManualNum(m.credit);
+    });
+    return { debit, credit };
+  }, [manualCells, dailyTotalsRows]);
+
+  const clearManualCells = () => setManualCells({});
+
+  // Paste from Excel: fills down starting at the pasted cell
+  const handleManualPaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    startIndex: number,
+    startField: 'debit' | 'credit'
+  ) => {
+    const text = e.clipboardData.getData('text');
+    if (!text || (!text.includes('\n') && !text.includes('\t'))) return;
+    e.preventDefault();
+    const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
+    setManualCells(prev => {
+      const next = { ...prev };
+      lines.forEach((line, i) => {
+        const row = dailyTotalsRows[startIndex + i];
+        if (!row) return;
+        const cols = line.split('\t');
+        const cur = { ...(next[row.date] || { debit: '', credit: '' }) };
+        if (cols.length > 1) {
+          if (startField === 'debit') {
+            cur.debit = cols[0].trim();
+            cur.credit = (cols[1] ?? '').trim();
+          } else {
+            cur.credit = cols[0].trim();
+          }
+        } else {
+          cur[startField] = cols[0].trim();
+        }
+        next[row.date] = cur;
+      });
+      return next;
+    });
+    toast({ title: 'تم اللصق', description: `تم لصق ${lines.length} سطر` });
+  };
+
+
   const exportDailyTotalsExcel = async () => {
     if (!dailyTotalsRows.length) {
       toast({ title: "لا توجد بيانات للتصدير", variant: "destructive" });
