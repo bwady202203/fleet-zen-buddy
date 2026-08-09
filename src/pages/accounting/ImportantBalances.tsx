@@ -718,7 +718,12 @@ const ImportantBalances = () => {
               <TrendingUp className="h-4 w-4" />
               إيرادات / مصروفات
             </TabsTrigger>
+            <TabsTrigger value="dailyTotals" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              الحركة اليومية
+            </TabsTrigger>
           </TabsList>
+
         </div>
 
         <TabsContent value="overview" className="mt-0">
