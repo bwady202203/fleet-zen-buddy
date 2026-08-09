@@ -315,7 +315,7 @@ const ImportantBalances = () => {
   };
 
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement') && monthlyAccountId) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && monthlyAccountId) {
       loadMonthlyView();
     }
   }, [activeTab, monthlyAccountId, monthlyDate]);
