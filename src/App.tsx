@@ -56,6 +56,7 @@ import BankStatementImport from "./pages/accounting/BankStatementImport";
 import RiyadhBankSmartEntries from "./pages/accounting/RiyadhBankSmartEntries";
 import BankReconciliation from "./pages/accounting/BankReconciliation";
 import RiyadhBankPaymentEntries from "./pages/accounting/RiyadhBankPaymentEntries";
+import BankDepositsEntries from "./pages/accounting/BankDepositsEntries";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
