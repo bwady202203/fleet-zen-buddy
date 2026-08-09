@@ -461,6 +461,10 @@ const ImportantBalances = () => {
     () => allAccountsList.filter(a => String(a.code).startsWith('111')),
     [allAccountsList]
   );
+  const custodyQuickAccounts = useMemo(
+    () => allAccountsList.filter(a => String(a.code).startsWith('113') || String(a.name_ar).includes('عهد')),
+    [allAccountsList]
+  );
   const dayMovementMap = useMemo(() => {
     const m = new Map<string, boolean>();
     monthlyDays.forEach(d => m.set(d.date, d.debit > 0 || d.credit > 0));
