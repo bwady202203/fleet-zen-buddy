@@ -56,6 +56,7 @@ import BankStatementImport from "./pages/accounting/BankStatementImport";
 import RiyadhBankSmartEntries from "./pages/accounting/RiyadhBankSmartEntries";
 import BankReconciliation from "./pages/accounting/BankReconciliation";
 import RiyadhBankPaymentEntries from "./pages/accounting/RiyadhBankPaymentEntries";
+import BankDepositsEntries from "./pages/accounting/BankDepositsEntries";
 import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
@@ -179,7 +180,8 @@ const App = () => {
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
                                   <Route path="/accounting/riyadh-bank-smart" element={<RiyadhBankSmartEntries />} />
                                   <Route path="/accounting/riyadh-bank-payment" element={<RiyadhBankPaymentEntries />} />
-                                 <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
+                                  <Route path="/accounting/bank-deposits" element={<BankDepositsEntries />} />
+                                  <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
                                  <Route path="/accounting/bank-collection-receipt" element={<BankCollectionReceipt />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />

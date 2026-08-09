@@ -295,6 +295,13 @@ const Accounting = () => {
       color: "from-indigo-500 to-purple-600"
     },
     {
+      title: "قيود الإيداعات البنكية",
+      description: "لصق الإيداعات والتنبؤ بالحساب وإنشاء قيد لكل تاريخ",
+      icon: Sparkles,
+      link: "/accounting/bank-deposits",
+      color: "from-emerald-500 to-teal-600"
+    },
+    {
       title: "طلبات التحويل",
       description: "إدارة وتسجيل طلبات التحويل المالية",
       icon: SendHorizontal,
