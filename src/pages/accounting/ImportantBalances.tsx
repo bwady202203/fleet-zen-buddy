@@ -890,11 +890,13 @@ const ImportantBalances = () => {
                 <Button variant="outline" size="icon" onClick={() => setMonthlyDate(d => addMonths(d, 1))}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
+              <Button variant="ghost" size="sm" onClick={() => setMonthlyDate(new Date())}>
                   الشهر الحالي
                 </Button>
               </div>
             </div>
+
+            {renderQuickPickers()}
 
             {!monthlyAccountId ? (
               <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب</div>
