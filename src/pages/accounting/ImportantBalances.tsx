@@ -494,7 +494,7 @@ const ImportantBalances = () => {
         </div>
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement' | 'revenueExpense')} className="w-full">
         <div className="container mx-auto px-4 pt-3 print:hidden">
           <TabsList>
             <TabsTrigger value="overview" className="gap-2">
@@ -508,6 +508,10 @@ const ImportantBalances = () => {
             <TabsTrigger value="noMovement" className="gap-2">
               <CalendarDays className="h-4 w-4" />
               أيام بدون حركة
+            </TabsTrigger>
+            <TabsTrigger value="revenueExpense" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              إيرادات / مصروفات
             </TabsTrigger>
           </TabsList>
         </div>
