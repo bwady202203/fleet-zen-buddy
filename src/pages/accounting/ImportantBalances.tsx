@@ -53,7 +53,7 @@ const ImportantBalances = () => {
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
   // Monthly view state
-  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement' | 'revenueExpense'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals'>('overview');
   const [revenueExpenseFilter, setRevenueExpenseFilter] = useState<'revenue' | 'expense'>('revenue');
   const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
   const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
@@ -222,7 +222,7 @@ const ImportantBalances = () => {
 
   // Load accounts list for monthly tab selector
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && allAccountsList.length === 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense' || activeTab === 'dailyTotals') && allAccountsList.length === 0) {
       supabase
         .from('chart_of_accounts')
         .select('id, code, name_ar')
@@ -234,7 +234,7 @@ const ImportantBalances = () => {
 
   // Default monthly account to first watched if not set
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && !monthlyAccountId && watchedAccounts.length > 0) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense' || activeTab === 'dailyTotals') && !monthlyAccountId && watchedAccounts.length > 0) {
       setMonthlyAccountId(watchedAccounts[0].account_id);
     }
   }, [activeTab, watchedAccounts]);
@@ -315,7 +315,7 @@ const ImportantBalances = () => {
   };
 
   useEffect(() => {
-    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense') && monthlyAccountId) {
+    if ((activeTab === 'monthly' || activeTab === 'noMovement' || activeTab === 'revenueExpense' || activeTab === 'dailyTotals') && monthlyAccountId) {
       loadMonthlyView();
     }
   }, [activeTab, monthlyAccountId, monthlyDate]);
@@ -634,7 +634,7 @@ const ImportantBalances = () => {
         </div>
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement' | 'revenueExpense')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals')} className="w-full">
         <div className="container mx-auto px-4 pt-3 print:hidden">
           <TabsList>
             <TabsTrigger value="overview" className="gap-2">
