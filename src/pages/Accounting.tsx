@@ -1,9 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send, Building2, Landmark } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send, Building2, Landmark, Crown, Lock } from "lucide-react";
  import { SendHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
