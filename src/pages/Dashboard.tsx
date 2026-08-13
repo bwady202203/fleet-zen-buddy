@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -12,6 +12,17 @@ const Dashboard = () => {
   const { hasPermission } = usePermissions();
   
   const allModules = [
+    {
+      title: "المستوى المميز",
+      description: "أدوات القيود الذكية والبنوك المحمية بكلمة مرور",
+      icon: Crown,
+      color: "from-amber-500 to-yellow-600",
+      link: "/accounting",
+      features: ["القيود الذكية", "استيراد كشف بنكي", "قيود بنك الرياض", "طلبات التحويل"],
+      module: "accounting",
+      badge: "مميز",
+      badgeColor: "from-amber-500 to-yellow-600"
+    },
     {
       title: "المحاسبة المالية",
       description: "إدارة الحسابات والتقارير المالية",
