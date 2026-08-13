@@ -265,7 +265,7 @@ const Accounting = () => {
     }
   };
 
-  const sections = [
+  const premiumSections = [
     {
       title: "قيود ذكية",
       description: "إنشاء قيود سريعة باختيار الحسابات مباشرة",
@@ -308,6 +308,10 @@ const Accounting = () => {
       link: "/accounting/transfer-requests",
       color: "from-cyan-500 to-cyan-600"
     },
+  ];
+
+  const sections = [
+
     {
       title: "أرصدة الحسابات الهامة",
       description: "مراقبة أرصدة العهد والبنوك والحسابات المهمة",
