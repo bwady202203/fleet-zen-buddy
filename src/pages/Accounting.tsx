@@ -300,7 +300,7 @@ const Accounting = () => {
       description: "إنشاء قيود سريعة باختيار الحسابات مباشرة",
       icon: Sparkles,
       link: "/accounting/smart-journal",
-      color: "from-gradient-start to-gradient-end"
+      color: "from-indigo-500 to-blue-600"
     },
     {
       title: "استيراد كشف بنكي",
@@ -319,14 +319,14 @@ const Accounting = () => {
     {
       title: "قيود بنك الرياض للسداد",
       description: "لصق عمليات السداد من بنك الرياض وإنشاء قيد لكل تاريخ",
-      icon: Sparkles,
+      icon: Landmark,
       link: "/accounting/riyadh-bank-payment",
       color: "from-indigo-500 to-purple-600"
     },
     {
       title: "قيود الإيداعات البنكية",
       description: "لصق الإيداعات والتنبؤ بالحساب وإنشاء قيد لكل تاريخ",
-      icon: Sparkles,
+      icon: PiggyBank,
       link: "/accounting/bank-deposits",
       color: "from-emerald-500 to-teal-600"
     },
@@ -578,7 +578,7 @@ const Accounting = () => {
 
       <main className="container mx-auto px-4 py-12">
         {/* المستوى المميز */}
-        <section className="mb-10">
+        <section id="premium-section" className="mb-10">
           {!premiumUnlocked ? (
             <Card
               onClick={() => setPremiumOpen(true)}
