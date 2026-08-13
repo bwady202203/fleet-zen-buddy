@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -12,6 +12,17 @@ const Dashboard = () => {
   const { hasPermission } = usePermissions();
   
   const allModules = [
+    {
+      title: "المستوى المميز",
+      description: "أدوات القيود الذكية والبنوك المحمية بكلمة مرور",
+      icon: Crown,
+      color: "from-amber-500 to-yellow-600",
+      link: "/accounting",
+      features: ["القيود الذكية", "استيراد كشف بنكي", "قيود بنك الرياض", "طلبات التحويل"],
+      module: "accounting",
+      badge: "مميز",
+      badgeColor: "from-amber-500 to-yellow-600"
+    },
     {
       title: "المحاسبة المالية",
       description: "إدارة الحسابات والتقارير المالية",
@@ -162,13 +173,14 @@ const Dashboard = () => {
                         <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
                           <module.icon className="h-8 w-8 text-white" />
                         </div>
-                        <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${module.color} text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
-                          نشط
+                        <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${module.badgeColor || module.color} text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+                          {module.badge || "نشط"}
                         </div>
                       </div>
                       
-                      <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
+                      <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
                         {module.title}
+                        {module.badge === "مميز" && <Lock className="h-4 w-4 text-amber-500" />}
                       </h2>
                       
                       <p className="text-muted-foreground mb-6 text-sm">
