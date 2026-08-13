@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send, Building2, Landmark, Crown, Lock } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Send, Building2, Landmark, Crown, Lock, PiggyBank } from "lucide-react";
  import { SendHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,12 +23,22 @@ const Accounting = () => {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [premiumUnlocked, setPremiumUnlocked] = useState(false);
   const [premiumCode, setPremiumCode] = useState("");
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("premium") === "1" && !premiumUnlocked) {
+      setPremiumOpen(true);
+    }
+  }, [searchParams, premiumUnlocked]);
 
   const handlePremiumSubmit = () => {
     if (premiumCode.trim() === PREMIUM_CODE) {
       setPremiumUnlocked(true);
       setPremiumOpen(false);
       setPremiumCode("");
+      setTimeout(() => {
+        document.getElementById("premium-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } else {
       toast({ title: "كلمة المرور غير صحيحة", variant: "destructive" });
     }
@@ -290,7 +300,7 @@ const Accounting = () => {
       description: "إنشاء قيود سريعة باختيار الحسابات مباشرة",
       icon: Sparkles,
       link: "/accounting/smart-journal",
-      color: "from-gradient-start to-gradient-end"
+      color: "from-indigo-500 to-blue-600"
     },
     {
       title: "استيراد كشف بنكي",
@@ -309,14 +319,14 @@ const Accounting = () => {
     {
       title: "قيود بنك الرياض للسداد",
       description: "لصق عمليات السداد من بنك الرياض وإنشاء قيد لكل تاريخ",
-      icon: Sparkles,
+      icon: Landmark,
       link: "/accounting/riyadh-bank-payment",
       color: "from-indigo-500 to-purple-600"
     },
     {
       title: "قيود الإيداعات البنكية",
       description: "لصق الإيداعات والتنبؤ بالحساب وإنشاء قيد لكل تاريخ",
-      icon: Sparkles,
+      icon: PiggyBank,
       link: "/accounting/bank-deposits",
       color: "from-emerald-500 to-teal-600"
     },
@@ -568,7 +578,7 @@ const Accounting = () => {
 
       <main className="container mx-auto px-4 py-12">
         {/* المستوى المميز */}
-        <section className="mb-10">
+        <section id="premium-section" className="mb-10">
           {!premiumUnlocked ? (
             <Card
               onClick={() => setPremiumOpen(true)}
