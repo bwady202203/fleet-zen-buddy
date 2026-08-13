@@ -173,8 +173,8 @@ const Dashboard = () => {
                         <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
                           <module.icon className="h-8 w-8 text-white" />
                         </div>
-                        <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${module.color} text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
-                          نشط
+                        <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${module.badgeColor || module.color} text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+                          {module.badge || "نشط"}
                         </div>
                       </div>
                       
