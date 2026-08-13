@@ -11,10 +11,26 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
+const PREMIUM_CODE = "363636";
+
 const Accounting = () => {
   const { userRole, user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [premiumUnlocked, setPremiumUnlocked] = useState(false);
+  const [premiumCode, setPremiumCode] = useState("");
+
+  const handlePremiumSubmit = () => {
+    if (premiumCode.trim() === PREMIUM_CODE) {
+      setPremiumUnlocked(true);
+      setPremiumOpen(false);
+      setPremiumCode("");
+    } else {
+      toast({ title: "كلمة المرور غير صحيحة", variant: "destructive" });
+    }
+  };
+
 
   // Get today's dates
   const today = new Date();
