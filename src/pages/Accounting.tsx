@@ -567,7 +567,97 @@ const Accounting = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
+        {/* المستوى المميز */}
+        <section className="mb-10">
+          {!premiumUnlocked ? (
+            <Card
+              onClick={() => setPremiumOpen(true)}
+              className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-amber-400/60 bg-gradient-to-br from-amber-50 to-yellow-100/60 dark:from-amber-950/30 dark:to-yellow-900/20"
+            >
+              <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Crown className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    المستوى المميز
+                    <Lock className="h-4 w-4 text-amber-600" />
+                  </CardTitle>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    قسم محمي بكلمة مرور — يحتوي على القيود الذكية وأدوات البنوك
+                  </p>
+                </div>
+              </CardHeader>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center">
+                  <Crown className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">المستوى المميز</h2>
+                  <p className="text-muted-foreground text-sm">أدوات القيود الذكية والبنوك</p>
+                </div>
+                <Button variant="outline" size="sm" className="ms-auto" onClick={() => setPremiumUnlocked(false)}>
+                  <Lock className="h-4 w-4 me-1" /> إغلاق القسم
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {premiumSections.map((section) => (
+                  <Link key={section.title} to={section.link}>
+                    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 border-amber-300/50 hover:border-amber-500">
+                      <CardHeader>
+                        <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${section.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                          <section.icon className="h-8 w-8 text-white" />
+                        </div>
+                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                          {section.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">{section.description}</p>
+                        <div className="mt-4 pt-4 border-t">
+                          <span className="text-sm text-primary font-semibold flex items-center gap-1">
+                            فتح
+                            <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+
+        <Dialog open={premiumOpen} onOpenChange={setPremiumOpen}>
+          <DialogContent dir="rtl" className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-500" />
+                الدخول إلى المستوى المميز
+              </DialogTitle>
+            </DialogHeader>
+            <Input
+              type="password"
+              inputMode="numeric"
+              autoFocus
+              placeholder="أدخل كلمة المرور"
+              value={premiumCode}
+              onChange={(e) => setPremiumCode(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handlePremiumSubmit()}
+              className="text-center tracking-[0.4em] text-lg"
+            />
+            <DialogFooter>
+              <Button onClick={handlePremiumSubmit} className="w-full">دخول</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
           {sections.map((section) => (
             <Link key={section.title} to={section.link}>
               <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">
