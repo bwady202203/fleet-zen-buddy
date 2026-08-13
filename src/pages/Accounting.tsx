@@ -23,12 +23,22 @@ const Accounting = () => {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [premiumUnlocked, setPremiumUnlocked] = useState(false);
   const [premiumCode, setPremiumCode] = useState("");
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("premium") === "1" && !premiumUnlocked) {
+      setPremiumOpen(true);
+    }
+  }, [searchParams, premiumUnlocked]);
 
   const handlePremiumSubmit = () => {
     if (premiumCode.trim() === PREMIUM_CODE) {
       setPremiumUnlocked(true);
       setPremiumOpen(false);
       setPremiumCode("");
+      setTimeout(() => {
+        document.getElementById("premium-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } else {
       toast({ title: "كلمة المرور غير صحيحة", variant: "destructive" });
     }
