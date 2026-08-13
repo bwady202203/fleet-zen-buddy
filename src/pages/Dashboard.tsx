@@ -178,8 +178,9 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
+                      <h2 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
                         {module.title}
+                        {module.badge === "مميز" && <Lock className="h-4 w-4 text-amber-500" />}
                       </h2>
                       
                       <p className="text-muted-foreground mb-6 text-sm">
