@@ -9,6 +9,7 @@ import { ar } from "date-fns/locale";
 import * as HijriDate from "hijri-converter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import wizerLogo from "@/assets/wizer-logo.png.asset.json";
 
 export const SystemIconsBar = () => {
   const { signOut, user, userRole } = useAuth();
@@ -131,6 +132,19 @@ export const SystemIconsBar = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-sm text-muted-foreground" dir="rtl">
           <div className="flex items-center gap-2 sm:gap-6 flex-wrap justify-center">
             <SafeSidebarTrigger className="h-8 w-8 hover:bg-primary/10" />
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-sm hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40"
+              title="الرئيسية"
+            >
+              <img
+                src={wizerLogo.url}
+                alt="ويزر"
+                width={28}
+                height={28}
+                className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
+              />
+            </button>
             {!isHome && (
               <Button
                 onClick={() => navigate(-1)}
