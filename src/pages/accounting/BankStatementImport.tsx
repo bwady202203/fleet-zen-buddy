@@ -75,6 +75,59 @@ export default function BankStatementImport() {
   });
   const [showHidden, setShowHidden] = useState(false);
 
+  // حسابات الوصول السريع (حسابات المصاريف) - 4 صفوف كحد أقصى
+  const QUICK_COLS = 8;
+  const QUICK_MAX = QUICK_COLS * 4;
+  const [quickAccountIds, setQuickAccountIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem("bsi_quick_accounts");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [showQuickPicker, setShowQuickPicker] = useState(false);
+  const [quickPickerSearch, setQuickPickerSearch] = useState("");
+
+  const persistQuick = (ids: string[]) => {
+    setQuickAccountIds(ids);
+    try { localStorage.setItem("bsi_quick_accounts", JSON.stringify(ids)); } catch {}
+  };
+
+  const addQuickAccount = (id: string) => {
+    if (quickAccountIds.includes(id)) {
+      toast.info("الحساب مضاف مسبقاً");
+      return;
+    }
+    if (quickAccountIds.length >= QUICK_MAX) {
+      toast.error(`الحد الأقصى ${QUICK_MAX} حساب (4 صفوف)`);
+      return;
+    }
+    persistQuick([...quickAccountIds, id]);
+  };
+
+  const removeQuickAccount = (id: string) => {
+    persistQuick(quickAccountIds.filter(x => x !== id));
+  };
+
+  // إدراج الحساب بالترتيب في أول صف فارغ في عمود الحساب
+  const assignAccountToNextRow = (accId: string) => {
+    if (parsedBankStatements.length === 0) {
+      toast.error("لا توجد عمليات لإسناد الحساب إليها");
+      return;
+    }
+    const idx = parsedBankStatements.findIndex(r => !r.selectedAccountId);
+    if (idx === -1) {
+      toast.info("تم إسناد حسابات لجميع الصفوف");
+      return;
+    }
+    setParsedBankStatements(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], selectedAccountId: accId };
+      return next;
+    });
+    const acc = accounts.find(a => a.id === accId);
+    toast.success(`صف ${idx + 1}: ${acc?.name_ar || ''}`);
+  };
+
   const persistHidden = (ids: string[]) => {
     setHiddenAccountIds(ids);
     try { localStorage.setItem("bsi_hidden_accounts", JSON.stringify(ids)); } catch {}
