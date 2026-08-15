@@ -200,6 +200,7 @@ const Auth = () => {
               </div>
               <div className="flex justify-center" dir="ltr">
                 <InputOTP
+                  aria-label="رمز الدخول السريع المكوّن من 6 أرقام"
                   maxLength={6}
                   value={pinCode}
                   onChange={(v) => {
