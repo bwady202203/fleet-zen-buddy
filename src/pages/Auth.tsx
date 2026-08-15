@@ -118,7 +118,7 @@ const Auth = () => {
 
         <Card className="shadow-2xl border-2 backdrop-blur-sm bg-card/95">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center font-bold">تسجيل الدخول</CardTitle>
+            <h2 className="text-2xl text-center font-bold leading-none tracking-tight">تسجيل الدخول</h2>
             <CardDescription className="text-center">
               أدخل بياناتك للوصول إلى النظام
             </CardDescription>
@@ -200,6 +200,7 @@ const Auth = () => {
               </div>
               <div className="flex justify-center" dir="ltr">
                 <InputOTP
+                  aria-label="رمز الدخول السريع المكوّن من 6 أرقام"
                   maxLength={6}
                   value={pinCode}
                   onChange={(v) => {
