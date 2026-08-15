@@ -75,6 +75,59 @@ export default function BankStatementImport() {
   });
   const [showHidden, setShowHidden] = useState(false);
 
+  // حسابات الوصول السريع (حسابات المصاريف) - 4 صفوف كحد أقصى
+  const QUICK_COLS = 8;
+  const QUICK_MAX = QUICK_COLS * 4;
+  const [quickAccountIds, setQuickAccountIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem("bsi_quick_accounts");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [showQuickPicker, setShowQuickPicker] = useState(false);
+  const [quickPickerSearch, setQuickPickerSearch] = useState("");
+
+  const persistQuick = (ids: string[]) => {
+    setQuickAccountIds(ids);
+    try { localStorage.setItem("bsi_quick_accounts", JSON.stringify(ids)); } catch {}
+  };
+
+  const addQuickAccount = (id: string) => {
+    if (quickAccountIds.includes(id)) {
+      toast.info("الحساب مضاف مسبقاً");
+      return;
+    }
+    if (quickAccountIds.length >= QUICK_MAX) {
+      toast.error(`الحد الأقصى ${QUICK_MAX} حساب (4 صفوف)`);
+      return;
+    }
+    persistQuick([...quickAccountIds, id]);
+  };
+
+  const removeQuickAccount = (id: string) => {
+    persistQuick(quickAccountIds.filter(x => x !== id));
+  };
+
+  // إدراج الحساب بالترتيب في أول صف فارغ في عمود الحساب
+  const assignAccountToNextRow = (accId: string) => {
+    if (parsedBankStatements.length === 0) {
+      toast.error("لا توجد عمليات لإسناد الحساب إليها");
+      return;
+    }
+    const idx = parsedBankStatements.findIndex(r => !r.selectedAccountId);
+    if (idx === -1) {
+      toast.info("تم إسناد حسابات لجميع الصفوف");
+      return;
+    }
+    setParsedBankStatements(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], selectedAccountId: accId };
+      return next;
+    });
+    const acc = accounts.find(a => a.id === accId);
+    toast.success(`صف ${idx + 1}: ${acc?.name_ar || ''}`);
+  };
+
   const persistHidden = (ids: string[]) => {
     setHiddenAccountIds(ids);
     try { localStorage.setItem("bsi_hidden_accounts", JSON.stringify(ids)); } catch {}
@@ -761,6 +814,102 @@ export default function BankStatementImport() {
         )}
 
 
+
+        {/* حسابات الوصول السريع */}
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-medium flex items-center gap-2 text-sm">
+              <LayoutGrid className="h-4 w-4 text-amber-600" />
+              حسابات للوصول السريع (حسابات المصاريف)
+              <span className="text-xs text-muted-foreground font-light">
+                — اضغط على الحساب ليُدرج بالترتيب في عمود الحساب
+              </span>
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setQuickPickerSearch(""); setShowQuickPicker(true); }}
+              className="gap-2 text-amber-700 border-amber-200 hover:bg-amber-50"
+            >
+              + إضافة حساب
+            </Button>
+          </div>
+          {quickAccountIds.length === 0 ? (
+            <p className="text-xs text-muted-foreground">لا توجد حسابات مضافة — اضغط "إضافة حساب" لإضافة حتى {QUICK_MAX} حساب (4 صفوف).</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+              {quickAccountIds.map((id) => {
+                const acc = accounts.find(a => a.id === id);
+                if (!acc) return null;
+                return (
+                  <div
+                    key={id}
+                    className={cn(
+                      "relative group border rounded-lg p-2 cursor-pointer transition-colors text-right",
+                      getAccountTypeColor(acc.type)
+                    )}
+                    onClick={() => assignAccountToNextRow(id)}
+                    title={`${acc.code} - ${acc.name_ar}`}
+                  >
+                    <div className="text-[10px] font-mono text-gray-500">{acc.code}</div>
+                    <div className="text-xs font-medium truncate">{acc.name_ar}</div>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeQuickAccount(id); }}
+                      className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded p-0.5"
+                      title="حذف من الوصول السريع"
+                    >
+                      <X className="h-3 w-3 text-red-600" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* اختيار حساب للوصول السريع */}
+        <Dialog open={showQuickPicker} onOpenChange={setShowQuickPicker}>
+          <DialogContent dir="rtl" className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-right">إضافة حساب للوصول السريع</DialogTitle>
+            </DialogHeader>
+            <Input
+              autoFocus
+              placeholder="ابحث بالكود أو الاسم..."
+              value={quickPickerSearch}
+              onChange={(e) => setQuickPickerSearch(e.target.value)}
+            />
+            <div className="max-h-[50vh] overflow-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {accounts
+                .filter(a => a.level === 4)
+                .filter(a => {
+                  const q = normalizeAr(quickPickerSearch);
+                  if (!q) return a.type === 'expense';
+                  return a.code.includes(quickPickerSearch) || normalizeAr(a.name_ar).includes(q);
+                })
+                .slice(0, 200)
+                .map(a => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => addQuickAccount(a.id)}
+                    disabled={quickAccountIds.includes(a.id)}
+                    className={cn(
+                      "border rounded-lg p-2 text-right text-xs transition-colors disabled:opacity-50",
+                      getAccountTypeColor(a.type)
+                    )}
+                  >
+                    <span className="font-mono text-[10px] text-gray-500 block">{a.code}</span>
+                    <span className="font-medium">{a.name_ar}</span>
+                  </button>
+                ))}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowQuickPicker(false)}>إغلاق</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Parsed Data Table */}
         {parsedBankStatements.length > 0 && (
