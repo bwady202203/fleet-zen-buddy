@@ -158,6 +158,7 @@ const PremiumLoadsRegister = () => {
         driver_id: formData.driverId || null,
         truck_number: formData.truckNumber || null,
         quantity,
+        unload_quantity: formData.unloadQuantity === "" ? null : parseFloat(formData.unloadQuantity) || 0,
         driver_commission: commissions,
         delivery_from: formData.deliveryFrom || null,
         delivery_to: formData.deliveryTo || null,
