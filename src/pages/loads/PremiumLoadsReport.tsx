@@ -15,6 +15,7 @@ interface LoadRow {
   invoice_number: string | null;
   truck_number: string | null;
   quantity: number | null;
+  unload_quantity: number | null;
   driver_commission: number | null;
   delivery_from: string | null;
   delivery_to: string | null;
@@ -51,7 +52,7 @@ const PremiumLoadsReport = () => {
     setLoading(true);
     let query = (supabase as any)
       .from("loads")
-      .select("id, date, load_number, invoice_number, truck_number, quantity, driver_commission, delivery_from, delivery_to, companies(name), drivers(name), load_types(name)")
+      .select("id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, companies(name), drivers(name), load_types(name)")
       .gte("date", fromDate)
       .lte("date", toDate)
       .order("date", { ascending: true });
@@ -72,6 +73,8 @@ const PremiumLoadsReport = () => {
   const totals = useMemo(() => ({
     count: rows.length,
     quantity: rows.reduce((s, r) => s + (Number(r.quantity) || 0), 0),
+    unloadQuantity: rows.reduce((s, r) => s + (Number(r.unload_quantity) || 0), 0),
+    difference: rows.reduce((s, r) => s + ((Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0)), 0),
     commissions: rows.reduce((s, r) => s + (Number(r.driver_commission) || 0), 0),
   }), [rows]);
 
@@ -146,14 +149,22 @@ const PremiumLoadsReport = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
           <Card><CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground">عدد الحمولات</p>
             <p className="text-3xl font-bold">{totals.count}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-6 text-center">
-            <p className="text-sm text-muted-foreground">إجمالي الكميات</p>
+            <p className="text-sm text-muted-foreground">إجمالي كمية التحميل</p>
             <p className="text-3xl font-bold">{fmt(totals.quantity)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي كمية التنزيل</p>
+            <p className="text-3xl font-bold">{fmt(totals.unloadQuantity)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي الفرق</p>
+            <p className="text-3xl font-bold">{fmt(totals.difference)}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground">إجمالي العمولات</p>
@@ -176,7 +187,9 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">نوع الحمولة</th>
                   <th className="border p-2">السائق</th>
                   <th className="border p-2">رقم الشاحنة</th>
-                  <th className="border p-2">الكمية</th>
+                  <th className="border p-2">كمية التحميل</th>
+                  <th className="border p-2">كمية التنزيل</th>
+                  <th className="border p-2">الفرق</th>
                   <th className="border p-2">عمولات</th>
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
@@ -184,7 +197,7 @@ const PremiumLoadsReport = () => {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={11} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={14} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : rows.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{r.date}</td>
@@ -195,6 +208,8 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2">{r.drivers?.name || "-"}</td>
                     <td className="border p-2 text-center">{r.truck_number || "-"}</td>
                     <td className="border p-2 text-center">{fmt(Number(r.quantity) || 0)}</td>
+                    <td className="border p-2 text-center">{fmt(Number(r.unload_quantity) || 0)}</td>
+                    <td className="border p-2 text-center">{fmt((Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0))}</td>
                     <td className="border p-2 text-center">{fmt(Number(r.driver_commission) || 0)}</td>
                     <td className="border p-2">{r.delivery_from || "-"}</td>
                     <td className="border p-2">{r.delivery_to || "-"}</td>
@@ -206,6 +221,8 @@ const PremiumLoadsReport = () => {
                   <tr className="bg-muted font-bold">
                     <td className="border p-2 text-center" colSpan={7}>الإجمالي</td>
                     <td className="border p-2 text-center">{fmt(totals.quantity)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.unloadQuantity)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.difference)}</td>
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
                     <td className="border p-2" colSpan={2}></td>
                   </tr>
