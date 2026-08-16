@@ -27,6 +27,7 @@ const PremiumLoadsRegister = () => {
     driverId: "",
     truckNumber: "",
     quantity: "1",
+    unloadQuantity: "",
     commissions: "0",
     deliveryFrom: "",
     deliveryTo: "",
@@ -157,6 +158,7 @@ const PremiumLoadsRegister = () => {
         driver_id: formData.driverId || null,
         truck_number: formData.truckNumber || null,
         quantity,
+        unload_quantity: formData.unloadQuantity === "" ? null : parseFloat(formData.unloadQuantity) || 0,
         driver_commission: commissions,
         delivery_from: formData.deliveryFrom || null,
         delivery_to: formData.deliveryTo || null,
@@ -177,6 +179,7 @@ const PremiumLoadsRegister = () => {
         driverId: "",
         truckNumber: "",
         quantity: "1",
+        unloadQuantity: "",
         commissions: "0",
         deliveryFrom: "",
         deliveryTo: "",
@@ -349,7 +352,7 @@ const PremiumLoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">الكمية / Quantity</Label>
+                  <Label htmlFor="quantity">كمية التحميل / Load Quantity</Label>
                   <Input
                     id="quantity"
                     type="text"
@@ -359,6 +362,30 @@ const PremiumLoadsRegister = () => {
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="unloadQuantity">كمية التنزيل / Unload Quantity</Label>
+                  <Input
+                    id="unloadQuantity"
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.unloadQuantity}
+                    onChange={(e) => setFormData({ ...formData, unloadQuantity: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>الفرق / Difference</Label>
+                  <Input
+                    readOnly
+                    value={(
+                      (parseFloat(formData.quantity) || 0) - (parseFloat(formData.unloadQuantity) || 0)
+                    ).toLocaleString("en-US", { maximumFractionDigits: 3 })}
+                    className="bg-muted font-semibold"
+                  />
+                </div>
+
 
                 <div className="space-y-2">
                   <Label htmlFor="commissions">عمولات / Commissions</Label>

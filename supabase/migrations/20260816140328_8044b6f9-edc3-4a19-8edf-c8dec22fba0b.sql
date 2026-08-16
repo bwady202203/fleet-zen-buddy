@@ -1,0 +1,1 @@
+ALTER TABLE public.loads ADD COLUMN IF NOT EXISTS unload_quantity numeric;
