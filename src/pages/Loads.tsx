@@ -18,6 +18,15 @@ const Loads = () => {
       color: "from-blue-500 to-blue-600"
     },
     {
+      title: "تسجيل الحمولات المميز",
+      titleEn: "Premium Loads Registration",
+      description: "نموذج مميز بحقول التوصيل والعمولات",
+      descriptionEn: "Premium form with delivery and commissions",
+      icon: Sparkles,
+      link: "/loads/premium-register",
+      color: "from-amber-500 to-yellow-600"
+    },
+    {
       title: "سجل الشحنات",
       titleEn: "Loads List",
       description: "عرض وإدارة الشحنات",
