@@ -179,7 +179,9 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">نوع الحمولة</th>
                   <th className="border p-2">السائق</th>
                   <th className="border p-2">رقم الشاحنة</th>
-                  <th className="border p-2">الكمية</th>
+                  <th className="border p-2">كمية التحميل</th>
+                  <th className="border p-2">كمية التنزيل</th>
+                  <th className="border p-2">الفرق</th>
                   <th className="border p-2">عمولات</th>
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
