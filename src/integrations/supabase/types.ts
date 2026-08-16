@@ -1904,6 +1904,7 @@ export type Database = {
           total_amount: number | null
           truck_number: string | null
           unit_price: number | null
+          unload_quantity: number | null
           updated_at: string | null
         }
         Insert: {
@@ -1929,6 +1930,7 @@ export type Database = {
           total_amount?: number | null
           truck_number?: string | null
           unit_price?: number | null
+          unload_quantity?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -1954,6 +1956,7 @@ export type Database = {
           total_amount?: number | null
           truck_number?: string | null
           unit_price?: number | null
+          unload_quantity?: number | null
           updated_at?: string | null
         }
         Relationships: [
