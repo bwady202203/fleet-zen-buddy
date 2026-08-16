@@ -1,0 +1,1 @@
+ALTER TABLE public.loads ADD COLUMN IF NOT EXISTS delivery_from text, ADD COLUMN IF NOT EXISTS delivery_to text;

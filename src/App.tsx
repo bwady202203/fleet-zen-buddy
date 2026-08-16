@@ -65,6 +65,7 @@ import Vouchers from "./pages/Vouchers";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
 import LoadsRegister from "./pages/loads/LoadsRegister";
+import PremiumLoadsRegister from "./pages/loads/PremiumLoadsRegister";
 import LoadsList from "./pages/loads/LoadsList";
 import AdvancedLoadsList from "./pages/loads/AdvancedLoadsList";
 import SimpleLoadsList from "./pages/loads/SimpleLoadsList";
@@ -194,6 +195,7 @@ const App = () => {
                   <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
                                   <Route path="/loads" element={<Loads />} />
                                   <Route path="/loads/register" element={<LoadsRegister />} />
+                                  <Route path="/loads/premium-register" element={<PremiumLoadsRegister />} />
                                   <Route path="/loads/list" element={<LoadsList />} />
                                   <Route path="/loads/advanced-list" element={<AdvancedLoadsList />} />
                                   <Route path="/loads/simple-list" element={<SimpleLoadsList />} />

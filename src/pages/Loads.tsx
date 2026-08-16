@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList, BadgeDollarSign } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList, BadgeDollarSign, Sparkles } from "lucide-react";
 import DeliverySystemAuth from "@/components/DeliverySystemAuth";
 
 const Loads = () => {
@@ -16,6 +16,15 @@ const Loads = () => {
       icon: PackagePlus,
       link: "/loads/register",
       color: "from-blue-500 to-blue-600"
+    },
+    {
+      title: "تسجيل الحمولات المميز",
+      titleEn: "Premium Loads Registration",
+      description: "نموذج مميز بحقول التوصيل والعمولات",
+      descriptionEn: "Premium form with delivery and commissions",
+      icon: Sparkles,
+      link: "/loads/premium-register",
+      color: "from-amber-500 to-yellow-600"
     },
     {
       title: "سجل الشحنات",

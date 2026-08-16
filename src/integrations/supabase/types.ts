@@ -1870,6 +1870,8 @@ export type Database = {
           created_by: string | null
           date: string
           delivery_commission: number
+          delivery_from: string | null
+          delivery_to: string | null
           driver_commission: number
           driver_id: string | null
           id: string
@@ -1893,6 +1895,8 @@ export type Database = {
           created_by?: string | null
           date?: string
           delivery_commission?: number
+          delivery_from?: string | null
+          delivery_to?: string | null
           driver_commission?: number
           driver_id?: string | null
           id?: string
@@ -1916,6 +1920,8 @@ export type Database = {
           created_by?: string | null
           date?: string
           delivery_commission?: number
+          delivery_from?: string | null
+          delivery_to?: string | null
           driver_commission?: number
           driver_id?: string | null
           id?: string
