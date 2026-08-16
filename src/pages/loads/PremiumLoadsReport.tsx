@@ -149,14 +149,22 @@ const PremiumLoadsReport = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
           <Card><CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground">عدد الحمولات</p>
             <p className="text-3xl font-bold">{totals.count}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-6 text-center">
-            <p className="text-sm text-muted-foreground">إجمالي الكميات</p>
+            <p className="text-sm text-muted-foreground">إجمالي كمية التحميل</p>
             <p className="text-3xl font-bold">{fmt(totals.quantity)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي كمية التنزيل</p>
+            <p className="text-3xl font-bold">{fmt(totals.unloadQuantity)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي الفرق</p>
+            <p className="text-3xl font-bold">{fmt(totals.difference)}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground">إجمالي العمولات</p>
