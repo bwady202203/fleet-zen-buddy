@@ -27,6 +27,7 @@ const PremiumLoadsRegister = () => {
     driverId: "",
     truckNumber: "",
     quantity: "1",
+    unloadQuantity: "",
     commissions: "0",
     deliveryFrom: "",
     deliveryTo: "",
