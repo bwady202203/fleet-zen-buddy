@@ -189,7 +189,7 @@ const PremiumLoadsReport = () => {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={11} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={14} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : rows.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{r.date}</td>
@@ -200,6 +200,8 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2">{r.drivers?.name || "-"}</td>
                     <td className="border p-2 text-center">{r.truck_number || "-"}</td>
                     <td className="border p-2 text-center">{fmt(Number(r.quantity) || 0)}</td>
+                    <td className="border p-2 text-center">{fmt(Number(r.unload_quantity) || 0)}</td>
+                    <td className="border p-2 text-center">{fmt((Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0))}</td>
                     <td className="border p-2 text-center">{fmt(Number(r.driver_commission) || 0)}</td>
                     <td className="border p-2">{r.delivery_from || "-"}</td>
                     <td className="border p-2">{r.delivery_to || "-"}</td>
@@ -211,6 +213,8 @@ const PremiumLoadsReport = () => {
                   <tr className="bg-muted font-bold">
                     <td className="border p-2 text-center" colSpan={7}>الإجمالي</td>
                     <td className="border p-2 text-center">{fmt(totals.quantity)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.unloadQuantity)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.difference)}</td>
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
                     <td className="border p-2" colSpan={2}></td>
                   </tr>
