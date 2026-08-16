@@ -73,6 +73,8 @@ const PremiumLoadsReport = () => {
   const totals = useMemo(() => ({
     count: rows.length,
     quantity: rows.reduce((s, r) => s + (Number(r.quantity) || 0), 0),
+    unloadQuantity: rows.reduce((s, r) => s + (Number(r.unload_quantity) || 0), 0),
+    difference: rows.reduce((s, r) => s + ((Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0)), 0),
     commissions: rows.reduce((s, r) => s + (Number(r.driver_commission) || 0), 0),
   }), [rows]);
 
