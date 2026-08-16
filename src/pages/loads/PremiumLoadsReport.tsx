@@ -15,6 +15,7 @@ interface LoadRow {
   invoice_number: string | null;
   truck_number: string | null;
   quantity: number | null;
+  unload_quantity: number | null;
   driver_commission: number | null;
   delivery_from: string | null;
   delivery_to: string | null;
