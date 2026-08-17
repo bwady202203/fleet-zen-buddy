@@ -8,7 +8,7 @@
  import { toast } from 'sonner';
  import { useAuth } from '@/contexts/AuthContext';
  import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-  import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search, XCircle, RotateCcw, Pencil, ZoomIn, ZoomOut } from 'lucide-react';
+  import { Plus, Trash2, Printer, FileDown, Calendar, Save, CheckCircle, ArrowUpCircle, Edit, ArrowRight, Sparkles, Info, Wallet, SendHorizontal, Search, XCircle, RotateCcw, Pencil, ZoomIn, ZoomOut, Copy } from 'lucide-react';
  import { format } from 'date-fns';
  import { ar } from 'date-fns/locale';
  import jsPDF from 'jspdf';
@@ -89,6 +89,8 @@ const [newAmountValue, setNewAmountValue] = useState('');
 // Edit date dialog state
 const [editingDate, setEditingDate] = useState<{requestId: string, currentDate: string} | null>(null);
 const [newDateValue, setNewDateValue] = useState('');
+  const [copyingRequest, setCopyingRequest] = useState<TransferRequest | null>(null);
+  const [copyDateValue, setCopyDateValue] = useState('');
   const [printScale, setPrintScale] = useState(0.8);
   const [requestSearchQuery, setRequestSearchQuery] = useState('');
   
@@ -747,6 +749,76 @@ const [newDateValue, setNewDateValue] = useState('');
     }
   };
  
+  const handleCopyRequest = async () => {
+    if (!copyingRequest || !copyDateValue) {
+      toast.error('الرجاء اختيار التاريخ');
+      return;
+    }
+    try {
+      const source = copyingRequest;
+      const { data: requestData, error: requestError } = await supabase
+        .from('transfer_requests')
+        .insert({
+          request_date: copyDateValue,
+          total_amount: source.total_amount,
+          notes: source.notes || null,
+          created_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (requestError) throw requestError;
+
+      const nonTaxItems = source.items.filter(i => !i.is_tax_row);
+      const taxItems = source.items.filter(i => i.is_tax_row);
+
+      const { data: insertedNonTax, error: nonTaxError } = await supabase
+        .from('transfer_request_items')
+        .insert(nonTaxItems.map(item => ({
+          transfer_request_id: requestData.id,
+          serial_number: item.serial_number,
+          description: item.description,
+          amount: item.amount,
+          account_id: item.account_id || null,
+          has_tax: item.has_tax || false,
+          is_tax_row: false,
+          parent_item_id: null
+        })))
+        .select();
+
+      if (nonTaxError) throw nonTaxError;
+
+      const idMap: Record<string, string> = {};
+      nonTaxItems.forEach((item, idx) => {
+        if (insertedNonTax && insertedNonTax[idx]) idMap[item.id] = insertedNonTax[idx].id;
+      });
+
+      if (taxItems.length > 0) {
+        const { error: taxError } = await supabase
+          .from('transfer_request_items')
+          .insert(taxItems.map(item => ({
+            transfer_request_id: requestData.id,
+            serial_number: item.serial_number,
+            description: item.description,
+            amount: item.amount,
+            account_id: item.account_id || null,
+            has_tax: false,
+            is_tax_row: true,
+            parent_item_id: item.parent_item_id ? idMap[item.parent_item_id] || null : null
+          })));
+        if (taxError) throw taxError;
+      }
+
+      toast.success(`تم نسخ الطلب إلى طلب جديد رقم ${requestData.request_number}`);
+      setCopyingRequest(null);
+      setCopyDateValue('');
+      fetchRequests();
+    } catch (error) {
+      console.error('Error copying request:', error);
+      toast.error('خطأ في نسخ الطلب');
+    }
+  };
+
    const handleDeleteRequest = async (request: TransferRequest) => {
      try {
        // If posted, delete journal entries first
@@ -2113,6 +2185,18 @@ const [newDateValue, setNewDateValue] = useState('');
                               </Button>
                             </>
                          )}
+                         <Button
+                           onClick={() => {
+                             setCopyingRequest(request);
+                             setCopyDateValue(new Date().toISOString().split('T')[0]);
+                           }}
+                           variant="outline"
+                           size="sm"
+                           className="gap-2"
+                         >
+                           <Copy className="h-4 w-4" />
+                           نسخ بتاريخ آخر
+                         </Button>
                          <Button
                            onClick={() => requestDelete(
                              () => handleDeleteRequest(request),
