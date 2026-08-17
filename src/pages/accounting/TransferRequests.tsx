@@ -2911,7 +2911,25 @@ const [newDateValue, setNewDateValue] = useState('');
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!copyingRequest} onOpenChange={(open) => { if (!open) { setCopyingRequest(null); setCopyDateValue(''); } }}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>نسخ طلب التحويل رقم {copyingRequest?.request_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>تاريخ الطلب الجديد</Label>
+            <Input type="date" value={copyDateValue} onChange={(e) => setCopyDateValue(e.target.value)} />
+            <p className="text-sm text-muted-foreground">سيتم إنشاء طلب جديد كمسودة بنفس البنود والمبالغ.</p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCopyingRequest(null)}>إلغاء</Button>
+            <Button onClick={handleCopyRequest}>نسخ الطلب</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <DeleteDialog />
+
     </div>
   );
 };
