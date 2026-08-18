@@ -61,6 +61,7 @@ import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
 import AdminPanel from "./pages/AdminPanel";
+import SettingsHub from "./pages/SettingsHub";
 import Vouchers from "./pages/Vouchers";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
@@ -153,6 +154,7 @@ const App = () => {
                                   <Route path="/vouchers" element={<Vouchers />} />
                                   <Route path="/users" element={<UsersManagement />} />
                                   <Route path="/admin-panel" element={<AdminPanel />} />
+                                  <Route path="/settings-hub" element={<SettingsHub />} />
                                   <Route path="/organizations" element={<OrganizationsManagement />} />
                                   <Route path="/fleet" element={<Index />} />
                                   <Route path="/fleet/vehicles" element={<Vehicles />} />

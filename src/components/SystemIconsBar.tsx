@@ -1,4 +1,4 @@
-import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
@@ -201,6 +201,16 @@ export const SystemIconsBar = () => {
             >
               <LayoutGrid className="h-4 w-4" />
               <span className="hidden sm:inline text-xs font-bold">الإدارية</span>
+            </Button>
+            <Button
+              onClick={() => navigate('/settings-hub')}
+              variant="default"
+              size="sm"
+              className="h-8 gap-1.5 bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:opacity-90 shadow-md"
+              title="الإعدادات: المستوى المميز وإدارة الصلاحيات والمستخدمين (محمية بكلمة مرور)"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs font-bold">الإعدادات</span>
             </Button>
           </div>
           
