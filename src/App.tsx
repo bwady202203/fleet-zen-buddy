@@ -61,6 +61,7 @@ import BankPaymentVoucher from "./pages/accounting/BankPaymentVoucher";
 import BankCollectionReceipt from "./pages/accounting/BankCollectionReceipt";
 import ImportantBalances from "./pages/accounting/ImportantBalances";
 import AdminPanel from "./pages/AdminPanel";
+import SettingsHub from "./pages/SettingsHub";
 import Vouchers from "./pages/Vouchers";
 import HR from "./pages/HR";
 import Loads from "./pages/Loads";
