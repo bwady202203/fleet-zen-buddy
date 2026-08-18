@@ -330,13 +330,6 @@ const Accounting = () => {
       link: "/accounting/bank-deposits",
       color: "from-emerald-500 to-teal-600"
     },
-    {
-      title: "طلبات التحويل",
-      description: "إدارة وتسجيل طلبات التحويل المالية",
-      icon: SendHorizontal,
-      link: "/accounting/transfer-requests",
-      color: "from-cyan-500 to-cyan-600"
-    },
   ];
 
   const sections = [
