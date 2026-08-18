@@ -333,7 +333,13 @@ const Accounting = () => {
   ];
 
   const sections = [
-
+    {
+      title: "طلبات التحويل",
+      description: "إدارة وتسجيل طلبات التحويل المالية",
+      icon: SendHorizontal,
+      link: "/accounting/transfer-requests",
+      color: "from-cyan-500 to-cyan-600"
+    },
     {
       title: "أرصدة الحسابات الهامة",
       description: "مراقبة أرصدة العهد والبنوك والحسابات المهمة",
