@@ -13,17 +13,6 @@ const Dashboard = () => {
   
   const allModules = [
     {
-      title: "المستوى المميز",
-      description: "أدوات القيود الذكية والبنوك المحمية بكلمة مرور",
-      icon: Crown,
-      color: "from-amber-500 to-yellow-600",
-      link: "/accounting?premium=1",
-      features: ["القيود الذكية", "استيراد كشف بنكي", "قيود بنك الرياض", "طلبات التحويل"],
-      module: "accounting",
-      badge: "مميز",
-      badgeColor: "from-amber-500 to-yellow-600"
-    },
-    {
       title: "المحاسبة المالية",
       description: "إدارة الحسابات والتقارير المالية",
       icon: Calculator,
