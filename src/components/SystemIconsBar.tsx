@@ -1,4 +1,4 @@
-import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
