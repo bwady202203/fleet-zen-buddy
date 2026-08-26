@@ -566,12 +566,50 @@ const TrialBalance = () => {
 
   const trialBalanceData = getDisplayAccounts();
 
-  const totalOpeningDebit = trialBalanceData.reduce((sum, acc) => sum + acc.openingDebit, 0);
-  const totalOpeningCredit = trialBalanceData.reduce((sum, acc) => sum + acc.openingCredit, 0);
-  const totalPeriodDebit = trialBalanceData.reduce((sum, acc) => sum + acc.periodDebit, 0);
-  const totalPeriodCredit = trialBalanceData.reduce((sum, acc) => sum + acc.periodCredit, 0);
-  const totalClosingDebit = trialBalanceData.reduce((sum, acc) => sum + acc.closingDebit, 0);
-  const totalClosingCredit = trialBalanceData.reduce((sum, acc) => sum + acc.closingCredit, 0);
+  // فلترة العرض فقط (بحث / نوع الحساب / إخفاء الأرصدة الصفرية) بدون أي تغيير في منطق الحسابات
+  const filteredData = trialBalanceData.filter(acc => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q && !(acc.name?.toLowerCase().includes(q) || acc.code?.toLowerCase().includes(q))) return false;
+    if (accountTypeFilter !== 'all' && acc.account.type !== accountTypeFilter) return false;
+    if (hideZeroBalances) {
+      const allZero = [acc.openingDebit, acc.openingCredit, acc.periodDebit, acc.periodCredit, acc.closingDebit, acc.closingCredit]
+        .every(v => Math.abs(Number(v) || 0) < 0.005);
+      if (allZero) return false;
+    }
+    return true;
+  });
+
+  const totalOpeningDebit = filteredData.reduce((sum, acc) => sum + acc.openingDebit, 0);
+  const totalOpeningCredit = filteredData.reduce((sum, acc) => sum + acc.openingCredit, 0);
+  const totalPeriodDebit = filteredData.reduce((sum, acc) => sum + acc.periodDebit, 0);
+  const totalPeriodCredit = filteredData.reduce((sum, acc) => sum + acc.periodCredit, 0);
+  const totalClosingDebit = filteredData.reduce((sum, acc) => sum + acc.closingDebit, 0);
+  const totalClosingCredit = filteredData.reduce((sum, acc) => sum + acc.closingCredit, 0);
+
+  const exportExcel = async () => {
+    const XLSX = await import('xlsx');
+    const rows = filteredData.map(a => ({
+      'رمز الحساب': a.code,
+      'اسم الحساب': a.name,
+      'افتتاحي مدين': a.openingDebit,
+      'افتتاحي دائن': a.openingCredit,
+      'حركة مدين': a.periodDebit,
+      'حركة دائن': a.periodCredit,
+      'ختامي مدين': a.closingDebit,
+      'ختامي دائن': a.closingCredit,
+    }));
+    rows.push({
+      'رمز الحساب': '', 'اسم الحساب': 'الإجمالي',
+      'افتتاحي مدين': totalOpeningDebit, 'افتتاحي دائن': totalOpeningCredit,
+      'حركة مدين': totalPeriodDebit, 'حركة دائن': totalPeriodCredit,
+      'ختامي مدين': totalClosingDebit, 'ختامي دائن': totalClosingCredit,
+    } as any);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ميزان المراجعة');
+    XLSX.writeFile(wb, `trial-balance-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
 
   // معاينة دفتر الأستاذ
   const ledgerFilteredEntries = selectedAccountForLedger 
