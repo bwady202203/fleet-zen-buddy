@@ -157,7 +157,7 @@ const TrialBalancePrintPreview = ({
         .tb-td { border: .5pt solid #e2e8f0; padding: 4.5px 5px; }
         .tb-code { text-align: center; font-family: ui-monospace,monospace; color: #1d4ed8; }
         .tb-name { text-align: right; font-size: 9.5pt; font-weight: 600; }
-        .tb-num { text-align: left; font-variant-numeric: tabular-nums; direction: ltr; }
+        .tb-num { text-align: right; font-variant-numeric: tabular-nums; direction: ltr; }
         .tb-zebra { background: #fafafa; }
         .tb-total td { border-top: 1.5pt solid #1e3a8a; background: #eef2ff; font-weight: 800; font-size: 9.5pt; }
         .tb-footer {
