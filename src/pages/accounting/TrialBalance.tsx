@@ -1237,24 +1237,121 @@ const TrialBalance = () => {
           </TabsContent>
         </Tabs>
 
+        {/* بطاقات الملخص */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4 no-print">
+          <Card className="border-r-4 border-r-primary">
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground mb-1">إجمالي المدين</div>
+              <div className="text-xl font-bold tabular-nums" dir="ltr">
+                {totalClosingDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-r-4 border-r-accent">
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground mb-1">إجمالي الدائن</div>
+              <div className="text-xl font-bold tabular-nums" dir="ltr">
+                {totalClosingCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-r-4 border-r-muted-foreground/40">
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground mb-1">عدد الحسابات</div>
+              <div className="text-xl font-bold tabular-nums">{filteredData.length}</div>
+            </CardContent>
+          </Card>
+          <Card className={Math.abs(totalClosingDebit - totalClosingCredit) < 0.01 ? 'border-r-4 border-r-accent' : 'border-r-4 border-r-destructive'}>
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground mb-1">حالة الميزان</div>
+              {Math.abs(totalClosingDebit - totalClosingCredit) < 0.01 ? (
+                <div className="flex items-center gap-2 text-accent font-bold">
+                  <CheckCircle2 className="h-4 w-4" /> الميزان متوازن
+                </div>
+              ) : (
+                <div className="text-destructive font-bold text-sm flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span dir="ltr" className="tabular-nums">
+                    {Math.abs(totalClosingDebit - totalClosingCredit).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span>فرق</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* شريط أدوات التقرير */}
+        <Card className="mb-4 no-print">
+          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="بحث برمز أو اسم الحساب..."
+                className="pr-9 h-9"
+              />
+            </div>
+            <Select value={accountTypeFilter} onValueChange={setAccountTypeFilter}>
+              <SelectTrigger className="h-9 w-[160px]">
+                <SelectValue placeholder="نوع الحساب" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الأنواع</SelectItem>
+                <SelectItem value="asset">أصول</SelectItem>
+                <SelectItem value="liability">التزامات</SelectItem>
+                <SelectItem value="equity">حقوق ملكية</SelectItem>
+                <SelectItem value="revenue">إيرادات</SelectItem>
+                <SelectItem value="expense">مصروفات</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant={hideZeroBalances ? 'default' : 'outline'} onClick={() => setHideZeroBalances(v => !v)}>
+              {hideZeroBalances ? <EyeOff className="h-4 w-4 ml-1" /> : <Eye className="h-4 w-4 ml-1" />}
+              {hideZeroBalances ? 'إظهار الصفرية' : 'إخفاء الصفرية'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              <ScrollText className="h-4 w-4 ml-1" /> معاينة الطباعة
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              <FileDown className="h-4 w-4 ml-1" /> تصدير PDF
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportExcel}>
+              <FileSpreadsheet className="h-4 w-4 ml-1" /> تصدير Excel
+            </Button>
+            <Button size="sm" onClick={() => setPreviewOpen(true)}>
+              <Printer className="h-4 w-4 ml-1" /> طباعة
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card className="print-content">
           <CardHeader>
             <div className="print-header">
+              <div className="print-company">{companyName}</div>
               <div className="print-title">ميزان المراجعة</div>
               <div className="print-subtitle">Trial Balance</div>
               <div className="print-info">
-                <div>
-                  {startDate && <span><strong>من:</strong> {new Date(startDate).toLocaleDateString('en-GB')}</span>}
-                  {startDate && endDate && <span className="mx-2">-</span>}
-                  {endDate && <span><strong>إلى:</strong> {new Date(endDate).toLocaleDateString('en-GB')}</span>}
+                <div className="space-y-1">
+                  <div><strong>من تاريخ:</strong> {startDate ? new Date(startDate).toLocaleDateString('en-GB') : '—'}</div>
+                  <div><strong>إلى تاريخ:</strong> {endDate ? new Date(endDate).toLocaleDateString('en-GB') : '—'}</div>
                 </div>
                 <div>
                   <strong>تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-GB')}
                 </div>
               </div>
             </div>
-            <CardTitle className="no-print">ميزان المراجعة</CardTitle>
+            <div className="no-print">
+              <div className="text-sm text-muted-foreground">{companyName}</div>
+              <CardTitle className="text-2xl">ميزان المراجعة</CardTitle>
+              <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-4">
+                <span>من: {startDate ? new Date(startDate).toLocaleDateString('en-GB') : '—'}</span>
+                <span>إلى: {endDate ? new Date(endDate).toLocaleDateString('en-GB') : '—'}</span>
+                <span>تاريخ الطباعة: {new Date().toLocaleDateString('en-GB')}</span>
+              </div>
+            </div>
           </CardHeader>
+
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table className="print-table">
