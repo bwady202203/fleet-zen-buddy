@@ -995,10 +995,11 @@ const TrialBalance = () => {
                 </DialogContent>
               </Dialog>
               
-              <Button variant="outline" onClick={() => window.print()}>
+              <Button variant="outline" onClick={() => setPreviewOpen(true)}>
                 <Printer className="h-4 w-4 ml-2" />
                 طباعة
               </Button>
+
             </div>
           </div>
         </div>
