@@ -581,17 +581,33 @@ const TrialBalance = () => {
   const trialBalanceData = getDisplayAccounts();
 
   // فلترة العرض فقط (بحث / نوع الحساب / إخفاء الأرصدة الصفرية) بدون أي تغيير في منطق الحسابات
-  const filteredData = trialBalanceData.filter(acc => {
-    const q = searchQuery.trim().toLowerCase();
-    if (q && !(acc.name?.toLowerCase().includes(q) || acc.code?.toLowerCase().includes(q))) return false;
-    if (accountTypeFilter !== 'all' && acc.account.type !== accountTypeFilter) return false;
-    if (hideZeroBalances) {
-      const allZero = [acc.openingDebit, acc.openingCredit, acc.periodDebit, acc.periodCredit, acc.closingDebit, acc.closingCredit]
-        .every(v => Math.abs(Number(v) || 0) < 0.005);
-      if (allZero) return false;
-    }
-    return true;
-  });
+  // ترتيب العرض: أصول → التزامات → حقوق ملكية → إيرادات → مصروفات
+  const TYPE_ORDER: Record<string, number> = {
+    asset: 0,
+    liability: 1,
+    equity: 2,
+    revenue: 3,
+    expense: 4,
+  };
+
+  const filteredData = trialBalanceData
+    .filter(acc => {
+      const q = searchQuery.trim().toLowerCase();
+      if (q && !(acc.name?.toLowerCase().includes(q) || acc.code?.toLowerCase().includes(q))) return false;
+      if (accountTypeFilter !== 'all' && acc.account.type !== accountTypeFilter) return false;
+      if (hideZeroBalances) {
+        const allZero = [acc.openingDebit, acc.openingCredit, acc.periodDebit, acc.periodCredit, acc.closingDebit, acc.closingCredit]
+          .every(v => Math.abs(Number(v) || 0) < 0.005);
+        if (allZero) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const orderA = TYPE_ORDER[a.account.type] ?? 99;
+      const orderB = TYPE_ORDER[b.account.type] ?? 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.code.localeCompare(b.code, undefined, { numeric: true });
+    });
 
   const totalOpeningDebit = filteredData.reduce((sum, acc) => sum + acc.openingDebit, 0);
   const totalOpeningCredit = filteredData.reduce((sum, acc) => sum + acc.openingCredit, 0);
