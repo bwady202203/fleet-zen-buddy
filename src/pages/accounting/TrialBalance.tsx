@@ -24,8 +24,9 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store, Filter } from "lucide-react";
+import { ArrowRight, Printer, Calendar, CalendarClock, CalendarRange, Plus, Layers, Trash2, Building2, Store, Filter, Search, Eye, EyeOff, FileSpreadsheet, FileDown, ScrollText, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import TrialBalancePrintPreview from "@/components/TrialBalancePrintPreview";
 
 interface Account {
   id: string;
@@ -74,6 +75,12 @@ const TrialBalance = () => {
   const [displayLevel, setDisplayLevel] = useState<number | 'all'>(4);
   const [editingBalances, setEditingBalances] = useState<{[key: string]: { debit: string, credit: string }}>({});
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
+  // إعدادات العرض والتنسيق فقط
+  const [searchQuery, setSearchQuery] = useState("");
+  const [accountTypeFilter, setAccountTypeFilter] = useState<string>("all");
+  const [hideZeroBalances, setHideZeroBalances] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [companyName, setCompanyName] = useState("النظام المحاسبي المميز");
   
   // Opening Balance Dialog
   const [openingBalanceDialog, setOpeningBalanceDialog] = useState(false);
@@ -150,6 +157,11 @@ const TrialBalance = () => {
       supabase.removeChannel(accountsChannel);
     };
   }, []);
+
+  const fetchCompanyName = async () => {
+    const { data } = await supabase.from('company_settings').select('company_name').limit(1).maybeSingle();
+    if (data?.company_name) setCompanyName(data.company_name);
+  };
 
   const fetchData = async () => {
     try {
