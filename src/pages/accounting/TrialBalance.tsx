@@ -1257,7 +1257,7 @@ const TrialBalance = () => {
                   </TableRow>
                 </TableHeader>
               <TableBody>
-                {trialBalanceData.map((account, index) => {
+                {filteredData.map((account, index) => {
                   const accountLevel = calculateLevel(account.account);
                   const isEditing = editingBalances[account.account.id];
                   const canEdit = !account.hasChildren && account.level === 4; // Only allow editing for level 4 accounts
@@ -1511,7 +1511,7 @@ const TrialBalance = () => {
                     </React.Fragment>
                   );
                 })}
-                {trialBalanceData.length > 0 && (
+                {filteredData.length > 0 && (
                   <TableRow className="font-bold bg-gradient-to-r from-primary/10 to-primary/5 print-total border-t-2 border-primary/20">
                     <TableCell colSpan={2} className="text-right text-lg py-4">
                       <span className="text-primary">الإجمالي / Total</span>
@@ -1536,7 +1536,7 @@ const TrialBalance = () => {
                     </TableCell>
                   </TableRow>
                 )}
-                {trialBalanceData.length === 0 && (
+                {filteredData.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
                       <div className="flex flex-col items-center gap-2">
@@ -1550,7 +1550,7 @@ const TrialBalance = () => {
             </Table>
             </div>
           </CardContent>
-          {trialBalanceData.length > 0 && (
+          {filteredData.length > 0 && (
             <CardContent className="border-t bg-gradient-to-r from-background to-muted/20">
               <div className="print-balance-status py-4">
                 {(Math.abs(totalOpeningDebit - totalOpeningCredit) < 0.01 && 
