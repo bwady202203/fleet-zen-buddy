@@ -106,6 +106,8 @@ const TrialBalance = () => {
   useEffect(() => {
     fetchData();
     fetchBranches();
+    fetchCompanyName();
+
 
     // Subscribe to real-time updates
     const journalChannel = supabase
