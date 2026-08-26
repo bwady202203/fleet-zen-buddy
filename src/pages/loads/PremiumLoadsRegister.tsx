@@ -31,6 +31,8 @@ const PremiumLoadsRegister = () => {
     commissions: "0",
     deliveryFrom: "",
     deliveryTo: "",
+    loadDate: "",
+    unloadDate: "",
   });
 
   const [companies, setCompanies] = useState<any[]>([]);
@@ -162,6 +164,8 @@ const PremiumLoadsRegister = () => {
         driver_commission: commissions,
         delivery_from: formData.deliveryFrom || null,
         delivery_to: formData.deliveryTo || null,
+        load_date: formData.loadDate || null,
+        unload_date: formData.unloadDate || null,
         created_by: user?.id,
       });
 
@@ -183,6 +187,8 @@ const PremiumLoadsRegister = () => {
         commissions: "0",
         deliveryFrom: "",
         deliveryTo: "",
+        loadDate: "",
+        unloadDate: "",
       });
     } catch (error: any) {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
@@ -264,6 +270,26 @@ const PremiumLoadsRegister = () => {
                     type="date"
                     value={formData.invoiceDate}
                     onChange={(e) => setFormData({ ...formData, invoiceDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="loadDate">تاريخ التحميل / Loading Date</Label>
+                  <Input
+                    id="loadDate"
+                    type="date"
+                    value={formData.loadDate}
+                    onChange={(e) => setFormData({ ...formData, loadDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="unloadDate">تاريخ التنزيل / Unloading Date</Label>
+                  <Input
+                    id="unloadDate"
+                    type="date"
+                    value={formData.unloadDate}
+                    onChange={(e) => setFormData({ ...formData, unloadDate: e.target.value })}
                   />
                 </div>
 
