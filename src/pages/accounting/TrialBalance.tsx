@@ -706,6 +706,7 @@ const TrialBalance = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <style>{`
+        @page { size: A4 landscape; margin: 12mm; }
         @media print {
           body * {
             visibility: hidden;
@@ -746,6 +747,13 @@ const TrialBalance = () => {
             font-size: 14px;
             margin-top: 10px;
             direction: rtl;
+          }
+          .print-table thead { display: table-header-group; }
+          .print-table tr { break-inside: avoid; page-break-inside: avoid; }
+          .print-company {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 6px;
           }
           .print-table {
             width: 100%;
@@ -1550,7 +1558,7 @@ const TrialBalance = () => {
                               })) : undefined}
                               title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
                             >
-                              {account.openingDebit > 0 ? account.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                              {account.openingDebit > 0 ? account.openingDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                             </span>
                           )}
                         </TableCell>
@@ -1600,21 +1608,21 @@ const TrialBalance = () => {
                               })) : undefined}
                               title={!canEdit ? 'لا يمكن تعديل حساب له حسابات فرعية' : ''}
                             >
-                              {account.openingCredit > 0 ? account.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                              {account.openingCredit > 0 ? account.openingCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="text-center font-medium tabular-nums">
-                          {account.periodDebit > 0 ? account.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          {account.periodDebit > 0 ? account.periodDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </TableCell>
                         <TableCell className="text-center font-medium border-l tabular-nums">
-                          {account.periodCredit > 0 ? account.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          {account.periodCredit > 0 ? account.periodCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </TableCell>
                         <TableCell className="text-center font-bold text-primary tabular-nums">
-                          {account.closingDebit > 0 ? account.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          {account.closingDebit > 0 ? account.closingDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </TableCell>
                         <TableCell className="text-center font-bold text-primary border-l tabular-nums">
-                          {account.closingCredit > 0 ? account.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          {account.closingCredit > 0 ? account.closingCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </TableCell>
                       </TableRow>
                       
@@ -1638,22 +1646,22 @@ const TrialBalance = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-center text-sm tabular-nums">
-                            {childAccount.openingDebit > 0 ? childAccount.openingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            {childAccount.openingDebit > 0 ? childAccount.openingDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                           </TableCell>
                           <TableCell className="text-center border-l text-sm tabular-nums">
-                            {childAccount.openingCredit > 0 ? childAccount.openingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            {childAccount.openingCredit > 0 ? childAccount.openingCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                           </TableCell>
                           <TableCell className="text-center font-medium text-sm tabular-nums">
-                            {childAccount.periodDebit > 0 ? childAccount.periodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            {childAccount.periodDebit > 0 ? childAccount.periodDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                           </TableCell>
                           <TableCell className="text-center font-medium border-l text-sm tabular-nums">
-                            {childAccount.periodCredit > 0 ? childAccount.periodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            {childAccount.periodCredit > 0 ? childAccount.periodCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                           </TableCell>
                           <TableCell className="text-center font-bold text-primary text-sm tabular-nums">
-                            {childAccount.closingDebit > 0 ? childAccount.closingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            {childAccount.closingDebit > 0 ? childAccount.closingDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                           </TableCell>
                           <TableCell className="text-center font-bold text-primary border-l text-sm tabular-nums">
-                            {childAccount.closingCredit > 0 ? childAccount.closingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                            {childAccount.closingCredit > 0 ? childAccount.closingCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1661,27 +1669,27 @@ const TrialBalance = () => {
                   );
                 })}
                 {filteredData.length > 0 && (
-                  <TableRow className="font-bold bg-gradient-to-r from-primary/10 to-primary/5 print-total border-t-2 border-primary/20">
+                  <TableRow className="font-bold bg-primary/10 print-total border-t-2 border-primary/40 sticky bottom-0 z-10 backdrop-blur">
                     <TableCell colSpan={2} className="text-right text-lg py-4">
                       <span className="text-primary">الإجمالي / Total</span>
                     </TableCell>
                     <TableCell className="text-left text-lg py-4">
-                      <span className="text-primary">{totalOpeningDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-primary">{totalOpeningDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </TableCell>
                     <TableCell className="text-left text-lg py-4 border-l">
-                      <span className="text-primary">{totalOpeningCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-primary">{totalOpeningCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </TableCell>
                     <TableCell className="text-left text-lg py-4">
-                      <span className="text-primary">{totalPeriodDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-primary">{totalPeriodDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </TableCell>
                     <TableCell className="text-left text-lg py-4 border-l">
-                      <span className="text-primary">{totalPeriodCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-primary">{totalPeriodCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </TableCell>
                     <TableCell className="text-left text-lg py-4">
-                      <span className="text-primary font-extrabold">{totalClosingDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-primary font-extrabold">{totalClosingDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </TableCell>
                     <TableCell className="text-left text-lg py-4 border-l">
-                      <span className="text-primary font-extrabold">{totalClosingCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-primary font-extrabold">{totalClosingCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </TableCell>
                   </TableRow>
                 )}
@@ -1726,7 +1734,7 @@ const TrialBalance = () => {
                         <div className="text-center">
                           <div className="text-muted-foreground">فرق الأرصدة الافتتاحية</div>
                           <div className="text-destructive font-semibold">
-                            {Math.abs(totalOpeningDebit - totalOpeningCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                            {Math.abs(totalOpeningDebit - totalOpeningCredit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       )}
@@ -1734,7 +1742,7 @@ const TrialBalance = () => {
                         <div className="text-center">
                           <div className="text-muted-foreground">فرق حركة الفترة</div>
                           <div className="text-destructive font-semibold">
-                            {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                            {Math.abs(totalPeriodDebit - totalPeriodCredit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       )}
@@ -1742,7 +1750,7 @@ const TrialBalance = () => {
                         <div className="text-center">
                           <div className="text-muted-foreground">فرق الرصيد الختامي</div>
                           <div className="text-destructive font-semibold">
-                            {Math.abs(totalClosingDebit - totalClosingCredit).toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                            {Math.abs(totalClosingDebit - totalClosingCredit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       )}
@@ -1776,7 +1784,7 @@ const TrialBalance = () => {
                   <div className="text-left">
                     <div className="text-sm text-muted-foreground">الرصيد</div>
                     <div className="text-2xl font-bold">
-                      {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                      {runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
                 </div>
@@ -1803,13 +1811,13 @@ const TrialBalance = () => {
                         <TableCell className="text-sm text-muted-foreground">{entry.branchName}</TableCell>
                         <TableCell>{entry.description}</TableCell>
                         <TableCell className="text-left font-medium">
-                          {entry.debit > 0 ? entry.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          {entry.debit > 0 ? entry.debit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </TableCell>
                         <TableCell className="text-left font-medium">
-                          {entry.credit > 0 ? entry.credit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
+                          {entry.credit > 0 ? entry.credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </TableCell>
                         <TableCell className="text-left font-bold">
-                          {entry.balance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          {entry.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1817,13 +1825,13 @@ const TrialBalance = () => {
                       <TableRow className="font-bold bg-accent/50">
                         <TableCell colSpan={4} className="text-right">الإجمالي</TableCell>
                         <TableCell className="text-left">
-                          {ledgerTotalDebit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          {ledgerTotalDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell className="text-left">
-                          {ledgerTotalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          {ledgerTotalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell className="text-left">
-                          {runningBalance.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
+                          {runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
                       </TableRow>
                     )}
