@@ -1698,7 +1698,34 @@ const TrialBalance = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <TrialBalancePrintPreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        rows={filteredData.map(a => ({
+          code: a.code,
+          name: a.name,
+          openingDebit: a.openingDebit,
+          openingCredit: a.openingCredit,
+          periodDebit: a.periodDebit,
+          periodCredit: a.periodCredit,
+          closingDebit: a.closingDebit,
+          closingCredit: a.closingCredit,
+        }))}
+        totals={{
+          openingDebit: totalOpeningDebit,
+          openingCredit: totalOpeningCredit,
+          periodDebit: totalPeriodDebit,
+          periodCredit: totalPeriodCredit,
+          closingDebit: totalClosingDebit,
+          closingCredit: totalClosingCredit,
+        }}
+        companyName={companyName}
+        startDate={startDate}
+        endDate={endDate}
+      />
     </div>
+
   );
 };
 
