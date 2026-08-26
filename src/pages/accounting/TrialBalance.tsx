@@ -1335,7 +1335,7 @@ const TrialBalance = () => {
 
         <Card className="print-content">
           <CardHeader>
-            <div className="print-header">
+            <div className="print-header hidden print:block">
               <div className="print-company">{companyName}</div>
               <div className="print-title">ميزان المراجعة</div>
               <div className="print-subtitle">Trial Balance</div>
