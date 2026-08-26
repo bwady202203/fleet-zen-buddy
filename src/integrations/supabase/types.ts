@@ -1895,6 +1895,7 @@ export type Database = {
           id: string
           invoice_date: string | null
           invoice_number: string | null
+          load_date: string | null
           load_number: string
           load_type_id: string | null
           notes: string | null
@@ -1904,6 +1905,7 @@ export type Database = {
           total_amount: number | null
           truck_number: string | null
           unit_price: number | null
+          unload_date: string | null
           unload_quantity: number | null
           updated_at: string | null
         }
@@ -1921,6 +1923,7 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_number?: string | null
+          load_date?: string | null
           load_number: string
           load_type_id?: string | null
           notes?: string | null
@@ -1930,6 +1933,7 @@ export type Database = {
           total_amount?: number | null
           truck_number?: string | null
           unit_price?: number | null
+          unload_date?: string | null
           unload_quantity?: number | null
           updated_at?: string | null
         }
@@ -1947,6 +1951,7 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_number?: string | null
+          load_date?: string | null
           load_number?: string
           load_type_id?: string | null
           notes?: string | null
@@ -1956,6 +1961,7 @@ export type Database = {
           total_amount?: number | null
           truck_number?: string | null
           unit_price?: number | null
+          unload_date?: string | null
           unload_quantity?: number | null
           updated_at?: string | null
         }

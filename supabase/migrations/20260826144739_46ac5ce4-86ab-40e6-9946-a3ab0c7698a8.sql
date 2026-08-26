@@ -1,0 +1,1 @@
+ALTER TABLE public.loads ADD COLUMN IF NOT EXISTS load_date date, ADD COLUMN IF NOT EXISTS unload_date date;
