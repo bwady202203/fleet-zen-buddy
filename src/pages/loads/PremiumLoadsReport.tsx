@@ -343,11 +343,12 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">عمولات</th>
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
+                  <th className="border p-2">تعديل</th>
                 </tr>
               </thead>
               <tbody>
                 {printRows.length === 0 ? (
-                  <tr><td colSpan={14} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={15} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : printRows.map((r, i) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{i + 1}</td>
@@ -364,6 +365,19 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(r.commission)}</td>
                     <td className="border p-2">{dash(r.delivery_from)}</td>
                     <td className="border p-2">{dash(r.delivery_to)}</td>
+                    <td className="border p-2 text-center">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="تعديل السجل"
+                        onClick={() => {
+                          const raw = rows.find((x) => x.id === r.id);
+                          if (raw) openEdit(raw);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -375,9 +389,10 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(totals.unloadQuantity)}</td>
                     <td className="border p-2 text-center">{fmt(totals.difference)}</td>
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
-                    <td className="border p-2" colSpan={2}></td>
+                    <td className="border p-2" colSpan={3}></td>
                   </tr>
                 </tfoot>
+
               )}
             </table>
           </CardContent>
