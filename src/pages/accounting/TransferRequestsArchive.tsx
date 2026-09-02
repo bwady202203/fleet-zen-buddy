@@ -34,6 +34,11 @@ interface RequestRow {
 const statusLabel = (s: string) =>
   s === 'posted' ? 'مرحّل' : s === 'approved' ? 'معتمد' : 'مسودة';
 
+const MONTHS_AR = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+];
+
 const TransferRequestsArchive = () => {
   const [rows, setRows] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +47,24 @@ const TransferRequestsArchive = () => {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [search, setSearch] = useState('');
+  const [year, setYear] = useState(2026);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const toggleMonth = (m: number) => {
+    setSelectedDay(null);
+    setSelectedMonths((prev) =>
+      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m].sort((a, b) => a - b)
+    );
+  };
+
+  const daysInSelection = useMemo(() => {
+    if (selectedMonths.length === 1) {
+      return new Date(year, selectedMonths[0] + 1, 0).getDate();
+    }
+    return 31;
+  }, [selectedMonths, year]);
+
 
   useEffect(() => {
     load();
