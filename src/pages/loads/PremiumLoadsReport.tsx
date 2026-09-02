@@ -82,7 +82,7 @@ const PremiumLoadsReport = () => {
         let query = (supabase as any)
           .from("loads")
           .select(
-            "id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, companies(name), drivers(name), load_types(name)"
+            "id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, load_date, unload_date, companies(name), drivers(name), load_types(name)"
           )
           .gte("date", fromDate)
           .lte("date", toDate)
