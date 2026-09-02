@@ -166,7 +166,10 @@ const TransferRequestsArchive = () => {
     setMinAmount('');
     setMaxAmount('');
     setSearch('');
+    setSelectedMonths([]);
+    setSelectedDay(null);
   };
+
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
