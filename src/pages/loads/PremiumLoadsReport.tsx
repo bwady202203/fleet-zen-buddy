@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Printer, Search, FileDown, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowRight, Printer, Search, FileDown, Eye, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import PremiumLoadsPrintPreview, { PremiumLoadPrintRow } from "@/components/loads/PremiumLoadsPrintPreview";
 
 interface LoadRow {
@@ -20,10 +22,28 @@ interface LoadRow {
   driver_commission: number | null;
   delivery_from: string | null;
   delivery_to: string | null;
+  load_date?: string | null;
+  unload_date?: string | null;
   companies: { name: string } | null;
   drivers: { name: string } | null;
   load_types: { name: string } | null;
 }
+
+interface EditForm {
+  id: string;
+  date: string;
+  load_number: string;
+  invoice_number: string;
+  truck_number: string;
+  quantity: string;
+  unload_quantity: string;
+  driver_commission: string;
+  delivery_from: string;
+  delivery_to: string;
+  load_date: string;
+  unload_date: string;
+}
+
 
 const PremiumLoadsReport = () => {
   const today = new Date().toISOString().split("T")[0];
@@ -39,6 +59,58 @@ const PremiumLoadsReport = () => {
   const [loading, setLoading] = useState(false);
   const [companyName, setCompanyName] = useState("شركة الحمولات");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [editRow, setEditRow] = useState<EditForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (r: LoadRow) => {
+    setEditRow({
+      id: r.id,
+      date: r.date || "",
+      load_number: r.load_number || "",
+      invoice_number: r.invoice_number || "",
+      truck_number: r.truck_number || "",
+      quantity: r.quantity != null ? String(r.quantity) : "",
+      unload_quantity: r.unload_quantity != null ? String(r.unload_quantity) : "",
+      driver_commission: r.driver_commission != null ? String(r.driver_commission) : "",
+      delivery_from: r.delivery_from || "",
+      delivery_to: r.delivery_to || "",
+      load_date: r.load_date || "",
+      unload_date: r.unload_date || "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editRow) return;
+    setSavingEdit(true);
+    try {
+      const num = (v: string) => (v.trim() === "" ? null : Number(v));
+      const { error } = await (supabase as any)
+        .from("loads")
+        .update({
+          date: editRow.date || null,
+          load_number: editRow.load_number || null,
+          invoice_number: editRow.invoice_number || null,
+          truck_number: editRow.truck_number || null,
+          quantity: num(editRow.quantity),
+          unload_quantity: num(editRow.unload_quantity),
+          driver_commission: num(editRow.driver_commission),
+          delivery_from: editRow.delivery_from || null,
+          delivery_to: editRow.delivery_to || null,
+          load_date: editRow.load_date || null,
+          unload_date: editRow.unload_date || null,
+        })
+        .eq("id", editRow.id);
+      if (error) throw error;
+      toast.success("تم تحديث السجل بنجاح");
+      setEditRow(null);
+      fetchData();
+    } catch (e: any) {
+      toast.error("فشل تحديث السجل: " + (e?.message || ""));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -62,7 +134,7 @@ const PremiumLoadsReport = () => {
         let query = (supabase as any)
           .from("loads")
           .select(
-            "id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, companies(name), drivers(name), load_types(name)"
+            "id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, load_date, unload_date, companies(name), drivers(name), load_types(name)"
           )
           .gte("date", fromDate)
           .lte("date", toDate)
@@ -271,11 +343,12 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">عمولات</th>
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
+                  <th className="border p-2">تعديل</th>
                 </tr>
               </thead>
               <tbody>
                 {printRows.length === 0 ? (
-                  <tr><td colSpan={14} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={15} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : printRows.map((r, i) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{i + 1}</td>
@@ -292,6 +365,19 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(r.commission)}</td>
                     <td className="border p-2">{dash(r.delivery_from)}</td>
                     <td className="border p-2">{dash(r.delivery_to)}</td>
+                    <td className="border p-2 text-center">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="تعديل السجل"
+                        onClick={() => {
+                          const raw = rows.find((x) => x.id === r.id);
+                          if (raw) openEdit(raw);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -303,9 +389,10 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(totals.unloadQuantity)}</td>
                     <td className="border p-2 text-center">{fmt(totals.difference)}</td>
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
-                    <td className="border p-2" colSpan={2}></td>
+                    <td className="border p-2" colSpan={3}></td>
                   </tr>
                 </tfoot>
+
               )}
             </table>
           </CardContent>
@@ -320,6 +407,46 @@ const PremiumLoadsReport = () => {
         fromDate={fromDate}
         toDate={toDate}
       />
+
+      <Dialog open={!!editRow} onOpenChange={(o) => !o && setEditRow(null)}>
+        <DialogContent dir="rtl" className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>تعديل السجل</DialogTitle>
+          </DialogHeader>
+          {editRow && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {([
+                ["date", "التاريخ", "date"],
+                ["load_number", "رقم الشحنة", "text"],
+                ["invoice_number", "رقم الفاتورة", "text"],
+                ["truck_number", "رقم الشاحنة", "text"],
+                ["quantity", "كمية التحميل", "decimal"],
+                ["unload_quantity", "كمية التنزيل", "decimal"],
+                ["driver_commission", "العمولة", "decimal"],
+                ["delivery_from", "التوصيل من", "text"],
+                ["delivery_to", "التوصيل الى", "text"],
+                ["load_date", "تاريخ التحميل", "date"],
+                ["unload_date", "تاريخ التنزيل", "date"],
+              ] as [keyof EditForm, string, string][]).map(([key, label, kind]) => (
+                <div key={key} className="space-y-2">
+                  <Label>{label}</Label>
+                  <Input
+                    type={kind === "date" ? "date" : "text"}
+                    inputMode={kind === "decimal" ? "decimal" : undefined}
+                    value={editRow[key]}
+                    onChange={(e) => setEditRow({ ...editRow, [key]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditRow(null)}>إلغاء</Button>
+            <Button onClick={saveEdit} disabled={savingEdit}>{savingEdit ? "جاري الحفظ..." : "حفظ التعديلات"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
