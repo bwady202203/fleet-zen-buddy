@@ -24,6 +24,9 @@ interface LoadRow {
   delivery_to: string | null;
   load_date?: string | null;
   unload_date?: string | null;
+  company_id?: string | null;
+  driver_id?: string | null;
+  load_type_id?: string | null;
   companies: { name: string } | null;
   drivers: { name: string } | null;
   load_types: { name: string } | null;
@@ -42,6 +45,9 @@ interface EditForm {
   delivery_to: string;
   load_date: string;
   unload_date: string;
+  company_id: string;
+  driver_id: string;
+  load_type_id: string;
 }
 
 
@@ -56,6 +62,7 @@ const PremiumLoadsReport = () => {
   const [rows, setRows] = useState<LoadRow[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
+  const [loadTypes, setLoadTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [companyName, setCompanyName] = useState("شركة الحمولات");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -76,6 +83,9 @@ const PremiumLoadsReport = () => {
       delivery_to: r.delivery_to || "",
       load_date: r.load_date || "",
       unload_date: r.unload_date || "",
+      company_id: r.company_id || "",
+      driver_id: r.driver_id || "",
+      load_type_id: r.load_type_id || "",
     });
   };
 
@@ -98,6 +108,9 @@ const PremiumLoadsReport = () => {
           delivery_to: editRow.delivery_to || null,
           load_date: editRow.load_date || null,
           unload_date: editRow.unload_date || null,
+          company_id: editRow.company_id || null,
+          driver_id: editRow.driver_id || null,
+          load_type_id: editRow.load_type_id || null,
         })
         .eq("id", editRow.id);
       if (error) throw error;
@@ -114,13 +127,15 @@ const PremiumLoadsReport = () => {
 
   useEffect(() => {
     (async () => {
-      const [driversRes, companiesRes, settingsRes] = await Promise.all([
+      const [driversRes, companiesRes, loadTypesRes, settingsRes] = await Promise.all([
         supabase.from("drivers").select("id, name").eq("is_active", true).order("name"),
         supabase.from("companies").select("id, name").eq("is_active", true).order("name"),
+        supabase.from("load_types").select("id, name").order("name"),
         supabase.from("company_settings").select("company_name").limit(1).maybeSingle(),
       ]);
       if (driversRes.data) setDrivers(driversRes.data);
       if (companiesRes.data) setCompanies(companiesRes.data);
+      if (loadTypesRes.data) setLoadTypes(loadTypesRes.data);
       if (settingsRes.data?.company_name) setCompanyName(settingsRes.data.company_name);
     })();
   }, []);
@@ -134,7 +149,7 @@ const PremiumLoadsReport = () => {
         let query = (supabase as any)
           .from("loads")
           .select(
-            "id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, load_date, unload_date, companies(name), drivers(name), load_types(name)"
+            "id, date, load_number, invoice_number, truck_number, quantity, unload_quantity, driver_commission, delivery_from, delivery_to, load_date, unload_date, company_id, driver_id, load_type_id, companies(name), drivers(name), load_types(name)"
           )
           .gte("date", fromDate)
           .lte("date", toDate)
@@ -409,12 +424,39 @@ const PremiumLoadsReport = () => {
       />
 
       <Dialog open={!!editRow} onOpenChange={(o) => !o && setEditRow(null)}>
-        <DialogContent dir="rtl" className="max-w-2xl">
+        <DialogContent dir="rtl" className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>تعديل السجل</DialogTitle>
           </DialogHeader>
           {editRow && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>العميل</Label>
+                <Select value={editRow.company_id} onValueChange={(v) => setEditRow({ ...editRow, company_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر العميل" /></SelectTrigger>
+                  <SelectContent>
+                    {companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>السائق</Label>
+                <Select value={editRow.driver_id} onValueChange={(v) => setEditRow({ ...editRow, driver_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر السائق" /></SelectTrigger>
+                  <SelectContent>
+                    {drivers.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>نوع الحمولة</Label>
+                <Select value={editRow.load_type_id} onValueChange={(v) => setEditRow({ ...editRow, load_type_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر نوع الحمولة" /></SelectTrigger>
+                  <SelectContent>
+                    {loadTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               {([
                 ["date", "التاريخ", "date"],
                 ["load_number", "رقم الشحنة", "text"],
