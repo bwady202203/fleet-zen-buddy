@@ -97,6 +97,15 @@ const TransferRequestsArchive = () => {
     return rows.filter((r) => {
       if (startDate && r.request_date < startDate) return false;
       if (endDate && r.request_date > endDate) return false;
+      if (selectedMonths.length > 0) {
+        const [y, m, d] = (r.request_date || '').split('-').map(Number);
+        if (y !== year) return false;
+        if (!selectedMonths.includes((m || 1) - 1)) return false;
+        if (selectedDay !== null && d !== selectedDay) return false;
+      } else if (selectedDay !== null) {
+        const [, , d] = (r.request_date || '').split('-').map(Number);
+        if (d !== selectedDay) return false;
+      }
       if (min !== null && Number(r.total_amount) < min) return false;
       if (max !== null && Number(r.total_amount) > max) return false;
       if (q) {
@@ -110,7 +119,8 @@ const TransferRequestsArchive = () => {
       }
       return true;
     });
-  }, [rows, startDate, endDate, minAmount, maxAmount, search]);
+  }, [rows, startDate, endDate, minAmount, maxAmount, search, selectedMonths, selectedDay, year]);
+
 
   const totalAmount = filtered.reduce((s, r) => s + Number(r.total_amount || 0), 0);
   const totalItems = filtered.reduce((s, r) => s + (r.transfer_request_items?.length || 0), 0);
