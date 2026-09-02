@@ -59,6 +59,58 @@ const PremiumLoadsReport = () => {
   const [loading, setLoading] = useState(false);
   const [companyName, setCompanyName] = useState("شركة الحمولات");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [editRow, setEditRow] = useState<EditForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (r: LoadRow) => {
+    setEditRow({
+      id: r.id,
+      date: r.date || "",
+      load_number: r.load_number || "",
+      invoice_number: r.invoice_number || "",
+      truck_number: r.truck_number || "",
+      quantity: r.quantity != null ? String(r.quantity) : "",
+      unload_quantity: r.unload_quantity != null ? String(r.unload_quantity) : "",
+      driver_commission: r.driver_commission != null ? String(r.driver_commission) : "",
+      delivery_from: r.delivery_from || "",
+      delivery_to: r.delivery_to || "",
+      load_date: r.load_date || "",
+      unload_date: r.unload_date || "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editRow) return;
+    setSavingEdit(true);
+    try {
+      const num = (v: string) => (v.trim() === "" ? null : Number(v));
+      const { error } = await (supabase as any)
+        .from("loads")
+        .update({
+          date: editRow.date || null,
+          load_number: editRow.load_number || null,
+          invoice_number: editRow.invoice_number || null,
+          truck_number: editRow.truck_number || null,
+          quantity: num(editRow.quantity),
+          unload_quantity: num(editRow.unload_quantity),
+          driver_commission: num(editRow.driver_commission),
+          delivery_from: editRow.delivery_from || null,
+          delivery_to: editRow.delivery_to || null,
+          load_date: editRow.load_date || null,
+          unload_date: editRow.unload_date || null,
+        })
+        .eq("id", editRow.id);
+      if (error) throw error;
+      toast.success("تم تحديث السجل بنجاح");
+      setEditRow(null);
+      fetchData();
+    } catch (e: any) {
+      toast.error("فشل تحديث السجل: " + (e?.message || ""));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
 
   useEffect(() => {
     (async () => {
