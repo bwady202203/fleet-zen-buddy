@@ -31,6 +31,7 @@ import CustodyJournalEntries from "./pages/custody/CustodyJournalEntries";
 import CustodySmartJournal from "./pages/custody/CustodySmartJournal";
 import CustodyCombinedStatement from "./pages/custody/CustodyCombinedStatement";
 import TransferRequests from "./pages/accounting/TransferRequests";
+import TransferRequestsArchive from "./pages/accounting/TransferRequestsArchive";
 import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
 import JournalEntries from "./pages/accounting/JournalEntries";
 import JournalEntriesReports from "./pages/accounting/JournalEntriesReports";
@@ -243,6 +244,7 @@ const App = () => {
                                  <Route path="/custody/smart-journal" element={<CustodySmartJournal />} />
                                  <Route path="/custody/combined-statement" element={<CustodyCombinedStatement />} />
                                   <Route path="/accounting/transfer-requests" element={<TransferRequests />} />
+                                  <Route path="/accounting/transfer-requests-archive" element={<TransferRequestsArchive />} />
                                   <Route path="/accounting/important-balances" element={<ImportantBalances />} />
                                   <Route path="/accounting/bank-reconciliation" element={<BankReconciliation />} />
                                   {/* ZATCA - الفوترة الإلكترونية */}
