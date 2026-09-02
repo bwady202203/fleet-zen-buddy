@@ -407,6 +407,46 @@ const PremiumLoadsReport = () => {
         fromDate={fromDate}
         toDate={toDate}
       />
+
+      <Dialog open={!!editRow} onOpenChange={(o) => !o && setEditRow(null)}>
+        <DialogContent dir="rtl" className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>تعديل السجل</DialogTitle>
+          </DialogHeader>
+          {editRow && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {([
+                ["date", "التاريخ", "date"],
+                ["load_number", "رقم الشحنة", "text"],
+                ["invoice_number", "رقم الفاتورة", "text"],
+                ["truck_number", "رقم الشاحنة", "text"],
+                ["quantity", "كمية التحميل", "decimal"],
+                ["unload_quantity", "كمية التنزيل", "decimal"],
+                ["driver_commission", "العمولة", "decimal"],
+                ["delivery_from", "التوصيل من", "text"],
+                ["delivery_to", "التوصيل الى", "text"],
+                ["load_date", "تاريخ التحميل", "date"],
+                ["unload_date", "تاريخ التنزيل", "date"],
+              ] as [keyof EditForm, string, string][]).map(([key, label, kind]) => (
+                <div key={key} className="space-y-2">
+                  <Label>{label}</Label>
+                  <Input
+                    type={kind === "date" ? "date" : "text"}
+                    inputMode={kind === "decimal" ? "decimal" : undefined}
+                    value={editRow[key]}
+                    onChange={(e) => setEditRow({ ...editRow, [key]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditRow(null)}>إلغاء</Button>
+            <Button onClick={saveEdit} disabled={savingEdit}>{savingEdit ? "جاري الحفظ..." : "حفظ التعديلات"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
