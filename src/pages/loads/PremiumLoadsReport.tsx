@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Printer, Search, FileDown, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowRight, Printer, Search, FileDown, Eye, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import PremiumLoadsPrintPreview, { PremiumLoadPrintRow } from "@/components/loads/PremiumLoadsPrintPreview";
 
 interface LoadRow {
@@ -20,10 +22,28 @@ interface LoadRow {
   driver_commission: number | null;
   delivery_from: string | null;
   delivery_to: string | null;
+  load_date?: string | null;
+  unload_date?: string | null;
   companies: { name: string } | null;
   drivers: { name: string } | null;
   load_types: { name: string } | null;
 }
+
+interface EditForm {
+  id: string;
+  date: string;
+  load_number: string;
+  invoice_number: string;
+  truck_number: string;
+  quantity: string;
+  unload_quantity: string;
+  driver_commission: string;
+  delivery_from: string;
+  delivery_to: string;
+  load_date: string;
+  unload_date: string;
+}
+
 
 const PremiumLoadsReport = () => {
   const today = new Date().toISOString().split("T")[0];
