@@ -34,6 +34,11 @@ interface RequestRow {
 const statusLabel = (s: string) =>
   s === 'posted' ? 'مرحّل' : s === 'approved' ? 'معتمد' : 'مسودة';
 
+const MONTHS_AR = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+];
+
 const TransferRequestsArchive = () => {
   const [rows, setRows] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +47,24 @@ const TransferRequestsArchive = () => {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [search, setSearch] = useState('');
+  const [year, setYear] = useState(2026);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const toggleMonth = (m: number) => {
+    setSelectedDay(null);
+    setSelectedMonths((prev) =>
+      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m].sort((a, b) => a - b)
+    );
+  };
+
+  const daysInSelection = useMemo(() => {
+    if (selectedMonths.length === 1) {
+      return new Date(year, selectedMonths[0] + 1, 0).getDate();
+    }
+    return 31;
+  }, [selectedMonths, year]);
+
 
   useEffect(() => {
     load();
@@ -74,6 +97,15 @@ const TransferRequestsArchive = () => {
     return rows.filter((r) => {
       if (startDate && r.request_date < startDate) return false;
       if (endDate && r.request_date > endDate) return false;
+      if (selectedMonths.length > 0) {
+        const [y, m, d] = (r.request_date || '').split('-').map(Number);
+        if (y !== year) return false;
+        if (!selectedMonths.includes((m || 1) - 1)) return false;
+        if (selectedDay !== null && d !== selectedDay) return false;
+      } else if (selectedDay !== null) {
+        const [, , d] = (r.request_date || '').split('-').map(Number);
+        if (d !== selectedDay) return false;
+      }
       if (min !== null && Number(r.total_amount) < min) return false;
       if (max !== null && Number(r.total_amount) > max) return false;
       if (q) {
@@ -87,7 +119,8 @@ const TransferRequestsArchive = () => {
       }
       return true;
     });
-  }, [rows, startDate, endDate, minAmount, maxAmount, search]);
+  }, [rows, startDate, endDate, minAmount, maxAmount, search, selectedMonths, selectedDay, year]);
+
 
   const totalAmount = filtered.reduce((s, r) => s + Number(r.total_amount || 0), 0);
   const totalItems = filtered.reduce((s, r) => s + (r.transfer_request_items?.length || 0), 0);
@@ -133,7 +166,10 @@ const TransferRequestsArchive = () => {
     setMinAmount('');
     setMaxAmount('');
     setSearch('');
+    setSelectedMonths([]);
+    setSelectedDay(null);
   };
+
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -165,6 +201,73 @@ const TransferRequestsArchive = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Card>
+          <CardContent className="pt-6 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setYear((y) => y - 1); setSelectedDay(null); }}>
+                  {'<'}
+                </Button>
+                <span className="font-bold text-lg">{year}</span>
+                <Button variant="outline" size="sm" onClick={() => { setYear((y) => y + 1); setSelectedDay(null); }}>
+                  {'>'}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setSelectedMonths(Array.from({ length: 12 }, (_, i) => i)); setSelectedDay(null); }}
+                >
+                  كل الشهور
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setSelectedMonths([]); setSelectedDay(null); }}>
+                  إلغاء التحديد
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2">
+              {MONTHS_AR.map((m, idx) => {
+                const active = selectedMonths.includes(idx);
+                return (
+                  <button
+                    key={m}
+                    onClick={() => toggleMonth(idx)}
+                    className={`rounded-md border py-2 text-sm font-medium transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-8 sm:grid-cols-12 lg:grid-cols-[repeat(31,minmax(0,1fr))] gap-1">
+              {Array.from({ length: daysInSelection }, (_, i) => i + 1).map((d) => {
+                const active = selectedDay === d;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => setSelectedDay(active ? null : d)}
+                    className={`rounded border py-1 text-xs transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/30 hover:bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">فلاتر البحث</CardTitle>
           </CardHeader>
