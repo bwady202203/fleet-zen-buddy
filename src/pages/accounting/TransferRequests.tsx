@@ -1398,12 +1398,19 @@ const [newDateValue, setNewDateValue] = useState('');
                  <span className="text-muted-foreground">|</span>
                  <span className="text-primary">{hijriDate} هـ</span>
                </div>
-               <Link to="/accounting">
-                 <Button variant="outline" size="sm" className="gap-2">
-                   <ArrowRight className="h-4 w-4" />
-                   العودة للمحاسبة
-                 </Button>
-               </Link>
+                <Link to="/accounting/transfer-requests-archive">
+                  <Button variant="secondary" size="sm" className="gap-2">
+                    <Search className="h-4 w-4" />
+                    جداول قوائم التحويل
+                  </Button>
+                </Link>
+                <Link to="/accounting">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <ArrowRight className="h-4 w-4" />
+                    العودة للمحاسبة
+                  </Button>
+                </Link>
+
              </div>
            </div>
          </div>
