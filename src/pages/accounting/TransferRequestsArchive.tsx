@@ -201,6 +201,74 @@ const TransferRequestsArchive = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <Card>
+          <CardContent className="pt-6 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setYear((y) => y - 1); setSelectedDay(null); }}>
+                  {'<'}
+                </Button>
+                <span className="font-bold text-lg">{year}</span>
+                <Button variant="outline" size="sm" onClick={() => { setYear((y) => y + 1); setSelectedDay(null); }}>
+                  {'>'}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setSelectedMonths(Array.from({ length: 12 }, (_, i) => i)); setSelectedDay(null); }}
+                >
+                  كل الشهور
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setSelectedMonths([]); setSelectedDay(null); }}>
+                  إلغاء التحديد
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2">
+              {MONTHS_AR.map((m, idx) => {
+                const active = selectedMonths.includes(idx);
+                return (
+                  <button
+                    key={m}
+                    onClick={() => toggleMonth(idx)}
+                    className={`rounded-md border py-2 text-sm font-medium transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-card hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-8 sm:grid-cols-12 lg:grid-cols-[repeat(31,minmax(0,1fr))] gap-1">
+              {Array.from({ length: daysInSelection }, (_, i) => i + 1).map((d) => {
+                const active = selectedDay === d;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => setSelectedDay(active ? null : d)}
+                    className={`rounded border py-1 text-xs transition-colors ${
+                      active
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/30 hover:bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">فلاتر البحث</CardTitle>
           </CardHeader>
