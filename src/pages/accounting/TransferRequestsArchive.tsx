@@ -268,7 +268,6 @@ const TransferRequestsArchive = () => {
 
         <Card>
 
-        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">فلاتر البحث</CardTitle>
           </CardHeader>
