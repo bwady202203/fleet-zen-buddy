@@ -375,20 +375,20 @@ export default function JournalWithDocument() {
     try {
       const { data: entry, error: entryError } = await db
         .from("journal_entries")
-        .select("id, entry_number, entry_date, description, reference")
+        .select("id, entry_number, date, description, reference")
         .eq("id", document.journal_entry_id)
         .maybeSingle();
       if (entryError) throw entryError;
       const { data: lines, error: linesError } = await db
         .from("journal_entry_lines")
-        .select("id, account_id, debit, credit, description")
+        .select("id, account_id, debit, credit, description, chart_of_accounts(code, name_ar)")
         .eq("journal_entry_id", document.journal_entry_id);
       if (linesError) throw linesError;
       setViewData({
         document,
-        entry,
+        entry: entry ? { ...entry, entry_date: entry.date ?? null } : null,
         lines: (lines || []).map((line: any) => {
-          const account = accounts.find((item) => item.id === line.account_id);
+          const account = line.chart_of_accounts || accounts.find((item) => item.id === line.account_id);
           return { ...line, account_code: account?.code || "", account_name: account?.name_ar || "" };
         }),
       });
