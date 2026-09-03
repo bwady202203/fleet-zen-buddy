@@ -114,6 +114,14 @@ export default function JournalWithDocument() {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewData, setViewData] = useState<{
+    document: DocumentRow;
+    entry: { id: string; entry_number: string | null; entry_date: string | null; description: string | null } | null;
+    lines: { id: string; account_code: string; account_name: string; description: string | null; debit: number; credit: number }[];
+  } | null>(null);
+
   const db = supabase as any;
   const debitAccount = useMemo(() => accounts.find((account) => account.id === linkedAccountId), [accounts, linkedAccountId]);
   const creditAccount = useMemo(() => accounts.find((account) => account.id === creditAccountId), [accounts, creditAccountId]);
