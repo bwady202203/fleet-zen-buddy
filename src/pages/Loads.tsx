@@ -1,13 +1,22 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList, BadgeDollarSign, Sparkles } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, FileText, Receipt, List, Truck, ClipboardList, BadgeDollarSign, Sparkles, FileSpreadsheet } from "lucide-react";
 import DeliverySystemAuth from "@/components/DeliverySystemAuth";
 
 const Loads = () => {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   const sections = [
+    {
+      title: "كشف حساب عميل",
+      titleEn: "Customer Statement",
+      description: "الرصيد الافتتاحي والفواتير والدفعات",
+      descriptionEn: "Opening balance, invoices and payments",
+      icon: FileSpreadsheet,
+      link: "/loads/customer-statement",
+      color: "from-teal-500 to-teal-600"
+    },
     {
       title: "تسجيل الحمولات",
       titleEn: "Loads Registration",
