@@ -30,6 +30,10 @@ const DOCUMENT_BUCKET = "journal-documents";
 const DEFAULT_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
 const DEBIT_ACCOUNT_NAME = "مؤسسة حاتم لافي بن نوار الدعاني للمقاولات";
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const LINKED_ACCOUNT_KEY = "jwd_linked_account_id";
+const QUICK_ACCOUNTS_KEY = "jwd_quick_account_ids";
+const MAX_QUICK_ACCOUNTS = 12;
+
 
 const extractedSchema = z.object({
   reference_number: z.string().nullable().optional(),
@@ -90,9 +94,20 @@ export default function JournalWithDocument() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [creditAccountId, setCreditAccountId] = useState(DEFAULT_BANK_ACCOUNT_ID);
+  const [creditAccountId, setCreditAccountId] = useState(() => localStorage.getItem(LINKED_ACCOUNT_KEY) || DEFAULT_BANK_ACCOUNT_ID);
+  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(() => localStorage.getItem(LINKED_ACCOUNT_KEY));
+  const [quickAccountIds, setQuickAccountIds] = useState<string[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(QUICK_ACCOUNTS_KEY) || "[]");
+      return Array.isArray(raw) ? raw.filter((v) => typeof v === "string").slice(0, MAX_QUICK_ACCOUNTS) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [pickerMode, setPickerMode] = useState<"credit" | "linked" | "quick">("credit");
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
   const [accountSearch, setAccountSearch] = useState("");
+
   const [isReading, setIsReading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -103,6 +118,48 @@ export default function JournalWithDocument() {
     [accounts],
   );
   const creditAccount = useMemo(() => accounts.find((account) => account.id === creditAccountId), [accounts, creditAccountId]);
+  const linkedAccount = useMemo(() => accounts.find((account) => account.id === linkedAccountId), [accounts, linkedAccountId]);
+  const quickAccounts = useMemo(
+    () => quickAccountIds.map((id) => accounts.find((account) => account.id === id)).filter(Boolean) as Account[],
+    [accounts, quickAccountIds],
+  );
+
+  const openPicker = (mode: "credit" | "linked" | "quick") => {
+    setPickerMode(mode);
+    setAccountSearch("");
+    setAccountPickerOpen(true);
+  };
+
+  const saveLinkedAccount = (id: string) => {
+    setLinkedAccountId(id);
+    localStorage.setItem(LINKED_ACCOUNT_KEY, id);
+    setCreditAccountId(id);
+    toast.success("تم تعريف الحساب المرتبط وسيتم استدعاؤه تلقائياً");
+  };
+
+  const toggleQuickAccount = (id: string) => {
+    setQuickAccountIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((value) => value !== id) : prev.length >= MAX_QUICK_ACCOUNTS ? prev : [...prev, id];
+      if (!prev.includes(id) && prev.length >= MAX_QUICK_ACCOUNTS) toast.error(`الحد الأقصى ${MAX_QUICK_ACCOUNTS} حساب للاختيار السريع`);
+      localStorage.setItem(QUICK_ACCOUNTS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handlePick = (id: string) => {
+    if (pickerMode === "linked") {
+      saveLinkedAccount(id);
+      setAccountPickerOpen(false);
+      return;
+    }
+    if (pickerMode === "quick") {
+      toggleQuickAccount(id);
+      return;
+    }
+    setCreditAccountId(id);
+    setAccountPickerOpen(false);
+  };
+
   const filteredAccounts = useMemo(() => {
     const term = normalizeArabic(accountSearch.toLowerCase());
     return accounts.filter((account) => !term || normalizeArabic(`${account.code} ${account.name_ar} ${account.name_en || ""}`.toLowerCase()).includes(term));
@@ -344,7 +401,18 @@ export default function JournalWithDocument() {
               </div>
               <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2">
                 <div><span className="text-xs text-muted-foreground">الحساب المدين الثابت</span><p className="mt-1 font-semibold text-primary">{debitAccount ? `${debitAccount.code} - ${debitAccount.name_ar}` : DEBIT_ACCOUNT_NAME}</p></div>
-                <div><span className="text-xs text-muted-foreground">الحساب الدائن</span><button type="button" className="mt-1 block text-right font-semibold text-primary underline-offset-4 hover:underline" onClick={() => setAccountPickerOpen(true)}>{creditAccount ? `${creditAccount.code} - ${creditAccount.name_ar}` : "اختر الحساب الدائن"}</button></div>
+                <div><span className="text-xs text-muted-foreground">الحساب الدائن</span><button type="button" className="mt-1 block text-right font-semibold text-primary underline-offset-4 hover:underline" onClick={() => openPicker("credit")}>{creditAccount ? `${creditAccount.code} - ${creditAccount.name_ar}` : "اختر الحساب الدائن"}</button></div>
+                <div className="border-t pt-3 sm:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div><span className="text-xs text-muted-foreground">الحساب المرتبط</span><p className="mt-1 font-semibold">{linkedAccount ? `${linkedAccount.code} - ${linkedAccount.name_ar}` : "لم يتم تعريف حساب مرتبط"}</p></div>
+                    <Button type="button" variant="outline" onClick={() => openPicker("linked")}>{linkedAccount ? "تغيير الحساب" : "تعريف الحساب"}</Button>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">يتم استدعاء الحساب المرتبط تلقائياً في القيود الجديدة.</p>
+                </div>
+                <div className="border-t pt-3 sm:col-span-2">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-semibold">أهم الحسابات للاختيار السريع</span><Button type="button" variant="ghost" size="sm" onClick={() => openPicker("quick")}><Plus className="ml-1 h-4 w-4" />إدارة الحسابات</Button></div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">{quickAccounts.length ? quickAccounts.map((account) => <Button key={account.id} type="button" variant={account.id === creditAccountId ? "default" : "outline"} className="h-auto min-w-[150px] shrink-0 justify-start whitespace-normal p-2 text-right" onClick={() => setCreditAccountId(account.id)}><span><span className="block text-xs opacity-70">{account.code}</span><span>{account.name_ar}</span></span></Button>) : <span className="text-sm text-muted-foreground">أضف حتى 12 حساباً للوصول السريع</span>}</div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -373,7 +441,7 @@ export default function JournalWithDocument() {
         </section>
       </div>
 
-      <Dialog open={accountPickerOpen} onOpenChange={setAccountPickerOpen}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>اختيار الحساب الدائن</DialogTitle></DialogHeader><div className="space-y-4"><Input value={accountSearch} onChange={(event) => setAccountSearch(event.target.value)} placeholder="ابحث بالكود أو اسم الحساب" /><div className="grid max-h-[55vh] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">{filteredAccounts.map((account) => <Button key={account.id} variant={account.id === creditAccountId ? "default" : "outline"} className="h-auto min-h-16 justify-start whitespace-normal p-3 text-right" onClick={() => { setCreditAccountId(account.id); setAccountPickerOpen(false); }}><span><span className="block text-xs opacity-70">{account.code}</span><span>{account.name_ar}</span></span></Button>)}</div></div></DialogContent></Dialog>
+      <Dialog open={accountPickerOpen} onOpenChange={setAccountPickerOpen}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>{pickerMode === "linked" ? "تعريف الحساب المرتبط" : pickerMode === "quick" ? "إدارة الحسابات السريعة" : "اختيار الحساب الدائن"}</DialogTitle></DialogHeader><div className="space-y-4"><Input value={accountSearch} onChange={(event) => setAccountSearch(event.target.value)} placeholder="ابحث بالكود أو اسم الحساب" />{pickerMode === "quick" && <p className="text-sm text-muted-foreground">اختر حتى 12 حساباً، واضغط مرة أخرى لإلغاء الاختيار.</p>}<div className="grid max-h-[55vh] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">{filteredAccounts.map((account) => <Button key={account.id} variant={(pickerMode === "quick" ? quickAccountIds.includes(account.id) : pickerMode === "linked" ? linkedAccountId === account.id : account.id === creditAccountId) ? "default" : "outline"} className="h-auto min-h-16 justify-start whitespace-normal p-3 text-right" onClick={() => handlePick(account.id)}><span><span className="block text-xs opacity-70">{account.code}</span><span>{account.name_ar}</span></span></Button>)}</div>{pickerMode === "quick" && <Button className="w-full" onClick={() => setAccountPickerOpen(false)}><Check className="ml-2 h-4 w-4" />تم</Button>}</div></DialogContent></Dialog>
     </main>
   );
 }
