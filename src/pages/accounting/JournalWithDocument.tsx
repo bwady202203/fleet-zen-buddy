@@ -401,7 +401,18 @@ export default function JournalWithDocument() {
               </div>
               <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 sm:grid-cols-2">
                 <div><span className="text-xs text-muted-foreground">الحساب المدين الثابت</span><p className="mt-1 font-semibold text-primary">{debitAccount ? `${debitAccount.code} - ${debitAccount.name_ar}` : DEBIT_ACCOUNT_NAME}</p></div>
-                <div><span className="text-xs text-muted-foreground">الحساب الدائن</span><button type="button" className="mt-1 block text-right font-semibold text-primary underline-offset-4 hover:underline" onClick={() => setAccountPickerOpen(true)}>{creditAccount ? `${creditAccount.code} - ${creditAccount.name_ar}` : "اختر الحساب الدائن"}</button></div>
+                <div><span className="text-xs text-muted-foreground">الحساب الدائن</span><button type="button" className="mt-1 block text-right font-semibold text-primary underline-offset-4 hover:underline" onClick={() => openPicker("credit")}>{creditAccount ? `${creditAccount.code} - ${creditAccount.name_ar}` : "اختر الحساب الدائن"}</button></div>
+                <div className="border-t pt-3 sm:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div><span className="text-xs text-muted-foreground">الحساب المرتبط</span><p className="mt-1 font-semibold">{linkedAccount ? `${linkedAccount.code} - ${linkedAccount.name_ar}` : "لم يتم تعريف حساب مرتبط"}</p></div>
+                    <Button type="button" variant="outline" onClick={() => openPicker("linked")}>{linkedAccount ? "تغيير الحساب" : "تعريف الحساب"}</Button>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">يتم استدعاء الحساب المرتبط تلقائياً في القيود الجديدة.</p>
+                </div>
+                <div className="border-t pt-3 sm:col-span-2">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-semibold">أهم الحسابات للاختيار السريع</span><Button type="button" variant="ghost" size="sm" onClick={() => openPicker("quick")}><Plus className="ml-1 h-4 w-4" />إدارة الحسابات</Button></div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">{quickAccounts.length ? quickAccounts.map((account) => <Button key={account.id} type="button" variant={account.id === creditAccountId ? "default" : "outline"} className="h-auto min-w-[150px] shrink-0 justify-start whitespace-normal p-2 text-right" onClick={() => setCreditAccountId(account.id)}><span><span className="block text-xs opacity-70">{account.code}</span><span>{account.name_ar}</span></span></Button>) : <span className="text-sm text-muted-foreground">أضف حتى 12 حساباً للوصول السريع</span>}</div>
+                </div>
               </div>
             </CardContent>
           </Card>
