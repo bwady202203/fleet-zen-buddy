@@ -13,8 +13,10 @@ import {
   FileText,
   Loader2,
   Plus,
+  Printer,
   RefreshCcw,
   Search,
+  Eye,
   Trash2,
   Upload,
   X,
@@ -111,6 +113,14 @@ export default function JournalWithDocument() {
   const [isReading, setIsReading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewData, setViewData] = useState<{
+    document: DocumentRow;
+    entry: { id: string; entry_number: string | null; entry_date: string | null; description: string | null } | null;
+    lines: { id: string; account_code: string; account_name: string; description: string | null; debit: number; credit: number }[];
+  } | null>(null);
 
   const db = supabase as any;
   const debitAccount = useMemo(() => accounts.find((account) => account.id === linkedAccountId), [accounts, linkedAccountId]);
@@ -354,6 +364,91 @@ export default function JournalWithDocument() {
 
   const updateDraft = (key: keyof Draft, value: string) => setDraft((current) => ({ ...current, [key]: value.slice(0, 500) }));
 
+  const openEntryView = async (document: DocumentRow) => {
+    if (!document.journal_entry_id) {
+      toast.error("لا يوجد قيد مرتبط بهذا المستند");
+      return;
+    }
+    setViewOpen(true);
+    setViewLoading(true);
+    setViewData(null);
+    try {
+      const { data: entry, error: entryError } = await db
+        .from("journal_entries")
+        .select("id, entry_number, entry_date, description, reference")
+        .eq("id", document.journal_entry_id)
+        .maybeSingle();
+      if (entryError) throw entryError;
+      const { data: lines, error: linesError } = await db
+        .from("journal_entry_lines")
+        .select("id, account_id, debit, credit, description")
+        .eq("journal_entry_id", document.journal_entry_id);
+      if (linesError) throw linesError;
+      setViewData({
+        document,
+        entry,
+        lines: (lines || []).map((line: any) => {
+          const account = accounts.find((item) => item.id === line.account_id);
+          return { ...line, account_code: account?.code || "", account_name: account?.name_ar || "" };
+        }),
+      });
+    } catch (error) {
+      toast.error(`تعذر عرض القيد: ${(error as Error).message}`);
+      setViewOpen(false);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const printEntry = () => {
+    if (!viewData) return;
+    const { entry, lines, document: doc } = viewData;
+    const money = (value: number) => Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalDebit = lines.reduce((sum, line) => sum + Number(line.debit || 0), 0);
+    const totalCredit = lines.reduce((sum, line) => sum + Number(line.credit || 0), 0);
+    const win = window.open("", "_blank", "width=900,height=1000");
+    if (!win) {
+      toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
+      return;
+    }
+    win.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8" />
+      <title>قيد يومية ${entry?.entry_number || ""}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" />
+      <style>
+        @page { size: A4; margin: 12mm; }
+        body { font-family: 'Cairo', sans-serif; color: #111; }
+        h1 { font-size: 20px; text-align: center; margin: 0 0 4px; }
+        .sub { text-align: center; font-size: 12px; color: #555; margin-bottom: 16px; }
+        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; font-size: 13px; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #999; padding: 7px; text-align: right; }
+        thead th { background: #eef2ff; }
+        tfoot td { font-weight: 700; background: #f6f6f6; }
+        img { max-width: 100%; margin-top: 16px; border: 1px solid #ddd; }
+      </style></head><body>
+      <h1>سند قيد يومية</h1>
+      <div class="sub">النظام المحاسبي المميز - ويزر</div>
+      <div class="meta">
+        <div><strong>رقم القيد:</strong> ${entry?.entry_number || "-"}</div>
+        <div><strong>التاريخ:</strong> ${entry?.entry_date || doc.doc_date || "-"}</div>
+        <div><strong>الرقم المرجعي:</strong> ${doc.reference_number || "-"}</div>
+        <div><strong>المستفيد:</strong> ${doc.beneficiary_name || "-"}</div>
+        <div style="grid-column: 1 / -1"><strong>البيان:</strong> ${entry?.description || doc.notes || "-"}</div>
+      </div>
+      <table><thead><tr><th>الكود</th><th>الحساب</th><th>البيان</th><th>مدين</th><th>دائن</th></tr></thead>
+      <tbody>${lines
+        .map(
+          (line) =>
+            `<tr><td>${line.account_code}</td><td>${line.account_name}</td><td>${line.description || "-"}</td><td>${money(line.debit)}</td><td>${money(line.credit)}</td></tr>`,
+        )
+        .join("")}</tbody>
+      <tfoot><tr><td colspan="3">الإجمالي</td><td>${money(totalDebit)}</td><td>${money(totalCredit)}</td></tr></tfoot></table>
+      ${doc.image_url ? `<img src="${doc.image_url}" alt="المستند البنكي" />` : ""}
+      <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 600); };<\/script>
+      </body></html>`);
+    win.document.close();
+  };
+
   return (
     <main className="min-h-screen bg-background p-4 md:p-8" dir="rtl" onPaste={handlePaste}>
       <div className="mx-auto max-w-[1500px] space-y-6">
@@ -438,11 +533,12 @@ export default function JournalWithDocument() {
             <div><h2 className="text-xl font-bold">المستندات المحفوظة</h2><p className="text-sm text-muted-foreground">استدعِ المستند والقيد بالرقم المرجعي أو التاريخ أو المبلغ.</p></div>
             <div className="relative w-full sm:w-80"><Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pr-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="بحث في المستندات..." /></div>
           </div>
-          <Card className="overflow-hidden shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-sm"><thead className="bg-muted/60"><tr><th className="p-3 text-right">المستند</th><th className="p-3 text-right">التاريخ</th><th className="p-3 text-right">المبلغ</th><th className="p-3 text-right">المستفيد</th><th className="p-3 text-right">الحساب</th><th className="p-3 text-right">القيد</th><th className="p-3 text-right">إجراء</th></tr></thead><tbody>{loading ? <tr><td colSpan={7} className="p-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" /></td></tr> : filteredDocuments.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">لا توجد مستندات محفوظة</td></tr> : filteredDocuments.map((document) => <tr key={document.id} className="border-t hover:bg-muted/20"><td className="p-3"><div className="flex items-center gap-3">{document.image_url ? <a href={document.image_url} target="_blank" rel="noreferrer"><img src={document.image_url} alt="مستند بنكي محفوظ" className="h-12 w-16 object-cover" /></a> : <FileImage className="h-8 w-8 text-muted-foreground" />}<span className="font-medium">{document.reference_number || "بدون مرجع"}</span></div></td><td className="p-3">{document.doc_date || "-"}</td><td className="p-3 font-semibold">{Number(document.amount || 0).toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td><td className="p-3">{document.beneficiary_name || "-"}</td><td className="p-3">{document.account_number || "-"}</td><td className="p-3 text-primary">{document.journal_entry_id ? "محفوظ" : "-"}</td><td className="p-3"><Button variant="ghost" size="icon" className="text-destructive" aria-label="حذف المستند" onClick={() => void deleteDocument(document)}><Trash2 className="h-4 w-4" /></Button></td></tr>)}</tbody></table></div></Card>
+          <Card className="overflow-hidden shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-sm"><thead className="bg-muted/60"><tr><th className="p-3 text-right">المستند</th><th className="p-3 text-right">التاريخ</th><th className="p-3 text-right">المبلغ</th><th className="p-3 text-right">المستفيد</th><th className="p-3 text-right">الحساب</th><th className="p-3 text-right">القيد</th><th className="p-3 text-right">إجراء</th></tr></thead><tbody>{loading ? <tr><td colSpan={7} className="p-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" /></td></tr> : filteredDocuments.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">لا توجد مستندات محفوظة</td></tr> : filteredDocuments.map((document) => <tr key={document.id} className="border-t hover:bg-muted/20"><td className="p-3"><div className="flex items-center gap-3">{document.image_url ? <a href={document.image_url} target="_blank" rel="noreferrer"><img src={document.image_url} alt="مستند بنكي محفوظ" className="h-12 w-16 object-cover" /></a> : <FileImage className="h-8 w-8 text-muted-foreground" />}<span className="font-medium">{document.reference_number || "بدون مرجع"}</span></div></td><td className="p-3">{document.doc_date || "-"}</td><td className="p-3 font-semibold">{Number(document.amount || 0).toLocaleString("ar-SA", { minimumFractionDigits: 2 })} ر.س</td><td className="p-3">{document.beneficiary_name || "-"}</td><td className="p-3">{document.account_number || "-"}</td><td className="p-3 text-primary">{document.journal_entry_id ? "محفوظ" : "-"}</td><td className="p-3"><div className="flex items-center gap-1"><Button variant="ghost" size="icon" className="text-primary" aria-label="عرض القيد" title="عرض القيد وطباعته" onClick={() => void openEntryView(document)}><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive" aria-label="حذف المستند" onClick={() => void deleteDocument(document)}><Trash2 className="h-4 w-4" /></Button></div></td></tr>)}</tbody></table></div></Card>
         </section>
       </div>
 
       <Dialog open={accountPickerOpen} onOpenChange={setAccountPickerOpen}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>{pickerMode === "linked" ? "اختيار الحساب المدين المرتبط" : pickerMode === "quick" ? "إدارة الحسابات السريعة" : "اختيار الحساب الدائن"}</DialogTitle></DialogHeader><div className="space-y-4"><Input value={accountSearch} onChange={(event) => setAccountSearch(event.target.value)} placeholder="ابحث بالكود أو اسم الحساب" />{pickerMode === "quick" && <p className="text-sm text-muted-foreground">اختر حتى 12 حساباً، واضغط مرة أخرى لإلغاء الاختيار.</p>}<div className="grid max-h-[55vh] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">{filteredAccounts.map((account) => <Button key={account.id} variant={(pickerMode === "quick" ? quickAccountIds.includes(account.id) : pickerMode === "linked" ? linkedAccountId === account.id : account.id === creditAccountId) ? "default" : "outline"} className="h-auto min-h-16 justify-start whitespace-normal p-3 text-right" onClick={() => handlePick(account.id)}><span><span className="block text-xs opacity-70">{account.code}</span><span>{account.name_ar}</span></span></Button>)}</div>{pickerMode === "quick" && <Button className="w-full" onClick={() => setAccountPickerOpen(false)}><Check className="ml-2 h-4 w-4" />تم</Button>}</div></DialogContent></Dialog>
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}><DialogContent className="max-w-3xl" dir="rtl"><DialogHeader><DialogTitle>عرض القيد</DialogTitle></DialogHeader>{viewLoading || !viewData ? <div className="p-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" /></div> : <div className="space-y-4"><div className="grid grid-cols-2 gap-2 text-sm"><div><span className="text-muted-foreground">رقم القيد: </span>{viewData.entry?.entry_number || "-"}</div><div><span className="text-muted-foreground">التاريخ: </span>{viewData.entry?.entry_date || viewData.document.doc_date || "-"}</div><div><span className="text-muted-foreground">المرجع: </span>{viewData.document.reference_number || "-"}</div><div><span className="text-muted-foreground">المستفيد: </span>{viewData.document.beneficiary_name || "-"}</div><div className="col-span-2"><span className="text-muted-foreground">البيان: </span>{viewData.entry?.description || viewData.document.notes || "-"}</div></div><div className="overflow-x-auto rounded-md border"><table className="w-full text-sm"><thead className="bg-muted/60"><tr><th className="p-2 text-right">الكود</th><th className="p-2 text-right">الحساب</th><th className="p-2 text-right">البيان</th><th className="p-2 text-right">مدين</th><th className="p-2 text-right">دائن</th></tr></thead><tbody>{viewData.lines.map((line) => <tr key={line.id} className="border-t"><td className="p-2">{line.account_code}</td><td className="p-2">{line.account_name}</td><td className="p-2">{line.description || "-"}</td><td className="p-2">{Number(line.debit || 0).toFixed(2)}</td><td className="p-2">{Number(line.credit || 0).toFixed(2)}</td></tr>)}</tbody><tfoot className="bg-muted/40 font-semibold"><tr><td className="p-2" colSpan={3}>الإجمالي</td><td className="p-2">{viewData.lines.reduce((sum, line) => sum + Number(line.debit || 0), 0).toFixed(2)}</td><td className="p-2">{viewData.lines.reduce((sum, line) => sum + Number(line.credit || 0), 0).toFixed(2)}</td></tr></tfoot></table></div>{viewData.document.image_url && <img src={viewData.document.image_url} alt="المستند البنكي المرفق" className="max-h-72 w-full rounded-md border object-contain" />}<Button className="w-full" onClick={printEntry}><Printer className="ml-2 h-4 w-4" />طباعة القيد</Button></div>}</DialogContent></Dialog>
     </main>
   );
 }
