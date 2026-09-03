@@ -362,6 +362,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          opening_balance: number
           organization_id: string | null
           phone: string | null
           tax_number: string | null
@@ -380,6 +381,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          opening_balance?: number
           organization_id?: string | null
           phone?: string | null
           tax_number?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          opening_balance?: number
           organization_id?: string | null
           phone?: string | null
           tax_number?: string | null
