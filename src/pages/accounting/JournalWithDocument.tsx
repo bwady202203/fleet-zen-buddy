@@ -118,6 +118,48 @@ export default function JournalWithDocument() {
     [accounts],
   );
   const creditAccount = useMemo(() => accounts.find((account) => account.id === creditAccountId), [accounts, creditAccountId]);
+  const linkedAccount = useMemo(() => accounts.find((account) => account.id === linkedAccountId), [accounts, linkedAccountId]);
+  const quickAccounts = useMemo(
+    () => quickAccountIds.map((id) => accounts.find((account) => account.id === id)).filter(Boolean) as Account[],
+    [accounts, quickAccountIds],
+  );
+
+  const openPicker = (mode: "credit" | "linked" | "quick") => {
+    setPickerMode(mode);
+    setAccountSearch("");
+    setAccountPickerOpen(true);
+  };
+
+  const saveLinkedAccount = (id: string) => {
+    setLinkedAccountId(id);
+    localStorage.setItem(LINKED_ACCOUNT_KEY, id);
+    setCreditAccountId(id);
+    toast.success("تم تعريف الحساب المرتبط وسيتم استدعاؤه تلقائياً");
+  };
+
+  const toggleQuickAccount = (id: string) => {
+    setQuickAccountIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((value) => value !== id) : prev.length >= MAX_QUICK_ACCOUNTS ? prev : [...prev, id];
+      if (!prev.includes(id) && prev.length >= MAX_QUICK_ACCOUNTS) toast.error(`الحد الأقصى ${MAX_QUICK_ACCOUNTS} حساب للاختيار السريع`);
+      localStorage.setItem(QUICK_ACCOUNTS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handlePick = (id: string) => {
+    if (pickerMode === "linked") {
+      saveLinkedAccount(id);
+      setAccountPickerOpen(false);
+      return;
+    }
+    if (pickerMode === "quick") {
+      toggleQuickAccount(id);
+      return;
+    }
+    setCreditAccountId(id);
+    setAccountPickerOpen(false);
+  };
+
   const filteredAccounts = useMemo(() => {
     const term = normalizeArabic(accountSearch.toLowerCase());
     return accounts.filter((account) => !term || normalizeArabic(`${account.code} ${account.name_ar} ${account.name_en || ""}`.toLowerCase()).includes(term));
