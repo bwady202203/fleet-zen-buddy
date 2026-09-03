@@ -1469,6 +1469,88 @@ export type Database = {
           },
         ]
       }
+      journal_documents: {
+        Row: {
+          account_number: string | null
+          amount: number
+          beneficiary_name: string | null
+          created_at: string
+          created_by: string | null
+          credit_account_id: string | null
+          debit_account_id: string | null
+          doc_date: string | null
+          extracted_data: Json | null
+          id: string
+          image_path: string | null
+          journal_entry_id: string | null
+          notes: string | null
+          organization_id: string | null
+          reference_number: string | null
+          sender_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          amount?: number
+          beneficiary_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_account_id?: string | null
+          debit_account_id?: string | null
+          doc_date?: string | null
+          extracted_data?: Json | null
+          id?: string
+          image_path?: string | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          reference_number?: string | null
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          amount?: number
+          beneficiary_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          credit_account_id?: string | null
+          debit_account_id?: string | null
+          doc_date?: string | null
+          extracted_data?: Json | null
+          id?: string
+          image_path?: string | null
+          journal_entry_id?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          reference_number?: string | null
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_documents_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_documents_debit_account_id_fkey"
+            columns: ["debit_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_documents_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           created_at: string | null
