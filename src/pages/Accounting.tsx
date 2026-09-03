@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Building2, Landmark, Crown, Lock, PiggyBank, SendHorizontal } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, BarChart3, DollarSign, Receipt, Wallet, ShoppingCart, Package, RotateCcw, Target, FolderKanban, FileBarChart, Download, ClipboardList, Sparkles, Calendar, Printer, FileDown, Building2, Landmark, Crown, Lock, PiggyBank, SendHorizontal, FileImage } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
@@ -294,6 +294,13 @@ const Accounting = () => {
   };
 
   const premiumSections = [
+    {
+      title: "قيد يومية مع المستند",
+      description: "الصق صورة إشعار البنك واقرأ بياناته وأنشئ القيد تلقائياً",
+      icon: FileImage,
+      link: "/accounting/journal-document-entry",
+      color: "from-cyan-500 to-blue-600"
+    },
     {
       title: "قيود ذكية",
       description: "إنشاء قيود سريعة باختيار الحسابات مباشرة",
