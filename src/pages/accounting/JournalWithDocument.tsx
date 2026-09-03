@@ -356,6 +356,91 @@ export default function JournalWithDocument() {
 
   const updateDraft = (key: keyof Draft, value: string) => setDraft((current) => ({ ...current, [key]: value.slice(0, 500) }));
 
+  const openEntryView = async (document: DocumentRow) => {
+    if (!document.journal_entry_id) {
+      toast.error("لا يوجد قيد مرتبط بهذا المستند");
+      return;
+    }
+    setViewOpen(true);
+    setViewLoading(true);
+    setViewData(null);
+    try {
+      const { data: entry, error: entryError } = await db
+        .from("journal_entries")
+        .select("id, entry_number, entry_date, description, reference")
+        .eq("id", document.journal_entry_id)
+        .maybeSingle();
+      if (entryError) throw entryError;
+      const { data: lines, error: linesError } = await db
+        .from("journal_entry_lines")
+        .select("id, account_id, debit, credit, description")
+        .eq("journal_entry_id", document.journal_entry_id);
+      if (linesError) throw linesError;
+      setViewData({
+        document,
+        entry,
+        lines: (lines || []).map((line: any) => {
+          const account = accounts.find((item) => item.id === line.account_id);
+          return { ...line, account_code: account?.code || "", account_name: account?.name_ar || "" };
+        }),
+      });
+    } catch (error) {
+      toast.error(`تعذر عرض القيد: ${(error as Error).message}`);
+      setViewOpen(false);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const printEntry = () => {
+    if (!viewData) return;
+    const { entry, lines, document: doc } = viewData;
+    const money = (value: number) => Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalDebit = lines.reduce((sum, line) => sum + Number(line.debit || 0), 0);
+    const totalCredit = lines.reduce((sum, line) => sum + Number(line.credit || 0), 0);
+    const win = window.open("", "_blank", "width=900,height=1000");
+    if (!win) {
+      toast.error("يرجى السماح بالنوافذ المنبثقة للطباعة");
+      return;
+    }
+    win.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8" />
+      <title>قيد يومية ${entry?.entry_number || ""}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" />
+      <style>
+        @page { size: A4; margin: 12mm; }
+        body { font-family: 'Cairo', sans-serif; color: #111; }
+        h1 { font-size: 20px; text-align: center; margin: 0 0 4px; }
+        .sub { text-align: center; font-size: 12px; color: #555; margin-bottom: 16px; }
+        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; font-size: 13px; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #999; padding: 7px; text-align: right; }
+        thead th { background: #eef2ff; }
+        tfoot td { font-weight: 700; background: #f6f6f6; }
+        img { max-width: 100%; margin-top: 16px; border: 1px solid #ddd; }
+      </style></head><body>
+      <h1>سند قيد يومية</h1>
+      <div class="sub">النظام المحاسبي المميز - ويزر</div>
+      <div class="meta">
+        <div><strong>رقم القيد:</strong> ${entry?.entry_number || "-"}</div>
+        <div><strong>التاريخ:</strong> ${entry?.entry_date || doc.doc_date || "-"}</div>
+        <div><strong>الرقم المرجعي:</strong> ${doc.reference_number || "-"}</div>
+        <div><strong>المستفيد:</strong> ${doc.beneficiary_name || "-"}</div>
+        <div style="grid-column: 1 / -1"><strong>البيان:</strong> ${entry?.description || doc.notes || "-"}</div>
+      </div>
+      <table><thead><tr><th>الكود</th><th>الحساب</th><th>البيان</th><th>مدين</th><th>دائن</th></tr></thead>
+      <tbody>${lines
+        .map(
+          (line) =>
+            `<tr><td>${line.account_code}</td><td>${line.account_name}</td><td>${line.description || "-"}</td><td>${money(line.debit)}</td><td>${money(line.credit)}</td></tr>`,
+        )
+        .join("")}</tbody>
+      <tfoot><tr><td colspan="3">الإجمالي</td><td>${money(totalDebit)}</td><td>${money(totalCredit)}</td></tr></tfoot></table>
+      ${doc.image_url ? `<img src="${doc.image_url}" alt="المستند البنكي" />` : ""}
+      <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 600); };<\/script>
+      </body></html>`);
+    win.document.close();
+  };
+
   return (
     <main className="min-h-screen bg-background p-4 md:p-8" dir="rtl" onPaste={handlePaste}>
       <div className="mx-auto max-w-[1500px] space-y-6">
