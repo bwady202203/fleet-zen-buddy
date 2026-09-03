@@ -28,9 +28,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const DOCUMENT_BUCKET = "journal-documents";
 const DEFAULT_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
-const DEBIT_ACCOUNT_NAME = "مؤسسة حاتم لافي بن نوار الدعاني للمقاولات";
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-const LINKED_ACCOUNT_KEY = "jwd_linked_account_id";
+const DEBIT_LINKED_ACCOUNT_KEY = "jwd_debit_linked_account_id";
+const CREDIT_ACCOUNT_KEY = "jwd_credit_account_id";
 const QUICK_ACCOUNTS_KEY = "jwd_quick_account_ids";
 const MAX_QUICK_ACCOUNTS = 12;
 
@@ -94,8 +94,8 @@ export default function JournalWithDocument() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [creditAccountId, setCreditAccountId] = useState(() => localStorage.getItem(LINKED_ACCOUNT_KEY) || DEFAULT_BANK_ACCOUNT_ID);
-  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(() => localStorage.getItem(LINKED_ACCOUNT_KEY));
+  const [creditAccountId, setCreditAccountId] = useState(() => localStorage.getItem(CREDIT_ACCOUNT_KEY) || DEFAULT_BANK_ACCOUNT_ID);
+  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(() => localStorage.getItem(DEBIT_LINKED_ACCOUNT_KEY));
   const [quickAccountIds, setQuickAccountIds] = useState<string[]>(() => {
     try {
       const raw = JSON.parse(localStorage.getItem(QUICK_ACCOUNTS_KEY) || "[]");
@@ -113,10 +113,7 @@ export default function JournalWithDocument() {
   const [loading, setLoading] = useState(true);
 
   const db = supabase as any;
-  const debitAccount = useMemo(
-    () => accounts.find((account) => normalizeArabic(account.name_ar) === normalizeArabic(DEBIT_ACCOUNT_NAME)),
-    [accounts],
-  );
+  const debitAccount = useMemo(() => accounts.find((account) => account.id === linkedAccountId), [accounts, linkedAccountId]);
   const creditAccount = useMemo(() => accounts.find((account) => account.id === creditAccountId), [accounts, creditAccountId]);
   const linkedAccount = useMemo(() => accounts.find((account) => account.id === linkedAccountId), [accounts, linkedAccountId]);
   const quickAccounts = useMemo(
@@ -130,11 +127,15 @@ export default function JournalWithDocument() {
     setAccountPickerOpen(true);
   };
 
-  const saveLinkedAccount = (id: string) => {
+  const saveDebitLinkedAccount = (id: string) => {
     setLinkedAccountId(id);
-    localStorage.setItem(LINKED_ACCOUNT_KEY, id);
+    localStorage.setItem(DEBIT_LINKED_ACCOUNT_KEY, id);
+    toast.success("تم تعريف الحساب المدين المرتبط وسيتم استدعاؤه تلقائياً");
+  };
+
+  const persistCreditAccount = (id: string) => {
     setCreditAccountId(id);
-    toast.success("تم تعريف الحساب المرتبط وسيتم استدعاؤه تلقائياً");
+    localStorage.setItem(CREDIT_ACCOUNT_KEY, id);
   };
 
   const toggleQuickAccount = (id: string) => {
@@ -148,7 +149,7 @@ export default function JournalWithDocument() {
 
   const handlePick = (id: string) => {
     if (pickerMode === "linked") {
-      saveLinkedAccount(id);
+      saveDebitLinkedAccount(id);
       setAccountPickerOpen(false);
       return;
     }
@@ -156,7 +157,7 @@ export default function JournalWithDocument() {
       toggleQuickAccount(id);
       return;
     }
-    setCreditAccountId(id);
+    persistCreditAccount(id);
     setAccountPickerOpen(false);
   };
 
@@ -268,7 +269,7 @@ export default function JournalWithDocument() {
   const saveDocument = async () => {
     const amount = Number(draft.amount.replace(/,/g, ""));
     if (!debitAccount) {
-      toast.error(`لم يتم العثور على الحساب المدين: ${DEBIT_ACCOUNT_NAME}`);
+      toast.error("يرجى تعريف الحساب المدين المرتبط أولاً");
       return;
     }
     if (!creditAccount) {
@@ -295,7 +296,7 @@ export default function JournalWithDocument() {
       const entry = await createEntryNumber(draft.doc_date);
       journalEntryId = entry.id;
       const { error: linesError } = await db.from("journal_entry_lines").insert([
-        { journal_entry_id: entry.id, account_id: debitAccount.id, debit: amount, credit: 0, description: draft.beneficiary_name || DEBIT_ACCOUNT_NAME },
+        { journal_entry_id: entry.id, account_id: debitAccount.id, debit: amount, credit: 0, description: draft.beneficiary_name || debitAccount.name_ar },
         { journal_entry_id: entry.id, account_id: creditAccount.id, debit: 0, credit: amount, description: draft.sender_name || "تحويل بنكي" },
       ]);
       if (linesError) throw linesError;
