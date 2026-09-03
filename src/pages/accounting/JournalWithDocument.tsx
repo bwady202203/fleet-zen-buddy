@@ -30,6 +30,10 @@ const DOCUMENT_BUCKET = "journal-documents";
 const DEFAULT_BANK_ACCOUNT_ID = "2edc3d0d-7582-4173-81f2-4b547ad32874";
 const DEBIT_ACCOUNT_NAME = "مؤسسة حاتم لافي بن نوار الدعاني للمقاولات";
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const LINKED_ACCOUNT_KEY = "jwd_linked_account_id";
+const QUICK_ACCOUNTS_KEY = "jwd_quick_account_ids";
+const MAX_QUICK_ACCOUNTS = 12;
+
 
 const extractedSchema = z.object({
   reference_number: z.string().nullable().optional(),
