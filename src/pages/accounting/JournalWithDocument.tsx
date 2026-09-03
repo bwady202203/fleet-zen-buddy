@@ -90,9 +90,20 @@ export default function JournalWithDocument() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [creditAccountId, setCreditAccountId] = useState(DEFAULT_BANK_ACCOUNT_ID);
+  const [creditAccountId, setCreditAccountId] = useState(() => localStorage.getItem(LINKED_ACCOUNT_KEY) || DEFAULT_BANK_ACCOUNT_ID);
+  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(() => localStorage.getItem(LINKED_ACCOUNT_KEY));
+  const [quickAccountIds, setQuickAccountIds] = useState<string[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(QUICK_ACCOUNTS_KEY) || "[]");
+      return Array.isArray(raw) ? raw.filter((v) => typeof v === "string").slice(0, MAX_QUICK_ACCOUNTS) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [pickerMode, setPickerMode] = useState<"credit" | "linked" | "quick">("credit");
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
   const [accountSearch, setAccountSearch] = useState("");
+
   const [isReading, setIsReading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
