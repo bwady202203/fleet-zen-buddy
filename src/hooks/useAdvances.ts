@@ -491,39 +491,77 @@ export const useAdvanceMutations = () => {
   return { createAdvance, setStatus, payInstallment, earlyPayoff, requestEdit };
 };
 
-/** أقساط السلف المستحقة خلال شهر معين — لاستخدامها في كشف الرواتب */
+export const payrollReferenceFor = (month: string) => `PAY-${month}`;
+
+/**
+ * أقساط السلف المستحقة خلال شهر معين — لاستخدامها في كشف الرواتب.
+ * تتضمن أيضًا الأقساط التي خُصمت فعليًا في كشف هذا الشهر حتى تبقى ظاهرة في الكشف.
+ */
 export const useDueAdvanceInstallments = (month: string) =>
   useQuery({
     queryKey: ["due-advance-installments", month],
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
     queryFn: async () => {
       const [y, m] = month.split("-").map(Number);
       const end = new Date(y, m, 0).toISOString().split("T")[0];
-      const { data, error } = await supabase
-        .from("advance_installments")
-        .select(
-          "id, advance_id, installment_number, due_date, amount, paid_amount, status, payroll_reference, employee_advances!inner(id, employee_id, employee_name, status, advance_number)"
-        )
-        .lte("due_date", end)
-        .in("status", ["upcoming", "due", "late"])
-        .eq("employee_advances.status", "approved");
-      if (error) throw error;
-      return (data ?? []).map((row) => {
-        const advance = (row as unknown as { employee_advances: { employee_id: string; employee_name: string; advance_number: string } })
-          .employee_advances;
-        return {
-          installmentId: row.id,
-          advanceId: row.advance_id,
-          advanceNumber: advance.advance_number,
-          employeeId: advance.employee_id,
-          employeeName: advance.employee_name,
-          installmentNumber: row.installment_number,
-          dueDate: row.due_date,
-          amount: round2(Number(row.amount) - Number(row.paid_amount || 0)),
-        };
-      });
+      const reference = payrollReferenceFor(month);
+      const select =
+        "id, advance_id, installment_number, due_date, amount, paid_amount, status, payroll_reference, employee_advances!inner(id, employee_id, employee_name, status, advance_number)";
+
+      const [dueRes, deductedRes] = await Promise.all([
+        supabase
+          .from("advance_installments")
+          .select(select)
+          .lte("due_date", end)
+          .in("status", ["upcoming", "due", "late"])
+          .eq("employee_advances.status", "approved"),
+        supabase
+          .from("advance_installments")
+          .select(select)
+          .eq("payroll_reference", reference),
+      ]);
+      if (dueRes.error) throw dueRes.error;
+      if (deductedRes.error) throw deductedRes.error;
+
+      const rows = [...(dueRes.data ?? []), ...(deductedRes.data ?? [])];
+      const seen = new Set<string>();
+
+      return rows
+        .filter((row) => {
+          if (seen.has(row.id)) return false;
+          seen.add(row.id);
+          return true;
+        })
+        .map((row) => {
+          const advance = (
+            row as unknown as {
+              employee_advances: {
+                employee_id: string;
+                employee_name: string;
+                advance_number: string;
+              };
+            }
+          ).employee_advances;
+          const alreadyDeducted = Boolean(row.payroll_reference);
+          return {
+            installmentId: row.id,
+            advanceId: row.advance_id,
+            advanceNumber: advance.advance_number,
+            employeeId: advance.employee_id,
+            employeeName: advance.employee_name,
+            installmentNumber: row.installment_number,
+            dueDate: row.due_date,
+            /** المبلغ المخصوم فعليًا أو المتبقي المستحق */
+            amount: alreadyDeducted
+              ? round2(Number(row.paid_amount || row.amount))
+              : round2(Number(row.amount) - Number(row.paid_amount || 0)),
+            alreadyDeducted,
+            payrollReference: row.payroll_reference as string | null,
+          };
+        });
     },
   });
+
 
 /** خصم أقساط السلف المستحقة عند إنشاء كشف الرواتب */
 export const useApplyPayrollDeductions = () => {
