@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Banknote, Download, Eye, FilePlus2, Loader2, Printer, RefreshCw, Settings2, Users, X } from "lucide-react";
+import { ArrowRight, Banknote, ListChecks, Download, Eye, FilePlus2, Loader2, Printer, RefreshCw, Settings2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
 } from "@/components/hr/payroll/usePayrollData";
 import { PayrollRow, formatMonthLabel } from "@/components/hr/payroll/types";
 import { usePayrollPosting } from "@/components/hr/payroll/usePayrollPosting";
+import { PayrollPostingsDialog } from "@/components/hr/payroll/PayrollPostingsDialog";
 import { formatMoneySar } from "@/lib/advances";
 
 const DEFAULT_FILTERS: PayrollFilters = {
@@ -52,6 +53,7 @@ const Payroll = () => {
 
   const { settings, update, toggleColumn, setOrder, reset } = usePayrollSettings("monthly");
   const { post, posting } = usePayrollPosting(month);
+  const [postingsOpen, setPostingsOpen] = useState(false);
   const { data: employees, isLoading, isRefetching, refetch } = usePayrollEmployees();
   const { filteredRows, totals, banks, departments } = usePayrollRows(employees, month, filters);
 
@@ -182,6 +184,10 @@ const Payroll = () => {
                   <Banknote className="h-4 w-4" />
                 )}
                 صرف الراتب
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={() => setPostingsOpen(true)}>
+                <ListChecks className="h-4 w-4" />
+                عرض / حذف الكشف
               </Button>
               <Button variant="outline" className="gap-2" onClick={() => refetch()} disabled={isRefetching}>
                 <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
@@ -330,6 +336,13 @@ const Payroll = () => {
           }
           refetch();
         }}
+      />
+
+      <PayrollPostingsDialog
+        open={postingsOpen}
+        onOpenChange={setPostingsOpen}
+        month={month}
+        onChanged={() => refetch()}
       />
 
       <PayrollColumnSettings
