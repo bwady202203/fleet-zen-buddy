@@ -278,7 +278,7 @@ export const useAdvanceMutations = () => {
           installment_amount: round2(input.installment_amount),
           frequency: input.frequency,
           first_installment_date: input.first_installment_date,
-          last_installment_date: schedule.at(-1)?.due_date ?? input.first_installment_date,
+          last_installment_date: schedule[schedule.length - 1]?.due_date ?? input.first_installment_date,
           paid_amount: 0,
           remaining_amount: round2(input.amount),
           status: input.status,
