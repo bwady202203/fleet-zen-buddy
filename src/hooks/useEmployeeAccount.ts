@@ -145,6 +145,9 @@ export interface EmployeeAccount {
   extras: EmployeeExtraRow[];
   payrolls: PayrollAccrualRow[];
   ledger: LedgerRow[];
+  /** الحركات الخام للمحرك المحاسبي الموحد */
+  transactions: EmployeeTxn[];
+
   totals: {
     advancesTotal: number;
     advancesPaid: number;
