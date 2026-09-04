@@ -43,8 +43,16 @@ export const TXN_SIDE: Record<EmployeeTxnType, "debit" | "credit"> = {
   OTHER: "debit",
 };
 
+/**
+ * حركات استرشادية (بيانية) لا تؤثر على الأرصدة:
+ * السلفة تُسجَّل مرة واحدة في الجانب المدين عند صرفها، وخصم قسطها من الراتب
+ * يظهر كبيان فقط لأن صرف الراتب يُثبت بالصافي بعد الخصم.
+ */
+export const MEMO_TYPES: EmployeeTxnType[] = ["ADVANCE_DEDUCTION"];
+
 /** الحركات التي تمثل مبالغ صُرفت فعليًا للموظف */
 const DISBURSED_TYPES: EmployeeTxnType[] = ["SALARY_PAYMENT", "ADVANCE"];
+
 
 export type EmployeeTxnStatus = "posted" | "pending" | "cancelled";
 
@@ -101,6 +109,7 @@ export interface LedgerPeriod {
 
 const sideAmounts = (t: EmployeeTxn) => {
   const amount = round2(Math.abs(Number(t.amount || 0)));
+  if (MEMO_TYPES.includes(t.type)) return { debit: 0, credit: 0 };
   return TXN_SIDE[t.type] === "debit" ? { debit: amount, credit: 0 } : { debit: 0, credit: amount };
 };
 
