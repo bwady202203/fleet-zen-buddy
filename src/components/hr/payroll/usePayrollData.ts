@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { useDueAdvanceInstallments } from "@/hooks/useAdvances";
+
 import { PayrollRow, PayrollTotals } from "./types";
 
 export interface PayrollEmployee {
@@ -104,11 +106,21 @@ export const usePayrollRows = (
   filters: PayrollFilters
 ) => {
   const { transactions } = useEmployeeTransactions();
+  const { data: dueInstallments } = useDueAdvanceInstallments(month);
 
   const monthTransactions = useMemo(
     () => transactions.filter((t) => (t.date ?? "").startsWith(month)),
     [transactions, month]
   );
+
+  /** أقساط السلف المعتمدة المستحقة لهذا الشهر — تُخصم تلقائيًا */
+  const advancesByEmployee = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const inst of dueInstallments ?? []) {
+      map.set(inst.employeeId, (map.get(inst.employeeId) ?? 0) + Number(inst.amount || 0));
+    }
+    return map;
+  }, [dueInstallments]);
 
   const rows = useMemo<PayrollRow[]>(() => {
     if (!employees) return [];
@@ -118,14 +130,14 @@ export const usePayrollRows = (
         byEmployee.get(t.employeeId) ?? { additions: 0, deductions: 0, advances: 0 };
       if (t.type === "addition") bucket.additions += Number(t.amount || 0);
       else if (t.type === "deduction") bucket.deductions += Number(t.amount || 0);
-      else if (t.type === "advance") bucket.advances += Number(t.remainingBalance ?? t.amount ?? 0);
       byEmployee.set(t.employeeId, bucket);
     }
 
     return employees.map((emp) => {
       const b = byEmployee.get(emp.id) ?? { additions: 0, deductions: 0, advances: 0 };
+      const advances = advancesByEmployee.get(emp.id) ?? b.advances;
       const netSalary =
-        emp.basicSalary + emp.allowances + b.additions - b.deductions - b.advances;
+        emp.basicSalary + emp.allowances + b.additions - b.deductions - advances;
       return {
         id: emp.id,
         employeeName: emp.name,
@@ -139,11 +151,12 @@ export const usePayrollRows = (
         allowances: emp.allowances,
         additions: b.additions,
         deductions: b.deductions,
-        advances: b.advances,
+        advances,
         netSalary,
       };
     });
-  }, [employees, monthTransactions]);
+  }, [employees, monthTransactions, advancesByEmployee]);
+
 
   const filteredRows = useMemo(() => {
     const q = filters.search.trim().toLowerCase();

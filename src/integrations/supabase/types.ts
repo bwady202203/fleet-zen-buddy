@@ -14,6 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
+      advance_audit_logs: {
+        Row: {
+          action: string
+          advance_id: string
+          created_at: string
+          description: string | null
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          organization_id: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          advance_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          organization_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          advance_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          organization_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advance_audit_logs_advance_id_fkey"
+            columns: ["advance_id"]
+            isOneToOne: false
+            referencedRelation: "employee_advances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advance_installments: {
+        Row: {
+          advance_id: string
+          amount: number
+          created_at: string
+          deducted_at: string | null
+          due_date: string
+          id: string
+          installment_number: number
+          organization_id: string | null
+          paid_amount: number
+          payroll_reference: string | null
+          remaining_after: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          advance_id: string
+          amount?: number
+          created_at?: string
+          deducted_at?: string | null
+          due_date: string
+          id?: string
+          installment_number: number
+          organization_id?: string | null
+          paid_amount?: number
+          payroll_reference?: string | null
+          remaining_after?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          advance_id?: string
+          amount?: number
+          created_at?: string
+          deducted_at?: string | null
+          due_date?: string
+          id?: string
+          installment_number?: number
+          organization_id?: string | null
+          paid_amount?: number
+          payroll_reference?: string | null
+          remaining_after?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advance_installments_advance_id_fkey"
+            columns: ["advance_id"]
+            isOneToOne: false
+            referencedRelation: "employee_advances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advance_payments: {
+        Row: {
+          advance_id: string
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          installment_id: string | null
+          method: string
+          notes: string | null
+          organization_id: string | null
+          payment_date: string
+          payroll_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          advance_id: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          installment_id?: string | null
+          method?: string
+          notes?: string | null
+          organization_id?: string | null
+          payment_date?: string
+          payroll_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          advance_id?: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          installment_id?: string | null
+          method?: string
+          notes?: string | null
+          organization_id?: string | null
+          payment_date?: string
+          payroll_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advance_payments_advance_id_fkey"
+            columns: ["advance_id"]
+            isOneToOne: false
+            referencedRelation: "employee_advances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advance_payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "advance_installments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advanced_loads_reports: {
         Row: {
           created_at: string
@@ -1222,6 +1385,122 @@ export type Database = {
           },
         ]
       }
+      employee_advances: {
+        Row: {
+          advance_date: string
+          advance_number: string
+          advance_type: string
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          basic_salary: number
+          cancelled_at: string | null
+          cancelled_reason: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          employee_id: string
+          employee_name: string | null
+          employee_number: string | null
+          first_installment_date: string
+          frequency: string
+          id: string
+          installment_amount: number
+          installments_count: number
+          last_installment_date: string | null
+          notes: string | null
+          organization_id: string | null
+          paid_amount: number
+          position: string | null
+          reason: string | null
+          rejected_reason: string | null
+          remaining_amount: number
+          residence_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          advance_date?: string
+          advance_number: string
+          advance_type?: string
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          basic_salary?: number
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          employee_id: string
+          employee_name?: string | null
+          employee_number?: string | null
+          first_installment_date?: string
+          frequency?: string
+          id?: string
+          installment_amount?: number
+          installments_count?: number
+          last_installment_date?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          paid_amount?: number
+          position?: string | null
+          reason?: string | null
+          rejected_reason?: string | null
+          remaining_amount?: number
+          residence_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          advance_date?: string
+          advance_number?: string
+          advance_type?: string
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          basic_salary?: number
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          employee_id?: string
+          employee_name?: string | null
+          employee_number?: string | null
+          first_installment_date?: string
+          frequency?: string
+          id?: string
+          installment_amount?: number
+          installments_count?: number
+          last_installment_date?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          paid_amount?: number
+          position?: string | null
+          reason?: string | null
+          rejected_reason?: string | null
+          remaining_amount?: number
+          residence_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_advances_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_transactions: {
         Row: {
           amount: number
@@ -1285,7 +1564,9 @@ export type Database = {
           bank_account_number: string | null
           bank_name: string | null
           created_at: string | null
+          department: string | null
           email: string | null
+          employee_number: string | null
           hire_date: string
           id: string
           name: string
@@ -1303,7 +1584,9 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
+          employee_number?: string | null
           hire_date: string
           id?: string
           name: string
@@ -1321,7 +1604,9 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
+          employee_number?: string | null
           hire_date?: string
           id?: string
           name?: string
@@ -4013,6 +4298,7 @@ export type Database = {
         Returns: undefined
       }
       is_org_admin: { Args: { _user_id: string }; Returns: boolean }
+      next_advance_number: { Args: never; Returns: string }
       user_in_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
