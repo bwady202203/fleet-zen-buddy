@@ -379,8 +379,8 @@ export const useEmployeeAccount = (employeeId?: string) =>
       ledger.sort((a, b) => a.date.localeCompare(b.date));
 
       // ===== الحركات الخام للمحرك المحاسبي الموحد =====
-      const transactions: EmployeeTxn[] = [];
-      const push = (t: EmployeeTxn) => transactions.push(t);
+      const txns: EmployeeTxn[] = [];
+      const push = (t: EmployeeTxn) => txns.push(t);
 
       advanceRecords.forEach((a: any) => {
         const cancelled = a.status === "cancelled" || a.status === "rejected";
@@ -458,7 +458,7 @@ export const useEmployeeAccount = (employeeId?: string) =>
         });
       });
 
-      transactions.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      txns.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
 
       const thisMonth = new Date().toISOString().slice(0, 7);
@@ -480,7 +480,7 @@ export const useEmployeeAccount = (employeeId?: string) =>
         extras: extras.sort((a, b) => (b.date || "").localeCompare(a.date || "")),
         payrolls,
         ledger,
-        transactions,
+        transactions: txns,
         totals: {
           advancesTotal: round2(advances.reduce((s, a) => s + (a.uiStatus === "cancelled" ? 0 : a.amount), 0)),
           advancesPaid: round2(advances.reduce((s, a) => s + a.paid_amount, 0)),
