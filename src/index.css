@@ -37,6 +37,14 @@ All colors MUST be HSL.
     --ring: 217 91% 60%;
 
     --radius: 0.5rem;
+
+    /* HR module accent (bold teal) */
+    --hr-accent: 173 80% 36%;
+    --hr-accent-foreground: 0 0% 100%;
+    --hr-accent-soft: 173 60% 95%;
+    --hr-surface: 200 25% 97%;
+    --hr-shadow: 0 12px 32px -18px hsl(173 40% 20% / 0.35);
+
     
     --chart-1: 217 91% 60%;
     --chart-2: 142 76% 36%;
@@ -100,6 +108,13 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --hr-accent: 173 70% 45%;
+    --hr-accent-foreground: 222 47% 8%;
+    --hr-accent-soft: 190 40% 14%;
+    --hr-surface: 217 33% 12%;
+    --hr-shadow: 0 12px 32px -18px hsl(0 0% 0% / 0.6);
+
   }
 }
 
