@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { round2 } from "@/lib/advances";
+import type { EmployeeTxn, EmployeeTxnType } from "@/lib/employeeLedger";
+
 
 export type LedgerSource =
   | "advance"
@@ -145,6 +147,9 @@ export interface EmployeeAccount {
   extras: EmployeeExtraRow[];
   payrolls: PayrollAccrualRow[];
   ledger: LedgerRow[];
+  /** الحركات الخام للمحرك المحاسبي الموحد */
+  transactions: EmployeeTxn[];
+
   totals: {
     advancesTotal: number;
     advancesPaid: number;
@@ -373,6 +378,89 @@ export const useEmployeeAccount = (employeeId?: string) =>
 
       ledger.sort((a, b) => a.date.localeCompare(b.date));
 
+      // ===== الحركات الخام للمحرك المحاسبي الموحد =====
+      const txns: EmployeeTxn[] = [];
+      const push = (t: EmployeeTxn) => txns.push(t);
+
+      advanceRecords.forEach((a: any) => {
+        const cancelled = a.status === "cancelled" || a.status === "rejected";
+        push({
+          id: `adv-${a.id}`,
+          date: a.advance_date,
+          employeeId: employeeId!,
+          type: "ADVANCE",
+          documentNumber: a.advance_number,
+          description: `صرف سلفة${a.reason ? ` — ${a.reason}` : ""}`,
+          amount: Number(a.amount || 0),
+          source: "employee_advances",
+          createdBy: a.created_by,
+          createdAt: a.created_at,
+          status: cancelled ? "cancelled" : a.status === "approved" || a.status === "completed" ? "posted" : "pending",
+          link: "/hr/advances",
+        });
+      });
+
+      payments.forEach((p: any) =>
+        push({
+          id: `pmt-${p.id}`,
+          date: p.payment_date,
+          employeeId: employeeId!,
+          type: p.method === "payroll" ? "ADVANCE_DEDUCTION" : "ADVANCE_PAYMENT",
+          documentNumber: p.payroll_reference || numberByAdvance.get(p.advance_id) || "-",
+          description:
+            p.method === "payroll"
+              ? `خصم قسط سلفة ${numberByAdvance.get(p.advance_id) ?? ""}`.trim()
+              : `سداد سلفة ${numberByAdvance.get(p.advance_id) ?? ""}`.trim(),
+          amount: Number(p.amount || 0),
+          source: "advance_payments",
+          createdBy: p.created_by,
+          createdAt: p.created_at,
+          status: "posted",
+          link: "/hr/advances",
+          relatedId: `adv-${p.advance_id}`,
+        })
+      );
+
+      const additionType = (text: string): EmployeeTxnType => {
+        const kind = classifyExtra(text);
+        return kind === "overtime"
+          ? "OVERTIME"
+          : kind === "allowance"
+            ? "ALLOWANCE"
+            : kind === "bonus"
+              ? "BONUS"
+              : "OTHER";
+      };
+
+      (transactionsRes.data ?? []).forEach((t: any) => {
+        const raw = String(t.type || "");
+        const desc = t.description || "";
+        let type: EmployeeTxnType | null = null;
+        if (raw === "deduction") type = "DEDUCTION";
+        else if (raw === "addition") type = additionType(desc);
+        else if (raw === "salary_accrual" || raw === "accrual") type = "SALARY_ACCRUAL";
+        else if (raw === "salary_payment" || raw === "salary") type = "SALARY_PAYMENT";
+        else if (raw === "advance") type = "ADVANCE";
+        if (!type) return;
+        push({
+          id: `trx-${t.id}`,
+          date: t.date,
+          employeeId: employeeId!,
+          type,
+          documentNumber: `${raw.slice(0, 3).toUpperCase()}-${String(t.id).slice(0, 6).toUpperCase()}`,
+          description: desc || "حركة موظف",
+          amount: Number(t.amount || 0),
+          source: "employee_transactions",
+          createdBy: t.created_by,
+          createdAt: t.created_at,
+          status: "posted",
+          link: raw === "deduction" ? "/hr/deductions" : raw === "addition" ? "/hr/additions" : "/hr/advances",
+        });
+      });
+
+      txns.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+
       const thisMonth = new Date().toISOString().slice(0, 7);
       const deductionsThisMonth = round2(
         deductions.filter((d) => (d.date || "").startsWith(thisMonth)).reduce((s, d) => s + d.amount, 0)
@@ -392,6 +480,7 @@ export const useEmployeeAccount = (employeeId?: string) =>
         extras: extras.sort((a, b) => (b.date || "").localeCompare(a.date || "")),
         payrolls,
         ledger,
+        transactions: txns,
         totals: {
           advancesTotal: round2(advances.reduce((s, a) => s + (a.uiStatus === "cancelled" ? 0 : a.amount), 0)),
           advancesPaid: round2(advances.reduce((s, a) => s + a.paid_amount, 0)),

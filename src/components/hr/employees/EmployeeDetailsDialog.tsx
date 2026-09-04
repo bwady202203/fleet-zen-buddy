@@ -29,12 +29,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatDateAr, formatMoneySar } from "@/lib/advances";
 import LoadingCup from "@/components/LoadingCup";
+import EmployeeFinancialStatement, { type StatementPeriod } from "@/components/hr/employees/EmployeeFinancialStatement";
 import {
   ADVANCE_UI_STATUS_CLASSES,
   ADVANCE_UI_STATUS_LABELS,
   DEDUCTION_CATEGORY_LABELS,
   EXTRA_KIND_LABELS,
-  LEDGER_SOURCE_LABELS,
   PAYROLL_STATUS_CLASSES,
   PAYROLL_STATUS_LABELS,
   useEmployeeAccount,
@@ -66,6 +66,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
   onPrintStatement: () => void;
+  period: StatementPeriod;
+  onPeriodChange: (p: StatementPeriod) => void;
 }
 
 const initials = (name: string) =>
@@ -133,7 +135,15 @@ const Empty = ({ text }: { text: string }) => (
   <p className="rounded-xl bg-muted/40 py-6 text-center text-sm text-muted-foreground">{text}</p>
 );
 
-export const EmployeeDetailsDialog = ({ employee, open, onOpenChange, onEdit, onPrintStatement }: Props) => {
+export const EmployeeDetailsDialog = ({
+  employee,
+  open,
+  onOpenChange,
+  onEdit,
+  onPrintStatement,
+  period,
+  onPeriodChange,
+}: Props) => {
   const navigate = useNavigate();
   const { data: account, isLoading } = useEmployeeAccount(employee?.id);
 
@@ -453,103 +463,19 @@ export const EmployeeDetailsDialog = ({ employee, open, onOpenChange, onEdit, on
               </TabsContent>
 
               {/* ============ الحساب المالي ============ */}
-              <TabsContent value="account" className="mt-5 space-y-4">
+              <TabsContent value="account" className="mt-5">
                 {isLoading ? (
                   <div className="flex justify-center py-12">
                     <LoadingCup />
                   </div>
                 ) : (
-                  <>
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                      <SummaryCard label="إجمالي المدين" value={formatMoneySar(t?.debit ?? 0)} icon={TrendingUp} tone="rose" />
-                      <SummaryCard label="إجمالي الدائن" value={formatMoneySar(t?.credit ?? 0)} icon={TrendingDown} tone="emerald" />
-                      <SummaryCard label="إجمالي السلف" value={formatMoneySar(t?.advancesTotal ?? 0)} icon={Wallet} tone="sky" />
-                      <SummaryCard label="الرصيد الحالي" value={formatMoneySar(t?.balance ?? 0)} icon={Banknote} tone="hr" />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <SectionTitle title="كشف حساب الموظف" hint="كل حركة مرتبطة بمصدرها ورقمها المرجعي" />
-                      <Button size="sm" variant="outline" className="gap-1.5 rounded-xl border-hr/40 text-hr" onClick={onPrintStatement}>
-                        <Printer className="h-3.5 w-3.5" /> طباعة الكشف
-                      </Button>
-                    </div>
-
-                    <div className="overflow-x-auto rounded-2xl border">
-                      <table className="w-full text-right text-sm">
-                        <thead className="bg-muted/60 text-xs text-muted-foreground">
-                          <tr>
-                            <th className="px-3 py-2 font-semibold">التاريخ</th>
-                            <th className="px-3 py-2 font-semibold">رقم المستند</th>
-                            <th className="px-3 py-2 font-semibold">المصدر</th>
-                            <th className="px-3 py-2 font-semibold">البيان</th>
-                            <th className="px-3 py-2 font-semibold">مدين</th>
-                            <th className="px-3 py-2 font-semibold">دائن</th>
-                            <th className="px-3 py-2 font-semibold">الرصيد</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-t bg-muted/20 font-semibold">
-                            <td className="px-3 py-2" colSpan={4}>
-                              رصيد أول المدة
-                            </td>
-                            <td className="px-3 py-2">—</td>
-                            <td className="px-3 py-2">—</td>
-                            <td className="px-3 py-2 font-mono">{formatMoneySar(t?.openingBalance ?? 0)}</td>
-                          </tr>
-                          {(() => {
-                            let running = t?.openingBalance ?? 0;
-                            return (account?.ledger ?? []).map((row) => {
-                              running += row.effect * (row.debit || row.credit);
-                              return (
-                                <tr key={row.id} className="border-t transition-colors hover:bg-hr/5">
-                                  <td className="px-3 py-2 font-mono text-xs">{formatDateAr(row.date)}</td>
-                                  <td className="px-3 py-2">
-                                    <button
-                                      type="button"
-                                      className="font-mono text-xs font-semibold text-hr underline-offset-2 hover:underline"
-                                      onClick={() => row.link && go(row.link)}
-                                    >
-                                      {row.documentNumber}
-                                    </button>
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Badge variant="secondary" className="rounded-lg text-[11px]">
-                                      {LEDGER_SOURCE_LABELS[row.source]}
-                                    </Badge>
-                                  </td>
-                                  <td className="px-3 py-2 text-xs">{row.description}</td>
-                                  <td className="px-3 py-2 font-mono text-xs text-rose-600">
-                                    {row.debit ? formatMoneySar(row.debit) : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 font-mono text-xs text-emerald-600">
-                                    {row.credit ? formatMoneySar(row.credit) : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 font-mono text-xs font-bold">{formatMoneySar(running)}</td>
-                                </tr>
-                              );
-                            });
-                          })()}
-                          {(account?.ledger.length ?? 0) === 0 && (
-                            <tr className="border-t">
-                              <td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">
-                                لا توجد حركات مالية مسجلة
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                        <tfoot className="bg-hr/10 font-bold">
-                          <tr>
-                            <td className="px-3 py-2" colSpan={4}>
-                              الإجماليات
-                            </td>
-                            <td className="px-3 py-2 font-mono text-xs">{formatMoneySar(t?.debit ?? 0)}</td>
-                            <td className="px-3 py-2 font-mono text-xs">{formatMoneySar(t?.credit ?? 0)}</td>
-                            <td className="px-3 py-2 font-mono text-xs text-hr">{formatMoneySar(t?.balance ?? 0)}</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </>
+                  <EmployeeFinancialStatement
+                    account={account ?? null}
+                    period={period}
+                    onPeriodChange={onPeriodChange}
+                    onPreview={onPrintStatement}
+                    onNavigate={go}
+                  />
                 )}
               </TabsContent>
             </Tabs>
