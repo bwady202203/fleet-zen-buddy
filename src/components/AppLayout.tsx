@@ -1,7 +1,6 @@
 import { ReactNode, type CSSProperties } from "react";
-import { useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { FleetSidebar } from "@/components/FleetSidebar";
+import { SystemNavigationSidebar } from "@/components/SystemNavigationSidebar";
 import { SystemIconsBar } from "@/components/SystemIconsBar";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
@@ -10,32 +9,7 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-// مسارات قسم الأسطول التي تعرض القائمة الجانبية
-const FLEET_PATHS = [
-  "/fleet",
-  "/new-maintenance-order",
-  "/maintenance-orders-report",
-  "/spare-parts",
-  "/bulk-spare-parts",
-  "/low-stock-alerts",
-  "/purchases",
-  "/maintenance-purchase-invoices",
-  "/reports",
-  "/maintenance-costs",
-  "/vehicle-cost-report",
-  "/vehicle-mileage",
-  "/bulk-vehicles",
-  "/edit-vehicles",
-  "/stock-movement",
-  "/price-history",
-];
-
-const isFleetRoute = (pathname: string) =>
-  FLEET_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
-
 export const AppLayout = ({ children }: AppLayoutProps) => {
-  const location = useLocation();
-  const showFleetSidebar = isFleetRoute(location.pathname);
   const exportToExcel = async () => {
     try {
       const { data: vehiclesData } = await supabase
@@ -78,24 +52,15 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     }
   };
 
-  if (!showFleetSidebar) {
-    return (
-      <div className="min-h-screen flex flex-col w-full bg-background" dir="rtl">
-        <SystemIconsBar />
-        <div className="flex-1">{children}</div>
-      </div>
-    );
-  }
-
   return (
     <SidebarProvider
-      style={{ "--sidebar-width": "18rem", "--sidebar-width-icon": "4rem" } as CSSProperties}
+      style={{ "--sidebar-width": "19rem", "--sidebar-width-icon": "4rem" } as CSSProperties}
     >
       <div className="min-h-screen flex w-full bg-background" dir="rtl">
-        <FleetSidebar onExportExcel={exportToExcel} />
+        <SystemNavigationSidebar onExportFleet={exportToExcel} />
         <div className="flex-1 flex flex-col min-w-0">
           <SystemIconsBar />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 min-w-0">{children}</div>
         </div>
       </div>
     </SidebarProvider>
