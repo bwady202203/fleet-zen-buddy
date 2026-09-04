@@ -378,6 +378,93 @@ export const useEmployeeAccount = (employeeId?: string) =>
 
       ledger.sort((a, b) => a.date.localeCompare(b.date));
 
+      // ===== الحركات الخام للمحرك المحاسبي الموحد =====
+      const transactions: EmployeeTxn[] = [];
+      const push = (t: EmployeeTxn) => transactions.push(t);
+
+      advanceRecords.forEach((a: any) => {
+        const cancelled = a.status === "cancelled" || a.status === "rejected";
+        push({
+          id: `adv-${a.id}`,
+          date: a.advance_date,
+          employeeId: employeeId!,
+          type: "ADVANCE",
+          documentNumber: a.advance_number,
+          description: `صرف سلفة${a.reason ? ` — ${a.reason}` : ""}`,
+          amount: Number(a.amount || 0),
+          source: "employee_advances",
+          createdBy: a.created_by,
+          createdAt: a.created_at,
+          status: cancelled ? "cancelled" : a.status === "approved" || a.status === "completed" ? "posted" : "pending",
+          link: "/hr/advances",
+        });
+      });
+
+      payments.forEach((p: any) =>
+        push({
+          id: `pmt-${p.id}`,
+          date: p.payment_date,
+          employeeId: employeeId!,
+          type: p.method === "payroll" ? "ADVANCE_DEDUCTION" : "ADVANCE_PAYMENT",
+          documentNumber: p.payroll_reference || numberByAdvance.get(p.advance_id) || "-",
+          description:
+            p.method === "payroll"
+              ? `خصم قسط سلفة ${numberByAdvance.get(p.advance_id) ?? ""}`.trim()
+              : `سداد سلفة ${numberByAdvance.get(p.advance_id) ?? ""}`.trim(),
+          amount: Number(p.amount || 0),
+          source: "advance_payments",
+          createdBy: p.created_by,
+          createdAt: p.created_at,
+          status: "posted",
+          link: "/hr/advances",
+          relatedId: `adv-${p.advance_id}`,
+        })
+      );
+
+      const additionType = (text: string): EmployeeTxnType => {
+        const kind = classifyExtra(text);
+        return kind === "overtime"
+          ? "OVERTIME"
+          : kind === "allowance"
+            ? "ALLOWANCE"
+            : kind === "bonus"
+              ? "BONUS"
+              : "OTHER";
+      };
+
+      transactions_loop: for (const t of transactions_source(transactions_input(transactions))) {
+        break transactions_loop;
+      }
+
+      (transactionsRes.data ?? []).forEach((t: any) => {
+        const raw = String(t.type || "");
+        const desc = t.description || "";
+        let type: EmployeeTxnType | null = null;
+        if (raw === "deduction") type = "DEDUCTION";
+        else if (raw === "addition") type = additionType(desc);
+        else if (raw === "salary_accrual" || raw === "accrual") type = "SALARY_ACCRUAL";
+        else if (raw === "salary_payment" || raw === "salary") type = "SALARY_PAYMENT";
+        else if (raw === "advance") type = "ADVANCE";
+        if (!type) return;
+        push({
+          id: `trx-${t.id}`,
+          date: t.date,
+          employeeId: employeeId!,
+          type,
+          documentNumber: `${raw.slice(0, 3).toUpperCase()}-${String(t.id).slice(0, 6).toUpperCase()}`,
+          description: desc || "حركة موظف",
+          amount: Number(t.amount || 0),
+          source: "employee_transactions",
+          createdBy: t.created_by,
+          createdAt: t.created_at,
+          status: "posted",
+          link: raw === "deduction" ? "/hr/deductions" : raw === "addition" ? "/hr/additions" : "/hr/advances",
+        });
+      });
+
+      transactions.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+
       const thisMonth = new Date().toISOString().slice(0, 7);
       const deductionsThisMonth = round2(
         deductions.filter((d) => (d.date || "").startsWith(thisMonth)).reduce((s, d) => s + d.amount, 0)
