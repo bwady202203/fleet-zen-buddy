@@ -22,7 +22,10 @@ import {
   formatDateAr,
   formatMoneySar,
 } from "@/lib/advances";
-import logo from "@/assets/wizer-logo.png";
+import logoAsset from "@/assets/wizer-logo.png.asset.json";
+
+const logo = logoAsset.url;
+
 
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5];
 
