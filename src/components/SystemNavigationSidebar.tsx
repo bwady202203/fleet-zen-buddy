@@ -82,12 +82,8 @@ const navigationGroups: NavigationGroup[] = [
       { title: "تقارير القيود", path: "/accounting/journal-entries-reports", icon: BarChart3 },
       { title: "سندات الصرف", path: "/accounting/payment-vouchers", icon: Receipt },
       { title: "سندات القبض", path: "/accounting/collection-receipts", icon: Wallet },
-      { title: "طلبات الشراء", path: "/accounting/purchase-order", icon: ShoppingCart },
-      { title: "فاتورة مبيعات", path: "/accounting/sales-invoice", icon: Receipt },
-      { title: "فاتورة مشتريات", path: "/accounting/purchase-invoice", icon: Receipt },
-      { title: "مرتجع مبيعات", path: "/accounting/sales-return", icon: FileText },
-      { title: "مرتجع مشتريات", path: "/accounting/purchase-return", icon: FileText },
       { title: "طلبات التحويل", path: "/accounting/transfer-requests", icon: Landmark },
+
       { title: "أرشيف التحويلات", path: "/accounting/transfer-requests-archive", icon: ClipboardList },
       { title: "أرصدة الحسابات الهامة", path: "/accounting/important-balances", icon: Gauge },
       { title: "أرصدة المستوى الرابع", path: "/accounting/level4-balances", icon: BarChart3 },
@@ -102,6 +98,20 @@ const navigationGroups: NavigationGroup[] = [
       { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
     ],
   },
+  {
+    key: "trade-invoices",
+    title: "فواتير الشراء والبيع",
+    icon: ShoppingCart,
+    module: "accounting",
+    children: [
+      { title: "طلبات الشراء", path: "/accounting/purchase-order", icon: ShoppingCart },
+      { title: "فاتورة مبيعات", path: "/accounting/sales-invoice", icon: Receipt },
+      { title: "فاتورة مشتريات", path: "/accounting/purchase-invoice", icon: Receipt },
+      { title: "مرتجع مبيعات", path: "/accounting/sales-return", icon: FileText },
+      { title: "مرتجع مشتريات", path: "/accounting/purchase-return", icon: FileText },
+    ],
+  },
+
   {
     key: "closing",
     title: "القوائم الختامية",
