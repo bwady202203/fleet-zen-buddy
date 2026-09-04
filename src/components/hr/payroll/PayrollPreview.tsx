@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Download,
@@ -26,6 +26,8 @@ interface Props {
   settings: PayrollSettings;
   month: string;
   onOrientationChange: (o: "portrait" | "landscape") => void;
+  autoAction?: "print" | "pdf" | null;
+  onAutoActionDone?: () => void;
 }
 
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5];
@@ -53,6 +55,8 @@ export const PayrollPreview = ({
   settings,
   month,
   onOrientationChange,
+  autoAction,
+  onAutoActionDone,
 }: Props) => {
   const [zoom, setZoom] = useState(1);
   const [exporting, setExporting] = useState(false);
@@ -145,6 +149,17 @@ export const PayrollPreview = ({
       setExporting(false);
     }
   };
+
+  useEffect(() => {
+    if (!open || !autoAction) return;
+    const timer = window.setTimeout(() => {
+      if (autoAction === "print") handlePrint();
+      else void handleExportPdf();
+      onAutoActionDone?.();
+    }, 450);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, autoAction]);
 
   if (!open) return null;
 

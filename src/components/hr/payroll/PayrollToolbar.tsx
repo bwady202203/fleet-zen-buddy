@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Search, Settings2, FileText, RotateCcw } from "lucide-react";
+import { Search, Settings2, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
