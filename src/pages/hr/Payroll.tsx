@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Download, Eye, FilePlus2, Printer, RefreshCw, Settings2, Users, X } from "lucide-react";
+import { ArrowRight, Banknote, Download, Eye, FilePlus2, Loader2, Printer, RefreshCw, Settings2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ import {
   usePayrollRows,
 } from "@/components/hr/payroll/usePayrollData";
 import { PayrollRow, formatMonthLabel } from "@/components/hr/payroll/types";
+import { usePayrollPosting } from "@/components/hr/payroll/usePayrollPosting";
+import { formatMoneySar } from "@/lib/advances";
 
 const DEFAULT_FILTERS: PayrollFilters = {
   search: "",
@@ -49,6 +51,7 @@ const Payroll = () => {
   const [sheetDepartment, setSheetDepartment] = useState("all");
 
   const { settings, update, toggleColumn, setOrder, reset } = usePayrollSettings("monthly");
+  const { post, posting } = usePayrollPosting(month);
   const { data: employees, isLoading, isRefetching, refetch } = usePayrollEmployees();
   const { filteredRows, totals, banks, departments } = usePayrollRows(employees, month, filters);
 
@@ -115,6 +118,31 @@ const Payroll = () => {
     toast({ title: "تم تحديث بيانات الموظف" });
   };
 
+  const handlePostSalaryPayment = async () => {
+    if (sheetRows.length === 0) {
+      toast({ title: "لا يوجد موظفون في الكشف", variant: "destructive" });
+      return;
+    }
+    try {
+      const res = await post("salary_payment", sheetRows);
+      toast({
+        title: res.inserted > 0 ? "تم تسجيل صرف الراتب" : "الرواتب مصروفة مسبقًا",
+        description:
+          res.inserted > 0
+            ? `تم تسجيل صافي الراتب لعدد ${res.inserted} موظف في الجانب المدين بإجمالي ${formatMoneySar(res.total)}${
+                res.skipped ? ` — تم تجاهل ${res.skipped} موظف مصروف مسبقًا` : ""
+              }`
+            : "جميع موظفي الكشف تم تسجيل صرف رواتبهم لهذا الشهر",
+      });
+    } catch (e) {
+      toast({
+        title: "تعذر تسجيل صرف الراتب",
+        description: e instanceof Error ? e.message : "خطأ غير معروف",
+        variant: "destructive",
+      });
+    }
+  };
+
   const suggestLandscape = visibleColumnCount > 7 && settings.orientation === "portrait";
 
   return (
@@ -142,6 +170,18 @@ const Payroll = () => {
               <Button className="gap-2" onClick={() => setCreateOpen(true)}>
                 <FilePlus2 className="h-4 w-4" />
                 إنشاء كشف الرواتب
+              </Button>
+              <Button
+                className="gap-2 bg-emerald-600 text-white hover:bg-emerald-600/90"
+                onClick={handlePostSalaryPayment}
+                disabled={posting === "salary_payment"}
+              >
+                {posting === "salary_payment" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Banknote className="h-4 w-4" />
+                )}
+                صرف الراتب
               </Button>
               <Button variant="outline" className="gap-2" onClick={() => refetch()} disabled={isRefetching}>
                 <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
@@ -268,10 +308,26 @@ const Payroll = () => {
           setPage(1);
         }}
         employees={employees}
-        onCreated={(ids, department) => {
+        onCreated={async (ids, department) => {
           setSelectedIds(ids);
           setSheetDepartment(department);
           setPage(1);
+          const accrualRows = filteredRows.filter((r) => ids.includes(r.id));
+          try {
+            const res = await post("salary_accrual", accrualRows);
+            if (res.inserted > 0) {
+              toast({
+                title: "تم إثبات الراتب في الجانب الدائن",
+                description: `عدد ${res.inserted} موظف بإجمالي ${formatMoneySar(res.total)}`,
+              });
+            }
+          } catch (e) {
+            toast({
+              title: "تعذر إثبات استحقاق الراتب",
+              description: e instanceof Error ? e.message : "خطأ غير معروف",
+              variant: "destructive",
+            });
+          }
           refetch();
         }}
       />
