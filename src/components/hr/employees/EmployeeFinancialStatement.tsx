@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { formatDateAr, formatMoneySar } from "@/lib/advances";
-import { buildEmployeeLedger, TXN_TYPE_LABELS } from "@/lib/employeeLedger";
+import { buildEmployeeLedger, TXN_TYPE_LABELS, MEMO_TYPES } from "@/lib/employeeLedger";
 import type { EmployeeAccount } from "@/hooks/useEmployeeAccount";
 
 export interface StatementPeriod {
