@@ -99,6 +99,20 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
+    key: "trade-invoices",
+    title: "فواتير الشراء والبيع",
+    icon: ShoppingCart,
+    module: "accounting",
+    children: [
+      { title: "طلبات الشراء", path: "/accounting/purchase-order", icon: ShoppingCart },
+      { title: "فاتورة مبيعات", path: "/accounting/sales-invoice", icon: Receipt },
+      { title: "فاتورة مشتريات", path: "/accounting/purchase-invoice", icon: Receipt },
+      { title: "مرتجع مبيعات", path: "/accounting/sales-return", icon: FileText },
+      { title: "مرتجع مشتريات", path: "/accounting/purchase-return", icon: FileText },
+    ],
+  },
+
+  {
     key: "closing",
     title: "القوائم الختامية",
     icon: FileSpreadsheet,
