@@ -109,6 +109,7 @@ export interface LedgerPeriod {
 
 const sideAmounts = (t: EmployeeTxn) => {
   const amount = round2(Math.abs(Number(t.amount || 0)));
+  if (MEMO_TYPES.includes(t.type)) return { debit: 0, credit: 0 };
   return TXN_SIDE[t.type] === "debit" ? { debit: amount, credit: 0 } : { debit: 0, credit: amount };
 };
 
