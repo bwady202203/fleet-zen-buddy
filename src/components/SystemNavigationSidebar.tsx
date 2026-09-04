@@ -211,6 +211,9 @@ const navigationGroups: NavigationGroup[] = [
 
 const isPathActive = (pathname: string, path: string) => {
   if (path === "/") return pathname === "/";
+  if (["/accounting", "/vouchers", "/hr", "/fleet", "/loads", "/custody", "/zatca"].includes(path)) {
+    return pathname === path;
+  }
   return pathname === path || pathname.startsWith(`${path}/`);
 };
 
