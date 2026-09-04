@@ -432,10 +432,6 @@ export const useEmployeeAccount = (employeeId?: string) =>
               : "OTHER";
       };
 
-      transactions_loop: for (const t of transactions_source(transactions_input(transactions))) {
-        break transactions_loop;
-      }
-
       (transactionsRes.data ?? []).forEach((t: any) => {
         const raw = String(t.type || "");
         const desc = t.description || "";
