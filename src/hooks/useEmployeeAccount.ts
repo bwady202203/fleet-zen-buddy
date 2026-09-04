@@ -480,6 +480,7 @@ export const useEmployeeAccount = (employeeId?: string) =>
         extras: extras.sort((a, b) => (b.date || "").localeCompare(a.date || "")),
         payrolls,
         ledger,
+        transactions,
         totals: {
           advancesTotal: round2(advances.reduce((s, a) => s + (a.uiStatus === "cancelled" ? 0 : a.amount), 0)),
           advancesPaid: round2(advances.reduce((s, a) => s + a.paid_amount, 0)),
