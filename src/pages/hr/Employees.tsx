@@ -5,27 +5,22 @@ import {
   Banknote,
   Building2,
   CalendarDays,
-  CreditCard,
   IdCard,
-  Mail,
   Pencil,
-  Phone,
   Plus,
   Search,
   Trash2,
-  TrendingDown,
   Upload,
   Users,
   Wallet,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { EmployeeDetailsDialog } from "@/components/hr/employees/EmployeeDetailsDialog";
+import { EmployeeStatementPrintView } from "@/components/hr/employees/EmployeeStatementPrintView";
+import { useEmployeeAccount } from "@/hooks/useEmployeeAccount";
 import { AddEmployeeDialog, EmployeeFormData, DEPARTMENTS } from "@/components/AddEmployeeDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,11 +110,12 @@ const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const { getEmployeeTransactions } = useEmployeeTransactions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeFormData | null>(null);
   const [detailsEmployee, setDetailsEmployee] = useState<DbEmployee | null>(null);
+  const [statementOpen, setStatementOpen] = useState(false);
   const { data: employees = [], isLoading } = useEmployees();
+  const { data: statementAccount } = useEmployeeAccount(detailsEmployee?.id);
   const queryClient = useQueryClient();
 
   const filtered = useMemo(() => {
@@ -161,8 +157,6 @@ const Employees = () => {
     setDetailsEmployee(null);
     toast({ title: "تم حذف الموظف" });
   };
-
-  const details = detailsEmployee ? getEmployeeTransactions(detailsEmployee.id) : null;
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
@@ -377,140 +371,26 @@ const Employees = () => {
       </main>
 
       {/* Details dialog */}
-      <Dialog open={!!detailsEmployee} onOpenChange={(o) => !o && setDetailsEmployee(null)}>
-        <DialogContent className="max-h-[92vh] gap-0 overflow-hidden rounded-3xl border-0 p-0 sm:max-w-[780px]" dir="rtl">
-          {detailsEmployee && (
-            <>
-              <div className="flex items-start gap-4 bg-hr-surface px-7 py-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-hr to-hr/60 text-xl font-bold text-hr-foreground shadow-md">
-                  {initials(detailsEmployee.name || "؟")}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-2xl font-bold tracking-tight">{detailsEmployee.name}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {detailsEmployee.position || "—"}
-                    {detailsEmployee.department ? ` • ${detailsEmployee.department}` : ""}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="gap-2 rounded-xl border-hr/40 text-hr hover:bg-hr/10"
-                  onClick={() => {
-                    setEditingEmployee(toFormData(detailsEmployee));
-                    setDetailsEmployee(null);
-                    setIsAddDialogOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                  تعديل
-                </Button>
-              </div>
+      <EmployeeDetailsDialog
+        employee={detailsEmployee}
+        open={!!detailsEmployee}
+        onOpenChange={(o) => !o && setDetailsEmployee(null)}
+        onEdit={() => {
+          if (!detailsEmployee) return;
+          setEditingEmployee(toFormData(detailsEmployee));
+          setDetailsEmployee(null);
+          setIsAddDialogOpen(true);
+        }}
+        onPrintStatement={() => setStatementOpen(true)}
+      />
 
-              <div className="max-h-[62vh] overflow-y-auto bg-card px-7 py-6">
-                <Tabs defaultValue="personal">
-                  <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/60 p-1">
-                    <TabsTrigger value="personal" className="rounded-lg">البيانات الشخصية</TabsTrigger>
-                    <TabsTrigger value="salary" className="rounded-lg">الراتب والبدلات</TabsTrigger>
-                    <TabsTrigger value="transactions" className="rounded-lg">السلف والخصومات</TabsTrigger>
-                  </TabsList>
+      <EmployeeStatementPrintView
+        open={statementOpen}
+        onOpenChange={setStatementOpen}
+        employee={detailsEmployee}
+        account={statementAccount ?? null}
+      />
 
-                  <TabsContent value="personal" className="mt-5 grid gap-2 sm:grid-cols-2">
-                    <Row icon={Building2} label="القسم" value={detailsEmployee.department} />
-                    <Row icon={CalendarDays} label="تاريخ التعيين" value={detailsEmployee.hire_date} mono />
-                    <Row icon={IdCard} label="رقم الهوية" value={detailsEmployee.national_id} mono />
-                    <Row icon={IdCard} label="رقم الإقامة" value={detailsEmployee.residence_number} mono />
-                    <Row icon={Phone} label="الهاتف" value={detailsEmployee.phone} mono />
-                    <Row icon={Mail} label="البريد الإلكتروني" value={detailsEmployee.email} mono />
-                    <Row icon={Banknote} label="اسم البنك" value={detailsEmployee.bank_name} />
-                    <Row icon={CreditCard} label="رقم الحساب" value={detailsEmployee.bank_account_number} mono />
-                  </TabsContent>
-
-                  <TabsContent value="salary" className="mt-5 space-y-2">
-                    {[
-                      ["الراتب الأساسي", Number(detailsEmployee.salary ?? 0)],
-                      ["بدل السكن", Number(detailsEmployee.housing_allowance ?? 0)],
-                      ["بدل النقل", Number(detailsEmployee.transport_allowance ?? 0)],
-                      ["بدلات أخرى", Number(detailsEmployee.other_allowances ?? 0)],
-                    ].map(([label, value]) => (
-                      <div
-                        key={label as string}
-                        className="flex items-center justify-between rounded-xl bg-muted/40 px-4 py-3"
-                      >
-                        <span className="text-sm text-muted-foreground">{label as string}</span>
-                        <span className="font-mono font-semibold">{money(value as number)}</span>
-                      </div>
-                    ))}
-                    <div className="mt-3 flex items-center justify-between rounded-2xl bg-hr/10 px-5 py-4">
-                      <span className="font-bold">إجمالي الراتب الشهري</span>
-                      <span className="font-mono text-2xl font-bold text-hr">{money(totalOf(detailsEmployee))}</span>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="transactions" className="mt-5 space-y-6">
-                    <div className="flex items-center justify-between rounded-2xl bg-destructive/10 px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <TrendingDown className="h-5 w-5 text-destructive" />
-                        <span className="font-semibold">رصيد السلف المستحق</span>
-                      </div>
-                      <span className="font-mono text-xl font-bold text-destructive">
-                        {money(details?.advancesBalance ?? 0)}
-                      </span>
-                    </div>
-
-                    {[
-                      { title: "السلف", rows: details?.advances ?? [], kind: "advances" as const },
-                      { title: "الإضافيات", rows: details?.additions ?? [], kind: "simple" as const },
-                      { title: "الخصومات", rows: details?.deductions ?? [], kind: "simple" as const },
-                    ].map((section) => (
-                      <div key={section.title} className="space-y-2">
-                        <h4 className="text-sm font-bold">{section.title}</h4>
-                        {section.rows.length === 0 ? (
-                          <p className="rounded-xl bg-muted/40 py-6 text-center text-sm text-muted-foreground">
-                            لا توجد بيانات
-                          </p>
-                        ) : (
-                          <div className="overflow-hidden rounded-xl border">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="text-right">رقم السند</TableHead>
-                                  <TableHead className="text-right">التاريخ</TableHead>
-                                  <TableHead className="text-right">المبلغ</TableHead>
-                                  {section.kind === "advances" && (
-                                    <TableHead className="text-right">المتبقي</TableHead>
-                                  )}
-                                  <TableHead className="text-right">السبب</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {section.rows.map((r: any) => (
-                                  <TableRow key={r.id}>
-                                    <TableCell className="font-medium">{r.voucherNumber}</TableCell>
-                                    <TableCell className="font-mono text-xs">{r.date}</TableCell>
-                                    <TableCell className="font-mono">
-                                      {money(Number(r.originalAmount ?? r.amount ?? 0))}
-                                    </TableCell>
-                                    {section.kind === "advances" && (
-                                      <TableCell className="font-mono font-bold text-destructive">
-                                        {money(Number(r.remainingBalance ?? 0))}
-                                      </TableCell>
-                                    )}
-                                    <TableCell>{r.reason}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <AddEmployeeDialog
         open={isAddDialogOpen}
