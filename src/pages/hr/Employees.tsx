@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { LoadingCup } from "@/components/LoadingCup";
+import LoadingCup from "@/components/LoadingCup";
 
 interface DbEmployee {
   id: string;
