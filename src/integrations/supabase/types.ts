@@ -1568,14 +1568,18 @@ export type Database = {
           email: string | null
           employee_number: string | null
           hire_date: string
+          housing_allowance: number | null
           id: string
           name: string
+          national_id: string | null
           organization_id: string | null
+          other_allowances: number | null
           phone: string | null
           position: string
           residence_number: string | null
           salary: number
           status: string | null
+          transport_allowance: number | null
           updated_at: string | null
           user_id: string | null
         }
@@ -1588,14 +1592,18 @@ export type Database = {
           email?: string | null
           employee_number?: string | null
           hire_date: string
+          housing_allowance?: number | null
           id?: string
           name: string
+          national_id?: string | null
           organization_id?: string | null
+          other_allowances?: number | null
           phone?: string | null
           position: string
           residence_number?: string | null
           salary: number
           status?: string | null
+          transport_allowance?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -1608,14 +1616,18 @@ export type Database = {
           email?: string | null
           employee_number?: string | null
           hire_date?: string
+          housing_allowance?: number | null
           id?: string
           name?: string
+          national_id?: string | null
           organization_id?: string | null
+          other_allowances?: number | null
           phone?: string | null
           position?: string
           residence_number?: string | null
           salary?: number
           status?: string | null
+          transport_allowance?: number | null
           updated_at?: string | null
           user_id?: string | null
         }

@@ -1,85 +1,131 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+
+export interface EmployeeFormData {
+  id?: string;
+  name: string;
+  position: string;
+  department: string;
+  phone: string;
+  email: string;
+  nationalId: string;
+  residenceNumber: string;
+  bankName: string;
+  bankAccountNumber: string;
+  joinDate: string;
+  basicSalary: number;
+  housingAllowance: number;
+  transportAllowance: number;
+  otherAllowances: number;
+}
+
+const EMPTY_FORM: EmployeeFormData = {
+  name: "",
+  position: "",
+  department: "",
+  phone: "",
+  email: "",
+  nationalId: "",
+  residenceNumber: "",
+  bankName: "",
+  bankAccountNumber: "",
+  joinDate: new Date().toISOString().split("T")[0],
+  basicSalary: 0,
+  housingAllowance: 0,
+  transportAllowance: 0,
+  otherAllowances: 0,
+};
 
 interface AddEmployeeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddEmployee: (employee: any) => void;
+  onSaved?: () => void;
+  employee?: EmployeeFormData | null;
 }
 
-export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmployeeDialogProps) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    position: "",
-    department: "",
-    phone: "",
-    email: "",
-    nationalId: "",
-    joinDate: new Date().toISOString().split('T')[0],
-    basicSalary: 0,
-    housingAllowance: 0,
-    transportAllowance: 0,
-    otherAllowances: 0,
-    bankAccountNumber: "",
-    bankName: "",
-    residenceNumber: ""
-  });
+export const AddEmployeeDialog = ({ open, onOpenChange, onSaved, employee }: AddEmployeeDialogProps) => {
+  const [formData, setFormData] = useState<EmployeeFormData>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const { user, currentOrganizationId } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (open) setFormData(employee ? { ...EMPTY_FORM, ...employee } : EMPTY_FORM);
+  }, [open, employee]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.position || !formData.department) {
       toast({
         title: "خطأ",
         description: "الرجاء ملء جميع الحقول المطلوبة",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    const newEmployee = {
-      id: Date.now(),
-      ...formData,
-      status: "active"
-    };
+    setSaving(true);
+    try {
+      const payload = {
+        name: formData.name,
+        position: formData.position,
+        department: formData.department,
+        phone: formData.phone,
+        email: formData.email,
+        national_id: formData.nationalId,
+        residence_number: formData.residenceNumber,
+        bank_name: formData.bankName,
+        bank_account_number: formData.bankAccountNumber,
+        hire_date: formData.joinDate,
+        salary: formData.basicSalary,
+        housing_allowance: formData.housingAllowance,
+        transport_allowance: formData.transportAllowance,
+        other_allowances: formData.otherAllowances,
+        status: "active",
+      };
 
-    onAddEmployee(newEmployee);
-    
-    toast({
-      title: "تم بنجاح",
-      description: "تم إضافة الموظف بنجاح"
-    });
+      if (employee?.id) {
+        const { error } = await supabase.from("employees").update(payload).eq("id", employee.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("employees").insert({
+          ...payload,
+          user_id: user?.id ?? null,
+          organization_id: currentOrganizationId ?? null,
+        });
+        if (error) throw error;
+      }
 
-    setFormData({
-      name: "",
-      position: "",
-      department: "",
-      phone: "",
-      email: "",
-      nationalId: "",
-      joinDate: new Date().toISOString().split('T')[0],
-      basicSalary: 0,
-      housingAllowance: 0,
-      transportAllowance: 0,
-      otherAllowances: 0,
-      bankAccountNumber: "",
-      bankName: "",
-      residenceNumber: ""
-    });
-    
-    onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-employees"] });
+      queryClient.invalidateQueries({ queryKey: ["advance-employees"] });
+
+      toast({ title: "تم بنجاح", description: employee?.id ? "تم تحديث بيانات الموظف" : "تم إضافة الموظف بنجاح" });
+      setFormData(EMPTY_FORM);
+      onOpenChange(false);
+      onSaved?.();
+    } catch (error) {
+      console.error("Error saving employee:", error);
+      toast({ title: "خطأ", description: "حدث خطأ أثناء حفظ بيانات الموظف", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle>إضافة موظف جديد</DialogTitle>
+          <DialogTitle>{employee?.id ? "تعديل بيانات الموظف" : "إضافة موظف جديد"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
@@ -87,7 +133,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>الاسم الكامل *</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="أدخل الاسم"
                 required
               />
@@ -96,7 +142,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>المسمى الوظيفي *</Label>
               <Input
                 value={formData.position}
-                onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
                 placeholder="أدخل المسمى الوظيفي"
                 required
               />
@@ -105,7 +151,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>القسم *</Label>
               <Select
                 value={formData.department}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, department: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="اختر القسم" />
@@ -123,7 +169,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>رقم الهوية</Label>
               <Input
                 value={formData.nationalId}
-                onChange={(e) => setFormData(prev => ({ ...prev, nationalId: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nationalId: e.target.value }))}
                 placeholder="أدخل رقم الهوية"
               />
             </div>
@@ -131,7 +177,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>رقم الإقامة</Label>
               <Input
                 value={formData.residenceNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, residenceNumber: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, residenceNumber: e.target.value }))}
                 placeholder="أدخل رقم الإقامة"
               />
             </div>
@@ -139,7 +185,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>رقم الهاتف</Label>
               <Input
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="05xxxxxxxx"
               />
             </div>
@@ -148,7 +194,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 placeholder="employee@company.com"
               />
             </div>
@@ -156,7 +202,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>اسم البنك</Label>
               <Input
                 value={formData.bankName}
-                onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, bankName: e.target.value }))}
                 placeholder="أدخل اسم البنك"
               />
             </div>
@@ -164,7 +210,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Label>رقم الحساب البنكي</Label>
               <Input
                 value={formData.bankAccountNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, bankAccountNumber: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, bankAccountNumber: e.target.value }))}
                 placeholder="أدخل رقم الحساب البنكي"
               />
             </div>
@@ -173,7 +219,7 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <Input
                 type="date"
                 value={formData.joinDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, joinDate: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, joinDate: e.target.value }))}
               />
             </div>
           </div>
@@ -184,36 +230,40 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
               <div className="space-y-2">
                 <Label>الراتب الأساسي (ر.س)</Label>
                 <Input
-                  type="number"
-                  value={formData.basicSalary}
-                  onChange={(e) => setFormData(prev => ({ ...prev, basicSalary: Number(e.target.value) }))}
+                  type="text"
+                  inputMode="decimal"
+                  value={String(formData.basicSalary)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, basicSalary: Number(e.target.value) || 0 }))}
                   placeholder="0"
                 />
               </div>
               <div className="space-y-2">
                 <Label>بدل السكن (ر.س)</Label>
                 <Input
-                  type="number"
-                  value={formData.housingAllowance}
-                  onChange={(e) => setFormData(prev => ({ ...prev, housingAllowance: Number(e.target.value) }))}
+                  type="text"
+                  inputMode="decimal"
+                  value={String(formData.housingAllowance)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, housingAllowance: Number(e.target.value) || 0 }))}
                   placeholder="0"
                 />
               </div>
               <div className="space-y-2">
                 <Label>بدل النقل (ر.س)</Label>
                 <Input
-                  type="number"
-                  value={formData.transportAllowance}
-                  onChange={(e) => setFormData(prev => ({ ...prev, transportAllowance: Number(e.target.value) }))}
+                  type="text"
+                  inputMode="decimal"
+                  value={String(formData.transportAllowance)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, transportAllowance: Number(e.target.value) || 0 }))}
                   placeholder="0"
                 />
               </div>
               <div className="space-y-2">
                 <Label>بدلات أخرى (ر.س)</Label>
                 <Input
-                  type="number"
-                  value={formData.otherAllowances}
-                  onChange={(e) => setFormData(prev => ({ ...prev, otherAllowances: Number(e.target.value) }))}
+                  type="text"
+                  inputMode="decimal"
+                  value={String(formData.otherAllowances)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, otherAllowances: Number(e.target.value) || 0 }))}
                   placeholder="0"
                 />
               </div>
@@ -221,7 +271,9 @@ export const AddEmployeeDialog = ({ open, onOpenChange, onAddEmployee }: AddEmpl
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1">إضافة الموظف</Button>
+            <Button type="submit" className="flex-1" disabled={saving}>
+              {saving ? "جارٍ الحفظ..." : employee?.id ? "حفظ التعديلات" : "إضافة الموظف"}
+            </Button>
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               إلغاء
             </Button>

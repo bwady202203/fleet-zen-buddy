@@ -1,0 +1,5 @@
+ALTER TABLE public.employees
+  ADD COLUMN IF NOT EXISTS housing_allowance NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS transport_allowance NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS other_allowances NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS national_id TEXT;

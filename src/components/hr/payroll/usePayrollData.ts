@@ -69,7 +69,7 @@ export const usePayrollEmployees = () => {
       const { data, error } = await supabase
         .from("employees")
         .select(
-          "id, name, position, salary, status, bank_name, bank_account_number, residence_number"
+          "id, name, position, department, employee_number, salary, status, bank_name, bank_account_number, residence_number, housing_allowance, transport_allowance, other_allowances"
         )
         .order("name", { ascending: true });
 
@@ -79,14 +79,17 @@ export const usePayrollEmployees = () => {
       return data.map((e, i) => ({
         id: e.id,
         name: e.name ?? "-",
-        employeeNumber: `EMP-${String(i + 1).padStart(3, "0")}`,
+        employeeNumber: e.employee_number ?? `EMP-${String(i + 1).padStart(3, "0")}`,
         residenceNumber: e.residence_number ?? "",
         bankName: e.bank_name ?? "",
         bankAccountNumber: e.bank_account_number ?? "",
-        department: e.position ?? "",
+        department: e.department ?? e.position ?? "",
         status: e.status ?? "active",
         basicSalary: Number(e.salary ?? 0),
-        allowances: 0,
+        allowances:
+          Number(e.housing_allowance ?? 0) +
+          Number(e.transport_allowance ?? 0) +
+          Number(e.other_allowances ?? 0),
       }));
     },
   });
