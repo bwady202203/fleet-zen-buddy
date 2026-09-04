@@ -20,12 +20,11 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { EmployeeDetailsDialog } from "@/components/hr/employees/EmployeeDetailsDialog";
+import { EmployeeStatementPrintView } from "@/components/hr/employees/EmployeeStatementPrintView";
+import { useEmployeeAccount } from "@/hooks/useEmployeeAccount";
 import { AddEmployeeDialog, EmployeeFormData, DEPARTMENTS } from "@/components/AddEmployeeDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,11 +114,12 @@ const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const { getEmployeeTransactions } = useEmployeeTransactions();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeFormData | null>(null);
   const [detailsEmployee, setDetailsEmployee] = useState<DbEmployee | null>(null);
+  const [statementOpen, setStatementOpen] = useState(false);
   const { data: employees = [], isLoading } = useEmployees();
+  const { data: statementAccount } = useEmployeeAccount(detailsEmployee?.id);
   const queryClient = useQueryClient();
 
   const filtered = useMemo(() => {
@@ -161,8 +161,6 @@ const Employees = () => {
     setDetailsEmployee(null);
     toast({ title: "تم حذف الموظف" });
   };
-
-  const details = detailsEmployee ? getEmployeeTransactions(detailsEmployee.id) : null;
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
