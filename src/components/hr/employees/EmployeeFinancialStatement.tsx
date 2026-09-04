@@ -221,7 +221,11 @@ export const EmployeeFinancialStatement = ({
                   </td>
                   <td className="px-3 py-2 text-xs">{row.description}</td>
                   <td className="px-3 py-2 font-mono text-xs text-rose-600" dir="ltr">
-                    {row.debit ? formatMoneySar(row.debit) : "—"}
+                    {row.debit ? formatMoneySar(row.debit) : MEMO_TYPES.includes(row.type) ? (
+                      <span className="text-muted-foreground">{formatMoneySar(row.amount)} (بيان)</span>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-emerald-600" dir="ltr">
                     {row.credit ? formatMoneySar(row.credit) : "—"}
