@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useApplyPayrollDeductions, useDueAdvanceInstallments } from "@/hooks/useAdvances";
+import {
+  payrollReferenceFor,
+  useApplyPayrollDeductions,
+  useDueAdvanceInstallments,
+} from "@/hooks/useAdvances";
 import { formatDateAr, formatMoneySar } from "@/lib/advances";
 import { PayrollEmployee } from "./usePayrollData";
 import { formatMonthLabel } from "./types";
@@ -77,13 +81,20 @@ export const PayrollCreateDialog = ({
   }, [open, department]);
 
   const advancesByEmployee = useMemo(() => {
-    const map = new Map<string, { amount: number; ids: string[]; details: string[] }>();
+    const map = new Map<
+      string,
+      { amount: number; ids: string[]; details: string[]; deducted: number }
+    >();
     for (const inst of dueInstallments ?? []) {
-      const cur = map.get(inst.employeeId) ?? { amount: 0, ids: [], details: [] };
+      const cur =
+        map.get(inst.employeeId) ?? { amount: 0, ids: [], details: [], deducted: 0 };
       cur.amount += Number(inst.amount || 0);
-      cur.ids.push(inst.installmentId);
+      if (inst.alreadyDeducted) cur.deducted += Number(inst.amount || 0);
+      else cur.ids.push(inst.installmentId);
       cur.details.push(
-        `${inst.advanceNumber} — قسط ${inst.installmentNumber} (${formatDateAr(inst.dueDate)})`
+        `${inst.advanceNumber} — قسط ${inst.installmentNumber} (${formatDateAr(inst.dueDate)})${
+          inst.alreadyDeducted ? " — مخصوم" : ""
+        }`
       );
       map.set(inst.employeeId, cur);
     }
@@ -95,16 +106,18 @@ export const PayrollCreateDialog = ({
   const summary = useMemo(() => {
     let salaries = 0;
     let advances = 0;
+    let deducted = 0;
     const installmentIds: string[] = [];
     for (const e of selectedEmployees) {
       salaries += e.basicSalary + e.allowances;
       const adv = advancesByEmployee.get(e.id);
       if (adv) {
         advances += adv.amount;
+        deducted += adv.deducted;
         installmentIds.push(...adv.ids);
       }
     }
-    return { salaries, advances, installmentIds, net: salaries - advances };
+    return { salaries, advances, deducted, installmentIds, net: salaries - advances };
   }, [selectedEmployees, advancesByEmployee]);
 
   const allSelected = scoped.length > 0 && selectedEmployees.length === scoped.length;
@@ -118,14 +131,20 @@ export const PayrollCreateDialog = ({
       if (deductAdvances && summary.installmentIds.length > 0) {
         const res = await applyDeductions.mutateAsync({
           installmentIds: summary.installmentIds,
-          payrollReference: `PAY-${month}`,
+          payrollReference: payrollReferenceFor(month),
         });
         toast({
           title: "تم إنشاء كشف الرواتب",
           description: `تم خصم ${res.deducted} قسط سلفة بإجمالي ${formatMoneySar(res.total)}`,
         });
       } else {
-        toast({ title: "تم إنشاء كشف الرواتب" });
+        toast({
+          title: "تم إنشاء كشف الرواتب",
+          description:
+            summary.deducted > 0
+              ? `أقساط السلف لهذا الشهر مخصومة مسبقًا بإجمالي ${formatMoneySar(summary.deducted)}`
+              : undefined,
+        });
       }
       onCreated(selectedEmployees.map((e) => e.id), department);
       onOpenChange(false);
@@ -249,10 +268,17 @@ export const PayrollCreateDialog = ({
                     <td className="p-2">
                       {adv ? (
                         <div className="space-y-1">
-                          <Badge className="gap-1 bg-hr-soft text-hr">
-                            <Wallet className="h-3 w-3" />
-                            {formatMoneySar(adv.amount)}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge className="gap-1 bg-hr-soft text-hr">
+                              <Wallet className="h-3 w-3" />
+                              {formatMoneySar(adv.amount)}
+                            </Badge>
+                            {adv.deducted > 0 && adv.ids.length === 0 && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                مخصوم في كشف هذا الشهر
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-[11px] leading-4 text-muted-foreground">
                             {adv.details.join(" • ")}
                           </div>
