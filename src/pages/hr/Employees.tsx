@@ -114,6 +114,7 @@ const Employees = () => {
   const [editingEmployee, setEditingEmployee] = useState<EmployeeFormData | null>(null);
   const [detailsEmployee, setDetailsEmployee] = useState<DbEmployee | null>(null);
   const [statementOpen, setStatementOpen] = useState(false);
+  const [statementPeriod, setStatementPeriod] = useState({ from: "", to: "" });
   const { data: employees = [], isLoading } = useEmployees();
   const { data: statementAccount } = useEmployeeAccount(detailsEmployee?.id);
   const queryClient = useQueryClient();
@@ -382,6 +383,8 @@ const Employees = () => {
           setIsAddDialogOpen(true);
         }}
         onPrintStatement={() => setStatementOpen(true)}
+        period={statementPeriod}
+        onPeriodChange={setStatementPeriod}
       />
 
       <EmployeeStatementPrintView
@@ -389,6 +392,7 @@ const Employees = () => {
         onOpenChange={setStatementOpen}
         employee={detailsEmployee}
         account={statementAccount ?? null}
+        period={statementPeriod}
       />
 
 
