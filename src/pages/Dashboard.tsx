@@ -104,7 +104,7 @@ const Dashboard = () => {
               ))}
             </div>
 
-            </div>
+
           </TabsContent>
 
         <TabsContent value="statistics" dir="rtl">
