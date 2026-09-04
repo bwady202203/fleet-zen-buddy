@@ -43,8 +43,16 @@ export const TXN_SIDE: Record<EmployeeTxnType, "debit" | "credit"> = {
   OTHER: "debit",
 };
 
+/**
+ * حركات استرشادية (بيانية) لا تؤثر على الأرصدة:
+ * السلفة تُسجَّل مرة واحدة في الجانب المدين عند صرفها، وخصم قسطها من الراتب
+ * يظهر كبيان فقط لأن صرف الراتب يُثبت بالصافي بعد الخصم.
+ */
+export const MEMO_TYPES: EmployeeTxnType[] = ["ADVANCE_DEDUCTION"];
+
 /** الحركات التي تمثل مبالغ صُرفت فعليًا للموظف */
 const DISBURSED_TYPES: EmployeeTxnType[] = ["SALARY_PAYMENT", "ADVANCE"];
+
 
 export type EmployeeTxnStatus = "posted" | "pending" | "cancelled";
 
