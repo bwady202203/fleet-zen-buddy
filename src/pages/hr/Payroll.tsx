@@ -48,11 +48,42 @@ const Payroll = () => {
   const { data: employees, isLoading, isRefetching, refetch } = usePayrollEmployees();
   const { filteredRows, totals, banks, departments } = usePayrollRows(employees, month, filters);
 
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  /** الموظفون المحددون عند إنشاء الكشف — null تعني كل الموظفين */
+  const sheetRows = useMemo(
+    () => (selectedIds ? filteredRows.filter((r) => selectedIds.includes(r.id)) : filteredRows),
+    [filteredRows, selectedIds]
+  );
+
+  const sheetTotals = useMemo(() => {
+    if (!selectedIds) return totals;
+    return sheetRows.reduce(
+      (acc, r) => ({
+        basicSalary: acc.basicSalary + r.basicSalary,
+        allowances: acc.allowances + r.allowances,
+        additions: acc.additions + r.additions,
+        deductions: acc.deductions + r.deductions,
+        advances: acc.advances + r.advances,
+        netSalary: acc.netSalary + r.netSalary,
+        count: acc.count + 1,
+      }),
+      {
+        basicSalary: 0,
+        allowances: 0,
+        additions: 0,
+        deductions: 0,
+        advances: 0,
+        netSalary: 0,
+        count: 0,
+      }
+    );
+  }, [selectedIds, sheetRows, totals]);
+
+  const pageCount = Math.max(1, Math.ceil(sheetRows.length / pageSize));
   const visibleRows = useMemo(() => {
     const start = (Math.min(page, pageCount) - 1) * pageSize;
-    return filteredRows.slice(start, start + pageSize);
-  }, [filteredRows, page, pageSize, pageCount]);
+    return sheetRows.slice(start, start + pageSize);
+  }, [sheetRows, page, pageSize, pageCount]);
+
 
   const visibleColumnCount = useMemo(
     () => settings.order.filter((k) => k !== "actions" && settings.visible[k]).length,
