@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmployeeTransactions } from "@/contexts/EmployeeTransactionsContext";
+import { useDueAdvanceInstallments } from "@/hooks/useAdvances";
+
 import { PayrollRow, PayrollTotals } from "./types";
 
 export interface PayrollEmployee {
