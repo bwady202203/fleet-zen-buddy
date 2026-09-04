@@ -524,3 +524,90 @@ export const useDueAdvanceInstallments = (month: string) =>
       });
     },
   });
+
+/** خصم أقساط السلف المستحقة عند إنشاء كشف الرواتب */
+export const useApplyPayrollDeductions = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      installmentIds,
+      payrollReference,
+    }: {
+      installmentIds: string[];
+      payrollReference: string;
+    }) => {
+      if (installmentIds.length === 0) return { deducted: 0, total: 0 };
+      const { data: rows, error } = await supabase
+        .from("advance_installments")
+        .select("*")
+        .in("id", installmentIds);
+      if (error) throw error;
+
+      const { data: auth } = await supabase.auth.getUser();
+      let deducted = 0;
+      let total = 0;
+
+      for (const inst of rows ?? []) {
+        if (inst.payroll_reference) continue; // منع الخصم المكرر
+        const pay = round2(Number(inst.amount) - Number(inst.paid_amount || 0));
+        if (pay <= 0) continue;
+
+        const { error: e1 } = await supabase
+          .from("advance_installments")
+          .update({
+            paid_amount: round2(Number(inst.paid_amount || 0) + pay),
+            status: "deducted",
+            payroll_reference: payrollReference,
+            deducted_at: new Date().toISOString(),
+          })
+          .eq("id", inst.id);
+        if (e1) throw e1;
+
+        await supabase.from("advance_payments").insert({
+          advance_id: inst.advance_id,
+          installment_id: inst.id,
+          payment_date: new Date().toISOString().split("T")[0],
+          amount: pay,
+          method: "payroll",
+          payroll_reference: payrollReference,
+          created_by: auth.user?.id ?? null,
+        });
+
+        const { data: adv } = await supabase
+          .from("employee_advances")
+          .select("id, amount, paid_amount, status")
+          .eq("id", inst.advance_id)
+          .maybeSingle();
+        if (adv) {
+          const totalPaid = round2(Number(adv.paid_amount || 0) + pay);
+          const remaining = round2(Math.max(0, Number(adv.amount) - totalPaid));
+          await supabase
+            .from("employee_advances")
+            .update({
+              paid_amount: totalPaid,
+              remaining_amount: remaining,
+              status: remaining <= 0.001 ? "completed" : adv.status,
+            })
+            .eq("id", adv.id);
+        }
+
+        await logAudit(
+          inst.advance_id,
+          "payroll_deduction",
+          `خصم القسط رقم ${inst.installment_number} بمبلغ ${pay} في كشف الرواتب ${payrollReference}`
+        );
+
+        deducted += 1;
+        total = round2(total + pay);
+      }
+
+      return { deducted, total };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["advances"] });
+      qc.invalidateQueries({ queryKey: ["advances-stats"] });
+      qc.invalidateQueries({ queryKey: ["advance-details"] });
+      qc.invalidateQueries({ queryKey: ["due-advance-installments"] });
+    },
+  });
+};
