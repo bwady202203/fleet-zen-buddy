@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { round2 } from "@/lib/advances";
+import type { EmployeeTxn, EmployeeTxnType } from "@/lib/employeeLedger";
+
 
 export type LedgerSource =
   | "advance"
