@@ -88,10 +88,6 @@ const navigationGroups: NavigationGroup[] = [
       { title: "قيود بنك الرياض الذكية", path: "/accounting/riyadh-bank-smart", icon: Landmark },
       { title: "سندات صرف بنك الرياض", path: "/accounting/riyadh-bank-payment", icon: Receipt },
       { title: "الإيداعات البنكية", path: "/accounting/bank-deposits", icon: Landmark },
-      { title: "مراكز التكلفة", path: "/accounting/cost-centers", icon: Boxes },
-      { title: "الفروع", path: "/accounting/branches", icon: Building2 },
-      { title: "المشاريع", path: "/accounting/projects", icon: ClipboardList },
-      { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
     ],
   },
   {
@@ -250,6 +246,18 @@ const navigationGroups: NavigationGroup[] = [
     icon: LayoutGrid,
     module: null,
     children: [{ title: "الروابط وبطاقات التشغيل", path: "/admin-panel", icon: LayoutGrid }],
+  },
+  {
+    key: "projects",
+    title: "المشاريع",
+    icon: Building2,
+    module: "accounting",
+    children: [
+      { title: "مراكز التكلفة", path: "/accounting/cost-centers", icon: Boxes },
+      { title: "الفروع", path: "/accounting/branches", icon: Building2 },
+      { title: "المشاريع", path: "/accounting/projects", icon: ClipboardList },
+      { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
+    ],
   },
   {
     key: "settings",
