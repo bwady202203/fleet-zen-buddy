@@ -84,7 +84,6 @@ const navigationGroups: NavigationGroup[] = [
       { title: "سندات القبض", path: "/accounting/collection-receipts", icon: Wallet },
       { title: "طلبات التحويل", path: "/accounting/transfer-requests", icon: Landmark },
 
-      { title: "طلبات التحويل", path: "/accounting/transfer-requests", icon: Landmark },
       { title: "أرشيف التحويلات", path: "/accounting/transfer-requests-archive", icon: ClipboardList },
       { title: "أرصدة الحسابات الهامة", path: "/accounting/important-balances", icon: Gauge },
       { title: "أرصدة المستوى الرابع", path: "/accounting/level4-balances", icon: BarChart3 },
