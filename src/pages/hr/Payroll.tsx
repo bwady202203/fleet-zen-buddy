@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Download, Eye, Printer, RefreshCw, Settings2, Users } from "lucide-react";
+import { ArrowRight, Download, Eye, FilePlus2, Printer, RefreshCw, Settings2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { PayrollTable } from "@/components/hr/payroll/PayrollTable";
 import { PayrollSummary } from "@/components/hr/payroll/PayrollSummary";
 import { PayrollColumnSettings } from "@/components/hr/payroll/PayrollColumnSettings";
 import { PayrollPreview } from "@/components/hr/payroll/PayrollPreview";
+import { PayrollCreateDialog } from "@/components/hr/payroll/PayrollCreateDialog";
 import { usePayrollSettings } from "@/components/hr/payroll/usePayrollSettings";
 import {
   PayrollFilters,
@@ -43,6 +44,9 @@ const Payroll = () => {
   const [autoAction, setAutoAction] = useState<"print" | "pdf" | null>(null);
   const [editRow, setEditRow] = useState<PayrollRow | null>(null);
   const [editAdvance, setEditAdvance] = useState("0");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
+  const [sheetDepartment, setSheetDepartment] = useState("all");
 
   const { settings, update, toggleColumn, setOrder, reset } = usePayrollSettings("monthly");
   const { data: employees, isLoading, isRefetching, refetch } = usePayrollEmployees();
@@ -128,18 +132,22 @@ const Payroll = () => {
                   <span>{formatMonthLabel(month)}</span>
                   <Badge variant="secondary" className="gap-1">
                     <Users className="h-3 w-3" />
-                    {totals.count} موظف
+                    {sheetTotals.count} موظف
                   </Badge>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
+              <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+                <FilePlus2 className="h-4 w-4" />
+                إنشاء كشف الرواتب
+              </Button>
               <Button variant="outline" className="gap-2" onClick={() => refetch()} disabled={isRefetching}>
                 <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-                إنشاء / تحديث الكشف
+                تحديث
               </Button>
-              <Button className="gap-2" onClick={() => openPreview(null)}>
+              <Button variant="outline" className="gap-2" onClick={() => openPreview(null)}>
                 <Eye className="h-4 w-4" />
                 معاينة
               </Button>
@@ -196,7 +204,20 @@ const Payroll = () => {
           </div>
         )}
 
-        <PayrollSummary totals={totals} />
+        {selectedIds && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hr/40 bg-hr-soft px-4 py-2 text-sm">
+            <span>
+              كشف منشأ لعدد {selectedIds.length} موظف
+              {sheetDepartment !== "all" ? ` — قسم ${sheetDepartment}` : ""} — تم استدعاء أقساط السلف المستحقة وخصمها.
+            </span>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setSelectedIds(null)}>
+              <X className="h-3 w-3" />
+              عرض جميع الموظفين
+            </Button>
+          </div>
+        )}
+
+        <PayrollSummary totals={sheetTotals} />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 py-4">
@@ -226,7 +247,7 @@ const Payroll = () => {
           <CardContent className="p-0">
             <PayrollTable
               rows={visibleRows}
-              totals={totals}
+              totals={sheetTotals}
               settings={settings}
               loading={isLoading}
               onEdit={(row) => {
@@ -237,6 +258,23 @@ const Payroll = () => {
           </CardContent>
         </Card>
       </main>
+
+      <PayrollCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        month={month}
+        onMonthChange={(m) => {
+          setMonth(m);
+          setPage(1);
+        }}
+        employees={employees}
+        onCreated={(ids, department) => {
+          setSelectedIds(ids);
+          setSheetDepartment(department);
+          setPage(1);
+          refetch();
+        }}
+      />
 
       <PayrollColumnSettings
         open={columnsOpen}
@@ -254,8 +292,8 @@ const Payroll = () => {
           setPreviewOpen(false);
           setAutoAction(null);
         }}
-        rows={filteredRows}
-        totals={totals}
+        rows={sheetRows}
+        totals={sheetTotals}
         settings={settings}
         month={month}
         onOrientationChange={(o) => update("orientation", o)}
