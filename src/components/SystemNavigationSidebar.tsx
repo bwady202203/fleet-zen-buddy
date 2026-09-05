@@ -47,13 +47,13 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { cn } from "@/lib/utils";
 import wizerLogo from "@/assets/wizer-logo.png.asset.json";
 
-type NavigationChild = {
+export type NavigationChild = {
   title: string;
   path: string;
   icon?: LucideIcon;
 };
 
-type NavigationGroup = {
+export type NavigationGroup = {
   key: string;
   title: string;
   icon: LucideIcon;
@@ -61,7 +61,7 @@ type NavigationGroup = {
   children: NavigationChild[];
 };
 
-const navigationGroups: NavigationGroup[] = [
+export const navigationGroups: NavigationGroup[] = [
   {
     key: "home",
     title: "الرئيسية",
