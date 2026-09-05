@@ -162,12 +162,17 @@ export default function NewMaintenanceOrder() {
     setIsSubmitting(true);
     try {
       const totalCost = calculateTotal();
+      const extraNotes = buildExtraNotes();
+      const fullDescription = [description || `صيانة ${selectedVehicle.name}`, extraNotes]
+        .filter(Boolean)
+        .join("\n");
 
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .from("maintenance_requests")
         .insert({
           vehicle_id: selectedVehicle.id,
-          description: description || `صيانة ${selectedVehicle.name}`,
+          description: fullDescription,
+
           cost: totalCost,
           status: "pending",
           priority: "medium",
