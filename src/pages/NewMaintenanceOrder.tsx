@@ -55,6 +55,33 @@ export default function NewMaintenanceOrder() {
   const [addPartDialogOpen, setAddPartDialogOpen] = useState(false);
   const [newPartForm, setNewPartForm] = useState({ name: "", price: "", minQuantity: "" });
 
+  // أعمال إضافية
+  const [electricalOpen, setElectricalOpen] = useState(false);
+  const [electricalWork, setElectricalWork] = useState<ElectricalWorkData | null>(null);
+  const [tireOpen, setTireOpen] = useState(false);
+  const [tireChange, setTireChange] = useState<TireChangeData | null>(null);
+  const [oilOpen, setOilOpen] = useState(false);
+
+  const buildExtraNotes = () => {
+    const parts: string[] = [];
+    if (electricalWork) {
+      parts.push(
+        `أعمال كهرباء (${electricalWork.date})${
+          electricalWork.batteriesCount ? ` - عدد البطاريات: ${electricalWork.batteriesCount}` : ""
+        }${electricalWork.statement ? `: ${electricalWork.statement}` : ""}`
+      );
+    }
+    if (tireChange) {
+      parts.push(
+        `تغيير الكفرات (${tireChange.date})${
+          tireChange.tires.length ? ` - ${tireChange.tires.map(tireLabel).join(" ، ")}` : ""
+        }${tireChange.statement ? `: ${tireChange.statement}` : ""}`
+      );
+    }
+    return parts.join("\n");
+  };
+
+
   const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
 
   const filteredVehicles = vehicles.filter((v) =>
