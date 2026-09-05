@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { CalendarIcon, ChevronsUpDown, Home, PackagePlus, Save, Truck, X, Wrench } from "lucide-react";
+import { CalendarIcon, ChevronsUpDown, CircleDot, Droplets, Home, PackagePlus, Save, Truck, X, Wrench, Zap } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { supabase } from "@/integrations/supabase/client";
+import { ElectricalWorkDialog, type ElectricalWorkData } from "@/components/maintenance/ElectricalWorkDialog";
+import { TireChangeDialog, tireLabel, type TireChangeData } from "@/components/maintenance/TireChangeDialog";
+import { OilChangeDialog } from "@/components/OilChangeDialog";
+
 
 export default function NewMaintenanceOrder() {
   const navigate = useNavigate();
@@ -49,6 +54,33 @@ export default function NewMaintenanceOrder() {
   // Add new part dialog
   const [addPartDialogOpen, setAddPartDialogOpen] = useState(false);
   const [newPartForm, setNewPartForm] = useState({ name: "", price: "", minQuantity: "" });
+
+  // أعمال إضافية
+  const [electricalOpen, setElectricalOpen] = useState(false);
+  const [electricalWork, setElectricalWork] = useState<ElectricalWorkData | null>(null);
+  const [tireOpen, setTireOpen] = useState(false);
+  const [tireChange, setTireChange] = useState<TireChangeData | null>(null);
+  const [oilOpen, setOilOpen] = useState(false);
+
+  const buildExtraNotes = () => {
+    const parts: string[] = [];
+    if (electricalWork) {
+      parts.push(
+        `أعمال كهرباء (${electricalWork.date})${
+          electricalWork.batteriesCount ? ` - عدد البطاريات: ${electricalWork.batteriesCount}` : ""
+        }${electricalWork.statement ? `: ${electricalWork.statement}` : ""}`
+      );
+    }
+    if (tireChange) {
+      parts.push(
+        `تغيير الكفرات (${tireChange.date})${
+          tireChange.tires.length ? ` - ${tireChange.tires.map(tireLabel).join(" ، ")}` : ""
+        }${tireChange.statement ? `: ${tireChange.statement}` : ""}`
+      );
+    }
+    return parts.join("\n");
+  };
+
 
   const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
 
@@ -100,10 +132,15 @@ export default function NewMaintenanceOrder() {
       toast({ title: "خطأ", description: "الرجاء اختيار تاريخ الصيانة", variant: "destructive" });
       return;
     }
-    if (Object.keys(selectedParts).length === 0) {
-      toast({ title: "خطأ", description: "الرجاء اختيار قطعة غيار واحدة على الأقل", variant: "destructive" });
+    if (Object.keys(selectedParts).length === 0 && !electricalWork && !tireChange) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء اختيار قطعة غيار أو إضافة أعمال كهرباء / تغيير كفرات",
+        variant: "destructive",
+      });
       return;
     }
+
 
     // التحقق من توفر الكميات
     const insufficient: string[] = [];
@@ -125,12 +162,17 @@ export default function NewMaintenanceOrder() {
     setIsSubmitting(true);
     try {
       const totalCost = calculateTotal();
+      const extraNotes = buildExtraNotes();
+      const fullDescription = [description || `صيانة ${selectedVehicle.name}`, extraNotes]
+        .filter(Boolean)
+        .join("\n");
 
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .from("maintenance_requests")
         .insert({
           vehicle_id: selectedVehicle.id,
-          description: description || `صيانة ${selectedVehicle.name}`,
+          description: fullDescription,
+
           cost: totalCost,
           status: "pending",
           priority: "medium",
@@ -172,6 +214,9 @@ export default function NewMaintenanceOrder() {
       // إعادة تعيين النموذج
       setSelectedVehicleId("");
       setSelectedParts({});
+      setElectricalWork(null);
+      setTireChange(null);
+
       setDescription("");
       setDate(new Date());
 
@@ -257,8 +302,101 @@ export default function NewMaintenanceOrder() {
             </Popover>
           </div>
 
+          {/* أعمال إضافية */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">أعمال الصيانة</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setElectricalOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50",
+                  electricalWork && "border-primary bg-primary/10"
+                )}
+              >
+                <Zap className="h-7 w-7 text-primary" />
+                <span className="font-semibold">أعمال كهرباء</span>
+                <span className="text-xs text-muted-foreground">
+                  {electricalWork
+                    ? `${electricalWork.date}${
+                        electricalWork.batteriesCount ? ` • ${electricalWork.batteriesCount} بطارية` : ""
+                      }`
+                    : "تركيب البطاريات وبيان الأعمال"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTireOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50",
+                  tireChange && "border-primary bg-primary/10"
+                )}
+              >
+                <CircleDot className="h-7 w-7 text-primary" />
+                <span className="font-semibold">تغيير الكفرات</span>
+                <span className="text-xs text-muted-foreground">
+                  {tireChange
+                    ? `${tireChange.date} • ${tireChange.tires.length} كفر`
+                    : "تحديد الكفرات على مخطط الشاحنة"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedVehicle) {
+                    toast({ title: "خطأ", description: "الرجاء اختيار المركبة أولاً", variant: "destructive" });
+                    return;
+                  }
+                  setOilOpen(true);
+                }}
+                className="flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50"
+              >
+                <Droplets className="h-7 w-7 text-primary" />
+                <span className="font-semibold">تغيير الزيت</span>
+                <span className="text-xs text-muted-foreground">تسجيل تغيير الزيت والعداد</span>
+              </button>
+            </div>
+
+            {/* ملخص الأعمال */}
+            {(electricalWork || tireChange) && (
+              <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm">
+                {electricalWork && (
+                  <div className="flex items-start gap-2">
+                    <Zap className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-semibold">أعمال كهرباء — {electricalWork.date}</div>
+                      {electricalWork.batteriesCount && (
+                        <div className="text-muted-foreground">عدد البطاريات: {electricalWork.batteriesCount}</div>
+                      )}
+                      {electricalWork.statement && (
+                        <div className="text-muted-foreground whitespace-pre-line">{electricalWork.statement}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {tireChange && (
+                  <div className="flex items-start gap-2">
+                    <CircleDot className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-semibold">تغيير الكفرات — {tireChange.date}</div>
+                      {tireChange.tires.length > 0 && (
+                        <div className="text-muted-foreground">{tireChange.tires.map(tireLabel).join(" ، ")}</div>
+                      )}
+                      {tireChange.statement && (
+                        <div className="text-muted-foreground whitespace-pre-line">{tireChange.statement}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* قطع الغيار */}
           <div className="space-y-3">
+
             <div className="flex items-center justify-between">
               <Label className="text-base font-semibold">قطع الغيار المستخدمة *</Label>
               <Button
@@ -490,6 +628,27 @@ export default function NewMaintenanceOrder() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* أعمال كهرباء */}
+      <ElectricalWorkDialog
+        open={electricalOpen}
+        onOpenChange={setElectricalOpen}
+        value={electricalWork}
+        onSave={setElectricalWork}
+      />
+
+      {/* تغيير الكفرات */}
+      <TireChangeDialog open={tireOpen} onOpenChange={setTireOpen} value={tireChange} onSave={setTireChange} />
+
+      {/* تغيير الزيت */}
+      <OilChangeDialog
+        open={oilOpen}
+        onOpenChange={setOilOpen}
+        vehicleId={selectedVehicle?.id}
+        vehicleName={selectedVehicle?.name}
+        vehicleType={selectedVehicle?.type}
+      />
     </div>
   );
 }
+
