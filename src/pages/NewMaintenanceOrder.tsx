@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { CalendarIcon, ChevronsUpDown, Home, PackagePlus, Save, Truck, X, Wrench } from "lucide-react";
+import { CalendarIcon, ChevronsUpDown, CircleDot, Droplets, Home, PackagePlus, Save, Truck, X, Wrench, Zap } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
