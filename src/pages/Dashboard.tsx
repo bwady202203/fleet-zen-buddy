@@ -91,12 +91,21 @@ const Dashboard = () => {
         </div>
 
         
-        <Tabs defaultValue="modules" className="w-full" dir="rtl">
-          <TabsList className="hidden">
-            <TabsTrigger value="modules">الأنظمة</TabsTrigger>
-            <TabsTrigger value="statistics">الإحصائيات</TabsTrigger>
+        <Tabs defaultValue="overview" className="w-full" dir="rtl">
+          <TabsList className="mx-auto mb-8 flex w-full max-w-2xl justify-center">
+            <TabsTrigger value="overview" className="flex-1">نظرة سريعة</TabsTrigger>
+            <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
+            <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
           </TabsList>
-          
+
+          <TabsContent value="overview" dir="rtl">
+            <DashboardOverview />
+          </TabsContent>
+
+          <TabsContent value="favorites" dir="rtl">
+            <FavoriteShortcuts />
+          </TabsContent>
+
           <TabsContent value="modules" dir="rtl">
             <div className="hidden">
               {modules.map((module) => (
@@ -106,6 +115,7 @@ const Dashboard = () => {
 
 
           </TabsContent>
+
 
         <TabsContent value="statistics" dir="rtl">
           <div className="mb-8 text-center">
