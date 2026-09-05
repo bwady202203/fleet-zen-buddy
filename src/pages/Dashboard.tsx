@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/StatsCard";
+import DashboardOverview from "@/components/dashboard/DashboardOverview";
+import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
