@@ -132,10 +132,15 @@ export default function NewMaintenanceOrder() {
       toast({ title: "خطأ", description: "الرجاء اختيار تاريخ الصيانة", variant: "destructive" });
       return;
     }
-    if (Object.keys(selectedParts).length === 0) {
-      toast({ title: "خطأ", description: "الرجاء اختيار قطعة غيار واحدة على الأقل", variant: "destructive" });
+    if (Object.keys(selectedParts).length === 0 && !electricalWork && !tireChange) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء اختيار قطعة غيار أو إضافة أعمال كهرباء / تغيير كفرات",
+        variant: "destructive",
+      });
       return;
     }
+
 
     // التحقق من توفر الكميات
     const insufficient: string[] = [];
