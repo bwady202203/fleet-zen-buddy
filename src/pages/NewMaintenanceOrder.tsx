@@ -628,6 +628,27 @@ export default function NewMaintenanceOrder() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* أعمال كهرباء */}
+      <ElectricalWorkDialog
+        open={electricalOpen}
+        onOpenChange={setElectricalOpen}
+        value={electricalWork}
+        onSave={setElectricalWork}
+      />
+
+      {/* تغيير الكفرات */}
+      <TireChangeDialog open={tireOpen} onOpenChange={setTireOpen} value={tireChange} onSave={setTireChange} />
+
+      {/* تغيير الزيت */}
+      <OilChangeDialog
+        open={oilOpen}
+        onOpenChange={setOilOpen}
+        vehicleId={selectedVehicle?.id}
+        vehicleName={selectedVehicle?.name}
+        vehicleType={selectedVehicle?.type}
+      />
     </div>
   );
 }
+
