@@ -31,6 +31,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useVehicles } from "@/contexts/VehiclesContext";
 import { useSpareParts } from "@/contexts/SparePartsContext";
 import { supabase } from "@/integrations/supabase/client";
+import { ElectricalWorkDialog, type ElectricalWorkData } from "@/components/maintenance/ElectricalWorkDialog";
+import { TireChangeDialog, tireLabel, type TireChangeData } from "@/components/maintenance/TireChangeDialog";
+import { OilChangeDialog } from "@/components/OilChangeDialog";
+
 
 export default function NewMaintenanceOrder() {
   const navigate = useNavigate();
