@@ -302,8 +302,101 @@ export default function NewMaintenanceOrder() {
             </Popover>
           </div>
 
+          {/* أعمال إضافية */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">أعمال الصيانة</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setElectricalOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50",
+                  electricalWork && "border-primary bg-primary/10"
+                )}
+              >
+                <Zap className="h-7 w-7 text-primary" />
+                <span className="font-semibold">أعمال كهرباء</span>
+                <span className="text-xs text-muted-foreground">
+                  {electricalWork
+                    ? `${electricalWork.date}${
+                        electricalWork.batteriesCount ? ` • ${electricalWork.batteriesCount} بطارية` : ""
+                      }`
+                    : "تركيب البطاريات وبيان الأعمال"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTireOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50",
+                  tireChange && "border-primary bg-primary/10"
+                )}
+              >
+                <CircleDot className="h-7 w-7 text-primary" />
+                <span className="font-semibold">تغيير الكفرات</span>
+                <span className="text-xs text-muted-foreground">
+                  {tireChange
+                    ? `${tireChange.date} • ${tireChange.tires.length} كفر`
+                    : "تحديد الكفرات على مخطط الشاحنة"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedVehicle) {
+                    toast({ title: "خطأ", description: "الرجاء اختيار المركبة أولاً", variant: "destructive" });
+                    return;
+                  }
+                  setOilOpen(true);
+                }}
+                className="flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50"
+              >
+                <Droplets className="h-7 w-7 text-primary" />
+                <span className="font-semibold">تغيير الزيت</span>
+                <span className="text-xs text-muted-foreground">تسجيل تغيير الزيت والعداد</span>
+              </button>
+            </div>
+
+            {/* ملخص الأعمال */}
+            {(electricalWork || tireChange) && (
+              <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm">
+                {electricalWork && (
+                  <div className="flex items-start gap-2">
+                    <Zap className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-semibold">أعمال كهرباء — {electricalWork.date}</div>
+                      {electricalWork.batteriesCount && (
+                        <div className="text-muted-foreground">عدد البطاريات: {electricalWork.batteriesCount}</div>
+                      )}
+                      {electricalWork.statement && (
+                        <div className="text-muted-foreground whitespace-pre-line">{electricalWork.statement}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {tireChange && (
+                  <div className="flex items-start gap-2">
+                    <CircleDot className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-semibold">تغيير الكفرات — {tireChange.date}</div>
+                      {tireChange.tires.length > 0 && (
+                        <div className="text-muted-foreground">{tireChange.tires.map(tireLabel).join(" ، ")}</div>
+                      )}
+                      {tireChange.statement && (
+                        <div className="text-muted-foreground whitespace-pre-line">{tireChange.statement}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* قطع الغيار */}
           <div className="space-y-3">
+
             <div className="flex items-center justify-between">
               <Label className="text-base font-semibold">قطع الغيار المستخدمة *</Label>
               <Button
