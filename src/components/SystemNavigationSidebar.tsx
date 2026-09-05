@@ -349,10 +349,10 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                           size="lg"
                           isActive={groupActive}
                           tooltip={{ children: group.title, side: "left" }}
-                          className="h-11 cursor-pointer justify-start gap-3"
+                          className="h-12 cursor-pointer justify-start gap-3"
                         >
                           <GroupIcon className="h-5 w-5" />
-                          {!collapsed && <span className="flex-1 text-right font-semibold">{group.title}</span>}
+                          {!collapsed && <span className="flex-1 text-right text-[15px] font-bold tracking-wide">{group.title}</span>}
                           {!collapsed && (
                             <ChevronDown className={cn("h-4 w-4 transition-transform", groupOpen && "rotate-180")} />
                           )}
@@ -366,10 +366,10 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                             const active = isPathActive(location.pathname, child.path);
                             return (
                               <SidebarMenuSubItem key={`${group.key}-${child.path}-${child.title}`}>
-                                <SidebarMenuSubButton asChild isActive={active} className="h-9">
+                                <SidebarMenuSubButton asChild isActive={active} className="h-10">
                                   <NavLink to={child.path} onClick={closeMobile}>
                                     {ChildIcon && <ChildIcon className="h-4 w-4" />}
-                                    <span>{child.title}</span>
+                                    <span className="text-sm font-semibold">{child.title}</span>
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
