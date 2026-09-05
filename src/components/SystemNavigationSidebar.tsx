@@ -319,14 +319,14 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   return (
     <Sidebar side="right" collapsible="icon" className="print:hidden">
       <SidebarHeader className="border-b border-sidebar-border p-3">
-        <NavLink to="/" onClick={closeMobile} className="flex h-11 items-center gap-3 overflow-hidden rounded-md px-1">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary">
-            <img src={wizerLogo.url} alt="ويزر" className="h-6 w-6 object-contain" />
+        <NavLink to="/" onClick={closeMobile} className="flex h-12 items-center gap-3 overflow-hidden rounded-md px-1">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary">
+            <img src={wizerLogo.url} alt="ويزر" className="h-7 w-7 object-contain" />
           </span>
           {!collapsed && (
             <span className="min-w-0">
-              <span className="block truncate text-sm font-bold">نظام الإدارة المتكامل</span>
-              <span className="block truncate text-xs text-muted-foreground">القائمة السريعة</span>
+              <span className="block truncate text-base font-bold">نظام الإدارة المتكامل</span>
+              <span className="block truncate text-sm text-muted-foreground">القائمة السريعة</span>
             </span>
           )}
         </NavLink>
@@ -349,10 +349,10 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                           size="lg"
                           isActive={groupActive}
                           tooltip={{ children: group.title, side: "left" }}
-                          className="h-11 cursor-pointer justify-start gap-3"
+                          className="h-12 cursor-pointer justify-start gap-3"
                         >
                           <GroupIcon className="h-5 w-5" />
-                          {!collapsed && <span className="flex-1 text-right font-semibold">{group.title}</span>}
+                          {!collapsed && <span className="flex-1 text-right text-[15px] font-bold tracking-wide">{group.title}</span>}
                           {!collapsed && (
                             <ChevronDown className={cn("h-4 w-4 transition-transform", groupOpen && "rotate-180")} />
                           )}
@@ -366,10 +366,10 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                             const active = isPathActive(location.pathname, child.path);
                             return (
                               <SidebarMenuSubItem key={`${group.key}-${child.path}-${child.title}`}>
-                                <SidebarMenuSubButton asChild isActive={active} className="h-9">
+                                <SidebarMenuSubButton asChild isActive={active} className="h-10">
                                   <NavLink to={child.path} onClick={closeMobile}>
                                     {ChildIcon && <ChildIcon className="h-4 w-4" />}
-                                    <span>{child.title}</span>
+                                    <span className="text-sm font-semibold">{child.title}</span>
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
