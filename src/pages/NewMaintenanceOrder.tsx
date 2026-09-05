@@ -214,6 +214,9 @@ export default function NewMaintenanceOrder() {
       // إعادة تعيين النموذج
       setSelectedVehicleId("");
       setSelectedParts({});
+      setElectricalWork(null);
+      setTireChange(null);
+
       setDescription("");
       setDate(new Date());
 
