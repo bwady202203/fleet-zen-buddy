@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Star, StarOff, Search, LayoutGrid } from "lucide-react";
 import { navigationGroups } from "@/components/SystemNavigationSidebar";
@@ -19,6 +18,24 @@ const readPinned = (): string[] => {
   }
 };
 
+const GROUP_COLORS: Record<string, string | undefined> = {
+  home: "--group-home",
+  accounting: "--group-accounting",
+  "trade-invoices": "--group-trade-invoices",
+  closing: "--group-closing",
+  vouchers: "--group-vouchers",
+  hr: "--group-hr",
+  fleet: "--group-fleet",
+  loads: "--group-loads",
+  custody: "--group-custody",
+  zatca: "--group-zatca",
+  admin: "--group-admin",
+  projects: "--group-projects",
+  settings: "--group-settings",
+};
+
+const getGroupColorVar = (groupKey: string) => GROUP_COLORS[groupKey] || "--primary";
+
 export const FavoriteShortcuts = () => {
   const { hasPermission } = usePermissions();
   const [pinned, setPinned] = useState<string[]>(readPinned);
@@ -31,6 +48,7 @@ export const FavoriteShortcuts = () => {
         .flatMap((g) =>
           g.children.map((c) => ({
             ...c,
+            groupKey: g.key,
             groupTitle: g.title,
             groupIcon: g.icon,
           }))
@@ -60,29 +78,64 @@ export const FavoriteShortcuts = () => {
 
   const renderCard = (item: (typeof allItems)[number], isPinned: boolean) => {
     const Icon = item.icon || item.groupIcon || LayoutGrid;
+    const colorVar = getGroupColorVar(item.groupKey);
+
     return (
       <Card
         key={item.path + item.title}
         className={cn(
-          "group relative border-2 transition-all hover:-translate-y-1 hover:shadow-lg",
-          isPinned ? "border-primary/40" : "hover:border-primary/40"
+          "group relative overflow-hidden border border-border/60 bg-card p-0 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-xl",
+          isPinned && "ring-1 ring-[hsl(var(--group-on-color)/0.0)]"
         )}
       >
         <button
           type="button"
           onClick={() => togglePin(item.path)}
-          className="absolute top-2 left-2 z-10 rounded-md p-1 text-muted-foreground hover:text-primary"
+          className={cn(
+            "absolute top-4 left-4 z-10 rounded-md p-1 transition-transform duration-300 hover:scale-125",
+            isPinned ? "text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"
+          )}
           aria-label={isPinned ? "إزالة من المفضلة" : "تثبيت في المفضلة"}
         >
-          {isPinned ? <Star className="h-4 w-4 fill-primary text-primary" /> : <StarOff className="h-4 w-4" />}
+          {isPinned ? (
+            <Star className="h-6 w-6 fill-amber-400 text-amber-400" />
+          ) : (
+            <StarOff className="h-6 w-6" />
+          )}
         </button>
-        <Link to={item.path}>
-          <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Icon className="h-6 w-6 text-primary" />
+
+        <Link to={item.path} className="block h-full">
+          <CardContent className="flex h-full flex-col items-center p-6 text-center">
+            <div
+              className={cn(
+                "mb-5 flex h-24 w-24 items-center justify-center rounded-2xl transition-colors duration-500",
+                `bg-[hsl(var(${colorVar})/0.10)] text-[hsl(var(${colorVar}))]`,
+                `group-hover:bg-[hsl(var(${colorVar}))] group-hover:text-[hsl(var(--group-on-color))]`
+              )}
+            >
+              <Icon className="h-12 w-12" strokeWidth={1.5} />
             </div>
-            <span className="text-sm font-semibold leading-tight">{item.title}</span>
-            <span className="text-[11px] text-muted-foreground">{item.groupTitle}</span>
+
+            <h3 className="mb-1 text-xl font-bold leading-tight text-card-foreground">
+              {item.title}
+            </h3>
+
+            <span
+              className={cn(
+                "mt-auto rounded-full px-3 py-1 text-xs font-semibold",
+                `bg-[hsl(var(${colorVar})/0.12)] text-[hsl(var(${colorVar}))]`
+              )}
+            >
+              {item.groupTitle}
+            </span>
+
+            <div
+              className={cn(
+                "absolute -bottom-4 -right-4 h-16 w-16 rounded-tl-full transition-transform duration-500 group-hover:scale-150",
+                `bg-[hsl(var(${colorVar})/0.05)]`
+              )}
+              aria-hidden="true"
+            />
           </CardContent>
         </Link>
       </Card>
@@ -90,10 +143,10 @@ export const FavoriteShortcuts = () => {
   };
 
   return (
-    <div className="space-y-8" dir="rtl">
+    <div className="space-y-10" dir="rtl">
       <div>
-        <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
-          <Star className="h-5 w-5 text-primary" />
+        <h3 className="mb-4 flex items-center gap-2 text-2xl font-bold">
+          <Star className="h-6 w-6 fill-amber-400 text-amber-400" />
           الأيقونات المثبتة
         </h3>
         {pinnedItems.length === 0 ? (
@@ -101,17 +154,17 @@ export const FavoriteShortcuts = () => {
             لم يتم تثبيت أي شاشة بعد. اضغط على النجمة في أي مربع بالأسفل لتثبيته هنا.
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {pinnedItems.map((i) => renderCard(i, true))}
           </div>
         )}
       </div>
 
       <div>
-        <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-          <h3 className="text-xl font-bold">كل الشاشات</h3>
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <h3 className="text-2xl font-bold">كل الشاشات</h3>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -120,7 +173,7 @@ export const FavoriteShortcuts = () => {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {filtered.map((i) => renderCard(i, pinned.includes(i.path)))}
         </div>
       </div>
