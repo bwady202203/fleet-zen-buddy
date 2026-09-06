@@ -11,10 +11,14 @@ type GroupShortcutsProps = {
   iconBox: string; // مثال: "bg-orange-100 text-orange-600"
   hover: string; // مثال: "hover:border-orange-200 hover:shadow-orange-100"
   titleIcon: string; // مثال: "text-orange-600"
+  // نمط البطاقات: "boxed" (افتراضي) أو "plain" (أيقونة كبيرة بدون مربع خلفية)
+  variant?: "boxed" | "plain";
+  iconColor?: string; // مثال: "text-cyan-500" (يستخدم مع plain)
 };
 
 // مربعات شاشات أي مجموعة تنقلات في الشاشة الرئيسية (الأسطول، المحاسبة، الحمولات...)
-const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIcon }: GroupShortcutsProps) => {
+const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIcon, variant = "boxed", iconColor = "" }: GroupShortcutsProps) => {
+
   const { hasPermission } = usePermissions();
   const group = navigationGroups.find((g) => g.key === groupKey);
 
