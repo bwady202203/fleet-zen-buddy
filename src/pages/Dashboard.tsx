@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/StatsCard";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
-import FleetShortcuts from "@/components/dashboard/FleetShortcuts";
+import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
