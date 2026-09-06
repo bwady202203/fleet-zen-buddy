@@ -35,6 +35,7 @@ import { ElectricalWorkDialog, type ElectricalWorkData } from "@/components/main
 import { TireChangeDialog, tireLabel, type TireChangeData } from "@/components/maintenance/TireChangeDialog";
 import { OilChangeDialog } from "@/components/OilChangeDialog";
 import { PunctureDialog, type PunctureData } from "@/components/maintenance/PunctureDialog";
+import { punctureTireLabel } from "@/components/maintenance/PunctureTruckScene";
 
 
 export default function NewMaintenanceOrder() {
@@ -84,7 +85,7 @@ export default function NewMaintenanceOrder() {
     if (puncture) {
       parts.push(
         `أعمال بنشر (${puncture.date})${
-          puncture.tires.length ? ` - ${puncture.tires.map(tireLabel).join(" ، ")}` : ""
+          puncture.tires.length ? ` - ${puncture.tires.map(punctureTireLabel).join(" ، ")}` : ""
         }${puncture.statement ? `: ${puncture.statement}` : ""}`
       );
     }
@@ -408,7 +409,7 @@ export default function NewMaintenanceOrder() {
                     <div>
                       <div className="font-semibold">أعمال بنشر — {puncture.date}</div>
                       {puncture.tires.length > 0 && (
-                        <div className="text-muted-foreground">{puncture.tires.map(tireLabel).join(" ، ")}</div>
+                        <div className="text-muted-foreground">{puncture.tires.map(punctureTireLabel).join(" ، ")}</div>
                       )}
                       {puncture.statement && (
                         <div className="text-muted-foreground whitespace-pre-line">{puncture.statement}</div>
