@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
+import { fleetIconByTitle } from "@/components/dashboard/FleetIcons";
 import { navigationGroups } from "@/components/SystemNavigationSidebar";
 import { usePermissions } from "@/contexts/PermissionsContext";
 
