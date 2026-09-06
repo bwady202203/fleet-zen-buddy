@@ -372,8 +372,10 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
+  // المجموعات المعروضة في القائمة الجانبية: الأسطول والمحاسبة والحمولات تُعرض كتبويبات في الشاشة الرئيسية
+  const hiddenGroupKeys = ["fleet", "accounting", "loads"];
   const visibleGroups = useMemo(
-    () => navigationGroups.filter((group) => group.key !== "fleet" && (!group.module || hasPermission(group.module, "view"))),
+    () => navigationGroups.filter((group) => !hiddenGroupKeys.includes(group.key) && (!group.module || hasPermission(group.module, "view"))),
     [hasPermission],
   );
 
