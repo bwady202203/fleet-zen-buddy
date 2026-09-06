@@ -3,7 +3,7 @@ import { Truck } from "lucide-react";
 import { navigationGroups } from "@/components/SystemNavigationSidebar";
 import { usePermissions } from "@/contexts/PermissionsContext";
 
-// تبويب الأسطول في الشاشة الرئيسية: يعرض كل شاشات الأسطول على شكل مربعات
+// تبويب شاشات مجموعة (الأسطول/المحاسبة/الحمولات...) في الشاشة الرئيسية: يعرض كل شاشات المجموعة على شكل مربعات
 const FleetShortcuts = () => {
   const { hasPermission } = usePermissions();
   const fleetGroup = navigationGroups.find((group) => group.key === "fleet");
