@@ -421,6 +421,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                 const GroupIcon = group.icon;
                 const groupActive = activeGroupKeys.includes(group.key);
                 const groupOpen = openGroups.includes(group.key);
+                const colors = groupColors[group.key] ?? defaultGroupColor;
 
                 return (
                   <Collapsible key={group.key} open={groupOpen && !collapsed} onOpenChange={() => toggleGroup(group.key)} asChild>
@@ -428,11 +429,22 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton
                           size="lg"
-                          isActive={groupActive}
+                          isActive={false}
                           tooltip={{ children: group.title, side: "left" }}
-                          className="h-12 cursor-pointer justify-start gap-3"
+                          className={cn(
+                            "group/nav h-14 cursor-pointer justify-start gap-3 rounded-2xl border-r-4 border-transparent bg-transparent transition-all duration-300 active:scale-95",
+                            colors.hover,
+                            groupActive && colors.active,
+                          )}
                         >
-                          <GroupIcon className="h-5 w-5" />
+                          <span
+                            className={cn(
+                              "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover/nav:scale-110 group-hover/nav:rotate-3",
+                              colors.iconBox,
+                            )}
+                          >
+                            <GroupIcon className="h-6 w-6" />
+                          </span>
                           {!collapsed && <span className="flex-1 text-right text-[15px] font-bold tracking-wide">{group.title}</span>}
                           {!collapsed && (
                             <ChevronDown className={cn("h-4 w-4 transition-transform", groupOpen && "rotate-180")} />
