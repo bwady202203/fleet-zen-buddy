@@ -13,18 +13,18 @@ export interface PunctureTirePosition {
 export const PUNCTURE_TIRE_POSITIONS: PunctureTirePosition[] = [
   { id: "F1R", label: "الأمامي يمين", shortLabel: "أ ي", position: [-1.55, 0.52, -4.25] },
   { id: "F1L", label: "الأمامي يسار", shortLabel: "أ س", position: [1.55, 0.52, -4.25] },
-  { id: "R1RO", label: "الخلفي 1 يمين خارجي", shortLabel: "1 ي خ", position: [-1.9, 0.52, 0.65] },
-  { id: "R1RI", label: "الخلفي 1 يمين داخلي", shortLabel: "1 ي د", position: [-1.38, 0.52, 0.65] },
-  { id: "R1LI", label: "الخلفي 1 يسار داخلي", shortLabel: "1 س د", position: [1.38, 0.52, 0.65] },
-  { id: "R1LO", label: "الخلفي 1 يسار خارجي", shortLabel: "1 س خ", position: [1.9, 0.52, 0.65] },
-  { id: "R2RO", label: "الخلفي 2 يمين خارجي", shortLabel: "2 ي خ", position: [-1.9, 0.52, 2.35] },
-  { id: "R2RI", label: "الخلفي 2 يمين داخلي", shortLabel: "2 ي د", position: [-1.38, 0.52, 2.35] },
-  { id: "R2LI", label: "الخلفي 2 يسار داخلي", shortLabel: "2 س د", position: [1.38, 0.52, 2.35] },
-  { id: "R2LO", label: "الخلفي 2 يسار خارجي", shortLabel: "2 س خ", position: [1.9, 0.52, 2.35] },
-  { id: "R3RO", label: "الخلفي 3 يمين خارجي", shortLabel: "3 ي خ", position: [-1.9, 0.52, 4.05] },
-  { id: "R3RI", label: "الخلفي 3 يمين داخلي", shortLabel: "3 ي د", position: [-1.38, 0.52, 4.05] },
-  { id: "R3LI", label: "الخلفي 3 يسار داخلي", shortLabel: "3 س د", position: [1.38, 0.52, 4.05] },
-  { id: "R3LO", label: "الخلفي 3 يسار خارجي", shortLabel: "3 س خ", position: [1.9, 0.52, 4.05] },
+  { id: "R1RO", label: "الخلفي 1 يمين خارجي", shortLabel: "1 ي خ", position: [-2.22, 0.52, 0.65] },
+  { id: "R1RI", label: "الخلفي 1 يمين داخلي", shortLabel: "1 ي د", position: [-1.72, 0.52, 0.65] },
+  { id: "R1LI", label: "الخلفي 1 يسار داخلي", shortLabel: "1 س د", position: [1.72, 0.52, 0.65] },
+  { id: "R1LO", label: "الخلفي 1 يسار خارجي", shortLabel: "1 س خ", position: [2.22, 0.52, 0.65] },
+  { id: "R2RO", label: "الخلفي 2 يمين خارجي", shortLabel: "2 ي خ", position: [-2.22, 0.52, 2.35] },
+  { id: "R2RI", label: "الخلفي 2 يمين داخلي", shortLabel: "2 ي د", position: [-1.72, 0.52, 2.35] },
+  { id: "R2LI", label: "الخلفي 2 يسار داخلي", shortLabel: "2 س د", position: [1.72, 0.52, 2.35] },
+  { id: "R2LO", label: "الخلفي 2 يسار خارجي", shortLabel: "2 س خ", position: [2.22, 0.52, 2.35] },
+  { id: "R3RO", label: "الخلفي 3 يمين خارجي", shortLabel: "3 ي خ", position: [-2.22, 0.52, 4.05] },
+  { id: "R3RI", label: "الخلفي 3 يمين داخلي", shortLabel: "3 ي د", position: [-1.72, 0.52, 4.05] },
+  { id: "R3LI", label: "الخلفي 3 يسار داخلي", shortLabel: "3 س د", position: [1.72, 0.52, 4.05] },
+  { id: "R3LO", label: "الخلفي 3 يسار خارجي", shortLabel: "3 س خ", position: [2.22, 0.52, 4.05] },
 ];
 
 export const punctureTireLabel = (id: string) =>
@@ -187,15 +187,18 @@ export const PunctureTruckScene = ({ selectedTires, onToggle }: Props) => {
         shadows
         dpr={[1, 1.5]}
         orthographic
-        camera={{ position: [8.2, 16, 10.5], zoom: 47, near: 0.1, far: 100 }}
+        camera={{ position: [0, 19, 4.5], zoom: 45, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: true }}
-        onCreated={({ camera }) => camera.lookAt(0, 0.5, 0)}
+        onCreated={({ camera, gl }) => {
+          camera.lookAt(0, 0.5, 0);
+          gl.toneMappingExposure = 0.72;
+        }}
       >
-        <ambientLight intensity={0.72} />
-        <hemisphereLight args={[colors.glass, colors.floor, 0.72]} />
+        <ambientLight intensity={0.48} />
+        <hemisphereLight args={[colors.glass, colors.floor, 0.54]} />
         <directionalLight
           position={[7, 13, -7]}
-          intensity={2.2}
+          intensity={1.45}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
@@ -211,8 +214,8 @@ export const PunctureTruckScene = ({ selectedTires, onToggle }: Props) => {
         </mesh>
         <ContactShadows position={[0, 0.035, 0]} opacity={0.34} scale={13} blur={2.4} far={6} />
         <Environment resolution={64}>
-          <Lightformer intensity={1.8} position={[0, 7, -5]} scale={[9, 3, 1]} />
-          <Lightformer intensity={1.1} position={[-6, 3, 2]} rotation-y={Math.PI / 2} scale={[8, 2, 1]} />
+          <Lightformer intensity={0.8} position={[0, 7, -5]} scale={[9, 3, 1]} />
+          <Lightformer intensity={0.5} position={[-6, 3, 2]} rotation-y={Math.PI / 2} scale={[8, 2, 1]} />
         </Environment>
       </Canvas>
     </div>
