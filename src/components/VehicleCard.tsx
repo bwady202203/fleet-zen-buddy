@@ -2,13 +2,15 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, Calendar, Wrench, AlertTriangle, Gauge, Settings, RotateCcw } from "lucide-react";
+import { Truck, Calendar, Wrench, AlertTriangle, Gauge, Settings, RotateCcw, History } from "lucide-react";
 import { MaintenanceRequestDialog } from "./MaintenanceRequestDialog";
 import { AddMileageDialog } from "./AddMileageDialog";
 import { ChangeVehicleStatusDialog } from "./ChangeVehicleStatusDialog";
+import { VehicleServiceHistoryDialog } from "./maintenance/VehicleServiceHistoryDialog";
 import { VehicleStatus } from "@/contexts/VehiclesContext";
 import { useVehicleMileage } from "@/contexts/VehicleMileageContext";
 import { toast } from "@/hooks/use-toast";
+
 
 interface VehicleCardProps {
   id: string;
