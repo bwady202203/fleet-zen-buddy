@@ -36,7 +36,9 @@ export const VehicleCard = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mileageDialogOpen, setMileageDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const { getMileageByVehicle, addMileageRecord } = useVehicleMileage();
+
 
   // حساب الكيلومترات الفعلية من السجلات
   const actualMileage = useMemo(() => {
