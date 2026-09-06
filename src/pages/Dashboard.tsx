@@ -95,8 +95,10 @@ const Dashboard = () => {
 
         
         <Tabs defaultValue="overview" className="w-full" dir="rtl">
-          <TabsList className="mx-auto mb-8 flex w-full max-w-2xl justify-center">
+          <TabsList className="mx-auto mb-8 flex w-full max-w-4xl flex-wrap justify-center">
             <TabsTrigger value="overview" className="flex-1">نظرة سريعة</TabsTrigger>
+            <TabsTrigger value="accounting" className="flex-1">المحاسبة</TabsTrigger>
+            <TabsTrigger value="loads" className="flex-1">إدارة الحمولات</TabsTrigger>
             <TabsTrigger value="fleet" className="flex-1">الأسطول</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
@@ -106,8 +108,37 @@ const Dashboard = () => {
             <DashboardOverview />
           </TabsContent>
 
+          <TabsContent value="accounting" dir="rtl">
+            <GroupShortcuts
+              groupKey="accounting"
+              title="المحاسبة المالية"
+              description="جميع شاشات الحسابات والقيود والتقارير المالية"
+              iconBox="bg-emerald-100 text-emerald-600"
+              hover="hover:border-emerald-200 hover:shadow-emerald-100"
+              titleIcon="text-emerald-600"
+            />
+          </TabsContent>
+
+          <TabsContent value="loads" dir="rtl">
+            <GroupShortcuts
+              groupKey="loads"
+              title="إدارة الحمولات"
+              description="جميع شاشات الحمولات والشحنات والتقارير"
+              iconBox="bg-orange-100 text-orange-600"
+              hover="hover:border-orange-200 hover:shadow-orange-100"
+              titleIcon="text-orange-600"
+            />
+          </TabsContent>
+
           <TabsContent value="fleet" dir="rtl">
-            <FleetShortcuts />
+            <GroupShortcuts
+              groupKey="fleet"
+              title="إدارة الأسطول"
+              description="جميع شاشات الأسطول والصيانة وقطع الغيار"
+              iconBox="bg-cyan-100 text-cyan-600"
+              hover="hover:border-cyan-200 hover:shadow-cyan-100"
+              titleIcon="text-cyan-600"
+            />
           </TabsContent>
 
           <TabsContent value="favorites" dir="rtl">
