@@ -218,6 +218,15 @@ export const VehicleCard = ({
         vehicleName={name}
         currentStatus={status}
       />
+
+      <VehicleServiceHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        vehicleId={id}
+        vehicleName={name}
+        licensePlate={licensePlate}
+      />
     </>
+
   );
 };
