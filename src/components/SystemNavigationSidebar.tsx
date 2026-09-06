@@ -459,9 +459,9 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                             const active = isPathActive(location.pathname, child.path);
                             return (
                               <SidebarMenuSubItem key={`${group.key}-${child.path}-${child.title}`}>
-                                <SidebarMenuSubButton asChild isActive={active} className="h-10">
+                                <SidebarMenuSubButton asChild isActive={active} className={cn("h-10 transition-colors", colors.hover)}>
                                   <NavLink to={child.path} onClick={closeMobile}>
-                                    {ChildIcon && <ChildIcon className="h-4 w-4" />}
+                                    {ChildIcon && <ChildIcon className="h-5 w-5" />}
                                     <span className="text-sm font-semibold">{child.title}</span>
                                   </NavLink>
                                 </SidebarMenuSubButton>
