@@ -55,7 +55,7 @@ const readSceneColors = (): SceneColors => {
   const styles = getComputedStyle(document.documentElement);
   const read = (name: string, fallback: string) => {
     const value = styles.getPropertyValue(name).trim();
-    return value ? `hsl(${value})` : fallback;
+    return value ? `hsl(${value.split(/\s+/).join(", ")})` : fallback;
   };
   return {
     body: read("--truck-body", DEFAULT_COLORS.body),
