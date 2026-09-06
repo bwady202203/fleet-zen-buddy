@@ -83,10 +83,8 @@ export const FavoriteShortcuts = () => {
     return (
       <Card
         key={item.path + item.title}
-        className={cn(
-          "group relative overflow-hidden border border-border/60 bg-card p-0 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-xl",
-          isPinned && "ring-1 ring-[hsl(var(--group-on-color)/0.0)]"
-        )}
+        style={{ "--group-color": `var(${colorVar})` } as React.CSSProperties}
+        className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card p-0 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-xl"
       >
         <button
           type="button"
@@ -106,13 +104,7 @@ export const FavoriteShortcuts = () => {
 
         <Link to={item.path} className="block h-full">
           <CardContent className="flex h-full flex-col items-center p-6 text-center">
-            <div
-              className={cn(
-                "mb-5 flex h-24 w-24 items-center justify-center rounded-2xl transition-colors duration-500",
-                `bg-[hsl(var(${colorVar})/0.10)] text-[hsl(var(${colorVar}))]`,
-                `group-hover:bg-[hsl(var(${colorVar}))] group-hover:text-[hsl(var(--group-on-color))]`
-              )}
-            >
+            <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-2xl bg-[hsl(var(--group-color)/0.10)] text-[hsl(var(--group-color))] transition-colors duration-500 group-hover:bg-[hsl(var(--group-color))] group-hover:text-[hsl(var(--group-on-color))]">
               <Icon className="h-12 w-12" strokeWidth={1.5} />
             </div>
 
@@ -120,20 +112,12 @@ export const FavoriteShortcuts = () => {
               {item.title}
             </h3>
 
-            <span
-              className={cn(
-                "mt-auto rounded-full px-3 py-1 text-xs font-semibold",
-                `bg-[hsl(var(${colorVar})/0.12)] text-[hsl(var(${colorVar}))]`
-              )}
-            >
+            <span className="mt-auto rounded-full bg-[hsl(var(--group-color)/0.12)] px-3 py-1 text-xs font-semibold text-[hsl(var(--group-color))]">
               {item.groupTitle}
             </span>
 
             <div
-              className={cn(
-                "absolute -bottom-4 -right-4 h-16 w-16 rounded-tl-full transition-transform duration-500 group-hover:scale-150",
-                `bg-[hsl(var(${colorVar})/0.05)]`
-              )}
+              className="absolute -bottom-4 -right-4 h-16 w-16 rounded-tl-full bg-[hsl(var(--group-color)/0.05)] transition-transform duration-500 group-hover:scale-150"
               aria-hidden="true"
             />
           </CardContent>
