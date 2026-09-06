@@ -34,6 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ElectricalWorkDialog, type ElectricalWorkData } from "@/components/maintenance/ElectricalWorkDialog";
 import { TireChangeDialog, tireLabel, type TireChangeData } from "@/components/maintenance/TireChangeDialog";
 import { OilChangeDialog } from "@/components/OilChangeDialog";
+import { PunctureDialog, type PunctureData } from "@/components/maintenance/PunctureDialog";
 
 
 export default function NewMaintenanceOrder() {
@@ -61,6 +62,8 @@ export default function NewMaintenanceOrder() {
   const [tireOpen, setTireOpen] = useState(false);
   const [tireChange, setTireChange] = useState<TireChangeData | null>(null);
   const [oilOpen, setOilOpen] = useState(false);
+  const [punctureOpen, setPunctureOpen] = useState(false);
+  const [puncture, setPuncture] = useState<PunctureData | null>(null);
 
   const buildExtraNotes = () => {
     const parts: string[] = [];
@@ -76,6 +79,13 @@ export default function NewMaintenanceOrder() {
         `تغيير الكفرات (${tireChange.date})${
           tireChange.tires.length ? ` - ${tireChange.tires.map(tireLabel).join(" ، ")}` : ""
         }${tireChange.statement ? `: ${tireChange.statement}` : ""}`
+      );
+    }
+    if (puncture) {
+      parts.push(
+        `أعمال بنشر (${puncture.date})${
+          puncture.tires.length ? ` - ${puncture.tires.map(tireLabel).join(" ، ")}` : ""
+        }${puncture.statement ? `: ${puncture.statement}` : ""}`
       );
     }
     return parts.join("\n");
@@ -132,7 +142,7 @@ export default function NewMaintenanceOrder() {
       toast({ title: "خطأ", description: "الرجاء اختيار تاريخ الصيانة", variant: "destructive" });
       return;
     }
-    if (Object.keys(selectedParts).length === 0 && !electricalWork && !tireChange) {
+    if (Object.keys(selectedParts).length === 0 && !electricalWork && !tireChange && !puncture) {
       toast({
         title: "خطأ",
         description: "الرجاء اختيار قطعة غيار أو إضافة أعمال كهرباء / تغيير كفرات",
@@ -216,6 +226,7 @@ export default function NewMaintenanceOrder() {
       setSelectedParts({});
       setElectricalWork(null);
       setTireChange(null);
+      setPuncture(null);
 
       setDescription("");
       setDate(new Date());
@@ -305,7 +316,7 @@ export default function NewMaintenanceOrder() {
           {/* أعمال إضافية */}
           <div className="space-y-3">
             <Label className="text-base font-semibold">أعمال الصيانة</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <button
                 type="button"
                 onClick={() => setElectricalOpen(true)}
@@ -357,10 +368,25 @@ export default function NewMaintenanceOrder() {
                 <span className="font-semibold">تغيير الزيت</span>
                 <span className="text-xs text-muted-foreground">تسجيل تغيير الزيت والعداد</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setPunctureOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 border rounded-xl transition-colors hover:bg-muted/50",
+                  puncture && "border-primary bg-primary/10"
+                )}
+              >
+                <Disc3 className="h-7 w-7 text-primary" />
+                <span className="font-semibold">بنشر</span>
+                <span className="text-xs text-muted-foreground">
+                  {puncture ? `${puncture.date} • ${puncture.tires.length} كفر` : "إصلاح البنشر وبيان الأعمال"}
+                </span>
+              </button>
             </div>
 
             {/* ملخص الأعمال */}
-            {(electricalWork || tireChange) && (
+            {(electricalWork || tireChange || puncture) && (
               <div className="border rounded-lg p-3 bg-muted/30 space-y-2 text-sm">
                 {electricalWork && (
                   <div className="flex items-start gap-2">
@@ -372,6 +398,20 @@ export default function NewMaintenanceOrder() {
                       )}
                       {electricalWork.statement && (
                         <div className="text-muted-foreground whitespace-pre-line">{electricalWork.statement}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {puncture && (
+                  <div className="flex items-start gap-2">
+                    <Disc3 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-semibold">أعمال بنشر — {puncture.date}</div>
+                      {puncture.tires.length > 0 && (
+                        <div className="text-muted-foreground">{puncture.tires.map(tireLabel).join(" ، ")}</div>
+                      )}
+                      {puncture.statement && (
+                        <div className="text-muted-foreground whitespace-pre-line">{puncture.statement}</div>
                       )}
                     </div>
                   </div>
@@ -639,6 +679,9 @@ export default function NewMaintenanceOrder() {
 
       {/* تغيير الكفرات */}
       <TireChangeDialog open={tireOpen} onOpenChange={setTireOpen} value={tireChange} onSave={setTireChange} />
+
+      {/* بنشر */}
+      <PunctureDialog open={punctureOpen} onOpenChange={setPunctureOpen} value={puncture} onSave={setPuncture} />
 
       {/* تغيير الزيت */}
       <OilChangeDialog
