@@ -136,9 +136,12 @@ const Dashboard = () => {
               title="إدارة الأسطول"
               description="جميع شاشات الأسطول والصيانة وقطع الغيار"
               iconBox="bg-cyan-100 text-cyan-600"
-              hover="hover:border-cyan-200 hover:shadow-cyan-100"
+              hover="hover:border-cyan-200"
               titleIcon="text-cyan-600"
+              variant="plain"
+              iconColor="text-cyan-500"
             />
+
           </TabsContent>
 
           <TabsContent value="favorites" dir="rtl">
