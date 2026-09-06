@@ -70,6 +70,22 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Module accent colors for favorites / categorization (HSL values) */
+    --group-home: 217 91% 60%;
+    --group-accounting: 142 76% 36%;
+    --group-trade-invoices: 38 92% 50%;
+    --group-closing: 263 70% 58%;
+    --group-vouchers: 0 84% 60%;
+    --group-hr: 199 89% 48%;
+    --group-fleet: 258 90% 66%;
+    --group-loads: 25 95% 53%;
+    --group-custody: 173 80% 36%;
+    --group-zatca: 226 71% 40%;
+    --group-admin: 220 9% 46%;
+    --group-projects: 142 71% 45%;
+    --group-settings: 220 9% 46%;
+    --group-on-color: 0 0% 100%;
   }
 
   .dark {
