@@ -114,7 +114,12 @@ export const VehicleCard = ({
       <Card className={`hover:shadow-lg transition-shadow ${getCardColorClass()}`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setHistoryDialogOpen(true)}
+              className="flex items-center gap-3 text-right rounded-lg transition-colors hover:bg-muted/50 p-1 -m-1"
+              title="عرض سجل الصيانة"
+            >
               <div className="p-2 rounded-lg bg-primary/10">
                 <Truck className="h-6 w-6 text-primary" />
               </div>
@@ -122,11 +127,20 @@ export const VehicleCard = ({
                 <CardTitle className="text-lg">{name}</CardTitle>
                 <p className="text-sm text-muted-foreground">{licensePlate}</p>
               </div>
-            </div>
+            </button>
             <div className="flex gap-2 items-center">
               <Badge className={getStatusColor()}>
                 {getStatusText()}
               </Badge>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => setHistoryDialogOpen(true)}
+                title="سجل الصيانة"
+              >
+                <History className="h-4 w-4" />
+              </Button>
               <Button 
                 size="icon" 
                 variant="ghost" 
@@ -137,6 +151,7 @@ export const VehicleCard = ({
               </Button>
             </div>
           </div>
+
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
