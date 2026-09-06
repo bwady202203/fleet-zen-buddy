@@ -373,7 +373,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   const collapsed = state === "collapsed";
 
   const visibleGroups = useMemo(
-    () => navigationGroups.filter((group) => !group.module || hasPermission(group.module, "view")),
+    () => navigationGroups.filter((group) => group.key !== "fleet" && (!group.module || hasPermission(group.module, "view"))),
     [hasPermission],
   );
 

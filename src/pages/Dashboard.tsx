@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/StatsCard";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
+import FleetShortcuts from "@/components/dashboard/FleetShortcuts";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
@@ -96,12 +97,17 @@ const Dashboard = () => {
         <Tabs defaultValue="overview" className="w-full" dir="rtl">
           <TabsList className="mx-auto mb-8 flex w-full max-w-2xl justify-center">
             <TabsTrigger value="overview" className="flex-1">نظرة سريعة</TabsTrigger>
+            <TabsTrigger value="fleet" className="flex-1">الأسطول</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" dir="rtl">
             <DashboardOverview />
+          </TabsContent>
+
+          <TabsContent value="fleet" dir="rtl">
+            <FleetShortcuts />
           </TabsContent>
 
           <TabsContent value="favorites" dir="rtl">
