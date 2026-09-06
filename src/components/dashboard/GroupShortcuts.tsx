@@ -11,10 +11,14 @@ type GroupShortcutsProps = {
   iconBox: string; // مثال: "bg-orange-100 text-orange-600"
   hover: string; // مثال: "hover:border-orange-200 hover:shadow-orange-100"
   titleIcon: string; // مثال: "text-orange-600"
+  // نمط البطاقات: "boxed" (افتراضي) أو "plain" (أيقونة كبيرة بدون مربع خلفية)
+  variant?: "boxed" | "plain";
+  iconColor?: string; // مثال: "text-cyan-500" (يستخدم مع plain)
 };
 
 // مربعات شاشات أي مجموعة تنقلات في الشاشة الرئيسية (الأسطول، المحاسبة، الحمولات...)
-const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIcon }: GroupShortcutsProps) => {
+const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIcon, variant = "boxed", iconColor = "" }: GroupShortcutsProps) => {
+
   const { hasPermission } = usePermissions();
   const group = navigationGroups.find((g) => g.key === groupKey);
 
@@ -36,9 +40,24 @@ const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIco
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
         {group.children.map((child) => {
           const ChildIcon = child.icon ?? LayoutGrid;
+          if (variant === "plain") {
+            return (
+              <Link
+                key={child.path}
+                to={child.path}
+                className={`group flex flex-col items-center justify-center gap-4 rounded-2xl border border-border/40 bg-card px-4 py-8 text-center shadow-[0_2px_10px_-4px_hsl(var(--foreground)/0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_-12px_hsl(var(--foreground)/0.22)] ${hover}`}
+              >
+                <ChildIcon
+                  className={`h-14 w-14 transition-transform duration-300 group-hover:scale-110 ${iconColor}`}
+                  strokeWidth={1.5}
+                />
+                <span className="text-base font-bold leading-snug text-foreground">{child.title}</span>
+              </Link>
+            );
+          }
           return (
             <Link
               key={child.path}
@@ -55,6 +74,7 @@ const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIco
           );
         })}
       </div>
+
     </div>
   );
 };
