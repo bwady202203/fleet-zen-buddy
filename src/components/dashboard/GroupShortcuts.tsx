@@ -50,10 +50,13 @@ const GroupShortcuts = ({ groupKey, title, description, iconBox, hover, titleIco
               <Link
                 key={child.path}
                 to={child.path}
-                className={`group flex flex-col items-center justify-center gap-4 rounded-2xl border border-border/40 bg-card px-4 py-8 text-center shadow-[0_2px_10px_-4px_hsl(var(--foreground)/0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_-12px_hsl(var(--foreground)/0.22)] ${hover}`}
+                className={`group flex flex-col items-center justify-center gap-4 rounded-[20px] border border-border/40 bg-card px-4 py-8 text-center shadow-[0_10px_28px_-14px_hsl(var(--foreground)/0.18)] transition-all duration-300 hover:-translate-y-2 hover:border-[#2EC4B6] hover:shadow-[0_18px_36px_-14px_rgba(18,143,134,0.45)] active:translate-y-0 active:scale-[0.98] ${hover}`}
               >
-                <CustomIcon className="h-16 w-16 transition-transform duration-300 group-hover:scale-110" />
-                <span className="text-base font-bold leading-snug text-foreground">{child.title}</span>
+                <CustomIcon className="h-[72px] w-[72px] drop-shadow-[0_8px_10px_rgba(20,120,120,0.22)] transition-all duration-300 group-hover:-rotate-[4deg] group-hover:scale-110 group-hover:drop-shadow-[0_12px_16px_rgba(18,143,134,0.35)]" />
+                <span className="text-base font-bold leading-snug text-foreground transition-colors duration-300 group-hover:text-[#128F86]">
+                  {child.title}
+                </span>
+
               </Link>
             );
           }
