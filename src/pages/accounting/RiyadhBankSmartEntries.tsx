@@ -496,6 +496,7 @@ export default function RiyadhBankSmartEntries() {
       }
 
       toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join("، ")})`);
+      snapshot(rows);
       setRows([]);
       setRawData("");
     } catch (e: any) {
