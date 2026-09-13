@@ -539,8 +539,14 @@ export default function RiyadhBankSmartEntries() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handleUndo} disabled={history.length === 0} title="تراجع عن آخر تغيير">
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={selectedCount === 0} title="معاينة القيود قبل الحفظ">
+              <Eye className="h-4 w-4 ml-1" /> معاينة
+            </Button>
             {rows.length > 0 && (
-              <Button variant="outline" onClick={() => setRows([])}>
+              <Button variant="outline" onClick={() => { snapshot(rows); setRows([]); }}>
                 <Trash2 className="h-4 w-4 ml-1" /> مسح
               </Button>
             )}
