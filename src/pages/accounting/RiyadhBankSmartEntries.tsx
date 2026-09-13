@@ -223,8 +223,10 @@ export default function RiyadhBankSmartEntries() {
     setCreditPickerOpen(false);
   };
 
-  const setRowAccount = (index: number, id: string) =>
+  const setRowAccount = (index: number, id: string) => {
+    snapshot(rows);
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
+  };
 
   const applyFavoriteAccount = (id: string) => {
     let idx = focusedRow;
