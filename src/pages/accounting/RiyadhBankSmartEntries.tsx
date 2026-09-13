@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, Undo2, Eye } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, Undo2, Eye, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +44,7 @@ const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
 const FAV_STORAGE_KEY = "riyadh_bank_fav_accounts_v1";
 const CREDIT_STORAGE_KEY = "riyadh_bank_credit_account_v1";
 const FAV_SETS_STORAGE_KEY = "riyadh_bank_fav_sets_v1";
+const LAST_BATCH_STORAGE_KEY = "riyadh_bank_last_batch_v1";
 
 interface FavSet {
   name: string;
@@ -122,6 +123,12 @@ export default function RiyadhBankSmartEntries() {
   // التراجع + المعاينة
   const [history, setHistory] = useState<PaymentRow[][]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // التراجع عن آخر ترحيل
+  const [lastBatchIds, setLastBatchIds] = useState<string[]>([]);
+  const [lastBatchRows, setLastBatchRows] = useState<PaymentRow[] | null>(null);
+  const [undoPostOpen, setUndoPostOpen] = useState(false);
+  const [undoPostCode, setUndoPostCode] = useState("");
+  const [isUndoingPost, setIsUndoingPost] = useState(false);
 
   const snapshot = (current: PaymentRow[]) =>
     setHistory((h) => [...h.slice(-29), current]);
@@ -150,6 +157,12 @@ export default function RiyadhBankSmartEntries() {
       if (c) setCreditAccountId(c);
       const s = localStorage.getItem(FAV_SETS_STORAGE_KEY);
       if (s) setFavSets(JSON.parse(s));
+      const lb = localStorage.getItem(LAST_BATCH_STORAGE_KEY);
+      if (lb) {
+        const parsed = JSON.parse(lb);
+        if (Array.isArray(parsed?.ids)) setLastBatchIds(parsed.ids);
+        if (Array.isArray(parsed?.rows)) setLastBatchRows(parsed.rows);
+      }
     } catch {
       // تجاهل
     }
@@ -457,6 +470,7 @@ export default function RiyadhBankSmartEntries() {
     setIsSaving(true);
     try {
       const savedNumbers: string[] = [];
+      const savedIds: string[] = [];
       for (const dateKey of Array.from(groups.keys()).sort()) {
         const groupRows = groups.get(dateKey)!;
         const yearOfEntry = new Date(dateKey).getFullYear();
@@ -509,7 +523,12 @@ export default function RiyadhBankSmartEntries() {
         const { error: linesError } = await supabase.from("journal_entry_lines").insert(lines);
         if (linesError) throw linesError;
         savedNumbers.push(entryNumber);
+        savedIds.push(journalEntry.id);
       }
+
+      localStorage.setItem(LAST_BATCH_STORAGE_KEY, JSON.stringify({ ids: savedIds, rows: valid }));
+      setLastBatchIds(savedIds);
+      setLastBatchRows(valid);
 
       toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join("، ")})`);
       snapshot(rows);
@@ -519,6 +538,44 @@ export default function RiyadhBankSmartEntries() {
       toast.error("خطأ في حفظ القيود: " + e.message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // التراجع عن آخر ترحيل (حذف قيود آخر عملية حفظ)
+  const handleUndoPost = async () => {
+    if (undoPostCode !== "363636") {
+      toast.error("الرمز السري غير صحيح");
+      return;
+    }
+    if (lastBatchIds.length === 0) return;
+    setIsUndoingPost(true);
+    try {
+      const { error: linesError } = await supabase
+        .from("journal_entry_lines")
+        .delete()
+        .in("journal_entry_id", lastBatchIds);
+      if (linesError) throw linesError;
+
+      const { error: entriesError } = await supabase
+        .from("journal_entries")
+        .delete()
+        .in("id", lastBatchIds);
+      if (entriesError) throw entriesError;
+
+      toast.success(`تم التراجع عن آخر ترحيل وحذف ${lastBatchIds.length} قيد`);
+      if (lastBatchRows) {
+        setRows(lastBatchRows);
+        toast.success("تمت استعادة العمليات إلى الشاشة للمراجعة");
+      }
+      setLastBatchIds([]);
+      setLastBatchRows(null);
+      localStorage.removeItem(LAST_BATCH_STORAGE_KEY);
+      setUndoPostOpen(false);
+      setUndoPostCode("");
+    } catch (e: any) {
+      toast.error("خطأ في التراجع عن الترحيل: " + e.message);
+    } finally {
+      setIsUndoingPost(false);
     }
   };
 
@@ -559,6 +616,16 @@ export default function RiyadhBankSmartEntries() {
             <Button variant="outline" size="icon" onClick={handleUndo} disabled={history.length === 0} title="تراجع عن آخر تغيير">
               <Undo2 className="h-4 w-4" />
             </Button>
+            {lastBatchIds.length > 0 && (
+              <Button
+                variant="outline"
+                className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                onClick={() => { setUndoPostCode(""); setUndoPostOpen(true); }}
+                title="حذف قيود آخر ترحيل واستعادة العمليات"
+              >
+                <RotateCcw className="h-4 w-4 ml-1" /> تراجع عن آخر ترحيل ({lastBatchIds.length})
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={selectedCount === 0} title="معاينة القيود قبل الحفظ">
               <Eye className="h-4 w-4 ml-1" /> معاينة
             </Button>
@@ -1166,6 +1233,37 @@ export default function RiyadhBankSmartEntries() {
               {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
               اعتماد وحفظ القيود
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* تأكيد التراجع عن آخر ترحيل */}
+      <Dialog open={undoPostOpen} onOpenChange={setUndoPostOpen}>
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base text-right">التراجع عن آخر ترحيل</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              سيتم حذف {lastBatchIds.length} قيد من آخر عملية حفظ واستعادة العمليات إلى الشاشة. أدخل الرمز السري للتأكيد:
+            </p>
+            <Input
+              type="password"
+              inputMode="numeric"
+              autoFocus
+              value={undoPostCode}
+              onChange={(e) => setUndoPostCode(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleUndoPost()}
+              placeholder="الرمز السري"
+              className="text-center"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setUndoPostOpen(false)}>إلغاء</Button>
+              <Button variant="destructive" onClick={handleUndoPost} disabled={isUndoingPost || !undoPostCode}>
+                {isUndoingPost ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <RotateCcw className="h-4 w-4 ml-1" />}
+                تأكيد التراجع
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
