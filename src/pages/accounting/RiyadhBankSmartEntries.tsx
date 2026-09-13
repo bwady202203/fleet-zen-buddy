@@ -419,6 +419,22 @@ export default function RiyadhBankSmartEntries() {
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [rows]);
 
+  const previewGroups = useMemo(() => {
+    const map = new Map<string, PaymentRow[]>();
+    for (const r of rows) {
+      if (!r.selectedAccountId || !r.amount) continue;
+      if (!map.has(r.payDate)) map.set(r.payDate, []);
+      map.get(r.payDate)!.push(r);
+    }
+    return Array.from(map.entries())
+      .map(([date, groupRows]) => ({
+        date,
+        rows: groupRows,
+        total: groupRows.reduce((s, r) => s + r.amount, 0),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [rows]);
+
   const totalAmount = rows.reduce((s, r) => s + r.amount, 0);
   const selectedCount = rows.filter((r) => r.selectedAccountId).length;
 
