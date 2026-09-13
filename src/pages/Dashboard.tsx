@@ -145,6 +145,17 @@ const Dashboard = () => {
 
           </TabsContent>
 
+          <TabsContent value="hr" dir="rtl">
+            <GroupShortcuts
+              groupKey="hr"
+              title="الموارد البشرية"
+              description="جميع شاشات الموظفين والرواتب والسلف والحضور"
+              iconBox="bg-rose-100 text-rose-600"
+              hover="hover:border-rose-200 hover:shadow-rose-100"
+              titleIcon="text-rose-600"
+            />
+          </TabsContent>
+
           <TabsContent value="favorites" dir="rtl">
             <FavoriteShortcuts />
           </TabsContent>
