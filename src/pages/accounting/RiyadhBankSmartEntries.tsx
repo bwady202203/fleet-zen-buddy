@@ -541,6 +541,44 @@ export default function RiyadhBankSmartEntries() {
     }
   };
 
+  // التراجع عن آخر ترحيل (حذف قيود آخر عملية حفظ)
+  const handleUndoPost = async () => {
+    if (undoPostCode !== "363636") {
+      toast.error("الرمز السري غير صحيح");
+      return;
+    }
+    if (lastBatchIds.length === 0) return;
+    setIsUndoingPost(true);
+    try {
+      const { error: linesError } = await supabase
+        .from("journal_entry_lines")
+        .delete()
+        .in("journal_entry_id", lastBatchIds);
+      if (linesError) throw linesError;
+
+      const { error: entriesError } = await supabase
+        .from("journal_entries")
+        .delete()
+        .in("id", lastBatchIds);
+      if (entriesError) throw entriesError;
+
+      toast.success(`تم التراجع عن آخر ترحيل وحذف ${lastBatchIds.length} قيد`);
+      if (lastBatchRows) {
+        setRows(lastBatchRows);
+        toast.success("تمت استعادة العمليات إلى الشاشة للمراجعة");
+      }
+      setLastBatchIds([]);
+      setLastBatchRows(null);
+      localStorage.removeItem(LAST_BATCH_STORAGE_KEY);
+      setUndoPostOpen(false);
+      setUndoPostCode("");
+    } catch (e: any) {
+      toast.error("خطأ في التراجع عن الترحيل: " + e.message);
+    } finally {
+      setIsUndoingPost(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" dir="rtl">
