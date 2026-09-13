@@ -1076,6 +1076,83 @@ export default function RiyadhBankSmartEntries() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* معاينة القيود قبل الحفظ */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">معاينة القيود المحاسبية</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+            {previewGroups.map((g) => (
+              <Card key={g.date} className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-sm">قيد تاريخ {g.date}</span>
+                  <span className="text-xs text-muted-foreground">{g.rows.length} عملية</span>
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="text-right py-1">الحساب</th>
+                      <th className="text-right py-1">البيان</th>
+                      <th className="text-left py-1">مدين</th>
+                      <th className="text-left py-1">دائن</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.rows.map((r, i) => {
+                      const acc = getAccount(r.selectedAccountId);
+                      return (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="py-1.5">
+                            <span className="font-mono text-muted-foreground">{acc?.code}</span> {acc?.name_ar}
+                          </td>
+                          <td className="py-1.5 text-muted-foreground">
+                            {r.description?.trim() || `${r.toName}${r.reference ? " - " + r.reference : ""}`}
+                          </td>
+                          <td className="py-1.5 text-left font-semibold">
+                            {r.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-1.5 text-left">-</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-emerald-50">
+                      <td className="py-1.5">
+                        <span className="font-mono text-muted-foreground">{getAccount(creditAccountId)?.code}</span>{" "}
+                        {getAccount(creditAccountId)?.name_ar || "بنك الرياض"}
+                      </td>
+                      <td className="py-1.5 text-muted-foreground">
+                        تحويلات {getAccount(creditAccountId)?.name_ar || "بنك الرياض"} - {g.date}
+                      </td>
+                      <td className="py-1.5 text-left">-</td>
+                      <td className="py-1.5 text-left font-semibold">
+                        {g.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </Card>
+            ))}
+          </div>
+          <div className="shrink-0 flex items-center justify-between border-t pt-3">
+            <span className="text-sm font-semibold">
+              عدد القيود: {previewGroups.length} · الإجمالي:{" "}
+              {previewGroups.reduce((s, g) => s + g.total, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            </span>
+            <Button
+              onClick={() => {
+                setPreviewOpen(false);
+                handleSave();
+              }}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
+              اعتماد وحفظ القيود
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
