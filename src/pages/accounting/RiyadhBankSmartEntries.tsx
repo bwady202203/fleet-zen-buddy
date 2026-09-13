@@ -458,7 +458,9 @@ export default function RiyadhBankSmartEntries() {
       return;
     }
     if (valid.length < rows.length) {
-      toast.error(`${rows.length - valid.length} عملية بدون حساب — سيتم تجاهلها`);
+      toast.warning(
+        `${rows.length - valid.length} عملية بدون حساب مدين — سيتم حفظ الباقي وستبقى هذه العمليات على الشاشة لاختيار الحساب`
+      );
     }
 
     const groups = new Map<string, PaymentRow[]>();
