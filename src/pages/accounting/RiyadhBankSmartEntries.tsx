@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2 } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, Undo2, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +119,22 @@ export default function RiyadhBankSmartEntries() {
   const [activeFavSet, setActiveFavSet] = useState<string | null>(null);
   const [saveSetOpen, setSaveSetOpen] = useState(false);
   const [newSetName, setNewSetName] = useState("");
+  // التراجع + المعاينة
+  const [history, setHistory] = useState<PaymentRow[][]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const snapshot = (current: PaymentRow[]) =>
+    setHistory((h) => [...h.slice(-29), current]);
+
+  const handleUndo = () => {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const last = h[h.length - 1];
+      setRows(last);
+      toast.success("تم التراجع عن آخر تغيير");
+      return h.slice(0, -1);
+    });
+  };
 
   const copyClicksRef = useRef<Record<number, number>>({});
 
@@ -207,8 +223,10 @@ export default function RiyadhBankSmartEntries() {
     setCreditPickerOpen(false);
   };
 
-  const setRowAccount = (index: number, id: string) =>
+  const setRowAccount = (index: number, id: string) => {
+    snapshot(rows);
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, selectedAccountId: id } : r)));
+  };
 
   const applyFavoriteAccount = (id: string) => {
     let idx = focusedRow;
@@ -235,6 +253,7 @@ export default function RiyadhBankSmartEntries() {
       return;
     }
     copyClicksRef.current = { ...copyClicksRef.current, [index]: nextCount };
+    snapshot(rows);
     setRows((prev) => prev.map((r, i) => (i === targetIndex ? { ...r, selectedAccountId: id } : r)));
     toast.success(`تم نسخ الحساب إلى الصف ${targetIndex + 1}`);
   };
@@ -367,6 +386,7 @@ export default function RiyadhBankSmartEntries() {
       return;
     }
 
+    snapshot(rows);
     setRows(parsed);
     const matched = parsed.filter((r) => r.selectedAccountId).length;
     toast.success(`تم تحليل ${parsed.length} عملية — تم مطابقة ${matched} حساب تلقائياً`);
@@ -396,6 +416,22 @@ export default function RiyadhBankSmartEntries() {
     }
     return Array.from(map.entries())
       .map(([date, v]) => ({ date, ...v }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [rows]);
+
+  const previewGroups = useMemo(() => {
+    const map = new Map<string, PaymentRow[]>();
+    for (const r of rows) {
+      if (!r.selectedAccountId || !r.amount) continue;
+      if (!map.has(r.payDate)) map.set(r.payDate, []);
+      map.get(r.payDate)!.push(r);
+    }
+    return Array.from(map.entries())
+      .map(([date, groupRows]) => ({
+        date,
+        rows: groupRows,
+        total: groupRows.reduce((s, r) => s + r.amount, 0),
+      }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [rows]);
 
@@ -476,6 +512,7 @@ export default function RiyadhBankSmartEntries() {
       }
 
       toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join("، ")})`);
+      snapshot(rows);
       setRows([]);
       setRawData("");
     } catch (e: any) {
@@ -519,8 +556,14 @@ export default function RiyadhBankSmartEntries() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handleUndo} disabled={history.length === 0} title="تراجع عن آخر تغيير">
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={selectedCount === 0} title="معاينة القيود قبل الحفظ">
+              <Eye className="h-4 w-4 ml-1" /> معاينة
+            </Button>
             {rows.length > 0 && (
-              <Button variant="outline" onClick={() => setRows([])}>
+              <Button variant="outline" onClick={() => { snapshot(rows); setRows([]); }}>
                 <Trash2 className="h-4 w-4 ml-1" /> مسح
               </Button>
             )}
@@ -1046,6 +1089,83 @@ export default function RiyadhBankSmartEntries() {
                   <span className="font-mono text-muted-foreground">{a.code}</span> — {a.name_ar}
                 </button>
               ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* معاينة القيود قبل الحفظ */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col" dir="rtl">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-right">معاينة القيود المحاسبية</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+            {previewGroups.map((g) => (
+              <Card key={g.date} className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-sm">قيد تاريخ {g.date}</span>
+                  <span className="text-xs text-muted-foreground">{g.rows.length} عملية</span>
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="text-right py-1">الحساب</th>
+                      <th className="text-right py-1">البيان</th>
+                      <th className="text-left py-1">مدين</th>
+                      <th className="text-left py-1">دائن</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.rows.map((r, i) => {
+                      const acc = getAccount(r.selectedAccountId);
+                      return (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="py-1.5">
+                            <span className="font-mono text-muted-foreground">{acc?.code}</span> {acc?.name_ar}
+                          </td>
+                          <td className="py-1.5 text-muted-foreground">
+                            {r.description?.trim() || `${r.toName}${r.reference ? " - " + r.reference : ""}`}
+                          </td>
+                          <td className="py-1.5 text-left font-semibold">
+                            {r.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-1.5 text-left">-</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-emerald-50">
+                      <td className="py-1.5">
+                        <span className="font-mono text-muted-foreground">{getAccount(creditAccountId)?.code}</span>{" "}
+                        {getAccount(creditAccountId)?.name_ar || "بنك الرياض"}
+                      </td>
+                      <td className="py-1.5 text-muted-foreground">
+                        تحويلات {getAccount(creditAccountId)?.name_ar || "بنك الرياض"} - {g.date}
+                      </td>
+                      <td className="py-1.5 text-left">-</td>
+                      <td className="py-1.5 text-left font-semibold">
+                        {g.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </Card>
+            ))}
+          </div>
+          <div className="shrink-0 flex items-center justify-between border-t pt-3">
+            <span className="text-sm font-semibold">
+              عدد القيود: {previewGroups.length} · الإجمالي:{" "}
+              {previewGroups.reduce((s, g) => s + g.total, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            </span>
+            <Button
+              onClick={() => {
+                setPreviewOpen(false);
+                handleSave();
+              }}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
+              اعتماد وحفظ القيود
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
