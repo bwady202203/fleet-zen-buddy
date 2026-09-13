@@ -1236,6 +1236,37 @@ export default function RiyadhBankSmartEntries() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* تأكيد التراجع عن آخر ترحيل */}
+      <Dialog open={undoPostOpen} onOpenChange={setUndoPostOpen}>
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base text-right">التراجع عن آخر ترحيل</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              سيتم حذف {lastBatchIds.length} قيد من آخر عملية حفظ واستعادة العمليات إلى الشاشة. أدخل الرمز السري للتأكيد:
+            </p>
+            <Input
+              type="password"
+              inputMode="numeric"
+              autoFocus
+              value={undoPostCode}
+              onChange={(e) => setUndoPostCode(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleUndoPost()}
+              placeholder="الرمز السري"
+              className="text-center"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setUndoPostOpen(false)}>إلغاء</Button>
+              <Button variant="destructive" onClick={handleUndoPost} disabled={isUndoingPost || !undoPostCode}>
+                {isUndoingPost ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <RotateCcw className="h-4 w-4 ml-1" />}
+                تأكيد التراجع
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
