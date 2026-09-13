@@ -100,6 +100,7 @@ const Dashboard = () => {
             <TabsTrigger value="accounting" className="flex-1">المحاسبة</TabsTrigger>
             <TabsTrigger value="loads" className="flex-1">إدارة الحمولات</TabsTrigger>
             <TabsTrigger value="fleet" className="flex-1">الأسطول</TabsTrigger>
+            <TabsTrigger value="hr" className="flex-1">الموارد البشرية</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
           </TabsList>
