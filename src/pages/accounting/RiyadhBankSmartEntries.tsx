@@ -122,6 +122,12 @@ export default function RiyadhBankSmartEntries() {
   // التراجع + المعاينة
   const [history, setHistory] = useState<PaymentRow[][]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // التراجع عن آخر ترحيل
+  const [lastBatchIds, setLastBatchIds] = useState<string[]>([]);
+  const [lastBatchRows, setLastBatchRows] = useState<PaymentRow[] | null>(null);
+  const [undoPostOpen, setUndoPostOpen] = useState(false);
+  const [undoPostCode, setUndoPostCode] = useState("");
+  const [isUndoingPost, setIsUndoingPost] = useState(false);
 
   const snapshot = (current: PaymentRow[]) =>
     setHistory((h) => [...h.slice(-29), current]);
