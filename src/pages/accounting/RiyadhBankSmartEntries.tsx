@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, Undo2, Eye } from "lucide-react";
+import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, Undo2, Eye, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -616,6 +616,16 @@ export default function RiyadhBankSmartEntries() {
             <Button variant="outline" size="icon" onClick={handleUndo} disabled={history.length === 0} title="تراجع عن آخر تغيير">
               <Undo2 className="h-4 w-4" />
             </Button>
+            {lastBatchIds.length > 0 && (
+              <Button
+                variant="outline"
+                className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                onClick={() => { setUndoPostCode(""); setUndoPostOpen(true); }}
+                title="حذف قيود آخر ترحيل واستعادة العمليات"
+              >
+                <RotateCcw className="h-4 w-4 ml-1" /> تراجع عن آخر ترحيل ({lastBatchIds.length})
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={selectedCount === 0} title="معاينة القيود قبل الحفظ">
               <Eye className="h-4 w-4 ml-1" /> معاينة
             </Button>
