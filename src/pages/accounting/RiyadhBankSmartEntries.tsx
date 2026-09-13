@@ -523,7 +523,12 @@ export default function RiyadhBankSmartEntries() {
         const { error: linesError } = await supabase.from("journal_entry_lines").insert(lines);
         if (linesError) throw linesError;
         savedNumbers.push(entryNumber);
+        savedIds.push(journalEntry.id);
       }
+
+      localStorage.setItem(LAST_BATCH_STORAGE_KEY, JSON.stringify({ ids: savedIds, rows: valid }));
+      setLastBatchIds(savedIds);
+      setLastBatchRows(valid);
 
       toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join("، ")})`);
       snapshot(rows);
