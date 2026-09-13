@@ -119,6 +119,22 @@ export default function RiyadhBankSmartEntries() {
   const [activeFavSet, setActiveFavSet] = useState<string | null>(null);
   const [saveSetOpen, setSaveSetOpen] = useState(false);
   const [newSetName, setNewSetName] = useState("");
+  // التراجع + المعاينة
+  const [history, setHistory] = useState<PaymentRow[][]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const snapshot = (current: PaymentRow[]) =>
+    setHistory((h) => [...h.slice(-29), current]);
+
+  const handleUndo = () => {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const last = h[h.length - 1];
+      setRows(last);
+      toast.success("تم التراجع عن آخر تغيير");
+      return h.slice(0, -1);
+    });
+  };
 
   const copyClicksRef = useRef<Record<number, number>>({});
 
