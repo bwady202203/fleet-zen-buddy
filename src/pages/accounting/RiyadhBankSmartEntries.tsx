@@ -44,6 +44,7 @@ const TILES_STORAGE_KEY = "riyadh_bank_tile_groups_v1";
 const FAV_STORAGE_KEY = "riyadh_bank_fav_accounts_v1";
 const CREDIT_STORAGE_KEY = "riyadh_bank_credit_account_v1";
 const FAV_SETS_STORAGE_KEY = "riyadh_bank_fav_sets_v1";
+const LAST_BATCH_STORAGE_KEY = "riyadh_bank_last_batch_v1";
 
 interface FavSet {
   name: string;
@@ -156,6 +157,12 @@ export default function RiyadhBankSmartEntries() {
       if (c) setCreditAccountId(c);
       const s = localStorage.getItem(FAV_SETS_STORAGE_KEY);
       if (s) setFavSets(JSON.parse(s));
+      const lb = localStorage.getItem(LAST_BATCH_STORAGE_KEY);
+      if (lb) {
+        const parsed = JSON.parse(lb);
+        if (Array.isArray(parsed?.ids)) setLastBatchIds(parsed.ids);
+        if (Array.isArray(parsed?.rows)) setLastBatchRows(parsed.rows);
+      }
     } catch {
       // تجاهل
     }
