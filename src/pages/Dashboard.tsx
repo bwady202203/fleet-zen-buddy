@@ -100,6 +100,7 @@ const Dashboard = () => {
             <TabsTrigger value="accounting" className="flex-1">المحاسبة</TabsTrigger>
             <TabsTrigger value="loads" className="flex-1">إدارة الحمولات</TabsTrigger>
             <TabsTrigger value="fleet" className="flex-1">الأسطول</TabsTrigger>
+            <TabsTrigger value="hr" className="flex-1">الموارد البشرية</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
           </TabsList>
@@ -142,6 +143,17 @@ const Dashboard = () => {
               iconColor="text-cyan-500"
             />
 
+          </TabsContent>
+
+          <TabsContent value="hr" dir="rtl">
+            <GroupShortcuts
+              groupKey="hr"
+              title="الموارد البشرية"
+              description="جميع شاشات الموظفين والرواتب والسلف والحضور"
+              iconBox="bg-rose-100 text-rose-600"
+              hover="hover:border-rose-200 hover:shadow-rose-100"
+              titleIcon="text-rose-600"
+            />
           </TabsContent>
 
           <TabsContent value="favorites" dir="rtl">
