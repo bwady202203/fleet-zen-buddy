@@ -253,6 +253,7 @@ export default function RiyadhBankSmartEntries() {
       return;
     }
     copyClicksRef.current = { ...copyClicksRef.current, [index]: nextCount };
+    snapshot(rows);
     setRows((prev) => prev.map((r, i) => (i === targetIndex ? { ...r, selectedAccountId: id } : r)));
     toast.success(`تم نسخ الحساب إلى الصف ${targetIndex + 1}`);
   };
@@ -385,6 +386,7 @@ export default function RiyadhBankSmartEntries() {
       return;
     }
 
+    snapshot(rows);
     setRows(parsed);
     const matched = parsed.filter((r) => r.selectedAccountId).length;
     toast.success(`تم تحليل ${parsed.length} عملية — تم مطابقة ${matched} حساب تلقائياً`);
