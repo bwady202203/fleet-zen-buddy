@@ -79,6 +79,7 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "القيود اليومية", path: "/accounting/journal-entries", icon: FileText },
       { title: "قيود ذكية", path: "/accounting/smart-journal", icon: Calculator },
       { title: "قيد بمستند", path: "/accounting/journal-document-entry", icon: FileCheck2 },
+      { title: "أرشيف الفواتير والمستندات", path: "/documents-archive", icon: FileText },
       { title: "تقارير القيود", path: "/accounting/journal-entries-reports", icon: BarChart3 },
       { title: "طلبات التحويل", path: "/accounting/transfer-requests", icon: Landmark },
       { title: "أرشيف التحويلات", path: "/accounting/transfer-requests-archive", icon: ClipboardList },

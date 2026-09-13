@@ -278,6 +278,60 @@ export type Database = {
           },
         ]
       }
+      archived_documents: {
+        Row: {
+          amount: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          doc_date: string | null
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          organization_id: string | null
+          party_name: string | null
+          reference_number: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          doc_date?: string | null
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          organization_id?: string | null
+          party_name?: string | null
+          reference_number?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          doc_date?: string | null
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          organization_id?: string | null
+          party_name?: string | null
+          reference_number?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           attendance_date: string
