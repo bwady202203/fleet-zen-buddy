@@ -534,8 +534,13 @@ export default function RiyadhBankSmartEntries() {
 
       toast.success(`تم حفظ ${savedNumbers.length} قيد بنجاح (${savedNumbers.join("، ")})`);
       snapshot(rows);
-      setRows([]);
-      setRawData("");
+      const remaining = rows.filter((r) => !(r.selectedAccountId && r.amount));
+      setRows(remaining);
+      if (remaining.length === 0) {
+        setRawData("");
+      } else {
+        toast.warning(`بقيت ${remaining.length} عملية بدون حساب مدين — اختر لها الحساب ثم احفظ مرة أخرى`);
+      }
     } catch (e: any) {
       toast.error("خطأ في حفظ القيود: " + e.message);
     } finally {
