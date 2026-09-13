@@ -470,6 +470,7 @@ export default function RiyadhBankSmartEntries() {
     setIsSaving(true);
     try {
       const savedNumbers: string[] = [];
+      const savedIds: string[] = [];
       for (const dateKey of Array.from(groups.keys()).sort()) {
         const groupRows = groups.get(dateKey)!;
         const yearOfEntry = new Date(dateKey).getFullYear();
