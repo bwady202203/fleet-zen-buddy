@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import * as HijriDate from "hijri-converter";
 import { supabase } from "@/integrations/supabase/client";
+import { getHomePathForPath } from "@/lib/homeTab";
 import { toast } from "sonner";
 import wizerLogo from "@/assets/wizer-logo.png.asset.json";
 
