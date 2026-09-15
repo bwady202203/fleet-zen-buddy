@@ -1965,13 +1965,22 @@ const JournalEntries = () => {
                             {entry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell className="text-center no-print">
-                            <div className="flex gap-2 justify-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleViewDetails(entry)}
-                                title="تعديل / Edit"
-                              >
+                             <div className="flex gap-2 justify-center">
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 onClick={() => setDocumentsEntry(entry)}
+                                 title="مستندات القيد"
+                                 className="text-primary hover:bg-primary/10"
+                               >
+                                 <Paperclip className="h-4 w-4" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 onClick={() => handleViewDetails(entry)}
+                                 title="تعديل / Edit"
+                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
