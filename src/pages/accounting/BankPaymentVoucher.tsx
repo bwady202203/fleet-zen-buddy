@@ -95,6 +95,7 @@ export default function BankPaymentVoucher() {
   const [lines, setLines] = useState<VoucherLine[]>([newLine()]);
 
   const [previewVoucher, setPreviewVoucher] = useState<Voucher | null>(null);
+  const [documentsVoucher, setDocumentsVoucher] = useState<Voucher | null>(null);
   const [previewLines, setPreviewLines] = useState<JELine[]>([]);
   const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
