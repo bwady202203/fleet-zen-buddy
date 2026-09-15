@@ -12,7 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landmark, Settings2, RotateCcw, GripVertical, X, Pencil } from "lucide-react";
+import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landmark, Settings2, RotateCcw, GripVertical, X, Pencil, Paperclip } from "lucide-react";
+import EntityDocumentsDialog from "@/components/documents/EntityDocumentsDialog";
 import { cn } from "@/lib/utils";
 import { numberToWords } from "@/lib/numberToWords";
 
