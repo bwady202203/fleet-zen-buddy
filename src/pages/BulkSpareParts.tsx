@@ -207,7 +207,7 @@ const BulkSpareParts = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/?tab=fleet")}>
                 <ArrowRight className="h-5 w-5" />
               </Button>
               <h1 className="text-2xl font-bold">إضافة قطع غيار متعددة</h1>
