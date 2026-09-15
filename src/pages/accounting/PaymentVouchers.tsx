@@ -774,7 +774,7 @@ export default function PaymentVouchers() {
     <div className="container mx-auto p-6" dir="rtl">
       {/* Back Button */}
       <div className="mb-4">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+        <Button variant="ghost" onClick={() => navigate("/?tab=accounting")} className="gap-2">
           <ArrowRight className="h-4 w-4" />
           رجوع
         </Button>

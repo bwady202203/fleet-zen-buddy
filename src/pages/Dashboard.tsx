@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,16 @@ import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
   const { hasPermission } = usePermissions();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+  const handleTabChange = (value: string) => {
+    if (value === "overview") {
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    } else {
+      setSearchParams({ tab: value }, { replace: true });
+    }
+  };
   
   const allModules = [
     {
@@ -94,7 +104,7 @@ const Dashboard = () => {
         </div>
 
         
-        <Tabs defaultValue="overview" className="w-full" dir="rtl">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" dir="rtl">
           <TabsList className="mx-auto mb-8 flex w-full max-w-4xl flex-wrap justify-center">
             <TabsTrigger value="overview" className="flex-1">نظرة سريعة</TabsTrigger>
             <TabsTrigger value="accounting" className="flex-1">المحاسبة</TabsTrigger>

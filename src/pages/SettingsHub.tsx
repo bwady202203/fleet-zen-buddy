@@ -69,7 +69,7 @@ export default function SettingsHub() {
             />
             <div className="flex gap-2">
               <Button className="flex-1" onClick={tryUnlock}>دخول</Button>
-              <Button variant="outline" onClick={() => navigate(-1)}>رجوع</Button>
+              <Button variant="outline" onClick={() => navigate("/")}>رجوع</Button>
             </div>
           </CardContent>
         </Card>
