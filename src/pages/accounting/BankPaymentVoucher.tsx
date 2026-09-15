@@ -12,7 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landmark, Settings2, RotateCcw, GripVertical, X, Pencil } from "lucide-react";
+import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landmark, Settings2, RotateCcw, GripVertical, X, Pencil, Paperclip } from "lucide-react";
+import EntityDocumentsDialog from "@/components/documents/EntityDocumentsDialog";
 import { cn } from "@/lib/utils";
 import { numberToWords } from "@/lib/numberToWords";
 
@@ -94,6 +95,7 @@ export default function BankPaymentVoucher() {
   const [lines, setLines] = useState<VoucherLine[]>([newLine()]);
 
   const [previewVoucher, setPreviewVoucher] = useState<Voucher | null>(null);
+  const [documentsVoucher, setDocumentsVoucher] = useState<Voucher | null>(null);
   const [previewLines, setPreviewLines] = useState<JELine[]>([]);
   const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -526,6 +528,9 @@ export default function BankPaymentVoucher() {
                           <Button size="sm" variant="outline" onClick={() => openPreview(v)}>
                             <Eye className="h-4 w-4" />
                           </Button>
+                          <Button size="sm" variant="outline" title="مستند السند" onClick={() => setDocumentsVoucher(v)}>
+                            <Paperclip className="h-4 w-4 text-primary" />
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleEdit(v)}>
                             <Pencil className="h-4 w-4 text-blue-600" />
                           </Button>
@@ -762,6 +767,17 @@ export default function BankPaymentVoucher() {
           )}
         </DialogContent>
       </Dialog>
+
+      <EntityDocumentsDialog
+        open={!!documentsVoucher}
+        onOpenChange={(o) => !o && setDocumentsVoucher(null)}
+        entityType="payment_voucher"
+        entityId={documentsVoucher?.id || null}
+        referenceNumber={documentsVoucher?.voucher_number || null}
+        entityDate={documentsVoucher?.voucher_date || null}
+        title="مستند سند الصرف"
+        subtitle={documentsVoucher?.description || undefined}
+      />
     </div>
   );
 }

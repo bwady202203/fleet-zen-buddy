@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw, Wrench } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw, Wrench, Paperclip } from "lucide-react";
+import EntityDocumentsDialog from "@/components/documents/EntityDocumentsDialog";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -74,6 +75,7 @@ const JournalEntries = () => {
   const entryIdFromUrl = searchParams.get('id');
   const isNewEntryPage = location.pathname === '/accounting/journal-entries/new';
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [documentsEntry, setDocumentsEntry] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [editingEntry, setEditingEntry] = useState<any>(null);
@@ -1963,13 +1965,22 @@ const JournalEntries = () => {
                             {entry.totalCredit.toLocaleString('ar-SA', { minimumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell className="text-center no-print">
-                            <div className="flex gap-2 justify-center">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleViewDetails(entry)}
-                                title="تعديل / Edit"
-                              >
+                             <div className="flex gap-2 justify-center">
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 onClick={() => setDocumentsEntry(entry)}
+                                 title="مستندات القيد"
+                                 className="text-primary hover:bg-primary/10"
+                               >
+                                 <Paperclip className="h-4 w-4" />
+                               </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 onClick={() => handleViewDetails(entry)}
+                                 title="تعديل / Edit"
+                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
@@ -2678,6 +2689,16 @@ const JournalEntries = () => {
             )}
           </DialogContent>
         </Dialog>
+        <EntityDocumentsDialog
+          open={!!documentsEntry}
+          onOpenChange={(open) => !open && setDocumentsEntry(null)}
+          entityType="journal_entry"
+          entityId={documentsEntry?.id || null}
+          referenceNumber={documentsEntry?.entryNumber || null}
+          entityDate={documentsEntry?.date || null}
+          title="مستندات القيد"
+          subtitle={documentsEntry?.description || undefined}
+        />
         <DeleteDialog />
       </>
     );
