@@ -767,6 +767,17 @@ export default function BankPaymentVoucher() {
           )}
         </DialogContent>
       </Dialog>
+
+      <EntityDocumentsDialog
+        open={!!documentsVoucher}
+        onOpenChange={(o) => !o && setDocumentsVoucher(null)}
+        entityType="payment_voucher"
+        entityId={documentsVoucher?.id || null}
+        referenceNumber={documentsVoucher?.voucher_number || null}
+        entityDate={documentsVoucher?.voucher_date || null}
+        title="مستند سند الصرف"
+        subtitle={documentsVoucher?.description || undefined}
+      />
     </div>
   );
 }
