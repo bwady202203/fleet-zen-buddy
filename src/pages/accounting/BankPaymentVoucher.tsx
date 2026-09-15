@@ -528,6 +528,9 @@ export default function BankPaymentVoucher() {
                           <Button size="sm" variant="outline" onClick={() => openPreview(v)}>
                             <Eye className="h-4 w-4" />
                           </Button>
+                          <Button size="sm" variant="outline" title="مستند السند" onClick={() => setDocumentsVoucher(v)}>
+                            <Paperclip className="h-4 w-4 text-primary" />
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleEdit(v)}>
                             <Pencil className="h-4 w-4 text-blue-600" />
                           </Button>
