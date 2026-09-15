@@ -2689,6 +2689,16 @@ const JournalEntries = () => {
             )}
           </DialogContent>
         </Dialog>
+        <EntityDocumentsDialog
+          open={!!documentsEntry}
+          onOpenChange={(open) => !open && setDocumentsEntry(null)}
+          entityType="journal_entry"
+          entityId={documentsEntry?.id || null}
+          referenceNumber={documentsEntry?.entryNumber || null}
+          entityDate={documentsEntry?.date || null}
+          title="مستندات القيد"
+          subtitle={documentsEntry?.description || undefined}
+        />
         <DeleteDialog />
       </>
     );
