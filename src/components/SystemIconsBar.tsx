@@ -148,7 +148,7 @@ export const SystemIconsBar = () => {
             </button>
             {!isHome && (
               <Button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(getHomePathForPath(location.pathname))}
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 hover:bg-primary/10 border-primary/30"
