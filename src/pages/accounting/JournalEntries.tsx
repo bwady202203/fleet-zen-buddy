@@ -75,6 +75,7 @@ const JournalEntries = () => {
   const entryIdFromUrl = searchParams.get('id');
   const isNewEntryPage = location.pathname === '/accounting/journal-entries/new';
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [documentsEntry, setDocumentsEntry] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [editingEntry, setEditingEntry] = useState<any>(null);
