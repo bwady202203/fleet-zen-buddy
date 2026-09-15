@@ -285,6 +285,8 @@ export type Database = {
           created_by: string | null
           description: string | null
           doc_date: string | null
+          entity_id: string | null
+          entity_type: string | null
           file_name: string | null
           file_path: string
           file_size: number | null
@@ -302,6 +304,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           doc_date?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
           file_name?: string | null
           file_path: string
           file_size?: number | null
@@ -319,6 +323,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           doc_date?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
           file_name?: string | null
           file_path?: string
           file_size?: number | null
