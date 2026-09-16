@@ -150,7 +150,7 @@ const UsersManagement = () => {
             id: profile.id,
             email: profile.email || '',
             full_name: profile.full_name || '',
-            role: roleData?.role || 'user',
+            role: roleData?.role || 'employee',
             created_at: profile.created_at
           };
         })
@@ -629,7 +629,6 @@ const UsersManagement = () => {
                           <SelectItem value="admin">مسؤول (Admin)</SelectItem>
                           <SelectItem value="manager">مدير (Manager)</SelectItem>
                           <SelectItem value="accountant">محاسب (Accountant)</SelectItem>
-                          <SelectItem value="user">مستخدم (User)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -742,7 +741,6 @@ const UsersManagement = () => {
                             <SelectItem value="admin">مسؤول (Admin)</SelectItem>
                             <SelectItem value="manager">مدير (Manager)</SelectItem>
                             <SelectItem value="accountant">محاسب (Accountant)</SelectItem>
-                            <SelectItem value="user">مستخدم (User)</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
