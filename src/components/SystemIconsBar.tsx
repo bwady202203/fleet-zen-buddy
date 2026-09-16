@@ -197,6 +197,21 @@ export const SystemIconsBar = () => {
               <span className="font-semibold text-xs sm:text-sm">الساعة:</span>
               <span className="font-mono text-xs sm:text-sm">{timeStr}</span>
             </div>
+            {user && branches.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-2 py-1">
+                <Building2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <select
+                  value={currentBranchId}
+                  onChange={(e) => handleBranchChange(e.target.value)}
+                  className="bg-transparent text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-400 focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[200px] truncate"
+                  title="الفرع الحالي"
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name_ar}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {(userRole === 'admin' || userRole === 'manager') && (
               <Button
                 onClick={handleExportData}
