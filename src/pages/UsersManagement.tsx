@@ -204,6 +204,19 @@ const UsersManagement = () => {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
+        // التحقق مما إذا كان المستخدم مرتبطاً بالشركة مسبقاً
+        const { data: existingOrg } = await supabase
+          .from('user_organizations')
+          .select('user_id')
+          .eq('user_id', authData.user.id)
+          .eq('organization_id', newUser.organizationId)
+          .maybeSingle();
+
+        if (existingOrg) {
+          toast.error('المستخدم مرتبط بهذه الشركة مسبقاً');
+          return;
+        }
+
         // ربط المستخدم بالشركة المختارة
         const { error: orgLinkError } = await supabase
           .from('user_organizations')
@@ -217,11 +230,11 @@ const UsersManagement = () => {
         // تعيين الدور للمستخدم في هذه الشركة
         const { error: roleError } = await supabase
           .from('user_roles')
-          .insert([{
+          .upsert([{
             user_id: authData.user.id,
             role: newUser.role as 'admin' | 'manager' | 'accountant' | 'employee',
             organization_id: newUser.organizationId
-          }]);
+          }], { onConflict: 'user_id, role, organization_id' });
 
         if (roleError) throw roleError;
 
@@ -245,6 +258,7 @@ const UsersManagement = () => {
         }
 
         toast.success('تم إضافة المستخدم بنجاح');
+
         setIsAddDialogOpen(false);
         setNewUser({ 
           email: '', 
