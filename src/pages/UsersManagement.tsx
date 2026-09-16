@@ -178,16 +178,8 @@ const UsersManagement = () => {
       return;
     }
 
-    if (newUser.password.length < 8) {
-      toast.error('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
-      return;
-    }
 
-    const weakPatterns = /^(123|1234|12345|123456|password|qwerty|abc123|admin|111111|000000)/i;
-    if (weakPatterns.test(newUser.password)) {
-      toast.error('كلمة المرور شائعة وسهلة التخمين، الرجاء استخدام كلمة مرور أقوى (حروف وأرقام ورموز)');
-      return;
-    }
+
 
 
     try {
@@ -436,10 +428,11 @@ const UsersManagement = () => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      toast.error('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+    if (!newPassword) {
+      toast.error('الرجاء إدخال كلمة المرور الجديدة');
       return;
     }
+
 
     if (newPassword !== confirmPassword) {
       toast.error('كلمتا المرور غير متطابقتين');
