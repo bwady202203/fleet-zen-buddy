@@ -1,4 +1,4 @@
-import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid, Settings } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid, Settings, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +20,33 @@ export const SystemIconsBar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sessionStartTime] = useState(new Date());
   const [sessionDuration, setSessionDuration] = useState("00:00:00");
+  const [fullName, setFullName] = useState<string>("");
+  const [branches, setBranches] = useState<{ id: string; name_ar: string }[]>([]);
+  const [currentBranchId, setCurrentBranchId] = useState<string>(() => localStorage.getItem("current_branch_id") || "");
+
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      const [{ data: profile }, { data: branchRows }] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+        supabase.from("branches").select("id, name_ar").eq("is_active", true).order("name_ar"),
+      ]);
+      setFullName(profile?.full_name || (user.user_metadata as any)?.full_name || "");
+      setBranches(branchRows || []);
+      if (!currentBranchId && branchRows && branchRows.length > 0) {
+        handleBranchChange(branchRows[0].id);
+      }
+    };
+    load();
+  }, [user]);
+
+  const handleBranchChange = (branchId: string) => {
+    setCurrentBranchId(branchId);
+    localStorage.setItem("current_branch_id", branchId);
+  };
+
+  const currentBranchName = branches.find((b) => b.id === currentBranchId)?.name_ar || "";
+
   
 
   useEffect(() => {
@@ -170,6 +197,21 @@ export const SystemIconsBar = () => {
               <span className="font-semibold text-xs sm:text-sm">الساعة:</span>
               <span className="font-mono text-xs sm:text-sm">{timeStr}</span>
             </div>
+            {user && branches.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-2 py-1">
+                <Building2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <select
+                  value={currentBranchId}
+                  onChange={(e) => handleBranchChange(e.target.value)}
+                  className="bg-transparent text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-400 focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[200px] truncate"
+                  title="الفرع الحالي"
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name_ar}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {(userRole === 'admin' || userRole === 'manager') && (
               <Button
                 onClick={handleExportData}
@@ -223,11 +265,11 @@ export const SystemIconsBar = () => {
                   {user.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
                 </div>
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-xs font-medium text-foreground truncate max-w-[150px]">
-                    {user.email}
+                  <span className="text-xs font-bold text-foreground truncate max-w-[160px]">
+                    {fullName || user.email}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {getRoleLabel(userRole)}
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+                    {getRoleLabel(userRole)}{currentBranchName ? ` • ${currentBranchName}` : ""}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 bg-background/50 rounded px-1.5 sm:px-2 py-0.5 sm:mr-2">
