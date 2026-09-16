@@ -1,4 +1,4 @@
-import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid, Settings } from "lucide-react";
+import { LogOut, Download, Clock, User, ArrowRight, PieChart, LayoutGrid, Settings, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeSidebarTrigger } from "@/components/SafeSidebarTrigger";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +20,33 @@ export const SystemIconsBar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sessionStartTime] = useState(new Date());
   const [sessionDuration, setSessionDuration] = useState("00:00:00");
+  const [fullName, setFullName] = useState<string>("");
+  const [branches, setBranches] = useState<{ id: string; name_ar: string }[]>([]);
+  const [currentBranchId, setCurrentBranchId] = useState<string>(() => localStorage.getItem("current_branch_id") || "");
+
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      const [{ data: profile }, { data: branchRows }] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+        supabase.from("branches").select("id, name_ar").eq("is_active", true).order("name_ar"),
+      ]);
+      setFullName(profile?.full_name || (user.user_metadata as any)?.full_name || "");
+      setBranches(branchRows || []);
+      if (!currentBranchId && branchRows && branchRows.length > 0) {
+        handleBranchChange(branchRows[0].id);
+      }
+    };
+    load();
+  }, [user]);
+
+  const handleBranchChange = (branchId: string) => {
+    setCurrentBranchId(branchId);
+    localStorage.setItem("current_branch_id", branchId);
+  };
+
+  const currentBranchName = branches.find((b) => b.id === currentBranchId)?.name_ar || "";
+
   
 
   useEffect(() => {
