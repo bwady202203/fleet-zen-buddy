@@ -629,6 +629,7 @@ const UsersManagement = () => {
                           <SelectItem value="admin">مسؤول (Admin)</SelectItem>
                           <SelectItem value="manager">مدير (Manager)</SelectItem>
                           <SelectItem value="accountant">محاسب (Accountant)</SelectItem>
+                          <SelectItem value="employee">موظف (Employee)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -741,6 +742,7 @@ const UsersManagement = () => {
                             <SelectItem value="admin">مسؤول (Admin)</SelectItem>
                             <SelectItem value="manager">مدير (Manager)</SelectItem>
                             <SelectItem value="accountant">محاسب (Accountant)</SelectItem>
+                          <SelectItem value="employee">موظف (Employee)</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
