@@ -265,11 +265,11 @@ export const SystemIconsBar = () => {
                   {user.email?.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
                 </div>
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-xs font-medium text-foreground truncate max-w-[150px]">
-                    {user.email}
+                  <span className="text-xs font-bold text-foreground truncate max-w-[160px]">
+                    {fullName || user.email}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {getRoleLabel(userRole)}
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+                    {getRoleLabel(userRole)}{currentBranchName ? ` • ${currentBranchName}` : ""}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 bg-background/50 rounded px-1.5 sm:px-2 py-0.5 sm:mr-2">
