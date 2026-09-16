@@ -59,10 +59,12 @@ serve(async (req) => {
     }
 
     // Update user password
+    // Update user password and confirm the email so the account can sign in
     const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
       userId,
-      { password: newPassword }
+      { password: newPassword, email_confirm: true }
     );
+
 
     if (updateError) {
       throw updateError;
