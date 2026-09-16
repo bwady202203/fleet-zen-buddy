@@ -22,24 +22,23 @@ export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
 }: RecoveryEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="ar" dir="rtl">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>إعادة تعيين كلمة المرور - {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Heading style={h1}>إعادة تعيين كلمة المرور</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          وصلنا طلب لإعادة تعيين كلمة المرور الخاصة بحسابك في {siteName}. اضغط
+          على الزر بالأسفل لاختيار كلمة مرور جديدة. الرابط صالح لمدة ساعة واحدة.
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Reset Password
+          تعيين كلمة مرور جديدة
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          إذا لم تطلب إعادة التعيين، تجاهل هذه الرسالة ولن تتغير كلمة مرورك.
         </Text>
       </Container>
     </Body>
