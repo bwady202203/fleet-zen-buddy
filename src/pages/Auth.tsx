@@ -71,11 +71,19 @@ const Auth = () => {
     setIsLoading(false);
 
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('بيانات الدخول غير صحيحة');
+      const msg = error.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      } else if (msg.includes('Email not confirmed')) {
+        toast.error('هذا الحساب غير مُنشَّط بعد. اطلب من المسؤول تعيين كلمة مرور جديدة لك من شاشة إدارة المستخدمين لتنشيط الحساب.');
+      } else if (msg.includes('Email logins are disabled')) {
+        toast.error('تسجيل الدخول بالبريد معطّل حالياً، تواصل مع المسؤول');
+      } else if (msg.toLowerCase().includes('rate limit') || msg.includes('after')) {
+        toast.error('محاولات كثيرة، انتظر قليلاً ثم أعد المحاولة');
       } else {
-        toast.error('حدث خطأ أثناء تسجيل الدخول');
+        toast.error(`حدث خطأ أثناء تسجيل الدخول: ${msg}`);
       }
+
     } else {
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
