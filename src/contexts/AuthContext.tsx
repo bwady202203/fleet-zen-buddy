@@ -26,9 +26,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Keep the user signed in through transient token-refresh hiccups
+        // (weak network / new device). Only an explicit sign-out clears state.
+        if (!session && event !== 'SIGNED_OUT') {
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Defer role fetching
         if (session?.user) {
           setTimeout(() => {
