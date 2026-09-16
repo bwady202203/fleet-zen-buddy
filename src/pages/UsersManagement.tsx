@@ -178,10 +178,17 @@ const UsersManagement = () => {
       return;
     }
 
-    if (newUser.password.length < 6) {
-      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (newUser.password.length < 8) {
+      toast.error('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
     }
+
+    const weakPatterns = /^(123|1234|12345|123456|password|qwerty|abc123|admin|111111|000000)/i;
+    if (weakPatterns.test(newUser.password)) {
+      toast.error('كلمة المرور شائعة وسهلة التخمين، الرجاء استخدام كلمة مرور أقوى (حروف وأرقام ورموز)');
+      return;
+    }
+
 
     try {
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -257,13 +264,22 @@ const UsersManagement = () => {
       }
     } catch (error: any) {
       console.error('Error adding user:', error);
-      if (error.message.includes('User already registered')) {
+      const msg = String(error?.message || '');
+      const code = String(error?.code || '');
+      if (code === 'weak_password' || msg.toLowerCase().includes('weak')) {
+        toast.error('كلمة المرور ضعيفة أو مستخدمة في تسريبات معروفة، الرجاء اختيار كلمة مرور أقوى (8 أحرف على الأقل مع أرقام ورموز)');
+      } else if (msg.includes('User already registered') || code === 'user_already_exists') {
         toast.error('البريد الإلكتروني مسجل مسبقاً');
+      } else if (code === 'validation_failed' || msg.toLowerCase().includes('invalid email')) {
+        toast.error('البريد الإلكتروني غير صحيح');
+      } else if (msg.toLowerCase().includes('rate limit') || code === 'over_email_send_rate_limit') {
+        toast.error('تم تجاوز عدد المحاولات المسموح، الرجاء المحاولة بعد قليل');
       } else {
-        toast.error('حدث خطأ أثناء إضافة المستخدم');
+        toast.error(msg ? `حدث خطأ أثناء إضافة المستخدم: ${msg}` : 'حدث خطأ أثناء إضافة المستخدم');
       }
     }
   };
+
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا المستخدم من هذه الشركة؟')) return;
