@@ -185,7 +185,7 @@ const UsersManagement = () => {
     try {
       // إنشاء المستخدم عبر دالة الخادم لضمان اكتمال كل الخطوات دفعة واحدة:
       // إنشاء الحساب + ربط الشركة + تعيين الدور + حفظ الصلاحيات
-      const { data, error: fnError } = await supabase.functions.invoke('create-org-user', {
+      const { error: fnError } = await supabase.functions.invoke('create-org-user', {
         body: {
           email: newUser.email,
           password: newUser.password,
