@@ -183,91 +183,47 @@ const UsersManagement = () => {
 
 
     try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.fullName,
-          },
+      // إنشاء المستخدم عبر دالة الخادم لضمان اكتمال كل الخطوات دفعة واحدة:
+      // إنشاء الحساب + ربط الشركة + تعيين الدور + حفظ الصلاحيات
+      const { data, error: fnError } = await supabase.functions.invoke('create-org-user', {
+        body: {
+          email: newUser.email,
+          password: newUser.password,
+          fullName: newUser.fullName,
+          role: newUser.role,
+          organizationId: newUser.organizationId,
+          permissions: newUser.modules,
         },
       });
 
-      if (signUpError) throw signUpError;
-
-      if (authData.user) {
-        // التحقق مما إذا كان المستخدم مرتبطاً بالشركة مسبقاً
-        const { data: existingOrg } = await supabase
-          .from('user_organizations')
-          .select('user_id')
-          .eq('user_id', authData.user.id)
-          .eq('organization_id', newUser.organizationId)
-          .maybeSingle();
-
-        if (existingOrg) {
-          toast.error('المستخدم مرتبط بهذه الشركة مسبقاً');
-          return;
+      if (fnError) {
+        const msg = String(data?.error || fnError.message || '');
+        if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
+          toast.error('البريد الإلكتروني مسجل مسبقاً');
+        } else {
+          toast.error(msg || 'حدث خطأ أثناء إضافة المستخدم');
         }
-
-        // ربط المستخدم بالشركة المختارة
-        const { error: orgLinkError } = await supabase
-          .from('user_organizations')
-          .insert([{
-            user_id: authData.user.id,
-            organization_id: newUser.organizationId
-          }]);
-
-        if (orgLinkError) throw orgLinkError;
-
-        // تعيين الدور للمستخدم في هذه الشركة
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert([{
-            user_id: authData.user.id,
-            role: newUser.role as 'admin' | 'manager' | 'accountant' | 'employee',
-            organization_id: newUser.organizationId
-          }], { onConflict: 'user_id, role, organization_id' });
-
-        if (roleError) throw roleError;
-
-        const permissionsToInsert = newUser.modules
-          .filter(m => m.can_view || m.can_create || m.can_edit || m.can_delete)
-          .map(m => ({
-            user_id: authData.user.id,
-            module_name: m.module_name,
-            can_view: m.can_view,
-            can_create: m.can_create,
-            can_edit: m.can_edit,
-            can_delete: m.can_delete
-          }));
-
-        if (permissionsToInsert.length > 0) {
-          const { error: permError } = await supabase
-            .from('user_module_permissions')
-            .insert(permissionsToInsert);
-
-          if (permError) throw permError;
-        }
-
-        toast.success('تم إضافة المستخدم بنجاح');
-
-        setIsAddDialogOpen(false);
-        setNewUser({ 
-          email: '', 
-          password: '', 
-          fullName: '', 
-          role: 'employee',
-          organizationId: '',
-          modules: MODULES.map(m => ({
-            module_name: m.id,
-            can_view: false,
-            can_create: false,
-            can_edit: false,
-            can_delete: false
-          }))
-        });
-        fetchUsers();
+        return;
       }
+
+      toast.success('تم إضافة المستخدم بنجاح وربطه بالشركة');
+
+      setIsAddDialogOpen(false);
+      setNewUser({ 
+        email: '', 
+        password: '', 
+        fullName: '', 
+        role: 'employee',
+        organizationId: '',
+        modules: MODULES.map(m => ({
+          module_name: m.id,
+          can_view: false,
+          can_create: false,
+          can_edit: false,
+          can_delete: false
+        }))
+      });
+      fetchUsers();
     } catch (error: any) {
       console.error('Error adding user:', error);
       const msg = String(error?.message || '');
