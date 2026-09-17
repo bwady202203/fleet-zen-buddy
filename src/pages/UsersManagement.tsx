@@ -197,7 +197,11 @@ const UsersManagement = () => {
       });
 
       if (fnError) {
-        const msg = String(data?.error || fnError.message || '');
+        let msg = String(fnError.message || '');
+        try {
+          const body = await (fnError as any).context?.json?.();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore */ }
         if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
           toast.error('البريد الإلكتروني مسجل مسبقاً');
         } else {
