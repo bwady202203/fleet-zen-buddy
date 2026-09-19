@@ -221,13 +221,59 @@ const ChartOfAccounts = () => {
     }
   };
 
-  const filteredAccounts = searchQuery 
-    ? accounts.filter(acc => 
-        acc.code.includes(searchQuery) || 
-        acc.name_ar.includes(searchQuery) || 
-        acc.name_en.includes(searchQuery)
-      )
-    : accounts;
+  // تطبيع النص العربي لتحسين البحث (الألف/الهمزة/التاء المربوطة/التشكيل)
+  const normalizeText = (value: string) =>
+    (value || "")
+      .toString()
+      .toLowerCase()
+      .replace(/[\u064B-\u0652\u0640]/g, "")
+      .replace(/[أإآٱ]/g, "ا")
+      .replace(/ى/g, "ي")
+      .replace(/ة/g, "ه")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const filteredAccounts = (() => {
+    const query = normalizeText(searchQuery);
+    if (!query) return accounts;
+
+    const terms = query.split(" ").filter(Boolean);
+    const matches = accounts.filter((acc) => {
+      const haystack = normalizeText(
+        `${acc.code} ${acc.name_ar} ${acc.name_en || ""}`
+      );
+      return terms.every((term) => haystack.includes(term));
+    });
+
+    // إظهار الحسابات الأب للحسابات المطابقة حتى تظهر داخل الشجرة
+    const visible = new Set<string>();
+    const addWithAncestors = (account: Account) => {
+      if (visible.has(account.id)) return;
+      visible.add(account.id);
+      if (account.parent_id) {
+        const parent = accounts.find((a) => a.id === account.parent_id);
+        if (parent) addWithAncestors(parent);
+      }
+    };
+    matches.forEach(addWithAncestors);
+
+    // إظهار الحسابات الفرعية للحسابات المطابقة
+    const addDescendants = (parentId: string) => {
+      accounts
+        .filter((a) => a.parent_id === parentId)
+        .forEach((child) => {
+          if (visible.has(child.id)) return;
+          visible.add(child.id);
+          addDescendants(child.id);
+        });
+    };
+    matches.forEach((m) => addDescendants(m.id));
+
+    return accounts.filter((acc) => visible.has(acc.id));
+  })();
+
+  const isSearching = normalizeText(searchQuery).length > 0;
+
 
   const toggleExpand = (accountId: string) => {
     const newExpanded = new Set(expandedAccounts);
