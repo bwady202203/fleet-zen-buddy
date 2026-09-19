@@ -38,7 +38,7 @@ interface SparePartsContextType {
   spareParts: SparePart[];
   purchases: Purchase[];
   stockTransactions: StockTransaction[];
-  addSparePart: (part: Omit<SparePart, "id" | "totalPurchased" | "totalMaintenanceUsed"> & { totalPurchased?: number; totalMaintenanceUsed?: number }) => Promise<void>;
+  addSparePart: (part: Omit<SparePart, "id" | "totalPurchased" | "totalMaintenanceUsed"> & { totalPurchased?: number; totalMaintenanceUsed?: number }) => Promise<SparePart | null>;
   updateSparePart: (id: string, part: Partial<SparePart>) => Promise<void>;
   deleteSparePart: (id: string) => Promise<void>;
   addPurchase: (purchase: Omit<Purchase, "id">) => Promise<void>;
@@ -159,7 +159,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addSparePart = async (part: Omit<SparePart, "id">) => {
+  const addSparePart = async (part: Omit<SparePart, "id">): Promise<SparePart | null> => {
     try {
       const { data, error } = await supabase
         .from('spare_parts')
@@ -193,7 +193,9 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           title: 'تم الإضافة / Added',
           description: 'تم إضافة قطعة الغيار بنجاح / Spare part added successfully',
         });
+        return newPart;
       }
+      return null;
     } catch (error) {
       console.error('Error adding spare part:', error);
       toast({
@@ -201,6 +203,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
         description: 'فشل إضافة قطعة الغيار / Failed to add spare part',
         variant: 'destructive',
       });
+      return null;
     }
   };
 
