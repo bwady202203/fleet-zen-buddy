@@ -161,6 +161,12 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
   const addSparePart = async (part: Omit<SparePart, "id">): Promise<SparePart | null> => {
     try {
+      const { data: orgData } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .limit(1)
+        .maybeSingle();
+
       const { data, error } = await supabase
         .from('spare_parts')
         .insert({
@@ -169,6 +175,7 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           quantity: part.quantity,
           min_quantity: part.minQuantity,
           code: `SP-${Date.now()}`,
+          organization_id: orgData?.organization_id,
         })
         .select()
         .single();
