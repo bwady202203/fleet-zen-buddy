@@ -159,8 +159,30 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const normalizeName = (value: string) =>
+    (value || '')
+      .trim()
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/[ىئ]/g, 'ي')
+      .replace(/ؤ/g, 'و')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
   const addSparePart = async (part: Omit<SparePart, "id">): Promise<SparePart | null> => {
     try {
+      // منع تكرار الأصناف: إذا كان الاسم موجوداً نُعيد الصنف الحالي
+      const existing = spareParts.find(
+        (p) => normalizeName(p.name) === normalizeName(part.name)
+      );
+      if (existing) {
+        toast({
+          title: 'الصنف موجود مسبقاً',
+          description: `تم استخدام الصنف الحالي «${existing.name}» بدون تكرار`,
+        });
+        return existing;
+      }
+
       const { data: orgData } = await supabase
         .from('user_organizations')
         .select('organization_id')
