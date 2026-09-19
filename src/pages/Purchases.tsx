@@ -112,6 +112,8 @@ const Purchases = () => {
   const [selectedParts, setSelectedParts] = useState<
     { sparePartId: string; quantity: number; price: number }[]
   >([]);
+  const [partSearch, setPartSearch] = useState<Record<number, string>>({});
+  const [creatingPartIndex, setCreatingPartIndex] = useState<number | null>(null);
   const [newPartForm, setNewPartForm] = useState({
     name: "",
     code: "",
@@ -120,6 +122,33 @@ const Purchases = () => {
     location: "",
     minQuantity: 0,
   });
+
+  // إضافة صنف جديد إلى أصناف المستودع مباشرة من سطر الفاتورة
+  const handleCreatePartInline = async (index: number, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCreatingPartIndex(index);
+    try {
+      const created = await addSparePart({
+        code: `SP-${Date.now()}`,
+        name: trimmed,
+        price: selectedParts[index]?.price || 0,
+        quantity: 0,
+        minQuantity: 0,
+        unit: "قطعة",
+      });
+      if (created) {
+        setSelectedParts((prev) => {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], sparePartId: created.id };
+          return updated;
+        });
+        setPartSearch((prev) => ({ ...prev, [index]: "" }));
+      }
+    } finally {
+      setCreatingPartIndex(null);
+    }
+  };
 
   const handleAddPart = () => {
     setSelectedParts([
@@ -562,9 +591,33 @@ const Purchases = () => {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                   <Command>
-                                    <CommandInput placeholder="ابحث عن قطعة الغيار..." />
+                                    <CommandInput
+                                      placeholder="ابحث أو اكتب اسم صنف جديد..."
+                                      value={partSearch[index] || ""}
+                                      onValueChange={(value) =>
+                                        setPartSearch((prev) => ({ ...prev, [index]: value }))
+                                      }
+                                    />
                                     <CommandList>
-                                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                                      <CommandEmpty>
+                                        {(partSearch[index] || "").trim() ? (
+                                          <button
+                                            type="button"
+                                            disabled={creatingPartIndex === index}
+                                            onClick={() =>
+                                              handleCreatePartInline(index, partSearch[index] || "")
+                                            }
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-right hover:bg-accent rounded-md"
+                                          >
+                                            <PackagePlus className="h-4 w-4 text-primary" />
+                                            <span>
+                                              إضافة «{(partSearch[index] || "").trim()}» إلى أصناف المستودع
+                                            </span>
+                                          </button>
+                                        ) : (
+                                          "لا توجد نتائج"
+                                        )}
+                                      </CommandEmpty>
                                       <CommandGroup>
                                         {spareParts.map((part) => (
                                           <CommandItem
@@ -589,6 +642,25 @@ const Purchases = () => {
                                           </CommandItem>
                                         ))}
                                       </CommandGroup>
+                                      {(partSearch[index] || "").trim() &&
+                                        !spareParts.some(
+                                          (p) =>
+                                            p.name.trim() === (partSearch[index] || "").trim()
+                                        ) && (
+                                          <CommandGroup>
+                                            <CommandItem
+                                              value={`__create__${partSearch[index]}`}
+                                              onSelect={() =>
+                                                handleCreatePartInline(index, partSearch[index] || "")
+                                              }
+                                            >
+                                              <PackagePlus className="mr-2 h-4 w-4 text-primary" />
+                                              <span>
+                                                إضافة «{(partSearch[index] || "").trim()}» إلى أصناف المستودع
+                                              </span>
+                                            </CommandItem>
+                                          </CommandGroup>
+                                        )}
                                     </CommandList>
                                   </Command>
                                 </PopoverContent>
