@@ -591,9 +591,33 @@ const Purchases = () => {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                   <Command>
-                                    <CommandInput placeholder="ابحث عن قطعة الغيار..." />
+                                    <CommandInput
+                                      placeholder="ابحث أو اكتب اسم صنف جديد..."
+                                      value={partSearch[index] || ""}
+                                      onValueChange={(value) =>
+                                        setPartSearch((prev) => ({ ...prev, [index]: value }))
+                                      }
+                                    />
                                     <CommandList>
-                                      <CommandEmpty>لا توجد نتائج</CommandEmpty>
+                                      <CommandEmpty>
+                                        {(partSearch[index] || "").trim() ? (
+                                          <button
+                                            type="button"
+                                            disabled={creatingPartIndex === index}
+                                            onClick={() =>
+                                              handleCreatePartInline(index, partSearch[index] || "")
+                                            }
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-right hover:bg-accent rounded-md"
+                                          >
+                                            <PackagePlus className="h-4 w-4 text-primary" />
+                                            <span>
+                                              إضافة «{(partSearch[index] || "").trim()}» إلى أصناف المستودع
+                                            </span>
+                                          </button>
+                                        ) : (
+                                          "لا توجد نتائج"
+                                        )}
+                                      </CommandEmpty>
                                       <CommandGroup>
                                         {spareParts.map((part) => (
                                           <CommandItem
@@ -618,6 +642,25 @@ const Purchases = () => {
                                           </CommandItem>
                                         ))}
                                       </CommandGroup>
+                                      {(partSearch[index] || "").trim() &&
+                                        !spareParts.some(
+                                          (p) =>
+                                            p.name.trim() === (partSearch[index] || "").trim()
+                                        ) && (
+                                          <CommandGroup>
+                                            <CommandItem
+                                              value={`__create__${partSearch[index]}`}
+                                              onSelect={() =>
+                                                handleCreatePartInline(index, partSearch[index] || "")
+                                              }
+                                            >
+                                              <PackagePlus className="mr-2 h-4 w-4 text-primary" />
+                                              <span>
+                                                إضافة «{(partSearch[index] || "").trim()}» إلى أصناف المستودع
+                                              </span>
+                                            </CommandItem>
+                                          </CommandGroup>
+                                        )}
                                     </CommandList>
                                   </Command>
                                 </PopoverContent>
