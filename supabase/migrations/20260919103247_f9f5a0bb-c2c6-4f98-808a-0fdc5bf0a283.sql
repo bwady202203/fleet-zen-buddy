@@ -1,0 +1,1 @@
+update public.spare_parts set organization_id = '8449f832-4c11-4f27-b650-294106680b15' where organization_id is null;
