@@ -665,7 +665,7 @@ const ChartOfAccounts = () => {
   const renderTreeView = () => {
     const renderAccount = (account: Account, level: number = 0) => {
       const children = filteredAccounts.filter(acc => acc.parent_id === account.id);
-      const isExpanded = expandedAccounts.has(account.id);
+      const isExpanded = isSearching || expandedAccounts.has(account.id);
       
       return (
         <div key={account.id}>

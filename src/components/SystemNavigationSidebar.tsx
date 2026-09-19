@@ -76,6 +76,8 @@ export const navigationGroups: NavigationGroup[] = [
     module: "accounting",
     children: [
       { title: "نظرة عامة", path: "/accounting", icon: LayoutGrid },
+      { title: "شجرة الحسابات", path: "/accounting/chart-of-accounts", icon: BookOpen },
+
       { title: "القيود اليومية", path: "/accounting/journal-entries", icon: FileText },
       { title: "قيود ذكية", path: "/accounting/smart-journal", icon: Calculator },
       { title: "قيد بمستند", path: "/accounting/journal-document-entry", icon: FileCheck2 },
@@ -111,7 +113,8 @@ export const navigationGroups: NavigationGroup[] = [
     icon: FileSpreadsheet,
     module: "accounting",
     children: [
-      { title: "شجرة الحسابات", path: "/accounting/chart-of-accounts", icon: BookOpen },
+      { title: "دفتر الأستاذ", path: "/accounting/ledger", icon: BookOpen },
+
       { title: "دفتر الأستاذ", path: "/accounting/ledger", icon: BookOpen },
       { title: "دفتر الأستاذ الجديد", path: "/accounting/ledger-new", icon: BookOpen },
       { title: "ميزان المراجعة", path: "/accounting/trial-balance", icon: BarChart3 },
