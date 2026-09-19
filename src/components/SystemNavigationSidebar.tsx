@@ -114,8 +114,6 @@ export const navigationGroups: NavigationGroup[] = [
     module: "accounting",
     children: [
       { title: "دفتر الأستاذ", path: "/accounting/ledger", icon: BookOpen },
-
-      { title: "دفتر الأستاذ", path: "/accounting/ledger", icon: BookOpen },
       { title: "دفتر الأستاذ الجديد", path: "/accounting/ledger-new", icon: BookOpen },
       { title: "ميزان المراجعة", path: "/accounting/trial-balance", icon: BarChart3 },
       { title: "ميزان المراجعة الجديد", path: "/accounting/trial-balance-new", icon: BarChart3 },
