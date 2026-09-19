@@ -112,6 +112,8 @@ const Purchases = () => {
   const [selectedParts, setSelectedParts] = useState<
     { sparePartId: string; quantity: number; price: number }[]
   >([]);
+  const [partSearch, setPartSearch] = useState<Record<number, string>>({});
+  const [creatingPartIndex, setCreatingPartIndex] = useState<number | null>(null);
   const [newPartForm, setNewPartForm] = useState({
     name: "",
     code: "",
@@ -120,6 +122,33 @@ const Purchases = () => {
     location: "",
     minQuantity: 0,
   });
+
+  // إضافة صنف جديد إلى أصناف المستودع مباشرة من سطر الفاتورة
+  const handleCreatePartInline = async (index: number, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCreatingPartIndex(index);
+    try {
+      const created = await addSparePart({
+        code: `SP-${Date.now()}`,
+        name: trimmed,
+        price: selectedParts[index]?.price || 0,
+        quantity: 0,
+        minQuantity: 0,
+        unit: "قطعة",
+      });
+      if (created) {
+        setSelectedParts((prev) => {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], sparePartId: created.id };
+          return updated;
+        });
+        setPartSearch((prev) => ({ ...prev, [index]: "" }));
+      }
+    } finally {
+      setCreatingPartIndex(null);
+    }
+  };
 
   const handleAddPart = () => {
     setSelectedParts([
