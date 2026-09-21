@@ -2135,7 +2135,7 @@ const JournalEntries = () => {
                     </div>
                   </div>
                 )}
-              )}
+              </>)}
             </CardContent>
           </Card>
         </main>
