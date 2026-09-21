@@ -550,6 +550,97 @@ const PremiumLoadsReport = () => {
         toDate={toDate}
       />
 
+      <Dialog open={distancesOpen} onOpenChange={setDistancesOpen}>
+        <DialogContent dir="rtl" className="max-w-3xl max-h-[88vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Route className="h-5 w-5" /> إعدادات المسافات بين نقاط الانطلاق والوصول
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end rounded-md border p-3">
+            <div className="space-y-2">
+              <Label>نقطة الانطلاق</Label>
+              {locations.length > 0 ? (
+                <Select value={newRoute.from} onValueChange={(v) => setNewRoute({ ...newRoute, from: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map((l) => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={newRoute.from} onChange={(e) => setNewRoute({ ...newRoute, from: e.target.value })} />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>نقطة الوصول</Label>
+              {locations.length > 0 ? (
+                <Select value={newRoute.to} onValueChange={(v) => setNewRoute({ ...newRoute, to: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map((l) => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={newRoute.to} onChange={(e) => setNewRoute({ ...newRoute, to: e.target.value })} />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>عدد الكيلومترات</Label>
+              <Input
+                inputMode="decimal"
+                value={newRoute.km}
+                onChange={(e) => setNewRoute({ ...newRoute, km: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+            <Button onClick={addRoute} disabled={savingRoute} className="gap-2">
+              <Plus className="h-4 w-4" /> {savingRoute ? "جاري الحفظ..." : "إضافة"}
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border p-2">نقطة الانطلاق</th>
+                  <th className="border p-2">نقطة الوصول</th>
+                  <th className="border p-2">الكيلومترات</th>
+                  <th className="border p-2">حذف</th>
+                </tr>
+              </thead>
+              <tbody>
+                {distances.length === 0 ? (
+                  <tr><td colSpan={4} className="border p-6 text-center text-muted-foreground">لا توجد مسافات مسجلة</td></tr>
+                ) : distances.map((d) => (
+                  <tr key={d.id}>
+                    <td className="border p-2">{d.from_location}</td>
+                    <td className="border p-2">{d.to_location}</td>
+                    <td className="border p-2 w-32">
+                      <Input
+                        inputMode="decimal"
+                        defaultValue={String(d.distance_km)}
+                        onBlur={(e) => updateRouteKm(d.id, e.target.value)}
+                        className="h-8 text-center"
+                      />
+                    </td>
+                    <td className="border p-2 text-center">
+                      <Button size="icon" variant="ghost" aria-label="حذف المسافة" onClick={() => deleteRoute(d.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDistancesOpen(false)}>إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!editRow} onOpenChange={(o) => !o && setEditRow(null)}>
         <DialogContent dir="rtl" className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
