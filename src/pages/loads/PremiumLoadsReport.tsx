@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowRight, Printer, Search, FileDown, Eye, Pencil } from "lucide-react";
+import { ArrowRight, Printer, Search, FileDown, Eye, Pencil, Settings2, Trash2, Plus, Route } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PremiumLoadsPrintPreview, { PremiumLoadPrintRow } from "@/components/loads/PremiumLoadsPrintPreview";
@@ -31,6 +31,23 @@ interface LoadRow {
   drivers: { name: string } | null;
   load_types: { name: string } | null;
 }
+
+interface RouteDistance {
+  id: string;
+  from_location: string;
+  to_location: string;
+  distance_km: number;
+}
+
+const normalizePoint = (v?: string | null) =>
+  (v || "")
+    .replace(/[\u064B-\u0652]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/[ىئ]/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 
 interface EditForm {
   id: string;
@@ -68,6 +85,70 @@ const PremiumLoadsReport = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [editRow, setEditRow] = useState<EditForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // إعدادات مسافات الطرق (كم)
+  const [distances, setDistances] = useState<RouteDistance[]>([]);
+  const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+  const [distancesOpen, setDistancesOpen] = useState(false);
+  const [newRoute, setNewRoute] = useState({ from: "", to: "", km: "" });
+  const [savingRoute, setSavingRoute] = useState(false);
+
+  const loadDistances = async () => {
+    const { data } = await (supabase as any)
+      .from("route_distances")
+      .select("id, from_location, to_location, distance_km")
+      .order("from_location");
+    setDistances((data as RouteDistance[]) || []);
+  };
+
+  const addRoute = async () => {
+    const from = newRoute.from.trim();
+    const to = newRoute.to.trim();
+    const km = Number(newRoute.km);
+    if (!from || !to) return toast.error("اختر نقطة الانطلاق ونقطة الوصول");
+    if (!Number.isFinite(km) || km <= 0) return toast.error("أدخل عدد الكيلومترات");
+    setSavingRoute(true);
+    try {
+      const { data: orgData } = await supabase
+        .from("user_organizations")
+        .select("organization_id")
+        .limit(1)
+        .maybeSingle();
+      const { error } = await (supabase as any).from("route_distances").insert({
+        from_location: from,
+        to_location: to,
+        distance_km: km,
+        organization_id: orgData?.organization_id ?? null,
+      });
+      if (error) throw error;
+      toast.success("تم حفظ المسافة");
+      setNewRoute({ from: "", to: "", km: "" });
+      loadDistances();
+    } catch (e: any) {
+      toast.error(
+        e?.code === "23505" ? "هذا المسار مسجّل مسبقاً" : "فشل الحفظ: " + (e?.message || "")
+      );
+    } finally {
+      setSavingRoute(false);
+    }
+  };
+
+  const updateRouteKm = async (id: string, km: string) => {
+    const value = Number(km);
+    if (!Number.isFinite(value)) return;
+    setDistances((prev) => prev.map((d) => (d.id === id ? { ...d, distance_km: value } : d)));
+    const { error } = await (supabase as any)
+      .from("route_distances")
+      .update({ distance_km: value })
+      .eq("id", id);
+    if (error) toast.error("فشل التحديث");
+  };
+
+  const deleteRoute = async (id: string) => {
+    const { error } = await (supabase as any).from("route_distances").delete().eq("id", id);
+    if (error) return toast.error("فشل الحذف");
+    setDistances((prev) => prev.filter((d) => d.id !== id));
+  };
 
   const openEdit = (r: LoadRow) => {
     setEditRow({
