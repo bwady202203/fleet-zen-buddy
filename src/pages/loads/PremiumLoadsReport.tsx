@@ -336,6 +336,7 @@ const PremiumLoadsReport = () => {
       "العمولة": r.commission,
       "التوصيل من": r.delivery_from || "",
       "التوصيل الى": r.delivery_to || "",
+      "الكيلومترات": r.distance_km || 0,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -356,6 +357,9 @@ const PremiumLoadsReport = () => {
               <p className="text-muted-foreground mt-1 text-sm">Premium Loads Detailed Report</p>
             </div>
             <div className="mr-auto flex gap-2">
+              <Button variant="outline" onClick={() => setDistancesOpen(true)} className="gap-2">
+                <Settings2 className="h-4 w-4" /> إعدادات المسافات
+              </Button>
               <Button variant="outline" onClick={exportExcel} className="gap-2">
                 <FileDown className="h-4 w-4" /> Excel
               </Button>
