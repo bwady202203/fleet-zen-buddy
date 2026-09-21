@@ -83,6 +83,8 @@ const JournalEntries = () => {
   const [filterAccount, setFilterAccount] = useState("");
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ENTRIES_PER_PAGE = 10;
   const [isSaving, setIsSaving] = useState(false);
   const [openingEntryDialogOpen, setOpeningEntryDialogOpen] = useState(false);
   const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
