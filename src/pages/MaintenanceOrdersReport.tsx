@@ -77,6 +77,95 @@ const MaintenanceOrdersReport = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<MaintenanceOrder | null>(null);
   const [orderItems, setOrderItems] = useState<CostItem[]>([]);
+  const [editOrder, setEditOrder] = useState<MaintenanceOrder | null>(null);
+  const [editForm, setEditForm] = useState({ description: "", priority: "medium", status: "pending", cost: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
+
+  const openEdit = (order: MaintenanceOrder) => {
+    setEditOrder(order);
+    setEditForm({
+      description: order.description || "",
+      priority: order.priority,
+      status: order.status,
+      cost: String(order.cost ?? ""),
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editOrder) return;
+    try {
+      setSavingEdit(true);
+      const newStatus = editForm.status;
+      const updates: Record<string, any> = {
+        description: editForm.description,
+        priority: editForm.priority,
+        status: newStatus,
+        cost: Number(editForm.cost) || 0,
+        completed_date:
+          newStatus === "completed"
+            ? editOrder.completed_date || new Date().toISOString()
+            : null,
+      };
+      const { error } = await supabase
+        .from("maintenance_requests")
+        .update(updates)
+        .eq("id", editOrder.id);
+      if (error) throw error;
+
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === editOrder.id
+            ? {
+                ...o,
+                description: updates.description,
+                priority: updates.priority,
+                status: updates.status,
+                cost: updates.cost,
+                completed_date: updates.completed_date,
+              }
+            : o
+        )
+      );
+      toast({ title: "تم الحفظ", description: "تم تعديل أمر الصيانة بنجاح" });
+      setEditOrder(null);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "خطأ", description: "تعذر تعديل أمر الصيانة", variant: "destructive" });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDelete = (order: MaintenanceOrder) => {
+    requestDelete(
+      async () => {
+        try {
+          const { error: itemsError } = await supabase
+            .from("maintenance_cost_items")
+            .delete()
+            .eq("maintenance_request_id", order.id);
+          if (itemsError) throw itemsError;
+
+          const { error } = await supabase
+            .from("maintenance_requests")
+            .delete()
+            .eq("id", order.id);
+          if (error) throw error;
+
+          setOrders(prev => prev.filter(o => o.id !== order.id));
+          toast({ title: "تم الحذف", description: "تم حذف أمر الصيانة وقطعه" });
+        } catch (e) {
+          console.error(e);
+          toast({ title: "خطأ", description: "تعذر حذف أمر الصيانة", variant: "destructive" });
+        }
+      },
+      {
+        title: "حذف أمر الصيانة",
+        description: `سيتم حذف أمر الصيانة الخاص بـ ${order.vehicle_name} وكل قطعه. لا يمكن التراجع.`,
+      }
+    );
+  };
 
   useEffect(() => {
     loadOrders();
