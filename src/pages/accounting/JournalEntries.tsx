@@ -1920,7 +1920,7 @@ const JournalEntries = () => {
                               )}
                             </Button>
                           </TableCell>
-                          <TableCell className="font-medium">{filteredEntries.length - index}</TableCell>
+                          <TableCell className="font-medium">{filteredEntries.length - ((safePage - 1) * ENTRIES_PER_PAGE + index)}</TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground">{entry.universalSerial || '—'}</TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
                           <TableCell>
