@@ -462,9 +462,17 @@ const MaintenanceOrdersReport = () => {
                         <TableCell className="text-center">{o.items_count}</TableCell>
                         <TableCell className="font-semibold text-primary">{o.cost.toLocaleString()} ر.س</TableCell>
                         <TableCell className="print:hidden">
-                          <Button size="sm" variant="ghost" onClick={() => handleViewDetails(o)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" title="عرض التفاصيل" onClick={() => handleViewDetails(o)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" title="تعديل" onClick={() => openEdit(o)}>
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button size="sm" variant="ghost" title="حذف" onClick={() => handleDelete(o)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
