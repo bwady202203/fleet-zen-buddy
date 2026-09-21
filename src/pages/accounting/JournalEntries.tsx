@@ -789,6 +789,13 @@ const JournalEntries = () => {
     return true;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedEntries = filteredEntries.slice(
+    (safePage - 1) * ENTRIES_PER_PAGE,
+    safePage * ENTRIES_PER_PAGE
+  );
+
   const toggleEntryExpand = (entryId: string) => {
     setExpandedEntries(prev => {
       const newSet = new Set(prev);
@@ -802,7 +809,7 @@ const JournalEntries = () => {
   };
 
   const expandAllEntries = () => {
-    const allEntryIds = new Set(filteredEntries.map(entry => entry.id));
+    const allEntryIds = new Set(paginatedEntries.map(entry => entry.id));
     setExpandedEntries(allEntryIds);
   };
 
@@ -811,7 +818,7 @@ const JournalEntries = () => {
   };
 
   const toggleAllEntries = () => {
-    if (expandedEntries.size === filteredEntries.length) {
+    if (expandedEntries.size === paginatedEntries.length) {
       collapseAllEntries();
     } else {
       expandAllEntries();
