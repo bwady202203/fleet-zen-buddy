@@ -1866,7 +1866,7 @@ const JournalEntries = () => {
                   onClick={toggleAllEntries}
                   className="gap-2"
                 >
-                  {expandedEntries.size === filteredEntries.length ? (
+                  {expandedEntries.size === paginatedEntries.length && paginatedEntries.length > 0 ? (
                     <>
                       <ChevronUp className="h-4 w-4" />
                       طي الكل / Collapse All
