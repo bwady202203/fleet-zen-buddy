@@ -17,6 +17,7 @@ export interface PremiumLoadPrintRow {
   commission: number;
   delivery_from: string | null;
   delivery_to: string | null;
+  distance_km?: number;
 }
 
 interface Props {
@@ -51,6 +52,7 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
       unload: rows.reduce((s, r) => s + r.unload_quantity, 0),
       difference: rows.reduce((s, r) => s + r.difference, 0),
       commission: rows.reduce((s, r) => s + r.commission, 0),
+      distance: rows.reduce((s, r) => s + (r.distance_km || 0), 0),
     }),
     [rows]
   );
@@ -93,6 +95,7 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
         <th className="pl-th">العمولة</th>
         <th className="pl-th pl-th-right">التوصيل من</th>
         <th className="pl-th pl-th-right">التوصيل الى</th>
+        <th className="pl-th">الكيلومترات</th>
       </tr>
     </thead>
   );
