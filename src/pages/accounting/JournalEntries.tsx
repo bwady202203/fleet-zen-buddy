@@ -2066,6 +2066,67 @@ const JournalEntries = () => {
                     ))}
                   </TableBody>
                 </Table>
+                {filteredEntries.length > 0 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      عرض {((safePage - 1) * ENTRIES_PER_PAGE + 1).toLocaleString('ar-SA')} - {Math.min(safePage * ENTRIES_PER_PAGE, filteredEntries.length).toLocaleString('ar-SA')} من أصل {filteredEntries.length.toLocaleString('ar-SA')} قيد
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={safePage === 1}
+                      >
+                        الأولى
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={safePage === 1}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => page === 1 || page === totalPages || (page >= safePage - 2 && page <= safePage + 2))
+                        .map((page, idx, arr) => {
+                          const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsis && <span className="px-2 text-muted-foreground">...</span>}
+                              <Button
+                                variant={safePage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.25rem]"
+                              >
+                                {page.toLocaleString('ar-SA')}
+                              </Button>
+                            </React.Fragment>
+                          );
+                        })}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={safePage === totalPages}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={safePage === totalPages}
+                      >
+                        الأخيرة
+                      </Button>
+                    </div>
+                  </div>
+                )}
               )}
             </CardContent>
           </Card>
