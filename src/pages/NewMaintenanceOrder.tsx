@@ -178,12 +178,31 @@ export default function NewMaintenanceOrder() {
         .filter(Boolean)
         .join("\n");
 
+      const { data: authData } = await supabase.auth.getUser();
+      const { data: orgData } = await supabase
+        .from("user_organizations")
+        .select("organization_id")
+        .limit(1)
+        .maybeSingle();
+      const organizationId = orgData?.organization_id ?? null;
+
+      if (!organizationId) {
+        toast({
+          title: "لا يمكن الحفظ",
+          description: "حسابك غير مرتبط بأي شركة. تواصل مع المسؤول لربط حسابك بالشركة.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .from("maintenance_requests")
         .insert({
           vehicle_id: selectedVehicle.id,
           description: fullDescription,
-
+          organization_id: organizationId,
+          requested_by: authData?.user?.id ?? null,
           cost: totalCost,
           status: "pending",
           priority: "medium",
@@ -197,6 +216,7 @@ export default function NewMaintenanceOrder() {
         const part = spareParts.find((p) => p.id === partId);
         return {
           maintenance_request_id: maintenanceData.id,
+          organization_id: organizationId,
           item_name: part?.name || "قطعة غيار",
           item_type: "spare_part",
           quantity: qty,
