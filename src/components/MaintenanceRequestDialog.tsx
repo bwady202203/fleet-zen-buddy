@@ -171,7 +171,7 @@ export const MaintenanceRequestDialog = ({
           throw new Error("Vehicle ID is required");
         }
 
-        // التحقق من الكميات المتاحة
+        // تنبيه فقط عند نقص الكمية المتاحة (الخصم مسموح على أي حال)
         const insufficientParts: string[] = [];
         for (const [partId, quantity] of Object.entries(selectedParts)) {
           const part = spareParts.find((p) => p.id === partId);
@@ -182,11 +182,9 @@ export const MaintenanceRequestDialog = ({
 
         if (insufficientParts.length > 0) {
           toast({
-            title: "كمية غير كافية",
-            description: `الأصناف التالية غير متوفرة بالكمية المطلوبة: ${insufficientParts.join(", ")}`,
-            variant: "destructive",
+            title: "تنبيه: الكمية المتاحة أقل من المطلوب",
+            description: `سيتم الخصم وسيظهر رصيد هذه الأصناف بالسالب: ${insufficientParts.join(", ")}`,
           });
-          return;
         }
 
         // حفظ طلب الصيانة في قاعدة البيانات

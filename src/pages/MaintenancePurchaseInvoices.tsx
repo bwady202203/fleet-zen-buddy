@@ -378,16 +378,17 @@ export default function MaintenancePurchaseInvoices() {
             // تحديث الكمية لقطعة موجودة
             const { data: sparePartData } = await supabase
               .from('spare_parts')
-              .select('quantity')
+              .select('quantity, total_purchased')
               .eq('id', item.spare_part_id)
               .single();
 
             const newQuantity = (sparePartData?.quantity || 0) + item.quantity;
-            
+
             const { error: updateError } = await supabase
               .from('spare_parts')
               .update({ 
                 quantity: newQuantity,
+                total_purchased: (sparePartData?.total_purchased || 0) + item.quantity,
                 unit_price: item.unit_price
               })
               .eq('id', item.spare_part_id);
