@@ -218,6 +218,12 @@ const PremiumLoadsReport = () => {
       if (companiesRes.data) setCompanies(companiesRes.data);
       if (loadTypesRes.data) setLoadTypes(loadTypesRes.data);
       if (settingsRes.data?.company_name) setCompanyName(settingsRes.data.company_name);
+      const { data: locs } = await (supabase as any)
+        .from("delivery_locations")
+        .select("id, name")
+        .order("name");
+      setLocations(locs || []);
+      loadDistances();
     })();
   }, []);
 
@@ -258,6 +264,21 @@ const PremiumLoadsReport = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const distanceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    distances.forEach((d) => {
+      const a = normalizePoint(d.from_location);
+      const b = normalizePoint(d.to_location);
+      const km = Number(d.distance_km) || 0;
+      map.set(`${a}|${b}`, km);
+      if (!map.has(`${b}|${a}`)) map.set(`${b}|${a}`, km);
+    });
+    return map;
+  }, [distances]);
+
+  const distanceFor = (from?: string | null, to?: string | null) =>
+    distanceMap.get(`${normalizePoint(from)}|${normalizePoint(to)}`) ?? 0;
+
   const printRows: PremiumLoadPrintRow[] = useMemo(
     () =>
       rows.map((r) => ({
@@ -275,8 +296,10 @@ const PremiumLoadsReport = () => {
         commission: Number(r.driver_commission) || 0,
         delivery_from: r.delivery_from,
         delivery_to: r.delivery_to,
+        distance_km: distanceFor(r.delivery_from, r.delivery_to),
       })),
-    [rows]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, distanceMap]
   );
 
   const totals = useMemo(() => ({
@@ -285,6 +308,7 @@ const PremiumLoadsReport = () => {
     unloadQuantity: printRows.reduce((s, r) => s + r.unload_quantity, 0),
     difference: printRows.reduce((s, r) => s + r.difference, 0),
     commissions: printRows.reduce((s, r) => s + r.commission, 0),
+    distance: printRows.reduce((s, r) => s + (r.distance_km || 0), 0),
   }), [rows.length, printRows]);
 
   const hasDeliveryData = useMemo(
