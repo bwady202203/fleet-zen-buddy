@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw, Wrench, Paperclip } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2, BookOpen, RefreshCw, Wrench, Paperclip } from "lucide-react";
 import EntityDocumentsDialog from "@/components/documents/EntityDocumentsDialog";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -83,6 +83,8 @@ const JournalEntries = () => {
   const [filterAccount, setFilterAccount] = useState("");
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ENTRIES_PER_PAGE = 10;
   const [isSaving, setIsSaving] = useState(false);
   const [openingEntryDialogOpen, setOpeningEntryDialogOpen] = useState(false);
   const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
@@ -210,6 +212,11 @@ const JournalEntries = () => {
       }
     }
   }, [entryIdFromUrl, displayedEntries, setSearchParams]);
+
+  // إعادة ضبط الصفحة عند تغيير التصفية
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterDate, filterAccount]);
 
   // Initialize opening entry lines after mount
   useEffect(() => {
@@ -782,6 +789,13 @@ const JournalEntries = () => {
     return true;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedEntries = filteredEntries.slice(
+    (safePage - 1) * ENTRIES_PER_PAGE,
+    safePage * ENTRIES_PER_PAGE
+  );
+
   const toggleEntryExpand = (entryId: string) => {
     setExpandedEntries(prev => {
       const newSet = new Set(prev);
@@ -795,7 +809,7 @@ const JournalEntries = () => {
   };
 
   const expandAllEntries = () => {
-    const allEntryIds = new Set(filteredEntries.map(entry => entry.id));
+    const allEntryIds = new Set(paginatedEntries.map(entry => entry.id));
     setExpandedEntries(allEntryIds);
   };
 
@@ -804,7 +818,7 @@ const JournalEntries = () => {
   };
 
   const toggleAllEntries = () => {
-    if (expandedEntries.size === filteredEntries.length) {
+    if (expandedEntries.size === paginatedEntries.length) {
       collapseAllEntries();
     } else {
       expandAllEntries();
@@ -1852,7 +1866,7 @@ const JournalEntries = () => {
                   onClick={toggleAllEntries}
                   className="gap-2"
                 >
-                  {expandedEntries.size === filteredEntries.length ? (
+                  {expandedEntries.size === paginatedEntries.length && paginatedEntries.length > 0 ? (
                     <>
                       <ChevronUp className="h-4 w-4" />
                       طي الكل / Collapse All
@@ -1867,13 +1881,14 @@ const JournalEntries = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {filteredEntries.length === 0 ? (
+              {paginatedEntries.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground text-lg">
                     لا توجد قيود حالياً / No entries found
                   </p>
                 </div>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1889,7 +1904,7 @@ const JournalEntries = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEntries.map((entry, index) => (
+                    {paginatedEntries.map((entry, index) => (
                       <Fragment key={entry.id}>
                         <TableRow className="hover:bg-muted/50">
                           <TableCell>
@@ -1906,7 +1921,7 @@ const JournalEntries = () => {
                               )}
                             </Button>
                           </TableCell>
-                          <TableCell className="font-medium">{filteredEntries.length - index}</TableCell>
+                          <TableCell className="font-medium">{filteredEntries.length - ((safePage - 1) * ENTRIES_PER_PAGE + index)}</TableCell>
                           <TableCell className="font-mono text-xs text-muted-foreground">{entry.universalSerial || '—'}</TableCell>
                           <TableCell className="font-medium">{entry.entryNumber}</TableCell>
                           <TableCell>
@@ -2052,7 +2067,68 @@ const JournalEntries = () => {
                     ))}
                   </TableBody>
                 </Table>
-              )}
+                {filteredEntries.length > 0 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      عرض {((safePage - 1) * ENTRIES_PER_PAGE + 1).toLocaleString('ar-SA')} - {Math.min(safePage * ENTRIES_PER_PAGE, filteredEntries.length).toLocaleString('ar-SA')} من أصل {filteredEntries.length.toLocaleString('ar-SA')} قيد
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={safePage === 1}
+                      >
+                        الأولى
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={safePage === 1}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => page === 1 || page === totalPages || (page >= safePage - 2 && page <= safePage + 2))
+                        .map((page, idx, arr) => {
+                          const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsis && <span className="px-2 text-muted-foreground">...</span>}
+                              <Button
+                                variant={safePage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="min-w-[2.25rem]"
+                              >
+                                {page.toLocaleString('ar-SA')}
+                              </Button>
+                            </React.Fragment>
+                          );
+                        })}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={safePage === totalPages}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={safePage === totalPages}
+                      >
+                        الأخيرة
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>)}
             </CardContent>
           </Card>
         </main>
