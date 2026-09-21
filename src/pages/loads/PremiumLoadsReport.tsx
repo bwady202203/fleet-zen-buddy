@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowRight, Printer, Search, FileDown, Eye, Pencil } from "lucide-react";
+import { ArrowRight, Printer, Search, FileDown, Eye, Pencil, Settings2, Trash2, Plus, Route } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PremiumLoadsPrintPreview, { PremiumLoadPrintRow } from "@/components/loads/PremiumLoadsPrintPreview";
@@ -31,6 +31,23 @@ interface LoadRow {
   drivers: { name: string } | null;
   load_types: { name: string } | null;
 }
+
+interface RouteDistance {
+  id: string;
+  from_location: string;
+  to_location: string;
+  distance_km: number;
+}
+
+const normalizePoint = (v?: string | null) =>
+  (v || "")
+    .replace(/[\u064B-\u0652]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/[ىئ]/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 
 interface EditForm {
   id: string;
@@ -68,6 +85,70 @@ const PremiumLoadsReport = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [editRow, setEditRow] = useState<EditForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // إعدادات مسافات الطرق (كم)
+  const [distances, setDistances] = useState<RouteDistance[]>([]);
+  const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+  const [distancesOpen, setDistancesOpen] = useState(false);
+  const [newRoute, setNewRoute] = useState({ from: "", to: "", km: "" });
+  const [savingRoute, setSavingRoute] = useState(false);
+
+  const loadDistances = async () => {
+    const { data } = await (supabase as any)
+      .from("route_distances")
+      .select("id, from_location, to_location, distance_km")
+      .order("from_location");
+    setDistances((data as RouteDistance[]) || []);
+  };
+
+  const addRoute = async () => {
+    const from = newRoute.from.trim();
+    const to = newRoute.to.trim();
+    const km = Number(newRoute.km);
+    if (!from || !to) return toast.error("اختر نقطة الانطلاق ونقطة الوصول");
+    if (!Number.isFinite(km) || km <= 0) return toast.error("أدخل عدد الكيلومترات");
+    setSavingRoute(true);
+    try {
+      const { data: orgData } = await supabase
+        .from("user_organizations")
+        .select("organization_id")
+        .limit(1)
+        .maybeSingle();
+      const { error } = await (supabase as any).from("route_distances").insert({
+        from_location: from,
+        to_location: to,
+        distance_km: km,
+        organization_id: orgData?.organization_id ?? null,
+      });
+      if (error) throw error;
+      toast.success("تم حفظ المسافة");
+      setNewRoute({ from: "", to: "", km: "" });
+      loadDistances();
+    } catch (e: any) {
+      toast.error(
+        e?.code === "23505" ? "هذا المسار مسجّل مسبقاً" : "فشل الحفظ: " + (e?.message || "")
+      );
+    } finally {
+      setSavingRoute(false);
+    }
+  };
+
+  const updateRouteKm = async (id: string, km: string) => {
+    const value = Number(km);
+    if (!Number.isFinite(value)) return;
+    setDistances((prev) => prev.map((d) => (d.id === id ? { ...d, distance_km: value } : d)));
+    const { error } = await (supabase as any)
+      .from("route_distances")
+      .update({ distance_km: value })
+      .eq("id", id);
+    if (error) toast.error("فشل التحديث");
+  };
+
+  const deleteRoute = async (id: string) => {
+    const { error } = await (supabase as any).from("route_distances").delete().eq("id", id);
+    if (error) return toast.error("فشل الحذف");
+    setDistances((prev) => prev.filter((d) => d.id !== id));
+  };
 
   const openEdit = (r: LoadRow) => {
     setEditRow({
@@ -137,6 +218,12 @@ const PremiumLoadsReport = () => {
       if (companiesRes.data) setCompanies(companiesRes.data);
       if (loadTypesRes.data) setLoadTypes(loadTypesRes.data);
       if (settingsRes.data?.company_name) setCompanyName(settingsRes.data.company_name);
+      const { data: locs } = await (supabase as any)
+        .from("delivery_locations")
+        .select("id, name")
+        .order("name");
+      setLocations(locs || []);
+      loadDistances();
     })();
   }, []);
 
@@ -177,6 +264,21 @@ const PremiumLoadsReport = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const distanceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    distances.forEach((d) => {
+      const a = normalizePoint(d.from_location);
+      const b = normalizePoint(d.to_location);
+      const km = Number(d.distance_km) || 0;
+      map.set(`${a}|${b}`, km);
+      if (!map.has(`${b}|${a}`)) map.set(`${b}|${a}`, km);
+    });
+    return map;
+  }, [distances]);
+
+  const distanceFor = (from?: string | null, to?: string | null) =>
+    distanceMap.get(`${normalizePoint(from)}|${normalizePoint(to)}`) ?? 0;
+
   const printRows: PremiumLoadPrintRow[] = useMemo(
     () =>
       rows.map((r) => ({
@@ -194,8 +296,10 @@ const PremiumLoadsReport = () => {
         commission: Number(r.driver_commission) || 0,
         delivery_from: r.delivery_from,
         delivery_to: r.delivery_to,
+        distance_km: distanceFor(r.delivery_from, r.delivery_to),
       })),
-    [rows]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, distanceMap]
   );
 
   const totals = useMemo(() => ({
@@ -204,6 +308,7 @@ const PremiumLoadsReport = () => {
     unloadQuantity: printRows.reduce((s, r) => s + r.unload_quantity, 0),
     difference: printRows.reduce((s, r) => s + r.difference, 0),
     commissions: printRows.reduce((s, r) => s + r.commission, 0),
+    distance: printRows.reduce((s, r) => s + (r.distance_km || 0), 0),
   }), [rows.length, printRows]);
 
   const hasDeliveryData = useMemo(
@@ -231,6 +336,7 @@ const PremiumLoadsReport = () => {
       "العمولة": r.commission,
       "التوصيل من": r.delivery_from || "",
       "التوصيل الى": r.delivery_to || "",
+      "الكيلومترات": r.distance_km || 0,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -251,6 +357,9 @@ const PremiumLoadsReport = () => {
               <p className="text-muted-foreground mt-1 text-sm">Premium Loads Detailed Report</p>
             </div>
             <div className="mr-auto flex gap-2">
+              <Button variant="outline" onClick={() => setDistancesOpen(true)} className="gap-2">
+                <Settings2 className="h-4 w-4" /> إعدادات المسافات
+              </Button>
               <Button variant="outline" onClick={exportExcel} className="gap-2">
                 <FileDown className="h-4 w-4" /> Excel
               </Button>
@@ -305,7 +414,7 @@ const PremiumLoadsReport = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card><CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground">عدد الحمولات</p>
             <p className="text-3xl font-bold">{totals.count}</p>
@@ -326,7 +435,19 @@ const PremiumLoadsReport = () => {
             <p className="text-sm text-muted-foreground">إجمالي العمولات</p>
             <p className="text-3xl font-bold">{fmt(totals.commissions)}</p>
           </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي الكيلومترات</p>
+            <p className="text-3xl font-bold">{fmt(totals.distance)}</p>
+          </CardContent></Card>
         </div>
+
+        {rows.length > 0 && hasDeliveryData && totals.distance === 0 && (
+          <div className="rounded-md border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm">
+            لم يتم تسجيل مسافات للمسارات المستخدمة في هذه الفترة — اضغط
+            <button className="mx-1 font-semibold underline" onClick={() => setDistancesOpen(true)}>إعدادات المسافات</button>
+            لتحديد عدد الكيلومترات بين نقطة الانطلاق ونقطة الوصول.
+          </div>
+        )}
 
         {rows.length > 0 && !hasDeliveryData && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
@@ -358,12 +479,13 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">عمولات</th>
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
+                  <th className="border p-2">الكيلومترات</th>
                   <th className="border p-2">تعديل</th>
                 </tr>
               </thead>
               <tbody>
                 {printRows.length === 0 ? (
-                  <tr><td colSpan={15} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={16} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : printRows.map((r, i) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{i + 1}</td>
@@ -380,6 +502,9 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(r.commission)}</td>
                     <td className="border p-2">{dash(r.delivery_from)}</td>
                     <td className="border p-2">{dash(r.delivery_to)}</td>
+                    <td className="border p-2 text-center font-semibold">
+                      {r.distance_km ? fmt(r.distance_km) : "—"}
+                    </td>
                     <td className="border p-2 text-center">
                       <Button
                         size="icon"
@@ -404,7 +529,9 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(totals.unloadQuantity)}</td>
                     <td className="border p-2 text-center">{fmt(totals.difference)}</td>
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
-                    <td className="border p-2" colSpan={3}></td>
+                    <td className="border p-2" colSpan={2}></td>
+                    <td className="border p-2 text-center">{fmt(totals.distance)}</td>
+                    <td className="border p-2"></td>
                   </tr>
                 </tfoot>
 
@@ -422,6 +549,97 @@ const PremiumLoadsReport = () => {
         fromDate={fromDate}
         toDate={toDate}
       />
+
+      <Dialog open={distancesOpen} onOpenChange={setDistancesOpen}>
+        <DialogContent dir="rtl" className="max-w-3xl max-h-[88vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Route className="h-5 w-5" /> إعدادات المسافات بين نقاط الانطلاق والوصول
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end rounded-md border p-3">
+            <div className="space-y-2">
+              <Label>نقطة الانطلاق</Label>
+              {locations.length > 0 ? (
+                <Select value={newRoute.from} onValueChange={(v) => setNewRoute({ ...newRoute, from: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map((l) => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={newRoute.from} onChange={(e) => setNewRoute({ ...newRoute, from: e.target.value })} />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>نقطة الوصول</Label>
+              {locations.length > 0 ? (
+                <Select value={newRoute.to} onValueChange={(v) => setNewRoute({ ...newRoute, to: v })}>
+                  <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map((l) => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={newRoute.to} onChange={(e) => setNewRoute({ ...newRoute, to: e.target.value })} />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>عدد الكيلومترات</Label>
+              <Input
+                inputMode="decimal"
+                value={newRoute.km}
+                onChange={(e) => setNewRoute({ ...newRoute, km: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+            <Button onClick={addRoute} disabled={savingRoute} className="gap-2">
+              <Plus className="h-4 w-4" /> {savingRoute ? "جاري الحفظ..." : "إضافة"}
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border p-2">نقطة الانطلاق</th>
+                  <th className="border p-2">نقطة الوصول</th>
+                  <th className="border p-2">الكيلومترات</th>
+                  <th className="border p-2">حذف</th>
+                </tr>
+              </thead>
+              <tbody>
+                {distances.length === 0 ? (
+                  <tr><td colSpan={4} className="border p-6 text-center text-muted-foreground">لا توجد مسافات مسجلة</td></tr>
+                ) : distances.map((d) => (
+                  <tr key={d.id}>
+                    <td className="border p-2">{d.from_location}</td>
+                    <td className="border p-2">{d.to_location}</td>
+                    <td className="border p-2 w-32">
+                      <Input
+                        inputMode="decimal"
+                        defaultValue={String(d.distance_km)}
+                        onBlur={(e) => updateRouteKm(d.id, e.target.value)}
+                        className="h-8 text-center"
+                      />
+                    </td>
+                    <td className="border p-2 text-center">
+                      <Button size="icon" variant="ghost" aria-label="حذف المسافة" onClick={() => deleteRoute(d.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDistancesOpen(false)}>إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editRow} onOpenChange={(o) => !o && setEditRow(null)}>
         <DialogContent dir="rtl" className="max-w-2xl max-h-[85vh] overflow-y-auto">

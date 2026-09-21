@@ -3151,6 +3151,39 @@ export type Database = {
         }
         Relationships: []
       }
+      route_distances: {
+        Row: {
+          created_at: string
+          distance_km: number
+          from_location: string
+          id: string
+          notes: string | null
+          organization_id: string | null
+          to_location: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          distance_km?: number
+          from_location: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          to_location: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          distance_km?: number
+          from_location?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          to_location?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       smart_journal_account_order: {
         Row: {
           account_order: string[]
