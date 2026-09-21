@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting, JournalEntryLine } from "@/contexts/AccountingContext";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, Trash2, BookOpen, RefreshCw, Wrench, Paperclip } from "lucide-react";
+import { ArrowRight, Plus, Printer, Eye, Filter, ClipboardPaste, Save, X, Pencil, FileDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2, BookOpen, RefreshCw, Wrench, Paperclip } from "lucide-react";
 import EntityDocumentsDialog from "@/components/documents/EntityDocumentsDialog";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
