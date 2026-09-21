@@ -414,7 +414,7 @@ const PremiumLoadsReport = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card><CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground">عدد الحمولات</p>
             <p className="text-3xl font-bold">{totals.count}</p>
@@ -435,7 +435,19 @@ const PremiumLoadsReport = () => {
             <p className="text-sm text-muted-foreground">إجمالي العمولات</p>
             <p className="text-3xl font-bold">{fmt(totals.commissions)}</p>
           </CardContent></Card>
+          <Card><CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي الكيلومترات</p>
+            <p className="text-3xl font-bold">{fmt(totals.distance)}</p>
+          </CardContent></Card>
         </div>
+
+        {rows.length > 0 && hasDeliveryData && totals.distance === 0 && (
+          <div className="rounded-md border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sm">
+            لم يتم تسجيل مسافات للمسارات المستخدمة في هذه الفترة — اضغط
+            <button className="mx-1 font-semibold underline" onClick={() => setDistancesOpen(true)}>إعدادات المسافات</button>
+            لتحديد عدد الكيلومترات بين نقطة الانطلاق ونقطة الوصول.
+          </div>
+        )}
 
         {rows.length > 0 && !hasDeliveryData && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
@@ -467,6 +479,7 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">عمولات</th>
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
+                  <th className="border p-2">الكيلومترات</th>
                   <th className="border p-2">تعديل</th>
                 </tr>
               </thead>
