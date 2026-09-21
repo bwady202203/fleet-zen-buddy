@@ -1881,7 +1881,7 @@ const JournalEntries = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {filteredEntries.length === 0 ? (
+              {paginatedEntries.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground text-lg">
                     لا توجد قيود حالياً / No entries found
@@ -1903,7 +1903,7 @@ const JournalEntries = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEntries.map((entry, index) => (
+                    {paginatedEntries.map((entry, index) => (
                       <Fragment key={entry.id}>
                         <TableRow className="hover:bg-muted/50">
                           <TableCell>
