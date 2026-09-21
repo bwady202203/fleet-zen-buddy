@@ -485,7 +485,7 @@ const PremiumLoadsReport = () => {
               </thead>
               <tbody>
                 {printRows.length === 0 ? (
-                  <tr><td colSpan={15} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={16} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : printRows.map((r, i) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{i + 1}</td>
@@ -502,6 +502,9 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(r.commission)}</td>
                     <td className="border p-2">{dash(r.delivery_from)}</td>
                     <td className="border p-2">{dash(r.delivery_to)}</td>
+                    <td className="border p-2 text-center font-semibold">
+                      {r.distance_km ? fmt(r.distance_km) : "—"}
+                    </td>
                     <td className="border p-2 text-center">
                       <Button
                         size="icon"
@@ -526,7 +529,9 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(totals.unloadQuantity)}</td>
                     <td className="border p-2 text-center">{fmt(totals.difference)}</td>
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
-                    <td className="border p-2" colSpan={3}></td>
+                    <td className="border p-2" colSpan={2}></td>
+                    <td className="border p-2 text-center">{fmt(totals.distance)}</td>
+                    <td className="border p-2"></td>
                   </tr>
                 </tfoot>
 
