@@ -213,6 +213,11 @@ const JournalEntries = () => {
     }
   }, [entryIdFromUrl, displayedEntries, setSearchParams]);
 
+  // إعادة ضبط الصفحة عند تغيير التصفية
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterDate, filterAccount]);
+
   // Initialize opening entry lines after mount
   useEffect(() => {
     if (openingEntryData.lines.length === 0) {
