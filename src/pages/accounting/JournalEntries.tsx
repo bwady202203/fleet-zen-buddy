@@ -1895,6 +1895,7 @@ const JournalEntries = () => {
                   </p>
                 </div>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
