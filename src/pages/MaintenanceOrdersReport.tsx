@@ -539,6 +539,73 @@ const MaintenanceOrdersReport = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editOrder} onOpenChange={(open) => !open && setEditOrder(null)}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل أمر الصيانة</DialogTitle>
+          </DialogHeader>
+          {editOrder && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                المركبة: <span className="font-semibold text-foreground">{editOrder.vehicle_name}</span>
+              </div>
+              <div className="space-y-2">
+                <Label>الوصف</Label>
+                <Textarea
+                  rows={6}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>الأولوية</Label>
+                  <Select value={editForm.priority} onValueChange={(v) => setEditForm({ ...editForm, priority: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">منخفض</SelectItem>
+                      <SelectItem value="medium">متوسط</SelectItem>
+                      <SelectItem value="high">عالي</SelectItem>
+                      <SelectItem value="urgent">عاجل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>الحالة</Label>
+                  <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">قيد الانتظار</SelectItem>
+                      <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="cancelled">ملغي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>التكلفة (ر.س)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={editForm.cost}
+                  onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button onClick={saveEdit} disabled={savingEdit}>
+              {savingEdit ? "جاري الحفظ..." : "حفظ التعديلات"}
+            </Button>
+            <Button variant="outline" onClick={() => setEditOrder(null)}>إلغاء</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteDialog />
     </div>
   );
 };
