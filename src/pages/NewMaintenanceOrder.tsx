@@ -153,7 +153,7 @@ export default function NewMaintenanceOrder() {
     }
 
 
-    // التحقق من توفر الكميات
+    // تنبيه فقط عند نقص الكمية المتاحة (الخصم مسموح على أي حال)
     const insufficient: string[] = [];
     for (const [partId, qty] of Object.entries(selectedParts)) {
       const part = spareParts.find((p) => p.id === partId);
@@ -163,12 +163,11 @@ export default function NewMaintenanceOrder() {
     }
     if (insufficient.length > 0) {
       toast({
-        title: "كمية غير كافية",
-        description: `الأصناف التالية غير متوفرة بالكمية المطلوبة: ${insufficient.join(", ")}`,
-        variant: "destructive",
+        title: "تنبيه: الكمية المتاحة أقل من المطلوب",
+        description: `سيتم الخصم وسيظهر رصيد هذه الأصناف بالسالب: ${insufficient.join(", ")}`,
       });
-      return;
     }
+
 
     setIsSubmitting(true);
     try {

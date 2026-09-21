@@ -375,10 +375,11 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
   const deductQuantity = async (sparePartId: string, quantity: number, reference: string, notes: string): Promise<boolean> => {
     try {
       const part = spareParts.find((p) => p.id === sparePartId);
-      if (!part || part.quantity < quantity) {
+      if (!part) {
         return false;
       }
 
+      // يُسمح بالخصم حتى إن كانت الكمية المتاحة أقل من المطلوب (يظهر الرصيد بالسالب)
       const newQuantity = part.quantity - quantity;
 
       // جلب القيمة التراكمية الحالية للصيانة من قاعدة البيانات
@@ -401,6 +402,13 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
 
       if (updateError) throw updateError;
 
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: orgData } = await supabase
+        .from('user_organizations')
+        .select('organization_id')
+        .limit(1)
+        .maybeSingle();
+
       // تسجيل حركة الصيانة
       const { error: transError } = await supabase
         .from('stock_transactions')
@@ -412,6 +420,8 @@ export const SparePartsProvider = ({ children }: { children: ReactNode }) => {
           reference_id: reference,
           reference_type: 'maintenance',
           notes,
+          organization_id: orgData?.organization_id,
+          created_by: userData?.user?.id,
         });
 
       if (transError) throw transError;
