@@ -222,6 +222,10 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                   <div className="pl-kpi-label">إجمالي العمولات</div>
                   <div className="pl-kpi-value">{fmt(totals.commission)}</div>
                 </div>
+                <div className="pl-kpi">
+                  <div className="pl-kpi-label">إجمالي الكيلومترات</div>
+                  <div className="pl-kpi-value">{fmt(totals.distance)}</div>
+                </div>
               </div>
             )}
 
@@ -238,9 +242,10 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                 <col style={{ width: "6%" }} />
                 <col style={{ width: "6%" }} />
                 <col style={{ width: "5.5%" }} />
-                <col style={{ width: "6.5%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "8%" }} />
+                <col style={{ width: "6%" }} />
+                <col style={{ width: "7.5%" }} />
+                <col style={{ width: "7.5%" }} />
+                <col style={{ width: "5%" }} />
               </colgroup>
               {tableHead}
               <tbody>
@@ -260,6 +265,7 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                     <td className="pl-td pl-num">{fmt(r.commission)}</td>
                     <td className="pl-td pl-td-right">{dash(r.delivery_from)}</td>
                     <td className="pl-td pl-td-right">{dash(r.delivery_to)}</td>
+                    <td className="pl-td pl-num">{r.distance_km ? fmt(r.distance_km) : "—"}</td>
                   </tr>
                 ))}
                 {pageIndex === pages.length - 1 && (
@@ -270,6 +276,7 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                     <td className="pl-td pl-num">{fmt(totals.difference)}</td>
                     <td className="pl-td pl-num">{fmt(totals.commission)}</td>
                     <td className="pl-td" colSpan={2} />
+                    <td className="pl-td pl-num">{fmt(totals.distance)}</td>
                   </tr>
                 )}
               </tbody>
