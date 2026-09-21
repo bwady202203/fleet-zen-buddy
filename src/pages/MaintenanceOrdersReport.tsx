@@ -21,13 +21,17 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ClipboardList, ArrowRight, Printer, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ClipboardList, ArrowRight, Printer, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
 
 interface MaintenanceOrder {
   id: string;
