@@ -218,13 +218,6 @@ const JournalEntries = () => {
     setCurrentPage(1);
   }, [filterDate, filterAccount]);
 
-  // التأكد من أن رقم الصفحة الحالي لا يتجاوز العدد الإجمالي
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(Math.max(1, totalPages));
-    }
-  }, [currentPage, totalPages]);
-
   // Initialize opening entry lines after mount
   useEffect(() => {
     if (openingEntryData.lines.length === 0) {
