@@ -21,13 +21,17 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ClipboardList, ArrowRight, Printer, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ClipboardList, ArrowRight, Printer, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
 
 interface MaintenanceOrder {
   id: string;
@@ -73,6 +77,95 @@ const MaintenanceOrdersReport = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<MaintenanceOrder | null>(null);
   const [orderItems, setOrderItems] = useState<CostItem[]>([]);
+  const [editOrder, setEditOrder] = useState<MaintenanceOrder | null>(null);
+  const [editForm, setEditForm] = useState({ description: "", priority: "medium", status: "pending", cost: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const { requestDelete, DeleteDialog } = useDeleteConfirmation();
+
+  const openEdit = (order: MaintenanceOrder) => {
+    setEditOrder(order);
+    setEditForm({
+      description: order.description || "",
+      priority: order.priority,
+      status: order.status,
+      cost: String(order.cost ?? ""),
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editOrder) return;
+    try {
+      setSavingEdit(true);
+      const newStatus = editForm.status;
+      const updates: Record<string, any> = {
+        description: editForm.description,
+        priority: editForm.priority,
+        status: newStatus,
+        cost: Number(editForm.cost) || 0,
+        completed_date:
+          newStatus === "completed"
+            ? editOrder.completed_date || new Date().toISOString()
+            : null,
+      };
+      const { error } = await supabase
+        .from("maintenance_requests")
+        .update(updates)
+        .eq("id", editOrder.id);
+      if (error) throw error;
+
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === editOrder.id
+            ? {
+                ...o,
+                description: updates.description,
+                priority: updates.priority,
+                status: updates.status,
+                cost: updates.cost,
+                completed_date: updates.completed_date,
+              }
+            : o
+        )
+      );
+      toast({ title: "تم الحفظ", description: "تم تعديل أمر الصيانة بنجاح" });
+      setEditOrder(null);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "خطأ", description: "تعذر تعديل أمر الصيانة", variant: "destructive" });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDelete = (order: MaintenanceOrder) => {
+    requestDelete(
+      async () => {
+        try {
+          const { error: itemsError } = await supabase
+            .from("maintenance_cost_items")
+            .delete()
+            .eq("maintenance_request_id", order.id);
+          if (itemsError) throw itemsError;
+
+          const { error } = await supabase
+            .from("maintenance_requests")
+            .delete()
+            .eq("id", order.id);
+          if (error) throw error;
+
+          setOrders(prev => prev.filter(o => o.id !== order.id));
+          toast({ title: "تم الحذف", description: "تم حذف أمر الصيانة وقطعه" });
+        } catch (e) {
+          console.error(e);
+          toast({ title: "خطأ", description: "تعذر حذف أمر الصيانة", variant: "destructive" });
+        }
+      },
+      {
+        title: "حذف أمر الصيانة",
+        description: `سيتم حذف أمر الصيانة الخاص بـ ${order.vehicle_name} وكل قطعه. لا يمكن التراجع.`,
+      }
+    );
+  };
 
   useEffect(() => {
     loadOrders();
@@ -369,9 +462,17 @@ const MaintenanceOrdersReport = () => {
                         <TableCell className="text-center">{o.items_count}</TableCell>
                         <TableCell className="font-semibold text-primary">{o.cost.toLocaleString()} ر.س</TableCell>
                         <TableCell className="print:hidden">
-                          <Button size="sm" variant="ghost" onClick={() => handleViewDetails(o)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" title="عرض التفاصيل" onClick={() => handleViewDetails(o)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" title="تعديل" onClick={() => openEdit(o)}>
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button size="sm" variant="ghost" title="حذف" onClick={() => handleDelete(o)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -438,6 +539,73 @@ const MaintenanceOrdersReport = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editOrder} onOpenChange={(open) => !open && setEditOrder(null)}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل أمر الصيانة</DialogTitle>
+          </DialogHeader>
+          {editOrder && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                المركبة: <span className="font-semibold text-foreground">{editOrder.vehicle_name}</span>
+              </div>
+              <div className="space-y-2">
+                <Label>الوصف</Label>
+                <Textarea
+                  rows={6}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>الأولوية</Label>
+                  <Select value={editForm.priority} onValueChange={(v) => setEditForm({ ...editForm, priority: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">منخفض</SelectItem>
+                      <SelectItem value="medium">متوسط</SelectItem>
+                      <SelectItem value="high">عالي</SelectItem>
+                      <SelectItem value="urgent">عاجل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>الحالة</Label>
+                  <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">قيد الانتظار</SelectItem>
+                      <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="cancelled">ملغي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>التكلفة (ر.س)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={editForm.cost}
+                  onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button onClick={saveEdit} disabled={savingEdit}>
+              {savingEdit ? "جاري الحفظ..." : "حفظ التعديلات"}
+            </Button>
+            <Button variant="outline" onClick={() => setEditOrder(null)}>إلغاء</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteDialog />
     </div>
   );
 };
