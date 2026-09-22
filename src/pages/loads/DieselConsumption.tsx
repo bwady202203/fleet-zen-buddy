@@ -172,6 +172,24 @@ const DieselConsumption = () => {
   const [filterDriver, setFilterDriver] = useState("all");
   const [loading, setLoading] = useState(false);
 
+  // معادلة التحويل: لترات لكل 100 كم
+  const [rateL100, setRateL100] = useState(
+    () => localStorage.getItem("diesel_rate_l_per_100km") || "40"
+  );
+  const [rateDraft, setRateDraft] = useState(rateL100);
+  const [rateOpen, setRateOpen] = useState(false);
+
+  const saveRate = () => {
+    const r = Number(rateDraft);
+    if (!r || r <= 0) return toast.error("أدخل معدل استهلاك صحيح");
+    setRateL100(rateDraft);
+    localStorage.setItem("diesel_rate_l_per_100km", rateDraft);
+    setRateOpen(false);
+    toast.success("تم حفظ معادلة التحويل");
+  };
+
+  const expectedLiters = (km: number) => (km * (Number(rateL100) || 0)) / 100;
+
   useEffect(() => {
     (async () => {
       const [driversRes, settingsRes, distRes] = await Promise.all([
@@ -514,6 +532,41 @@ const DieselConsumption = () => {
                 <Printer className="h-4 w-4 ml-2" />
                 طباعة
               </Button>
+              <Dialog open={rateOpen} onOpenChange={(o) => { setRateOpen(o); if (o) setRateDraft(rateL100); }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 md:col-span-2">
+                    <Settings2 className="h-4 w-4" />
+                    معادلة التحويل: {fmt(Number(rateL100) || 0)} لتر / 100 كم
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Fuel className="h-5 w-5 text-primary" />
+                      معادلة تحويل الكيلومترات إلى ديزل
+                    </DialogTitle>
+                    <DialogDescription>
+                      كمية الديزل المتوقعة = (الكيلومترات ÷ 100) × المعدل المدخل.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    <Label>المعدل (لتر لكل 100 كم)</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={rateDraft}
+                      onChange={(e) => setRateDraft(e.target.value)}
+                      placeholder="40"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={saveRate}>
+                      <Save className="h-4 w-4 ml-2" />
+                      حفظ
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
 
@@ -532,32 +585,47 @@ const DieselConsumption = () => {
                   <th className="border p-2">السائق</th>
                   <th className="border p-2">الكيلومترات</th>
                   <th className="border p-2">الأطنان</th>
-                  <th className="border p-2">الديزل (لتر)</th>
+                  <th className="border p-2">كمية الديزل (حسب الكيلومترات)</th>
+                  <th className="border p-2">الديزل المصروف (لتر)</th>
                   <th className="border p-2">مبلغ الديزل</th>
                   <th className="border p-2">لتر / 100 كم</th>
+                  <th className="border p-2">الفرق (مصروف - محسوب)</th>
                 </tr>
               </thead>
               <tbody>
                 {reportRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                    <td colSpan={9} className="p-6 text-center text-muted-foreground">
                       لا توجد بيانات في الفترة المحددة
                     </td>
                   </tr>
                 ) : (
-                  reportRows.map((r) => (
-                    <tr key={`${r.date}-${r.driverId}`} className="hover:bg-muted/40">
-                      <td className="border p-2 text-center">{r.date}</td>
-                      <td className="border p-2 text-center">{r.driver}</td>
-                      <td className="border p-2 text-center">{fmt(r.km)}</td>
-                      <td className="border p-2 text-center">{fmt(r.tons)}</td>
-                      <td className="border p-2 text-center">{fmt(r.liters)}</td>
-                      <td className="border p-2 text-center">{fmt(r.amount)}</td>
-                      <td className="border p-2 text-center">
-                        {r.km > 0 ? fmt((r.liters / r.km) * 100) : "—"}
-                      </td>
-                    </tr>
-                  ))
+                  reportRows.map((r) => {
+                    const exp = expectedLiters(r.km);
+                    const diff = r.liters - exp;
+                    return (
+                      <tr key={`${r.date}-${r.driverId}`} className="hover:bg-muted/40">
+                        <td className="border p-2 text-center">{r.date}</td>
+                        <td className="border p-2 text-center">{r.driver}</td>
+                        <td className="border p-2 text-center">{fmt(r.km)}</td>
+                        <td className="border p-2 text-center">{fmt(r.tons)}</td>
+                        <td className="border p-2 text-center">{fmt(exp)}</td>
+                        <td className="border p-2 text-center">{fmt(r.liters)}</td>
+                        <td className="border p-2 text-center">{fmt(r.amount)}</td>
+                        <td className="border p-2 text-center">
+                          {r.km > 0 ? fmt((r.liters / r.km) * 100) : "—"}
+                        </td>
+                        <td
+                          className={cn(
+                            "border p-2 text-center font-semibold",
+                            diff > 0 ? "text-destructive" : diff < 0 ? "text-emerald-600" : ""
+                          )}
+                        >
+                          {fmt(diff)}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
               {reportRows.length > 0 && (
@@ -568,10 +636,14 @@ const DieselConsumption = () => {
                     </td>
                     <td className="border p-2 text-center">{fmt(totals.km)}</td>
                     <td className="border p-2 text-center">{fmt(totals.tons)}</td>
+                    <td className="border p-2 text-center">{fmt(expectedLiters(totals.km))}</td>
                     <td className="border p-2 text-center">{fmt(totals.liters)}</td>
                     <td className="border p-2 text-center">{fmt(totals.amount)}</td>
                     <td className="border p-2 text-center">
                       {totals.km > 0 ? fmt((totals.liters / totals.km) * 100) : "—"}
+                    </td>
+                    <td className="border p-2 text-center">
+                      {fmt(totals.liters - expectedLiters(totals.km))}
                     </td>
                   </tr>
                 </tfoot>
