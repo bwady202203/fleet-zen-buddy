@@ -338,18 +338,12 @@ const DieselConsumption = () => {
               </div>
               <div className="space-y-2">
                 <Label>السائق</Label>
-                <Select value={driverId} onValueChange={setDriverId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر السائق" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {drivers.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <DriverCombobox
+                  value={driverId}
+                  onChange={setDriverId}
+                  options={drivers}
+                  placeholder="اختر السائق"
+                />
               </div>
               <div className="space-y-2">
                 <Label>كمية الديزل (لتر)</Label>
