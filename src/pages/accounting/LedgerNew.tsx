@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowRight, Printer, Search, X, Plus, Star, Calendar } from "lucide-react";
+import { ArrowRight, Eye, Printer, Search, X, Plus, Star, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toHijri } from "hijri-converter";
@@ -46,6 +46,24 @@ const formatNumber = (num: number): string => {
     minimumFractionDigits: 2, 
     maximumFractionDigits: 2 
   });
+};
+
+const normalizeText = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[\u064B-\u0652]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/[ىئ]/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const toDisplayDate = (value?: string): string => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-GB");
 };
 
 // Helper function to get current Hijri date
@@ -155,6 +173,7 @@ export default function LedgerNew() {
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
   const [selectedEntryDetail, setSelectedEntryDetail] = useState<JournalEntryDetail | null>(null);
   const [loadingEntry, setLoadingEntry] = useState(false);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   
   // Favorite accounts state
   const [favoriteAccounts, setFavoriteAccounts] = useState<FavoriteAccount[]>([]);
@@ -212,11 +231,11 @@ export default function LedgerNew() {
   // Filtered accounts for adding to favorites
   const filteredFavoriteAccounts = useMemo(() => {
     if (!debouncedFavoriteSearch.trim()) return [];
-    const query = debouncedFavoriteSearch.toLowerCase().trim();
+    const query = normalizeText(debouncedFavoriteSearch);
     return accounts.filter(account => 
-      (account.name_ar.toLowerCase().includes(query) ||
-      account.name_en.toLowerCase().includes(query) ||
-      account.code.toLowerCase().includes(query)) &&
+      (normalizeText(account.name_ar).includes(query) ||
+      normalizeText(account.name_en).includes(query) ||
+      normalizeText(account.code).includes(query)) &&
       !favoriteAccounts.some(f => f.id === account.id)
     ).slice(0, 10);
   }, [accounts, debouncedFavoriteSearch, favoriteAccounts]);
@@ -268,83 +287,87 @@ export default function LedgerNew() {
       return accounts;
     }
     
-    const query = debouncedSearchQuery.toLowerCase().trim();
+    const query = normalizeText(debouncedSearchQuery);
     return accounts.filter(account => 
-      account.name_ar.toLowerCase().includes(query) ||
-      account.name_en.toLowerCase().includes(query) ||
-      account.code.toLowerCase().includes(query)
+      normalizeText(account.name_ar).includes(query) ||
+      normalizeText(account.name_en).includes(query) ||
+      normalizeText(account.code).includes(query)
     );
   }, [accounts, debouncedSearchQuery]);
 
   const fetchLedgerEntries = async () => {
     if (!selectedAccount) return;
 
+    if (startDate && endDate && endDate < startDate) {
+      setLedgerEntries([]);
+      setOpeningBalance(0);
+      toast.error("تاريخ النهاية يجب أن يكون بعد تاريخ البداية");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Build query for journal entry lines
-      let linesQuery = supabase
-        .from("journal_entry_lines")
-        .select(`
-          id,
-          journal_entry_id,
-          debit,
-          credit,
-          description,
-          branch_id,
-          journal_entries!inner(
-            id,
-            entry_number,
-            date,
-            description
-          ),
-          branches(
-            name_ar
-          )
-        `)
-        .eq("account_id", selectedAccount);
+      const pageSize = 1000;
+      const fetchAllLines = async (openingOnly: boolean) => {
+        const allLines: any[] = [];
 
-      // Apply branch filter
-      if (selectedBranch !== "all") {
-        linesQuery = linesQuery.eq("branch_id", selectedBranch);
-      }
+        for (let from = 0; ; from += pageSize) {
+          let query = supabase
+            .from("journal_entry_lines")
+            .select(`
+              id,
+              journal_entry_id,
+              debit,
+              credit,
+              description,
+              branch_id,
+              journal_entries!inner(
+                id,
+                entry_number,
+                date,
+                description
+              ),
+              branches(
+                name_ar
+              )
+            `)
+            .eq("account_id", selectedAccount)
+            .range(from, from + pageSize - 1);
 
-      // Apply date filter on journal entries
-      if (startDate) {
-        linesQuery = linesQuery.gte("journal_entries.date", startDate);
-      }
-      if (endDate) {
-        linesQuery = linesQuery.lte("journal_entries.date", endDate);
-      }
+          if (selectedBranch !== "all") {
+            query = query.eq("branch_id", selectedBranch);
+          }
 
-      const { data: linesData, error: linesError } = await linesQuery;
+          if (openingOnly) {
+            query = query.lt("journal_entries.date", startDate);
+          } else {
+            if (startDate) query = query.gte("journal_entries.date", startDate);
+            if (endDate) query = query.lte("journal_entries.date", endDate);
+          }
 
-      if (linesError) throw linesError;
+          const { data, error } = await query;
+          if (error) throw error;
+
+          const page = data || [];
+          allLines.push(...page);
+          if (page.length < pageSize) break;
+        }
+
+        return allLines;
+      };
+
+      const [linesData, openingData] = await Promise.all([
+        fetchAllLines(false),
+        startDate ? fetchAllLines(true) : Promise.resolve([]),
+      ]);
 
       // Calculate opening balance (entries before start date)
       let calculatedOpeningBalance = 0;
-      if (startDate) {
-        let openingQuery = supabase
-          .from("journal_entry_lines")
-          .select(`
-            debit,
-            credit,
-            journal_entries!inner(date)
-          `)
-          .eq("account_id", selectedAccount)
-          .lt("journal_entries.date", startDate);
-
-        if (selectedBranch !== "all") {
-          openingQuery = openingQuery.eq("branch_id", selectedBranch);
-        }
-
-        const { data: openingData, error: openingError } = await openingQuery;
-
-        if (!openingError && openingData) {
-          calculatedOpeningBalance = openingData.reduce(
-            (sum, line) => sum + (line.debit || 0) - (line.credit || 0),
-            0
-          );
-        }
+      if (startDate && openingData) {
+        calculatedOpeningBalance = openingData.reduce(
+          (sum, line) => sum + (Number(line.debit) || 0) - (Number(line.credit) || 0),
+          0
+        );
       }
       setOpeningBalance(calculatedOpeningBalance);
 
@@ -356,7 +379,8 @@ export default function LedgerNew() {
       const sortedLines = (linesData || []).sort((a: any, b: any) => {
         const dateA = new Date(a.journal_entries.date).getTime();
         const dateB = new Date(b.journal_entries.date).getTime();
-        return dateA - dateB;
+        if (dateA !== dateB) return dateA - dateB;
+        return String(a.journal_entries.entry_number || "").localeCompare(String(b.journal_entries.entry_number || ""));
       });
 
       for (const line of sortedLines) {
@@ -386,7 +410,19 @@ export default function LedgerNew() {
   };
 
   const handlePrint = () => {
+    if (!selectedAccountData) {
+      toast.info("اختر حساباً أولاً قبل الطباعة");
+      return;
+    }
     window.print();
+  };
+
+  const handlePreviewPrint = () => {
+    if (!selectedAccountData) {
+      toast.info("اختر حساباً أولاً قبل المعاينة");
+      return;
+    }
+    setPrintPreviewOpen(true);
   };
 
   const handleAccountSelect = (accountId: string) => {
@@ -449,12 +485,126 @@ export default function LedgerNew() {
   };
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount);
+  const selectedBranchData = branches.find((branch) => branch.id === selectedBranch);
+  const periodLabel = startDate || endDate
+    ? `${startDate ? `من ${toDisplayDate(startDate)}` : "من البداية"} ${endDate ? `إلى ${toDisplayDate(endDate)}` : "إلى اليوم"}`
+    : "كل الفترات";
 
   const totalDebit = ledgerEntries.reduce((sum, entry) => sum + entry.debit, 0);
   const totalCredit = ledgerEntries.reduce((sum, entry) => sum + entry.credit, 0);
   const closingBalance = ledgerEntries.length > 0 
     ? ledgerEntries[ledgerEntries.length - 1].balance 
     : openingBalance;
+
+  const renderLedgerReport = (isPreview = false) => (
+    <div className="ledger-print-area">
+      <section className={`ledger-print-sheet border border-border bg-card text-card-foreground shadow-xl ${isPreview ? "mx-auto" : ""}`}>
+        <div className="ledger-paper-head border-b border-primary/25 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="text-sm font-bold text-primary">دفتر الأستاذ</div>
+              <h2 className="mt-1 text-2xl font-black tracking-normal text-foreground">
+                {selectedAccountData ? `${selectedAccountData.code} - ${selectedAccountData.name_ar}` : "اختر حساباً"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">{selectedAccountData?.name_en || ""}</p>
+            </div>
+            <div className="text-sm leading-7 text-muted-foreground sm:text-left">
+              <div>الفترة: <span className="font-bold text-foreground">{periodLabel}</span></div>
+              <div>الفرع: <span className="font-bold text-foreground">{selectedBranchData ? selectedBranchData.name_ar : "جميع الفروع"}</span></div>
+              <div>تاريخ الطباعة: <span className="font-bold text-foreground">{getGregorianDate()} • {getHijriDate()}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="ledger-summary-grid my-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <div className="text-xs font-semibold text-muted-foreground">الرصيد الافتتاحي</div>
+            <div className="mt-1 text-lg font-black text-foreground">{formatNumber(openingBalance)}</div>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <div className="text-xs font-semibold text-muted-foreground">إجمالي المدين</div>
+            <div className="mt-1 text-lg font-black text-primary">{formatNumber(totalDebit)}</div>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3">
+            <div className="text-xs font-semibold text-muted-foreground">إجمالي الدائن</div>
+            <div className="mt-1 text-lg font-black text-destructive">{formatNumber(totalCredit)}</div>
+          </div>
+          <div className="rounded-lg border border-border bg-primary/10 p-3">
+            <div className="text-xs font-semibold text-muted-foreground">الرصيد الختامي</div>
+            <div className="mt-1 text-lg font-black text-foreground">{formatNumber(closingBalance)}</div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-border ledger-table-wrap">
+          <table className="ledger-print-table w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-primary/10">
+                <th className="w-[92px] p-3 text-right font-black">التاريخ</th>
+                <th className="w-[118px] p-3 text-right font-black">رقم القيد</th>
+                <th className="min-w-[240px] p-3 text-right font-black">البيان</th>
+                <th className="w-[110px] p-3 text-right font-black">الفرع</th>
+                <th className="w-[112px] p-3 text-center font-black">مدين</th>
+                <th className="w-[112px] p-3 text-center font-black">دائن</th>
+                <th className="w-[124px] p-3 text-center font-black">الرصيد</th>
+              </tr>
+            </thead>
+            <tbody>
+              {startDate && (
+                <tr className="bg-muted/40 font-bold">
+                  <td colSpan={4} className="p-3 text-right">رصيد أول المدة</td>
+                  <td className="p-3 text-center">{openingBalance > 0 ? formatNumber(openingBalance) : "-"}</td>
+                  <td className="p-3 text-center">{openingBalance < 0 ? formatNumber(Math.abs(openingBalance)) : "-"}</td>
+                  <td className="p-3 text-center">{formatNumber(openingBalance)}</td>
+                </tr>
+              )}
+
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">جاري تحميل كشف الحساب...</td>
+                </tr>
+              ) : ledgerEntries.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">لا توجد حركات على هذا الحساب ضمن الفترة المحددة</td>
+                </tr>
+              ) : (
+                ledgerEntries.map((entry) => (
+                  <tr key={entry.id} className="ledger-entry-row border-t border-border">
+                    <td className="p-3 text-right whitespace-nowrap">{toDisplayDate(entry.entry_date)}</td>
+                    <td className="p-3 text-right">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="ledger-reference-button h-auto p-0 text-sm font-bold"
+                        onClick={() => fetchEntryDetails(entry.journal_entry_id)}
+                        disabled={loadingEntry || isPreview}
+                      >
+                        {entry.reference || "-"}
+                      </Button>
+                    </td>
+                    <td className="p-3 text-right leading-6">{entry.description || "-"}</td>
+                    <td className="p-3 text-right text-muted-foreground">{entry.branch_name || "-"}</td>
+                    <td className="p-3 text-center font-semibold">{entry.debit > 0 ? formatNumber(entry.debit) : "-"}</td>
+                    <td className="p-3 text-center font-semibold">{entry.credit > 0 ? formatNumber(entry.credit) : "-"}</td>
+                    <td className="p-3 text-center font-black">{formatNumber(entry.balance)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {ledgerEntries.length > 0 && (
+              <tfoot>
+                <tr className="ledger-totals-row border-t border-primary/30 bg-primary/10 font-black">
+                  <td colSpan={4} className="p-3 text-right">الإجمالي</td>
+                  <td className="p-3 text-center">{formatNumber(totalDebit)}</td>
+                  <td className="p-3 text-center">{formatNumber(totalCredit)}</td>
+                  <td className="p-3 text-center">{formatNumber(closingBalance)}</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </section>
+    </div>
+  );
 
   return (
     <div className="container mx-auto p-6 print:p-0 ledger-report-container" dir="rtl">
@@ -467,10 +617,16 @@ export default function LedgerNew() {
           </Button>
           <h1 className="text-2xl font-bold">كشف الحساب</h1>
         </div>
-        <Button onClick={handlePrint} disabled={!selectedAccount || ledgerEntries.length === 0}>
-          <Printer className="ml-2" />
-          طباعة
-        </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handlePreviewPrint} disabled={!selectedAccount}>
+              <Eye className="ml-2 h-4 w-4" />
+              معاينة الطباعة
+            </Button>
+            <Button onClick={handlePrint} disabled={!selectedAccount}>
+              <Printer className="ml-2 h-4 w-4" />
+              طباعة A4
+            </Button>
+          </div>
       </div>
 
       {/* Date Range Bar - Hidden during print */}
@@ -591,24 +747,6 @@ export default function LedgerNew() {
         </div>
       </div>
 
-      {/* Report Header - Visible in both view and print */}
-      <div className="mb-6 report-header print:block hidden">
-        <h1 className="text-3xl font-bold text-center mb-4">كشف الحساب</h1>
-        <div className="text-right space-y-1">
-          <p className="text-sm text-muted-foreground">التاريخ: {getGregorianDate()}</p>
-          {(startDate || endDate) && (
-            <p className="text-sm text-muted-foreground">
-              الفترة: {startDate ? `من ${startDate}` : ""} {endDate ? `إلى ${endDate}` : ""}
-            </p>
-          )}
-          {selectedAccountData && (
-            <p className="text-base font-medium">
-              الحساب: {selectedAccountData.code} - {selectedAccountData.name_ar}
-            </p>
-          )}
-        </div>
-      </div>
-
       {/* Filters - Hidden during print */}
       <Card className="p-6 mb-6 print:hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -692,205 +830,177 @@ export default function LedgerNew() {
 
       {/* Report Content */}
       {selectedAccount && (
-        <Card className="p-6 print:p-0 print:shadow-none print:border-none">
-          {/* Ledger Table */}
-          <div className="overflow-x-auto">
-            <table className="ledger-table w-full border-collapse">
-              <thead>
-                <tr className="ledger-table-header">
-                  <th className="text-right p-3 border border-border bg-muted/50 font-bold">التاريخ</th>
-                  <th className="text-right p-3 border border-border bg-muted/50 font-bold">البيان</th>
-                  <th className="text-right p-3 border border-border bg-muted/50 font-bold">القيد</th>
-                  <th className="text-center p-3 border border-border bg-muted/50 font-bold">المدين</th>
-                  <th className="text-center p-3 border border-border bg-muted/50 font-bold">الدائن</th>
-                  <th className="text-center p-3 border border-border bg-muted/50 font-bold">الرصيد</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Opening Balance */}
-                {startDate && openingBalance !== 0 && (
-                  <tr className="font-semibold bg-muted/30">
-                    <td colSpan={3} className="text-right p-3 border border-border">رصيد أول المدة</td>
-                    <td className="text-center p-3 border border-border">-</td>
-                    <td className="text-center p-3 border border-border">-</td>
-                    <td className="text-center p-3 border border-border">{formatNumber(openingBalance)}</td>
-                  </tr>
-                )}
-
-                {/* Entries */}
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 border border-border">
-                      جاري التحميل...
-                    </td>
-                  </tr>
-                ) : ledgerEntries.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 border border-border">
-                      لا توجد قيود لهذا الحساب
-                    </td>
-                  </tr>
-                ) : (
-                  ledgerEntries.map((entry) => (
-                    <tr key={entry.id} className="ledger-entry-row">
-                      <td className="text-right p-3 border border-border">{entry.entry_date}</td>
-                      <td className="text-right p-3 border border-border">{entry.description || "-"}</td>
-                      <td className="text-right p-3 border border-border">
-                        <button
-                          onClick={() => fetchEntryDetails(entry.journal_entry_id)}
-                          className="text-primary hover:underline cursor-pointer font-medium print:no-underline print:text-foreground"
-                          disabled={loadingEntry}
-                        >
-                          {entry.reference || "-"}
-                        </button>
-                      </td>
-                      <td className="text-center p-3 border border-border">
-                        {entry.debit > 0 ? formatNumber(entry.debit) : "-"}
-                      </td>
-                      <td className="text-center p-3 border border-border">
-                        {entry.credit > 0 ? formatNumber(entry.credit) : "-"}
-                      </td>
-                      <td className="text-center p-3 border border-border font-medium">{formatNumber(entry.balance)}</td>
-                    </tr>
-                  ))
-                )}
-
-                {/* Totals */}
-                {ledgerEntries.length > 0 && (
-                  <tr className="font-bold bg-muted ledger-totals-row">
-                    <td colSpan={3} className="text-right p-3 border border-border">الإجمالي</td>
-                    <td className="text-center p-3 border border-border">{formatNumber(totalDebit)}</td>
-                    <td className="text-center p-3 border border-border">{formatNumber(totalCredit)}</td>
-                    <td className="text-center p-3 border border-border">{formatNumber(closingBalance)}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        renderLedgerReport(false)
       )}
 
       {/* Print Styles */}
       <style>{`
+        .ledger-print-sheet {
+          width: 100%;
+          padding: 1.25rem;
+          border-radius: 0.75rem;
+        }
+
+        .ledger-print-table th,
+        .ledger-print-table td {
+          border-inline-end: 1px solid hsl(var(--border));
+        }
+
+        .ledger-print-table th:last-child,
+        .ledger-print-table td:last-child {
+          border-inline-end: 0;
+        }
+
         @media print {
-          /* Page setup */
           @page {
             size: A4 portrait;
-            margin: 2cm;
+            margin: 10mm;
           }
-          
-          /* Hide everything except report */
-          body * {
-            visibility: hidden;
+
+          html,
+          body {
+            background: hsl(var(--card)) !important;
           }
-          
-          .ledger-report-container, .ledger-report-container * {
-            visibility: visible;
+
+          .print\\:hidden,
+          [data-sidebar],
+          aside,
+          nav,
+          header,
+          .ledger-report-container > *:not(.ledger-print-area),
+          .ledger-no-print {
+            display: none !important;
           }
-          
+
           .ledger-report-container {
-            position: absolute;
-            right: 0;
-            top: 0;
+            display: block !important;
             width: 100%;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
             direction: rtl;
             font-family: 'Cairo', 'Arial', sans-serif;
-            font-size: 11pt;
-            color: #000 !important;
-            background: #fff !important;
+            color: hsl(var(--foreground)) !important;
+            background: hsl(var(--card)) !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
-          
-          .print\\:hidden {
-            display: none !important;
-          }
-          
-          /* Report header styling for print */
-          .report-header {
-            page-break-after: avoid;
-            margin-bottom: 20px !important;
-          }
-          
-          .report-header h1 {
-            font-size: 20pt !important;
-            font-weight: bold !important;
-            text-align: center !important;
-            margin-bottom: 15px !important;
-          }
-          
-          .report-header p {
-            font-size: 11pt !important;
-            text-align: right !important;
-          }
-          
-          /* Table styling */
-          .ledger-table {
+
+          .ledger-print-area {
+            display: block !important;
             width: 100% !important;
-            border-collapse: collapse !important;
-            font-size: 10pt !important;
-            margin-top: 15px !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
-          
-          .ledger-table th,
-          .ledger-table td {
-            border: 1px solid #333 !important;
-            padding: 8px 10px !important;
-            text-align: right !important;
-            background-color: transparent !important;
-          }
-          
-          .ledger-table th {
-            background-color: #f0f0f0 !important;
-            font-weight: bold !important;
-            font-size: 11pt !important;
-          }
-          
-          /* Number columns centered */
-          .ledger-table td:nth-child(4),
-          .ledger-table td:nth-child(5),
-          .ledger-table td:nth-child(6),
-          .ledger-table th:nth-child(4),
-          .ledger-table th:nth-child(5),
-          .ledger-table th:nth-child(6) {
-            text-align: center !important;
-          }
-          
-          /* Repeat table header on each page */
-          .ledger-table thead {
-            display: table-header-group !important;
-          }
-          
-          /* Prevent row breaking across pages */
-          .ledger-entry-row {
-            page-break-inside: avoid !important;
-          }
-          
-          /* Totals row styling */
-          .ledger-totals-row {
-            background-color: #e8e8e8 !important;
-            font-weight: bold !important;
-            page-break-before: avoid !important;
-          }
-          
-          /* Card styling for print */
-          .print\\:shadow-none {
+
+          .ledger-print-sheet {
+            display: block !important;
+            width: 100% !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
           }
-          
-          .print\\:border-none {
-            border: none !important;
+
+          .ledger-paper-head {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+            margin-bottom: 10px !important;
+            padding-bottom: 8px !important;
           }
-          
-          /* Page numbering */
-          @page {
-            @bottom-right {
-              content: counter(page) " / " counter(pages);
-              font-size: 10pt;
-            }
+
+          .ledger-summary-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            margin: 8px 0 10px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          .ledger-table-wrap {
+            overflow: visible !important;
+            border-radius: 0 !important;
+          }
+
+          .ledger-print-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 8.8pt !important;
+            line-height: 1.35 !important;
+          }
+
+          .ledger-print-table th,
+          .ledger-print-table td {
+            border: 1px solid hsl(var(--border)) !important;
+            padding: 5px 6px !important;
+            text-align: right !important;
+            vertical-align: top !important;
+          }
+
+          .ledger-print-table th {
+            background-color: hsl(var(--muted)) !important;
+            font-weight: bold !important;
+          }
+
+          .ledger-print-table td:nth-child(5),
+          .ledger-print-table td:nth-child(6),
+          .ledger-print-table td:nth-child(7),
+          .ledger-print-table th:nth-child(5),
+          .ledger-print-table th:nth-child(6),
+          .ledger-print-table th:nth-child(7) {
+            text-align: center !important;
+          }
+
+          .ledger-reference-button {
+            display: inline !important;
+            color: hsl(var(--foreground)) !important;
+            text-decoration: none !important;
+          }
+
+          .ledger-print-table thead {
+            display: table-header-group !important;
+          }
+
+          .ledger-print-table tfoot {
+            display: table-footer-group !important;
+          }
+
+          .ledger-entry-row {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          .ledger-totals-row {
+            font-weight: bold !important;
+            page-break-before: avoid !important;
+            break-before: avoid !important;
           }
         }
       `}</style>
+
+      <Dialog open={printPreviewOpen} onOpenChange={setPrintPreviewOpen}>
+        <DialogContent className="max-w-7xl max-h-[94vh] overflow-hidden print:hidden" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>معاينة الطباعة — A4</span>
+              <Button variant="outline" size="sm" onClick={handlePrint} disabled={!selectedAccount}>
+                <Printer className="ml-2 h-4 w-4" />
+                طباعة
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[78vh] bg-muted/40 p-4 rounded-lg">
+            <div className="min-w-[210mm] pb-6">
+              <div className="ledger-preview-sheet mx-auto w-[210mm] min-h-[297mm] bg-card shadow-xl">
+                {renderLedgerReport(true)}
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* Journal Entry Detail Dialog */}
       <Dialog open={entryDialogOpen} onOpenChange={setEntryDialogOpen}>
