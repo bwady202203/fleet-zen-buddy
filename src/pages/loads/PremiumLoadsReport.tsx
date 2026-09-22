@@ -93,6 +93,16 @@ const PremiumLoadsReport = () => {
   const [newRoute, setNewRoute] = useState({ from: "", to: "", km: "" });
   const [savingRoute, setSavingRoute] = useState(false);
 
+  // أسعار التكلفة والبيع للطن لكل عميل + نوع مادة
+  const [prices, setPrices] = useState<any[]>([]);
+
+  const loadPrices = async () => {
+    const { data } = await (supabase as any)
+      .from("company_load_type_prices")
+      .select("company_id, load_type_id, cost_price, sale_price, unit_price");
+    setPrices(data || []);
+  };
+
   const loadDistances = async () => {
     const { data } = await (supabase as any)
       .from("route_distances")
