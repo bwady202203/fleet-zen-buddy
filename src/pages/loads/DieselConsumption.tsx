@@ -45,6 +45,81 @@ const normalizePoint = (v?: string | null) =>
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+interface DriverOption {
+  id: string;
+  name: string;
+}
+
+const DriverCombobox = ({
+  value,
+  onChange,
+  options,
+  placeholder = "اختر السائق",
+  includeAll = false,
+  allLabel = "كل السائقين",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: DriverOption[];
+  placeholder?: string;
+  includeAll?: boolean;
+  allLabel?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selectedLabel =
+    (includeAll && value === "all" ? allLabel : options.find((o) => o.id === value)?.name) || placeholder;
+
+  const allItem: DriverOption[] = includeAll ? [{ id: "all", name: allLabel }] : [];
+  const items = [...allItem, ...options];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+          {selectedLabel}
+          <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(val, search) => {
+            const name = val.split("|")[1] || "";
+            const term = normalizePoint(search);
+            const target = normalizePoint(name);
+            if (!term) return 1;
+            return target.includes(term) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="ابحث بالحروف..." />
+          <CommandList>
+            <CommandEmpty>لا يوجد سائق بهذا الاسم</CommandEmpty>
+            <CommandGroup>
+              {items.map((item) => {
+                const isSelected = value === item.id;
+                return (
+                  <CommandItem
+                    key={item.id}
+                    value={`${item.id}|${item.name}`}
+                    onSelect={() => {
+                      onChange(item.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
+                    />
+                    {item.name}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 const DieselConsumption = () => {
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
