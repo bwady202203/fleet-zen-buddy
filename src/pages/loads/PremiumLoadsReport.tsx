@@ -367,6 +367,8 @@ const PremiumLoadsReport = () => {
       "التوصيل من": r.delivery_from || "",
       "التوصيل الى": r.delivery_to || "",
       "الكيلومترات": r.distance_km || 0,
+      "تكلفة الطن": r.cost_per_ton || 0,
+      "سعر بيع الطن": r.sale_per_ton || 0,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -387,6 +389,11 @@ const PremiumLoadsReport = () => {
               <p className="text-muted-foreground mt-1 text-sm">Premium Loads Detailed Report</p>
             </div>
             <div className="mr-auto flex gap-2">
+              <Button variant="outline" asChild className="gap-2">
+                <Link to="/loads/company-material-prices">
+                  <Settings2 className="h-4 w-4" /> أسعار المواد لكل عميل
+                </Link>
+              </Button>
               <Button variant="outline" onClick={() => setDistancesOpen(true)} className="gap-2">
                 <Settings2 className="h-4 w-4" /> إعدادات المسافات
               </Button>
