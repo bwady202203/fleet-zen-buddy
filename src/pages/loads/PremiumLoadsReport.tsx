@@ -290,27 +290,43 @@ const PremiumLoadsReport = () => {
   const distanceFor = (from?: string | null, to?: string | null) =>
     distanceMap.get(`${normalizePoint(from)}|${normalizePoint(to)}`) ?? 0;
 
+  const priceMap = useMemo(() => {
+    const map = new Map<string, { cost: number; sale: number }>();
+    prices.forEach((p) => {
+      map.set(`${p.company_id}|${p.load_type_id}`, {
+        cost: Number(p.cost_price) || 0,
+        sale: Number(p.sale_price) || Number(p.unit_price) || 0,
+      });
+    });
+    return map;
+  }, [prices]);
+
   const printRows: PremiumLoadPrintRow[] = useMemo(
     () =>
-      rows.map((r) => ({
-        id: r.id,
-        date: r.date,
-        load_number: r.load_number,
-        invoice_number: r.invoice_number,
-        company: r.companies?.name || "",
-        load_type: r.load_types?.name || "",
-        driver: r.drivers?.name || "",
-        truck_number: r.truck_number,
-        quantity: Number(r.quantity) || 0,
-        unload_quantity: Number(r.unload_quantity) || 0,
-        difference: (Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0),
-        commission: Number(r.driver_commission) || 0,
-        delivery_from: r.delivery_from,
-        delivery_to: r.delivery_to,
-        distance_km: distanceFor(r.delivery_from, r.delivery_to),
-      })),
+      rows.map((r) => {
+        const price = priceMap.get(`${r.company_id}|${r.load_type_id}`);
+        return {
+          id: r.id,
+          date: r.date,
+          load_number: r.load_number,
+          invoice_number: r.invoice_number,
+          company: r.companies?.name || "",
+          load_type: r.load_types?.name || "",
+          driver: r.drivers?.name || "",
+          truck_number: r.truck_number,
+          quantity: Number(r.quantity) || 0,
+          unload_quantity: Number(r.unload_quantity) || 0,
+          difference: (Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0),
+          commission: Number(r.driver_commission) || 0,
+          delivery_from: r.delivery_from,
+          delivery_to: r.delivery_to,
+          distance_km: distanceFor(r.delivery_from, r.delivery_to),
+          cost_per_ton: price?.cost || 0,
+          sale_per_ton: price?.sale || 0,
+        };
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, distanceMap]
+    [rows, distanceMap, priceMap]
   );
 
   const totals = useMemo(() => ({
@@ -320,7 +336,10 @@ const PremiumLoadsReport = () => {
     difference: printRows.reduce((s, r) => s + r.difference, 0),
     commissions: printRows.reduce((s, r) => s + r.commission, 0),
     distance: printRows.reduce((s, r) => s + (r.distance_km || 0), 0),
+    costValue: printRows.reduce((s, r) => s + r.quantity * (r.cost_per_ton || 0), 0),
+    saleValue: printRows.reduce((s, r) => s + r.quantity * (r.sale_per_ton || 0), 0),
   }), [rows.length, printRows]);
+
 
   const hasDeliveryData = useMemo(
     () => printRows.some((r) => (r.delivery_from || "").trim() || (r.delivery_to || "").trim()),
