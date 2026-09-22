@@ -141,6 +141,31 @@ const DieselConsumption = () => {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // سعر اللتر (يُحفظ محليًا)
+  const [pricePerLiter, setPricePerLiter] = useState(
+    () => localStorage.getItem("diesel_price_per_liter") || "2.33"
+  );
+  const [priceDraft, setPriceDraft] = useState(pricePerLiter);
+  const [priceOpen, setPriceOpen] = useState(false);
+
+  const savePrice = () => {
+    const p = Number(priceDraft);
+    if (!p || p <= 0) return toast.error("أدخل سعر لتر صحيح");
+    setPricePerLiter(priceDraft);
+    localStorage.setItem("diesel_price_per_liter", priceDraft);
+    const a = Number(amount) || 0;
+    if (a > 0) setLiters((a / p).toFixed(2));
+    setPriceOpen(false);
+    toast.success("تم حفظ سعر اللتر");
+  };
+
+  const handleAmountChange = (v: string) => {
+    setAmount(v);
+    const p = Number(pricePerLiter) || 0;
+    const a = Number(v) || 0;
+    setLiters(p > 0 && a > 0 ? (a / p).toFixed(2) : "");
+  };
+
   // report filters
   const [fromDate, setFromDate] = useState(firstDay);
   const [toDate, setToDate] = useState(today);
