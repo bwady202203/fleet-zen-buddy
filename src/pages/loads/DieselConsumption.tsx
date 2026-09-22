@@ -353,8 +353,43 @@ const DieselConsumption = () => {
 
         <TabsContent value="entry" className="space-y-6">
           <Card className="no-print">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>تسجيل جديد</CardTitle>
+              <Dialog open={priceOpen} onOpenChange={(o) => { setPriceOpen(o); if (o) setPriceDraft(pricePerLiter); }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    سعر اللتر: {fmt(Number(pricePerLiter) || 0)} ريال
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Fuel className="h-5 w-5 text-primary" />
+                      سعر لتر الديزل
+                    </DialogTitle>
+                    <DialogDescription>
+                      يُستخدم لتحويل المبلغ المدخل تلقائيًا إلى كمية لترات.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    <Label>السعر (ريال / لتر)</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={priceDraft}
+                      onChange={(e) => setPriceDraft(e.target.value)}
+                      placeholder="2.33"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={savePrice}>
+                      <Save className="h-4 w-4 ml-2" />
+                      حفظ
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
               <div className="space-y-2">
