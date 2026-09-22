@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Fuel, Printer, Save, Search, Trash2 } from "lucide-react";
+import { ArrowRight, Check, ChevronsUpDown, Fuel, Printer, Save, Search, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface DieselRecord {
   id: string;
@@ -41,6 +43,81 @@ const normalizePoint = (v?: string | null) =>
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+interface DriverOption {
+  id: string;
+  name: string;
+}
+
+const DriverCombobox = ({
+  value,
+  onChange,
+  options,
+  placeholder = "اختر السائق",
+  includeAll = false,
+  allLabel = "كل السائقين",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: DriverOption[];
+  placeholder?: string;
+  includeAll?: boolean;
+  allLabel?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selectedLabel =
+    (includeAll && value === "all" ? allLabel : options.find((o) => o.id === value)?.name) || placeholder;
+
+  const allItem: DriverOption[] = includeAll ? [{ id: "all", name: allLabel }] : [];
+  const items = [...allItem, ...options];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+          {selectedLabel}
+          <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(val, search) => {
+            const name = val.split("|")[1] || "";
+            const term = normalizePoint(search);
+            const target = normalizePoint(name);
+            if (!term) return 1;
+            return target.includes(term) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="ابحث بالحروف..." />
+          <CommandList>
+            <CommandEmpty>لا يوجد سائق بهذا الاسم</CommandEmpty>
+            <CommandGroup>
+              {items.map((item) => {
+                const isSelected = value === item.id;
+                return (
+                  <CommandItem
+                    key={item.id}
+                    value={`${item.id}|${item.name}`}
+                    onSelect={() => {
+                      onChange(item.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
+                    />
+                    {item.name}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const DieselConsumption = () => {
   const navigate = useNavigate();
@@ -260,18 +337,12 @@ const DieselConsumption = () => {
               </div>
               <div className="space-y-2">
                 <Label>السائق</Label>
-                <Select value={driverId} onValueChange={setDriverId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر السائق" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {drivers.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <DriverCombobox
+                  value={driverId}
+                  onChange={setDriverId}
+                  options={drivers}
+                  placeholder="اختر السائق"
+                />
               </div>
               <div className="space-y-2">
                 <Label>كمية الديزل (لتر)</Label>
@@ -364,19 +435,14 @@ const DieselConsumption = () => {
               </div>
               <div className="space-y-2">
                 <Label>السائق</Label>
-                <Select value={filterDriver} onValueChange={setFilterDriver}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">كل السائقين</SelectItem>
-                    {drivers.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <DriverCombobox
+                  value={filterDriver}
+                  onChange={setFilterDriver}
+                  options={drivers}
+                  placeholder="كل السائقين"
+                  includeAll
+                  allLabel="كل السائقين"
+                />
               </div>
               <Button onClick={fetchReport} disabled={loading}>
                 <Search className="h-4 w-4 ml-2" />
