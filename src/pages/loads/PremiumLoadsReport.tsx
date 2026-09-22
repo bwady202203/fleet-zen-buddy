@@ -517,12 +517,14 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
                   <th className="border p-2">الكيلومترات</th>
+                  <th className="border p-2">تكلفة الطن</th>
+                  <th className="border p-2">سعر بيع الطن</th>
                   <th className="border p-2">تعديل</th>
                 </tr>
               </thead>
               <tbody>
                 {printRows.length === 0 ? (
-                  <tr><td colSpan={16} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={18} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : printRows.map((r, i) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{i + 1}</td>
@@ -542,6 +544,8 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center font-semibold">
                       {r.distance_km ? fmt(r.distance_km) : "—"}
                     </td>
+                    <td className="border p-2 text-center">{r.cost_per_ton ? fmt(r.cost_per_ton) : "—"}</td>
+                    <td className="border p-2 text-center">{r.sale_per_ton ? fmt(r.sale_per_ton) : "—"}</td>
                     <td className="border p-2 text-center">
                       <Button
                         size="icon"
@@ -568,6 +572,8 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
                     <td className="border p-2" colSpan={2}></td>
                     <td className="border p-2 text-center">{fmt(totals.distance)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.costValue)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.saleValue)}</td>
                     <td className="border p-2"></td>
                   </tr>
                 </tfoot>
