@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Check, ChevronsUpDown, Fuel, Printer, Save, Search, Trash2 } from "lucide-react";
+import { ArrowRight, Check, ChevronsUpDown, Fuel, Printer, Save, Search, Settings2, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -139,6 +140,31 @@ const DieselConsumption = () => {
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // سعر اللتر (يُحفظ محليًا)
+  const [pricePerLiter, setPricePerLiter] = useState(
+    () => localStorage.getItem("diesel_price_per_liter") || "2.33"
+  );
+  const [priceDraft, setPriceDraft] = useState(pricePerLiter);
+  const [priceOpen, setPriceOpen] = useState(false);
+
+  const savePrice = () => {
+    const p = Number(priceDraft);
+    if (!p || p <= 0) return toast.error("أدخل سعر لتر صحيح");
+    setPricePerLiter(priceDraft);
+    localStorage.setItem("diesel_price_per_liter", priceDraft);
+    const a = Number(amount) || 0;
+    if (a > 0) setLiters((a / p).toFixed(2));
+    setPriceOpen(false);
+    toast.success("تم حفظ سعر اللتر");
+  };
+
+  const handleAmountChange = (v: string) => {
+    setAmount(v);
+    const p = Number(pricePerLiter) || 0;
+    const a = Number(v) || 0;
+    setLiters(p > 0 && a > 0 ? (a / p).toFixed(2) : "");
+  };
 
   // report filters
   const [fromDate, setFromDate] = useState(firstDay);
@@ -327,8 +353,43 @@ const DieselConsumption = () => {
 
         <TabsContent value="entry" className="space-y-6">
           <Card className="no-print">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>تسجيل جديد</CardTitle>
+              <Dialog open={priceOpen} onOpenChange={(o) => { setPriceOpen(o); if (o) setPriceDraft(pricePerLiter); }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    سعر اللتر: {fmt(Number(pricePerLiter) || 0)} ريال
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Fuel className="h-5 w-5 text-primary" />
+                      سعر لتر الديزل
+                    </DialogTitle>
+                    <DialogDescription>
+                      يُستخدم لتحويل المبلغ المدخل تلقائيًا إلى كمية لترات.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    <Label>السعر (ريال / لتر)</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={priceDraft}
+                      onChange={(e) => setPriceDraft(e.target.value)}
+                      placeholder="2.33"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={savePrice}>
+                      <Save className="h-4 w-4 ml-2" />
+                      حفظ
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
               <div className="space-y-2">
@@ -345,23 +406,24 @@ const DieselConsumption = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>كمية الديزل (لتر)</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={liters}
-                  onChange={(e) => setLiters(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label>المبلغ (ريال)</Label>
                 <Input
                   type="text"
                   inputMode="decimal"
                   placeholder="0"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>كمية الديزل (لتر) — تُحسب تلقائيًا</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={liters}
+                  onChange={(e) => setLiters(e.target.value)}
+                  className="bg-muted/50 font-semibold"
                 />
               </div>
               <div className="space-y-2">
