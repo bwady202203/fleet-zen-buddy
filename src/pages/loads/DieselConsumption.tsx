@@ -406,23 +406,24 @@ const DieselConsumption = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>كمية الديزل (لتر)</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={liters}
-                  onChange={(e) => setLiters(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label>المبلغ (ريال)</Label>
                 <Input
                   type="text"
                   inputMode="decimal"
                   placeholder="0"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>كمية الديزل (لتر) — تُحسب تلقائيًا</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={liters}
+                  onChange={(e) => setLiters(e.target.value)}
+                  className="bg-muted/50 font-semibold"
                 />
               </div>
               <div className="space-y-2">
