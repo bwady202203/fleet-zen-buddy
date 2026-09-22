@@ -172,6 +172,24 @@ const DieselConsumption = () => {
   const [filterDriver, setFilterDriver] = useState("all");
   const [loading, setLoading] = useState(false);
 
+  // معادلة التحويل: لترات لكل 100 كم
+  const [rateL100, setRateL100] = useState(
+    () => localStorage.getItem("diesel_rate_l_per_100km") || "40"
+  );
+  const [rateDraft, setRateDraft] = useState(rateL100);
+  const [rateOpen, setRateOpen] = useState(false);
+
+  const saveRate = () => {
+    const r = Number(rateDraft);
+    if (!r || r <= 0) return toast.error("أدخل معدل استهلاك صحيح");
+    setRateL100(rateDraft);
+    localStorage.setItem("diesel_rate_l_per_100km", rateDraft);
+    setRateOpen(false);
+    toast.success("تم حفظ معادلة التحويل");
+  };
+
+  const expectedLiters = (km: number) => (km * (Number(rateL100) || 0)) / 100;
+
   useEffect(() => {
     (async () => {
       const [driversRes, settingsRes, distRes] = await Promise.all([
