@@ -532,6 +532,41 @@ const DieselConsumption = () => {
                 <Printer className="h-4 w-4 ml-2" />
                 طباعة
               </Button>
+              <Dialog open={rateOpen} onOpenChange={(o) => { setRateOpen(o); if (o) setRateDraft(rateL100); }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 md:col-span-2">
+                    <Settings2 className="h-4 w-4" />
+                    معادلة التحويل: {fmt(Number(rateL100) || 0)} لتر / 100 كم
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Fuel className="h-5 w-5 text-primary" />
+                      معادلة تحويل الكيلومترات إلى ديزل
+                    </DialogTitle>
+                    <DialogDescription>
+                      كمية الديزل المتوقعة = (الكيلومترات ÷ 100) × المعدل المدخل.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    <Label>المعدل (لتر لكل 100 كم)</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={rateDraft}
+                      onChange={(e) => setRateDraft(e.target.value)}
+                      placeholder="40"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={saveRate}>
+                      <Save className="h-4 w-4 ml-2" />
+                      حفظ
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
 
