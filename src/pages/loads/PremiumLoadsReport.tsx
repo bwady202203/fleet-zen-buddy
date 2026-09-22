@@ -234,6 +234,7 @@ const PremiumLoadsReport = () => {
         .order("name");
       setLocations(locs || []);
       loadDistances();
+      loadPrices();
     })();
   }, []);
 
