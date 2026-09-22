@@ -274,6 +274,8 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                     <td className="pl-td pl-td-right">{dash(r.delivery_from)}</td>
                     <td className="pl-td pl-td-right">{dash(r.delivery_to)}</td>
                     <td className="pl-td pl-num">{r.distance_km ? fmt(r.distance_km) : "—"}</td>
+                    <td className="pl-td pl-num">{r.cost_per_ton ? fmt(r.cost_per_ton) : "—"}</td>
+                    <td className="pl-td pl-num">{r.sale_per_ton ? fmt(r.sale_per_ton) : "—"}</td>
                   </tr>
                 ))}
                 {pageIndex === pages.length - 1 && (
@@ -285,6 +287,8 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                     <td className="pl-td pl-num">{fmt(totals.commission)}</td>
                     <td className="pl-td" colSpan={2} />
                     <td className="pl-td pl-num">{fmt(totals.distance)}</td>
+                    <td className="pl-td pl-num">{fmt(totals.costValue)}</td>
+                    <td className="pl-td pl-num">{fmt(totals.saleValue)}</td>
                   </tr>
                 )}
               </tbody>
