@@ -585,32 +585,47 @@ const DieselConsumption = () => {
                   <th className="border p-2">السائق</th>
                   <th className="border p-2">الكيلومترات</th>
                   <th className="border p-2">الأطنان</th>
-                  <th className="border p-2">الديزل (لتر)</th>
+                  <th className="border p-2">كمية الديزل (حسب الكيلومترات)</th>
+                  <th className="border p-2">الديزل المصروف (لتر)</th>
                   <th className="border p-2">مبلغ الديزل</th>
                   <th className="border p-2">لتر / 100 كم</th>
+                  <th className="border p-2">الفرق (مصروف - محسوب)</th>
                 </tr>
               </thead>
               <tbody>
                 {reportRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                    <td colSpan={9} className="p-6 text-center text-muted-foreground">
                       لا توجد بيانات في الفترة المحددة
                     </td>
                   </tr>
                 ) : (
-                  reportRows.map((r) => (
-                    <tr key={`${r.date}-${r.driverId}`} className="hover:bg-muted/40">
-                      <td className="border p-2 text-center">{r.date}</td>
-                      <td className="border p-2 text-center">{r.driver}</td>
-                      <td className="border p-2 text-center">{fmt(r.km)}</td>
-                      <td className="border p-2 text-center">{fmt(r.tons)}</td>
-                      <td className="border p-2 text-center">{fmt(r.liters)}</td>
-                      <td className="border p-2 text-center">{fmt(r.amount)}</td>
-                      <td className="border p-2 text-center">
-                        {r.km > 0 ? fmt((r.liters / r.km) * 100) : "—"}
-                      </td>
-                    </tr>
-                  ))
+                  reportRows.map((r) => {
+                    const exp = expectedLiters(r.km);
+                    const diff = r.liters - exp;
+                    return (
+                      <tr key={`${r.date}-${r.driverId}`} className="hover:bg-muted/40">
+                        <td className="border p-2 text-center">{r.date}</td>
+                        <td className="border p-2 text-center">{r.driver}</td>
+                        <td className="border p-2 text-center">{fmt(r.km)}</td>
+                        <td className="border p-2 text-center">{fmt(r.tons)}</td>
+                        <td className="border p-2 text-center">{fmt(exp)}</td>
+                        <td className="border p-2 text-center">{fmt(r.liters)}</td>
+                        <td className="border p-2 text-center">{fmt(r.amount)}</td>
+                        <td className="border p-2 text-center">
+                          {r.km > 0 ? fmt((r.liters / r.km) * 100) : "—"}
+                        </td>
+                        <td
+                          className={cn(
+                            "border p-2 text-center font-semibold",
+                            diff > 0 ? "text-destructive" : diff < 0 ? "text-emerald-600" : ""
+                          )}
+                        >
+                          {fmt(diff)}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
               {reportRows.length > 0 && (
@@ -621,10 +636,14 @@ const DieselConsumption = () => {
                     </td>
                     <td className="border p-2 text-center">{fmt(totals.km)}</td>
                     <td className="border p-2 text-center">{fmt(totals.tons)}</td>
+                    <td className="border p-2 text-center">{fmt(expectedLiters(totals.km))}</td>
                     <td className="border p-2 text-center">{fmt(totals.liters)}</td>
                     <td className="border p-2 text-center">{fmt(totals.amount)}</td>
                     <td className="border p-2 text-center">
                       {totals.km > 0 ? fmt((totals.liters / totals.km) * 100) : "—"}
+                    </td>
+                    <td className="border p-2 text-center">
+                      {fmt(totals.liters - expectedLiters(totals.km))}
                     </td>
                   </tr>
                 </tfoot>
