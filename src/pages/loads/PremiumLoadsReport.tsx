@@ -93,6 +93,16 @@ const PremiumLoadsReport = () => {
   const [newRoute, setNewRoute] = useState({ from: "", to: "", km: "" });
   const [savingRoute, setSavingRoute] = useState(false);
 
+  // أسعار التكلفة والبيع للطن لكل عميل + نوع مادة
+  const [prices, setPrices] = useState<any[]>([]);
+
+  const loadPrices = async () => {
+    const { data } = await (supabase as any)
+      .from("company_load_type_prices")
+      .select("company_id, load_type_id, cost_price, sale_price, unit_price");
+    setPrices(data || []);
+  };
+
   const loadDistances = async () => {
     const { data } = await (supabase as any)
       .from("route_distances")
@@ -224,6 +234,7 @@ const PremiumLoadsReport = () => {
         .order("name");
       setLocations(locs || []);
       loadDistances();
+      loadPrices();
     })();
   }, []);
 
@@ -279,27 +290,43 @@ const PremiumLoadsReport = () => {
   const distanceFor = (from?: string | null, to?: string | null) =>
     distanceMap.get(`${normalizePoint(from)}|${normalizePoint(to)}`) ?? 0;
 
+  const priceMap = useMemo(() => {
+    const map = new Map<string, { cost: number; sale: number }>();
+    prices.forEach((p) => {
+      map.set(`${p.company_id}|${p.load_type_id}`, {
+        cost: Number(p.cost_price) || 0,
+        sale: Number(p.sale_price) || Number(p.unit_price) || 0,
+      });
+    });
+    return map;
+  }, [prices]);
+
   const printRows: PremiumLoadPrintRow[] = useMemo(
     () =>
-      rows.map((r) => ({
-        id: r.id,
-        date: r.date,
-        load_number: r.load_number,
-        invoice_number: r.invoice_number,
-        company: r.companies?.name || "",
-        load_type: r.load_types?.name || "",
-        driver: r.drivers?.name || "",
-        truck_number: r.truck_number,
-        quantity: Number(r.quantity) || 0,
-        unload_quantity: Number(r.unload_quantity) || 0,
-        difference: (Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0),
-        commission: Number(r.driver_commission) || 0,
-        delivery_from: r.delivery_from,
-        delivery_to: r.delivery_to,
-        distance_km: distanceFor(r.delivery_from, r.delivery_to),
-      })),
+      rows.map((r) => {
+        const price = priceMap.get(`${r.company_id}|${r.load_type_id}`);
+        return {
+          id: r.id,
+          date: r.date,
+          load_number: r.load_number,
+          invoice_number: r.invoice_number,
+          company: r.companies?.name || "",
+          load_type: r.load_types?.name || "",
+          driver: r.drivers?.name || "",
+          truck_number: r.truck_number,
+          quantity: Number(r.quantity) || 0,
+          unload_quantity: Number(r.unload_quantity) || 0,
+          difference: (Number(r.quantity) || 0) - (Number(r.unload_quantity) || 0),
+          commission: Number(r.driver_commission) || 0,
+          delivery_from: r.delivery_from,
+          delivery_to: r.delivery_to,
+          distance_km: distanceFor(r.delivery_from, r.delivery_to),
+          cost_per_ton: price?.cost || 0,
+          sale_per_ton: price?.sale || 0,
+        };
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, distanceMap]
+    [rows, distanceMap, priceMap]
   );
 
   const totals = useMemo(() => ({
@@ -309,7 +336,10 @@ const PremiumLoadsReport = () => {
     difference: printRows.reduce((s, r) => s + r.difference, 0),
     commissions: printRows.reduce((s, r) => s + r.commission, 0),
     distance: printRows.reduce((s, r) => s + (r.distance_km || 0), 0),
+    costValue: printRows.reduce((s, r) => s + r.quantity * (r.cost_per_ton || 0), 0),
+    saleValue: printRows.reduce((s, r) => s + r.quantity * (r.sale_per_ton || 0), 0),
   }), [rows.length, printRows]);
+
 
   const hasDeliveryData = useMemo(
     () => printRows.some((r) => (r.delivery_from || "").trim() || (r.delivery_to || "").trim()),
@@ -337,6 +367,8 @@ const PremiumLoadsReport = () => {
       "التوصيل من": r.delivery_from || "",
       "التوصيل الى": r.delivery_to || "",
       "الكيلومترات": r.distance_km || 0,
+      "تكلفة الطن": r.cost_per_ton || 0,
+      "سعر بيع الطن": r.sale_per_ton || 0,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -357,6 +389,11 @@ const PremiumLoadsReport = () => {
               <p className="text-muted-foreground mt-1 text-sm">Premium Loads Detailed Report</p>
             </div>
             <div className="mr-auto flex gap-2">
+              <Button variant="outline" asChild className="gap-2">
+                <Link to="/loads/company-material-prices">
+                  <Settings2 className="h-4 w-4" /> أسعار المواد لكل عميل
+                </Link>
+              </Button>
               <Button variant="outline" onClick={() => setDistancesOpen(true)} className="gap-2">
                 <Settings2 className="h-4 w-4" /> إعدادات المسافات
               </Button>
@@ -480,12 +517,14 @@ const PremiumLoadsReport = () => {
                   <th className="border p-2">التوصيل من</th>
                   <th className="border p-2">التوصيل الى</th>
                   <th className="border p-2">الكيلومترات</th>
+                  <th className="border p-2">تكلفة الطن</th>
+                  <th className="border p-2">سعر بيع الطن</th>
                   <th className="border p-2">تعديل</th>
                 </tr>
               </thead>
               <tbody>
                 {printRows.length === 0 ? (
-                  <tr><td colSpan={16} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
+                  <tr><td colSpan={18} className="border p-6 text-center text-muted-foreground">لا توجد بيانات</td></tr>
                 ) : printRows.map((r, i) => (
                   <tr key={r.id} className="hover:bg-muted/50">
                     <td className="border p-2 text-center">{i + 1}</td>
@@ -505,6 +544,8 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center font-semibold">
                       {r.distance_km ? fmt(r.distance_km) : "—"}
                     </td>
+                    <td className="border p-2 text-center">{r.cost_per_ton ? fmt(r.cost_per_ton) : "—"}</td>
+                    <td className="border p-2 text-center">{r.sale_per_ton ? fmt(r.sale_per_ton) : "—"}</td>
                     <td className="border p-2 text-center">
                       <Button
                         size="icon"
@@ -531,6 +572,8 @@ const PremiumLoadsReport = () => {
                     <td className="border p-2 text-center">{fmt(totals.commissions)}</td>
                     <td className="border p-2" colSpan={2}></td>
                     <td className="border p-2 text-center">{fmt(totals.distance)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.costValue)}</td>
+                    <td className="border p-2 text-center">{fmt(totals.saleValue)}</td>
                     <td className="border p-2"></td>
                   </tr>
                 </tfoot>

@@ -18,6 +18,8 @@ export interface PremiumLoadPrintRow {
   delivery_from: string | null;
   delivery_to: string | null;
   distance_km?: number;
+  cost_per_ton?: number;
+  sale_per_ton?: number;
 }
 
 interface Props {
@@ -53,6 +55,8 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
       difference: rows.reduce((s, r) => s + r.difference, 0),
       commission: rows.reduce((s, r) => s + r.commission, 0),
       distance: rows.reduce((s, r) => s + (r.distance_km || 0), 0),
+      costValue: rows.reduce((s, r) => s + r.quantity * (r.cost_per_ton || 0), 0),
+      saleValue: rows.reduce((s, r) => s + r.quantity * (r.sale_per_ton || 0), 0),
     }),
     [rows]
   );
@@ -96,6 +100,8 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
         <th className="pl-th pl-th-right">التوصيل من</th>
         <th className="pl-th pl-th-right">التوصيل الى</th>
         <th className="pl-th">الكيلومترات</th>
+        <th className="pl-th">تكلفة الطن</th>
+        <th className="pl-th">سعر بيع الطن</th>
       </tr>
     </thead>
   );
@@ -231,20 +237,22 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
 
             <table className="pl-table">
               <colgroup>
-                <col style={{ width: "3.5%" }} />
-                <col style={{ width: "7%" }} />
+                <col style={{ width: "3%" }} />
                 <col style={{ width: "6.5%" }} />
-                <col style={{ width: "7%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "9%" }} />
-                <col style={{ width: "10%" }} />
                 <col style={{ width: "6%" }} />
                 <col style={{ width: "6%" }} />
-                <col style={{ width: "6%" }} />
+                <col style={{ width: "9.5%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8.5%" }} />
                 <col style={{ width: "5.5%" }} />
-                <col style={{ width: "6%" }} />
-                <col style={{ width: "7.5%" }} />
-                <col style={{ width: "7.5%" }} />
+                <col style={{ width: "5.5%" }} />
+                <col style={{ width: "5.5%" }} />
+                <col style={{ width: "5%" }} />
+                <col style={{ width: "5.5%" }} />
+                <col style={{ width: "6.5%" }} />
+                <col style={{ width: "6.5%" }} />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "5%" }} />
                 <col style={{ width: "5%" }} />
               </colgroup>
               {tableHead}
@@ -266,6 +274,8 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                     <td className="pl-td pl-td-right">{dash(r.delivery_from)}</td>
                     <td className="pl-td pl-td-right">{dash(r.delivery_to)}</td>
                     <td className="pl-td pl-num">{r.distance_km ? fmt(r.distance_km) : "—"}</td>
+                    <td className="pl-td pl-num">{r.cost_per_ton ? fmt(r.cost_per_ton) : "—"}</td>
+                    <td className="pl-td pl-num">{r.sale_per_ton ? fmt(r.sale_per_ton) : "—"}</td>
                   </tr>
                 ))}
                 {pageIndex === pages.length - 1 && (
@@ -277,6 +287,8 @@ const PremiumLoadsPrintPreview = ({ open, onClose, rows, companyName, fromDate, 
                     <td className="pl-td pl-num">{fmt(totals.commission)}</td>
                     <td className="pl-td" colSpan={2} />
                     <td className="pl-td pl-num">{fmt(totals.distance)}</td>
+                    <td className="pl-td pl-num">{fmt(totals.costValue)}</td>
+                    <td className="pl-td pl-num">{fmt(totals.saleValue)}</td>
                   </tr>
                 )}
               </tbody>

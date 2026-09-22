@@ -696,31 +696,37 @@ export type Database = {
       company_load_type_prices: {
         Row: {
           company_id: string
+          cost_price: number
           created_at: string | null
           id: string
           is_active: boolean | null
           load_type_id: string
           organization_id: string | null
+          sale_price: number
           unit_price: number
           updated_at: string | null
         }
         Insert: {
           company_id: string
+          cost_price?: number
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           load_type_id: string
           organization_id?: string | null
+          sale_price?: number
           unit_price?: number
           updated_at?: string | null
         }
         Update: {
           company_id?: string
+          cost_price?: number
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           load_type_id?: string
           organization_id?: string | null
+          sale_price?: number
           unit_price?: number
           updated_at?: string | null
         }

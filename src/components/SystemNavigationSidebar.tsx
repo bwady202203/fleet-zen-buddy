@@ -188,6 +188,7 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "تسجيل الحمولات", path: "/loads/register", icon: Package },
       { title: "تسجيل الحمولات المميز", path: "/loads/premium-register", icon: Package },
       { title: "تقرير الحمولات المميز", path: "/loads/premium-report", icon: BarChart3 },
+      { title: "أسعار المواد لكل عميل", path: "/loads/company-material-prices", icon: BarChart3 },
       { title: "سجل الشحنات", path: "/loads/list", icon: ClipboardList },
       { title: "السجل المتقدم", path: "/loads/advanced-list", icon: ClipboardList },
       { title: "السجل المبسط", path: "/loads/simple-list", icon: ClipboardList },
