@@ -1237,6 +1237,53 @@ export type Database = {
         }
         Relationships: []
       }
+      diesel_records: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          date: string
+          driver_id: string | null
+          id: string
+          liters: number
+          notes: string | null
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          driver_id?: string | null
+          id?: string
+          liters?: number
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          driver_id?: string | null
+          id?: string
+          liters?: number
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diesel_records_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_commissions_reports: {
         Row: {
           created_at: string | null
