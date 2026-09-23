@@ -70,7 +70,7 @@ const GeneralCostReport = () => {
         fetchAll(),
         supabase.from("load_types").select("id, name"),
         (supabase as any).from("global_material_prices").select("load_type_id, cost_price, sale_price"),
-        (supabase as any).from("company_load_type_prices").select("load_type_id, sale_price"),
+        (supabase as any).from("company_load_type_prices").select("load_type_id, sale_price, unit_price"),
         (supabase as any).from("diesel_records").select("liters, amount").gte("date", from).lte("date", to),
         (supabase as any)
           .from("period_cost_entries")
@@ -82,7 +82,7 @@ const GeneralCostReport = () => {
       const typeNames = new Map<string, string>((typesRes.data || []).map((t: any) => [t.id, t.name]));
       const customerSaleTotals = new Map<string, { sum: number; count: number }>();
       for (const row of (customerPricesRes.data as any[]) || []) {
-        const sale = Number(row.sale_price || 0);
+        const sale = Number(row.sale_price || row.unit_price || 0);
         if (sale <= 0) continue;
         const current = customerSaleTotals.get(row.load_type_id) || { sum: 0, count: 0 };
         current.sum += sale;
