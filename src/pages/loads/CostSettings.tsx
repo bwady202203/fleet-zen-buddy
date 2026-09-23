@@ -34,6 +34,8 @@ const num = (v: string) => {
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const DEFAULT_TON_COST = "9";
+
 const today = () => new Date().toISOString().slice(0, 10);
 
 const CostSettings = () => {
@@ -77,7 +79,7 @@ const CostSettings = () => {
             load_type_id: t.id,
             load_type_name: t.name,
             row_id: p?.id,
-            cost_price: p?.cost_price != null ? String(p.cost_price) : "",
+            cost_price: p?.cost_price != null && Number(p.cost_price) > 0 ? String(p.cost_price) : DEFAULT_TON_COST,
             sale_price: p?.sale_price != null ? String(p.sale_price) : "",
           };
         })
@@ -195,7 +197,7 @@ const CostSettings = () => {
     setCosts((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const CostSection = ({
+  const renderCostSection = ({
     type,
     title,
     icon: Icon,
@@ -238,7 +240,9 @@ const CostSettings = () => {
                 inputMode="decimal"
                 placeholder="0.00"
                 value={form[type].amount}
+                dir="ltr"
                 onChange={(e) => setForm((p) => ({ ...p, [type]: { ...p[type], amount: e.target.value } }))}
+                className="text-center"
               />
             </div>
             <div className="space-y-2">
@@ -340,7 +344,7 @@ const CostSettings = () => {
           <TabsContent value="materials">
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
-                <CardTitle>أسعار المواد الموحدة (ر.س / طن)</CardTitle>
+                <CardTitle>أسعار المواد الموحدة (ر.س / طن) — تكلفة الطن الافتراضية 9 ريال</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" onClick={importAvgSalePrices} disabled={importing} className="gap-2">
                     <DownloadCloud className="h-4 w-4" />
@@ -386,6 +390,7 @@ const CostSettings = () => {
                                   value={r.cost_price}
                                   onChange={(e) => setField(r.load_type_id, "cost_price", e.target.value)}
                                   placeholder="0.00"
+                                  dir="ltr"
                                   className="h-9 text-center"
                                 />
                               </td>
@@ -396,6 +401,7 @@ const CostSettings = () => {
                                   value={r.sale_price}
                                   onChange={(e) => setField(r.load_type_id, "sale_price", e.target.value)}
                                   placeholder="0.00"
+                                  dir="ltr"
                                   className="h-9 text-center"
                                 />
                               </td>
@@ -430,11 +436,11 @@ const CostSettings = () => {
           </TabsContent>
 
           <TabsContent value="maintenance">
-            <CostSection type="maintenance" title="تكاليف الصيانة خلال فترة" icon={Wrench} />
+            {renderCostSection({ type: "maintenance", title: "تكاليف الصيانة خلال فترة", icon: Wrench })}
           </TabsContent>
 
           <TabsContent value="payroll">
-            <CostSection type="payroll" title="تكاليف الأجور والرواتب خلال فترة" icon={Users} />
+            {renderCostSection({ type: "payroll", title: "تكاليف الأجور والرواتب خلال فترة", icon: Users })}
           </TabsContent>
         </Tabs>
       </main>
