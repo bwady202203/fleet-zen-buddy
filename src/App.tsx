@@ -71,6 +71,8 @@ import LoadsRegister from "./pages/loads/LoadsRegister";
 import PremiumLoadsRegister from "./pages/loads/PremiumLoadsRegister";
 import PremiumLoadsReport from "./pages/loads/PremiumLoadsReport";
 import CompanyMaterialPrices from "./pages/loads/CompanyMaterialPrices";
+import CostSettings from "./pages/loads/CostSettings";
+import GeneralCostReport from "./pages/loads/GeneralCostReport";
 import DieselConsumption from "./pages/loads/DieselConsumption";
 import LoadsList from "./pages/loads/LoadsList";
 import AdvancedLoadsList from "./pages/loads/AdvancedLoadsList";
@@ -208,6 +210,8 @@ const App = () => {
                                   <Route path="/loads/premium-register" element={<PremiumLoadsRegister />} />
                                   <Route path="/loads/premium-report" element={<PremiumLoadsReport />} />
                                   <Route path="/loads/company-material-prices" element={<CompanyMaterialPrices />} />
+                                  <Route path="/loads/cost-settings" element={<CostSettings />} />
+                                  <Route path="/loads/general-cost-report" element={<GeneralCostReport />} />
                                   <Route path="/loads/diesel" element={<DieselConsumption />} />
                                   <Route path="/loads/list" element={<LoadsList />} />
                                   <Route path="/loads/advanced-list" element={<AdvancedLoadsList />} />

@@ -1772,6 +1772,44 @@ export type Database = {
         }
         Relationships: []
       }
+      global_material_prices: {
+        Row: {
+          cost_price: number
+          created_at: string
+          id: string
+          load_type_id: string
+          organization_id: string | null
+          sale_price: number
+          updated_at: string
+        }
+        Insert: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          load_type_id: string
+          organization_id?: string | null
+          sale_price?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          load_type_id?: string
+          organization_id?: string | null
+          sale_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "global_material_prices_load_type_id_fkey"
+            columns: ["load_type_id"]
+            isOneToOne: false
+            referencedRelation: "load_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           account_id: string | null
@@ -3081,6 +3119,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      period_cost_entries: {
+        Row: {
+          amount: number
+          cost_type: string
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          notes: string | null
+          organization_id: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          cost_type: string
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          cost_type?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
