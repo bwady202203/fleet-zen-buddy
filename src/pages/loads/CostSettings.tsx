@@ -42,6 +42,7 @@ const CostSettings = () => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [costs, setCosts] = useState<PeriodCost[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const [form, setForm] = useState<Record<"maintenance" | "payroll", { start: string; end: string; amount: string; notes: string }>>({
     maintenance: { start: today(), end: today(), amount: "", notes: "" },
