@@ -341,7 +341,12 @@ const CostSettings = () => {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>أسعار المواد الموحدة (ر.س / طن)</CardTitle>
-                <Button onClick={savePrices} disabled={saving} className="gap-2">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={importAvgSalePrices} disabled={importing} className="gap-2">
+                    <DownloadCloud className="h-4 w-4" />
+                    {importing ? "جاري الاستيراد..." : "استيراد متوسط سعر البيع من العملاء"}
+                  </Button>
+                  <Button onClick={savePrices} disabled={saving} className="gap-2">
                   <Save className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ"}
                 </Button>
               </CardHeader>
