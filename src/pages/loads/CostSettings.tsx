@@ -347,8 +347,9 @@ const CostSettings = () => {
                     {importing ? "جاري الاستيراد..." : "استيراد متوسط سعر البيع من العملاء"}
                   </Button>
                   <Button onClick={savePrices} disabled={saving} className="gap-2">
-                  <Save className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ"}
-                </Button>
+                    <Save className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 {loading ? (
