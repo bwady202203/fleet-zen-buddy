@@ -64,7 +64,7 @@ const CostSettings = () => {
 
       const [typesRes, pricesRes, costsRes] = await Promise.all([
         supabase.from("load_types").select("id, name").eq("is_active", true).order("name"),
-        (supabase as any).from("global_material_prices").select("id, load_type_id, cost_price, sale_price"),
+        (supabase as any).from("global_material_prices").select("id, organization_id, load_type_id, cost_price, sale_price"),
         (supabase as any)
           .from("period_cost_entries")
           .select("id, cost_type, start_date, end_date, amount, notes")
