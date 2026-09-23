@@ -134,6 +134,42 @@ const CostSettings = () => {
     }
   };
 
+  const importAvgSalePrices = async () => {
+    setImporting(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("company_load_type_prices")
+        .select("load_type_id, sale_price");
+      if (error) throw error;
+      const byType = new Map<string, { sum: number; count: number }>();
+      for (const row of (data as any[]) || []) {
+        const price = Number(row.sale_price || 0);
+        if (price <= 0) continue;
+        const cur = byType.get(row.load_type_id) || { sum: 0, count: 0 };
+        cur.sum += price;
+        cur.count += 1;
+        byType.set(row.load_type_id, cur);
+      }
+      if (byType.size === 0) {
+        toast.error("لا توجد أسعار بيع مسجلة لدى العملاء لاستيرادها");
+        return;
+      }
+      setRows((prev) =>
+        prev.map((r) => {
+          const agg = byType.get(r.load_type_id);
+          if (!agg) return r;
+          const avg = Math.round((agg.sum / agg.count) * 100) / 100;
+          return { ...r, sale_price: String(avg) };
+        })
+      );
+      toast.success(`تم استيراد متوسط سعر البيع لـ ${byType.size} مادة — راجع القيم ثم اضغط حفظ`);
+    } catch (e: any) {
+      toast.error("فشل الاستيراد: " + (e?.message || ""));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const addCost = async (type: "maintenance" | "payroll") => {
     const f = form[type];
     if (!f.start || !f.end) return toast.error("حدد الفترة من تاريخ إلى تاريخ");
