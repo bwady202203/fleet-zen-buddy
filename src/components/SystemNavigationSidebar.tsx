@@ -189,6 +189,8 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "تسجيل الحمولات المميز", path: "/loads/premium-register", icon: Package },
       { title: "تقرير الحمولات المميز", path: "/loads/premium-report", icon: BarChart3 },
       { title: "أسعار المواد لكل عميل", path: "/loads/company-material-prices", icon: BarChart3 },
+      { title: "إعدادات التكاليف", path: "/loads/cost-settings", icon: BarChart3 },
+      { title: "التقرير العام للتكاليف", path: "/loads/general-cost-report", icon: BarChart3 },
       { title: "استهلاك الديزل", path: "/loads/diesel", icon: BarChart3 },
       { title: "سجل الشحنات", path: "/loads/list", icon: ClipboardList },
       { title: "السجل المتقدم", path: "/loads/advanced-list", icon: ClipboardList },
