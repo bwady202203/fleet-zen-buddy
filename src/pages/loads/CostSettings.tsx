@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Save, Settings2, Plus, Trash2, Wrench, Users } from "lucide-react";
+import { ArrowRight, Save, Settings2, Plus, Trash2, Wrench, Users, DownloadCloud } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
