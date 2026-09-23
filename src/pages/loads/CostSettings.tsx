@@ -64,7 +64,7 @@ const CostSettings = () => {
 
       const [typesRes, pricesRes, costsRes] = await Promise.all([
         supabase.from("load_types").select("id, name").eq("is_active", true).order("name"),
-        (supabase as any).from("global_material_prices").select("id, load_type_id, cost_price, sale_price"),
+        (supabase as any).from("global_material_prices").select("id, organization_id, load_type_id, cost_price, sale_price"),
         (supabase as any)
           .from("period_cost_entries")
           .select("id, cost_type, start_date, end_date, amount, notes")
@@ -74,7 +74,10 @@ const CostSettings = () => {
       const prices = (pricesRes.data as any[]) || [];
       setRows(
         (typesRes.data || []).map((t) => {
-          const p = prices.find((x) => x.load_type_id === t.id);
+          const matchingPrices = prices.filter((x) => x.load_type_id === t.id);
+          const p = matchingPrices.find((x) => Number(x.sale_price || 0) > 0)
+            || matchingPrices.find((x) => x.organization_id === organizationId)
+            || matchingPrices[0];
           return {
             load_type_id: t.id,
             load_type_name: t.name,
@@ -141,11 +144,11 @@ const CostSettings = () => {
     try {
       const { data, error } = await (supabase as any)
         .from("company_load_type_prices")
-        .select("load_type_id, sale_price");
+        .select("load_type_id, sale_price, unit_price");
       if (error) throw error;
       const byType = new Map<string, { sum: number; count: number }>();
       for (const row of (data as any[]) || []) {
-        const price = Number(row.sale_price || 0);
+        const price = Number(row.sale_price || row.unit_price || 0);
         if (price <= 0) continue;
         const cur = byType.get(row.load_type_id) || { sum: 0, count: 0 };
         cur.sum += price;

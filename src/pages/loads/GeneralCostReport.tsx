@@ -66,10 +66,11 @@ const GeneralCostReport = () => {
     if (!from || !to) return toast.error("حدد الفترة");
     setLoading(true);
     try {
-      const [loadsRows, typesRes, pricesRes, dieselRes, costsRes] = await Promise.all([
+      const [loadsRows, typesRes, pricesRes, customerPricesRes, dieselRes, costsRes] = await Promise.all([
         fetchAll(),
         supabase.from("load_types").select("id, name"),
         (supabase as any).from("global_material_prices").select("load_type_id, cost_price, sale_price"),
+        (supabase as any).from("company_load_type_prices").select("load_type_id, sale_price, unit_price"),
         (supabase as any).from("diesel_records").select("liters, amount").gte("date", from).lte("date", to),
         (supabase as any)
           .from("period_cost_entries")
@@ -79,12 +80,35 @@ const GeneralCostReport = () => {
       ]);
 
       const typeNames = new Map<string, string>((typesRes.data || []).map((t: any) => [t.id, t.name]));
-      const priceMap = new Map<string, { cost: number; sale: number }>(
-        ((pricesRes.data as any[]) || []).map((p) => [
-          p.load_type_id,
-          { cost: Number(p.cost_price || 0), sale: Number(p.sale_price || 0) },
-        ])
-      );
+      const customerSaleTotals = new Map<string, { sum: number; count: number }>();
+      for (const row of (customerPricesRes.data as any[]) || []) {
+        const sale = Number(row.sale_price || row.unit_price || 0);
+        if (sale <= 0) continue;
+        const current = customerSaleTotals.get(row.load_type_id) || { sum: 0, count: 0 };
+        current.sum += sale;
+        current.count += 1;
+        customerSaleTotals.set(row.load_type_id, current);
+      }
+
+      const priceMap = new Map<string, { cost: number; sale: number }>();
+      for (const p of (pricesRes.data as any[]) || []) {
+        const current = priceMap.get(p.load_type_id) || { cost: 0, sale: 0 };
+        const cost = Number(p.cost_price || 0);
+        const sale = Number(p.sale_price || 0);
+        priceMap.set(p.load_type_id, {
+          cost: cost > 0 ? cost : current.cost,
+          sale: sale > 0 ? sale : current.sale,
+        });
+      }
+      for (const [loadTypeId, totals] of customerSaleTotals) {
+        const current = priceMap.get(loadTypeId) || { cost: 0, sale: 0 };
+        if (current.sale <= 0 && totals.count > 0) {
+          priceMap.set(loadTypeId, {
+            cost: current.cost,
+            sale: Math.round((totals.sum / totals.count) * 100) / 100,
+          });
+        }
+      }
 
       const tonsByType = new Map<string, number>();
       for (const l of loadsRows) {
@@ -94,11 +118,11 @@ const GeneralCostReport = () => {
 
       const rows: MaterialRow[] = Array.from(tonsByType.entries())
         .map(([id, tons]) => {
-          const p = priceMap.get(id) || { cost: 0, sale: 0 };
+          const p = priceMap.get(id) || { cost: 9, sale: 0 };
           return {
             name: typeNames.get(id) || "غير محدد",
             tons,
-            cost_price: p.cost,
+            cost_price: p.cost > 0 ? p.cost : 9,
             sale_price: p.sale,
           };
         })
