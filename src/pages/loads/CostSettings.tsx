@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Save, Settings2, Plus, Trash2, Wrench, Users } from "lucide-react";
+import { ArrowRight, Save, Settings2, Plus, Trash2, Wrench, Users, DownloadCloud } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -42,6 +42,7 @@ const CostSettings = () => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [costs, setCosts] = useState<PeriodCost[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const [form, setForm] = useState<Record<"maintenance" | "payroll", { start: string; end: string; amount: string; notes: string }>>({
     maintenance: { start: today(), end: today(), amount: "", notes: "" },
@@ -130,6 +131,42 @@ const CostSettings = () => {
       toast.error("فشل الحفظ: " + (e?.message || ""));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const importAvgSalePrices = async () => {
+    setImporting(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("company_load_type_prices")
+        .select("load_type_id, sale_price");
+      if (error) throw error;
+      const byType = new Map<string, { sum: number; count: number }>();
+      for (const row of (data as any[]) || []) {
+        const price = Number(row.sale_price || 0);
+        if (price <= 0) continue;
+        const cur = byType.get(row.load_type_id) || { sum: 0, count: 0 };
+        cur.sum += price;
+        cur.count += 1;
+        byType.set(row.load_type_id, cur);
+      }
+      if (byType.size === 0) {
+        toast.error("لا توجد أسعار بيع مسجلة لدى العملاء لاستيرادها");
+        return;
+      }
+      setRows((prev) =>
+        prev.map((r) => {
+          const agg = byType.get(r.load_type_id);
+          if (!agg) return r;
+          const avg = Math.round((agg.sum / agg.count) * 100) / 100;
+          return { ...r, sale_price: String(avg) };
+        })
+      );
+      toast.success(`تم استيراد متوسط سعر البيع لـ ${byType.size} مادة — راجع القيم ثم اضغط حفظ`);
+    } catch (e: any) {
+      toast.error("فشل الاستيراد: " + (e?.message || ""));
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -304,9 +341,15 @@ const CostSettings = () => {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>أسعار المواد الموحدة (ر.س / طن)</CardTitle>
-                <Button onClick={savePrices} disabled={saving} className="gap-2">
-                  <Save className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={importAvgSalePrices} disabled={importing} className="gap-2">
+                    <DownloadCloud className="h-4 w-4" />
+                    {importing ? "جاري الاستيراد..." : "استيراد متوسط سعر البيع من العملاء"}
+                  </Button>
+                  <Button onClick={savePrices} disabled={saving} className="gap-2">
+                    <Save className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 {loading ? (
