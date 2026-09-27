@@ -237,6 +237,7 @@ const App = () => {
                                   <Route path="/maintenance-purchase-invoices" element={<MaintenancePurchaseInvoices />} />
                                   <Route path="/new-maintenance-order" element={<NewMaintenanceOrder />} />
                                   <Route path="/maintenance-orders-report" element={<MaintenanceOrdersReport />} />
+                                  <Route path="/vehicle-maintenance-report" element={<VehicleMaintenanceReport />} />
                                   <Route path="/spare-parts" element={<SpareParts />} />
                                   <Route path="/bulk-spare-parts" element={<BulkSpareParts />} />
                                   <Route path="/low-stock-alerts" element={<LowStockAlerts />} />
