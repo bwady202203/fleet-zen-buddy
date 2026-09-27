@@ -293,20 +293,23 @@ const MaintenanceOrdersReport = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b print:hidden">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ClipboardList className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">سجل أوامر الصيانة</h1>
+    <div className="min-h-screen bg-slate-50" dir="rtl">
+      <header className="print:hidden">
+        <div className="container mx-auto px-4 pt-8 pb-2 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <ClipboardList className="h-6 w-6 text-emerald-600" />
+              سجل أوامر الصيانة
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">إدارة ومتابعة كافة طلبات صيانة الأسطول</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handlePrint} variant="outline">
+            <Button onClick={handlePrint} variant="outline" className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm">
               <Printer className="h-4 w-4 ml-2" />
               طباعة التقرير
             </Button>
             <Link to="/fleet">
-              <Button variant="outline">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
                 العودة
                 <ArrowRight className="h-4 w-4 mr-2" />
               </Button>
@@ -325,129 +328,138 @@ const MaintenanceOrdersReport = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">إجمالي الأوامر</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-                <Wrench className="h-8 w-8 text-primary opacity-70" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">مكتملة</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                </div>
-                <CheckCircle2 className="h-8 w-8 text-green-600 opacity-70" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">قيد التنفيذ/الانتظار</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-600 opacity-70" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">إجمالي التكاليف</p>
-                  <p className="text-2xl font-bold text-primary">{stats.totalCost.toLocaleString()} ر.س</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-primary opacity-70" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+              <Wrench className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-slate-500 text-sm">إجمالي الأوامر</p>
+              <h3 className="text-2xl font-bold text-slate-800">{stats.total}</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+              <CheckCircle2 className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-slate-500 text-sm">الأوامر المكتملة</p>
+              <h3 className="text-2xl font-bold text-emerald-600">{stats.completed}</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shrink-0">
+              <Clock className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-slate-500 text-sm">قيد التنفيذ/الانتظار</p>
+              <h3 className="text-2xl font-bold text-amber-600">{stats.pending}</h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+              <DollarSign className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-slate-500 text-sm">إجمالي التكاليف</p>
+              <h3 className="text-xl font-bold text-slate-800 whitespace-nowrap">
+                {stats.totalCost.toLocaleString()} <span className="text-sm font-normal text-slate-500">ر.س</span>
+              </h3>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
-        <Card className="print:hidden">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Filter className="h-5 w-5" />
-              الفلاتر والبحث
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="بحث بالمركبة أو الوصف..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pr-9"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger><SelectValue placeholder="الحالة" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الحالات</SelectItem>
-                  <SelectItem value="pending">قيد الانتظار</SelectItem>
-                  <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-                  <SelectItem value="completed">مكتمل</SelectItem>
-                  <SelectItem value="cancelled">ملغي</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} placeholder="من تاريخ" />
-              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} placeholder="إلى تاريخ" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap items-center gap-4 print:hidden">
+          <div className="flex items-center gap-2 text-slate-600 font-semibold text-sm">
+            <Filter className="h-4 w-4 text-emerald-600" />
+            الفلاتر والبحث
+          </div>
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="بحث بالمركبة أو الوصف..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pr-9 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px] bg-slate-50 border-slate-200 focus:ring-emerald-500">
+              <SelectValue placeholder="الحالة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">جميع الحالات</SelectItem>
+              <SelectItem value="pending">قيد الانتظار</SelectItem>
+              <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+              <SelectItem value="completed">مكتمل</SelectItem>
+              <SelectItem value="cancelled">ملغي</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-[150px] bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" />
+            <span className="text-slate-400 text-sm">إلى</span>
+            <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-[150px] bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" />
+          </div>
+        </div>
 
         {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>قائمة أوامر الصيانة ({filtered.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="font-bold text-slate-800">قائمة أوامر الصيانة</h2>
+            <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full">
+              {filtered.length} أمر
+            </span>
+          </div>
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">#</TableHead>
-                  <TableHead className="text-right">التاريخ</TableHead>
-                  <TableHead className="text-right">المركبة</TableHead>
-                  <TableHead className="text-right">الوصف</TableHead>
-                  <TableHead className="text-right">الأولوية</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">عدد القطع</TableHead>
-                  <TableHead className="text-right">التكلفة</TableHead>
-                  <TableHead className="text-right print:hidden">إجراءات</TableHead>
+                <TableRow className="bg-slate-50 border-b border-slate-100 hover:bg-slate-50">
+                  <TableHead className="text-right text-slate-600 font-semibold w-12">#</TableHead>
+                  <TableHead className="text-right text-slate-600 font-semibold whitespace-nowrap">التاريخ</TableHead>
+                  <TableHead className="text-right text-slate-600 font-semibold min-w-[170px]">المركبة</TableHead>
+                  <TableHead className="text-right text-slate-600 font-semibold">الوصف</TableHead>
+                  <TableHead className="text-right text-slate-600 font-semibold">الأولوية</TableHead>
+                  <TableHead className="text-center text-slate-600 font-semibold">الحالة</TableHead>
+                  <TableHead className="text-center text-slate-600 font-semibold">القطع</TableHead>
+                  <TableHead className="text-left text-slate-600 font-semibold whitespace-nowrap">التكلفة</TableHead>
+                  <TableHead className="text-right text-slate-600 font-semibold print:hidden">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">جاري التحميل...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500">جاري التحميل...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">لا توجد أوامر صيانة</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500">لا توجد أوامر صيانة</TableCell></TableRow>
                 ) : (
                   filtered.map((o, idx) => {
                     const st = statusLabels[o.status] || statusLabels.pending;
                     const pr = priorityLabels[o.priority] || priorityLabels.medium;
+                    const dotColor =
+                      o.status === "completed" ? "bg-emerald-500" :
+                      o.status === "in_progress" ? "bg-blue-500" :
+                      o.status === "cancelled" ? "bg-red-500" : "bg-amber-500";
                     return (
-                      <TableRow key={o.id}>
-                        <TableCell className="font-medium">{idx + 1}</TableCell>
-                        <TableCell>{new Date(o.created_at).toLocaleDateString("ar-SA")}</TableCell>
-                        <TableCell className="font-medium">{o.vehicle_name}</TableCell>
-                        <TableCell className="max-w-xs truncate">{o.description}</TableCell>
-                        <TableCell><Badge variant="outline" className={pr.className}>{pr.label}</Badge></TableCell>
+                      <TableRow key={o.id} className={`${idx % 2 === 1 ? "bg-slate-50/30" : ""} hover:bg-slate-50 transition-colors`}>
+                        <TableCell className="text-sm text-slate-500 font-medium">{idx + 1}</TableCell>
+                        <TableCell className="text-sm text-slate-600 whitespace-nowrap">{new Date(o.created_at).toLocaleDateString("ar-SA")}</TableCell>
                         <TableCell>
-                          <div className="print:hidden">
+                          <span className="font-bold text-slate-800 text-sm whitespace-nowrap bg-slate-100 border border-slate-200 px-2 py-1 rounded inline-block">
+                            {o.vehicle_name}
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-[280px] truncate text-sm text-slate-600" title={o.description}>{o.description}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`${pr.className} rounded-full text-xs font-bold whitespace-nowrap`}>{pr.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center print:hidden">
                             <Select value={o.status} onValueChange={(v) => handleStatusChange(o.id, v)}>
-                              <SelectTrigger className={`h-8 w-[140px] ${st.className}`}>
-                                <SelectValue />
+                              <SelectTrigger className={`h-8 w-[140px] rounded-lg text-xs font-semibold ${st.className}`}>
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${o.status === "in_progress" ? "animate-pulse" : ""}`} />
+                                  <SelectValue />
+                                </div>
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="pending">قيد الانتظار</SelectItem>
@@ -457,19 +469,23 @@ const MaintenanceOrdersReport = () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <Badge variant="outline" className={`${st.className} hidden print:inline-flex`}>{st.label}</Badge>
+                          <div className="hidden print:flex justify-center">
+                            <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-center">{o.items_count}</TableCell>
-                        <TableCell className="font-semibold text-primary">{o.cost.toLocaleString()} ر.س</TableCell>
+                        <TableCell className="text-center text-sm text-slate-600">{o.items_count}</TableCell>
+                        <TableCell className="text-left font-bold text-slate-800 text-sm whitespace-nowrap">
+                          {o.cost.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">ر.س</span>
+                        </TableCell>
                         <TableCell className="print:hidden">
                           <div className="flex items-center gap-1">
-                            <Button size="sm" variant="ghost" title="عرض التفاصيل" onClick={() => handleViewDetails(o)}>
+                            <Button size="sm" variant="ghost" title="عرض التفاصيل" className="hover:bg-emerald-50 hover:text-emerald-600" onClick={() => handleViewDetails(o)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" title="تعديل" onClick={() => openEdit(o)}>
+                            <Button size="sm" variant="ghost" title="تعديل" className="hover:bg-blue-50" onClick={() => openEdit(o)}>
                               <Pencil className="h-4 w-4 text-blue-600" />
                             </Button>
-                            <Button size="sm" variant="ghost" title="حذف" onClick={() => handleDelete(o)}>
+                            <Button size="sm" variant="ghost" title="حذف" className="hover:bg-red-50" onClick={() => handleDelete(o)}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -478,17 +494,18 @@ const MaintenanceOrdersReport = () => {
                     );
                   })
                 )}
-                {filtered.length > 0 && (
-                  <TableRow className="bg-primary/5 font-bold">
-                    <TableCell colSpan={7} className="text-left">الإجمالي:</TableCell>
-                    <TableCell className="text-lg text-primary">{stats.totalCost.toLocaleString()} ر.س</TableCell>
-                    <TableCell className="print:hidden"></TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+          {filtered.length > 0 && (
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-sm text-slate-500">إجمالي {filtered.length} أمر صيانة</span>
+              <span className="text-sm font-bold text-slate-800">
+                إجمالي التكاليف: <span className="text-emerald-700">{stats.totalCost.toLocaleString()} ر.س</span>
+              </span>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Details Dialog */}
