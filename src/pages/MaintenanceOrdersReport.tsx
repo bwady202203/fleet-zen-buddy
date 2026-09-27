@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, ArrowRight, Printer, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, Search, Filter, Eye, Wrench, DollarSign, CheckCircle2, Clock, Pencil, Trash2, Bell, Settings, Menu, Truck, Home, ChevronLeft, ChevronRight, Plus, FileSpreadsheet, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -81,6 +81,17 @@ const MaintenanceOrdersReport = () => {
   const [editForm, setEditForm] = useState({ description: "", priority: "medium", status: "pending", cost: "" });
   const [savingEdit, setSavingEdit] = useState(false);
   const { requestDelete, DeleteDialog } = useDeleteConfirmation();
+  const [page, setPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      setUserName((u?.user_metadata as any)?.full_name || u?.email?.split("@")[0] || "");
+    });
+  }, []);
 
   const openEdit = (order: MaintenanceOrder) => {
     setEditOrder(order);
@@ -292,217 +303,337 @@ const MaintenanceOrdersReport = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
-      <header className="print:hidden">
-        <div className="container mx-auto px-4 pt-8 pb-2 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <ClipboardList className="h-6 w-6 text-emerald-600" />
-              سجل أوامر الصيانة
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">إدارة ومتابعة كافة طلبات صيانة الأسطول</p>
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const exportExcel = async () => {
+    const XLSX = await import("xlsx");
+    const rows = filtered.map((o, i) => ({
+      "#": i + 1,
+      "التاريخ": new Date(o.created_at).toLocaleDateString("ar-SA"),
+      "المركبة": o.vehicle_name,
+      "الوصف": o.description,
+      "الأولوية": priorityLabels[o.priority]?.label || o.priority,
+      "الحالة": statusLabels[o.status]?.label || o.status,
+      "القطع": o.items_count,
+      "التكلفة": o.cost,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!views"] = [{ RTL: true }] as any;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "أوامر الصيانة");
+    XLSX.writeFile(wb, "maintenance-orders.xlsx");
+  };
+
+  const dotOf = (s: string) =>
+    s === "completed" ? "bg-emerald-500" : s === "in_progress" ? "bg-blue-500" : s === "cancelled" ? "bg-red-500" : "bg-amber-500";
+
+  const statusSelect = (o: MaintenanceOrder, full = false) => {
+    const st = statusLabels[o.status] || statusLabels.pending;
+    return (
+      <Select value={o.status} onValueChange={(v) => handleStatusChange(o.id, v)}>
+        <SelectTrigger className={`h-8 ${full ? "w-full" : "w-full max-w-[130px]"} rounded-full text-xs font-semibold px-2.5 ${st.className}`}>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotOf(o.status)} ${o.status === "in_progress" ? "animate-pulse" : ""}`} />
+            <SelectValue />
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handlePrint} variant="outline" className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm">
-              <Printer className="h-4 w-4 ml-2" />
-              طباعة التقرير
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="pending">قيد الانتظار</SelectItem>
+          <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+          <SelectItem value="completed">مكتمل</SelectItem>
+          <SelectItem value="cancelled">ملغي</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  };
+
+  const actions = (o: MaintenanceOrder) => (
+    <div className="flex items-center justify-center gap-0.5">
+      <Button size="icon" variant="ghost" title="عرض التفاصيل" className="h-8 w-8 text-slate-500 hover:bg-blue-50 hover:text-blue-600" onClick={() => handleViewDetails(o)}>
+        <Eye className="h-4 w-4" />
+      </Button>
+      <Button size="icon" variant="ghost" title="تعديل" className="h-8 w-8 text-slate-500 hover:bg-amber-50 hover:text-amber-600" onClick={() => openEdit(o)}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button size="icon" variant="ghost" title="حذف" className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(o)}>
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
+  const today = new Date().toLocaleDateString("ar-SA", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const kpis = [
+    { label: "إجمالي الأوامر", value: stats.total.toLocaleString(), icon: Wrench, tone: "bg-blue-50 text-blue-600", valueTone: "text-slate-800" },
+    { label: "قيد التنفيذ / الانتظار", value: stats.pending.toLocaleString(), icon: Clock, tone: "bg-amber-50 text-amber-600", valueTone: "text-amber-600" },
+    { label: "الأوامر المكتملة", value: stats.completed.toLocaleString(), icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-600", valueTone: "text-emerald-600" },
+    { label: "إجمالي التكاليف", value: stats.totalCost.toLocaleString(), unit: "ر.س", icon: DollarSign, tone: "bg-sky-50 text-sky-600", valueTone: "text-slate-800" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#F7F9FC] overflow-x-hidden" dir="rtl" style={{ fontFamily: "Cairo, sans-serif" }}>
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.04)] print:hidden">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button size="icon" variant="ghost" className="lg:hidden h-9 w-9 text-slate-600" title="القائمة" asChild>
+              <Link to="/fleet"><Menu className="h-5 w-5" /></Link>
             </Button>
-            <Link to="/fleet">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
-                العودة
-                <ArrowRight className="h-4 w-4 mr-2" />
-              </Button>
-            </Link>
+            <div className="h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-slate-800 text-sm md:text-base truncate">نظام إدارة الأسطول والصيانة</p>
+              <p className="text-[11px] text-slate-400 truncate hidden sm:block">إدارة المركبات وأوامر الصيانة والتكاليف</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
+            <Button size="icon" variant="ghost" title="الإشعارات" className="h-9 w-9 text-slate-500 relative">
+              <Bell className="h-5 w-5" />
+              {stats.pending > 0 && <span className="absolute top-2 left-2 h-2 w-2 rounded-full bg-amber-500" />}
+            </Button>
+            <Button size="icon" variant="ghost" title="الإعدادات" className="h-9 w-9 text-slate-500" asChild>
+              <Link to="/settings"><Settings className="h-5 w-5" /></Link>
+            </Button>
+            <div className="h-8 w-px bg-slate-200 mx-1 hidden sm:block" />
+            <div className="flex items-center gap-2">
+              <div className="text-left hidden md:block max-w-[160px]">
+                <p className="text-xs font-semibold text-slate-700 truncate">{userName || "المستخدم"}</p>
+                <p className="text-[10px] text-slate-400">متصل</p>
+              </div>
+              <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm">
+                {(userName || "م").charAt(0).toUpperCase()}
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-6">
         {/* Print Header */}
         <div className="hidden print:block text-center mb-6">
           <h1 className="text-3xl font-bold">سجل أوامر الصيانة</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            تاريخ التقرير: {new Date().toLocaleDateString("ar-SA")}
-          </p>
+          <p className="text-sm text-muted-foreground mt-2">تاريخ التقرير: {new Date().toLocaleDateString("ar-SA")}</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
-              <Wrench className="h-7 w-7" />
-            </div>
-            <div>
-              <p className="text-slate-500 text-sm">إجمالي الأوامر</p>
-              <h3 className="text-2xl font-bold text-slate-800">{stats.total}</h3>
-            </div>
+        {/* Page title */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 print:hidden">
+          <div className="min-w-0">
+            <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
+              <Link to="/" className="hover:text-blue-600 flex items-center gap-1"><Home className="h-3.5 w-3.5" />الرئيسية</Link>
+              <ChevronLeft className="h-3 w-3" />
+              <Link to="/fleet" className="hover:text-blue-600">الصيانة</Link>
+              <ChevronLeft className="h-3 w-3" />
+              <span className="text-slate-600 font-medium">أوامر الصيانة</span>
+            </nav>
+            <h1 className="text-2xl md:text-[28px] font-bold text-slate-800">سجل أوامر الصيانة</h1>
+            <p className="text-xs text-slate-400 mt-1">تاريخ التقرير: {today}</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <div>
-              <p className="text-slate-500 text-sm">الأوامر المكتملة</p>
-              <h3 className="text-2xl font-bold text-emerald-600">{stats.completed}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shrink-0">
-              <Clock className="h-7 w-7" />
-            </div>
-            <div>
-              <p className="text-slate-500 text-sm">قيد التنفيذ/الانتظار</p>
-              <h3 className="text-2xl font-bold text-amber-600">{stats.pending}</h3>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
-              <DollarSign className="h-7 w-7" />
-            </div>
-            <div>
-              <p className="text-slate-500 text-sm">إجمالي التكاليف</p>
-              <h3 className="text-xl font-bold text-slate-800 whitespace-nowrap">
-                {stats.totalCost.toLocaleString()} <span className="text-sm font-normal text-slate-500">ر.س</span>
-              </h3>
-            </div>
-          </div>
+          <Button asChild variant="outline" className="bg-white border-slate-200 text-slate-600 rounded-xl self-start sm:self-auto">
+            <Link to="/fleet"><ArrowRight className="h-4 w-4 ml-2" />العودة</Link>
+          </Button>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-wrap items-center gap-4 print:hidden">
-          <div className="flex items-center gap-2 text-slate-600 font-semibold text-sm">
-            <Filter className="h-4 w-4 text-emerald-600" />
-            الفلاتر والبحث
-          </div>
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="بحث بالمركبة أو الوصف..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pr-9 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500"
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px] bg-slate-50 border-slate-200 focus:ring-emerald-500">
-              <SelectValue placeholder="الحالة" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">جميع الحالات</SelectItem>
-              <SelectItem value="pending">قيد الانتظار</SelectItem>
-              <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-              <SelectItem value="completed">مكتمل</SelectItem>
-              <SelectItem value="cancelled">ملغي</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2">
-            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-[150px] bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" />
-            <span className="text-slate-400 text-sm">إلى</span>
-            <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-[150px] bg-slate-50 border-slate-200 focus-visible:ring-emerald-500" />
-          </div>
+        {/* KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {kpis.map((k) => (
+            <div key={k.label} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex items-center gap-4 min-w-0 hover:shadow-md transition-shadow">
+              <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${k.tone}`}>
+                <k.icon className="h-6 w-6" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-slate-500 text-sm truncate">{k.label}</p>
+                <p className={`text-2xl md:text-3xl font-bold leading-tight truncate ${k.valueTone}`}>
+                  {k.value} {k.unit && <span className="text-sm font-medium text-slate-400">{k.unit}</span>}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="font-bold text-slate-800">قائمة أوامر الصيانة</h2>
-            <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full">
-              {filtered.length} أمر
-            </span>
+        {/* List card */}
+        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_1px_2px_rgba(15,23,42,0.04)] w-full min-w-0 overflow-hidden">
+          <div className="p-4 md:px-6 md:py-5 border-b border-slate-100 space-y-4 print:hidden">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-slate-800 text-lg">قائمة أوامر الصيانة</h2>
+                <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full">{filtered.length}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-9">
+                  <Link to="/new-maintenance-order"><Plus className="h-4 w-4 ml-1" />إضافة أمر صيانة</Link>
+                </Button>
+                <Button variant="outline" onClick={exportExcel} title="تصدير Excel" className="rounded-xl h-9 border-slate-200 text-emerald-700 hover:bg-emerald-50">
+                  <FileSpreadsheet className="h-4 w-4 ml-1" />Excel
+                </Button>
+                <Button variant="outline" onClick={handlePrint} title="طباعة / PDF" className="rounded-xl h-9 border-slate-200 text-red-600 hover:bg-red-50">
+                  <FileText className="h-4 w-4 ml-1" />PDF
+                </Button>
+                <Button variant={showFilters ? "secondary" : "outline"} onClick={() => setShowFilters(v => !v)} title="فلترة" className="rounded-xl h-9 border-slate-200 text-slate-600">
+                  <Filter className="h-4 w-4 ml-1" />فلترة
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="ابحث برقم المركبة أو وصف الصيانة..."
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  className="pr-9 h-10 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-blue-500"
+                />
+              </div>
+              {showFilters && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+                    <SelectTrigger className="w-[150px] h-10 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="الحالة" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">جميع الحالات</SelectItem>
+                      <SelectItem value="pending">قيد الانتظار</SelectItem>
+                      <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="cancelled">ملغي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(1); }} className="w-[145px] h-10 rounded-xl bg-slate-50 border-slate-200" />
+                  <span className="text-slate-400 text-sm">إلى</span>
+                  <Input type="date" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(1); }} className="w-[145px] h-10 rounded-xl bg-slate-50 border-slate-200" />
+                </div>
+              )}
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50 border-b border-slate-100 hover:bg-slate-50">
-                  <TableHead className="text-right text-slate-600 font-semibold w-12">#</TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold whitespace-nowrap">التاريخ</TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold min-w-[170px]">المركبة</TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold">الوصف</TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold">الأولوية</TableHead>
-                  <TableHead className="text-center text-slate-600 font-semibold">الحالة</TableHead>
-                  <TableHead className="text-center text-slate-600 font-semibold">القطع</TableHead>
-                  <TableHead className="text-left text-slate-600 font-semibold whitespace-nowrap">التكلفة</TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold print:hidden">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+
+          {/* Desktop table (no horizontal scroll) */}
+          <div className="hidden md:block print:block">
+            <table className="w-full table-fixed text-sm">
+              <colgroup>
+                <col className="w-[4%]" />
+                <col className="w-[10%]" />
+                <col className="w-[17%]" />
+                <col />
+                <col className="w-[9%]" />
+                <col className="w-[13%]" />
+                <col className="w-[10%]" />
+                <col className="w-[11%] print:hidden" />
+              </colgroup>
+              <thead>
+                <tr className="bg-slate-50/80 text-slate-500 text-xs font-semibold border-b border-slate-100">
+                  <th className="text-right px-3 py-3">#</th>
+                  <th className="text-right px-3 py-3">التاريخ</th>
+                  <th className="text-right px-3 py-3">المركبة</th>
+                  <th className="text-right px-3 py-3">الوصف</th>
+                  <th className="text-center px-3 py-3">الأولوية</th>
+                  <th className="text-center px-3 py-3">الحالة</th>
+                  <th className="text-left px-3 py-3">التكلفة</th>
+                  <th className="text-center px-3 py-3 print:hidden">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500">جاري التحميل...</TableCell></TableRow>
+                  <tr><td colSpan={8} className="text-center py-10 text-slate-400">جاري التحميل...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-slate-500">لا توجد أوامر صيانة</TableCell></TableRow>
+                  <tr><td colSpan={8} className="text-center py-10 text-slate-400">لا توجد أوامر صيانة</td></tr>
                 ) : (
-                  filtered.map((o, idx) => {
+                  pageRows.map((o, i) => {
+                    const idx = (safePage - 1) * PAGE_SIZE + i;
                     const st = statusLabels[o.status] || statusLabels.pending;
                     const pr = priorityLabels[o.priority] || priorityLabels.medium;
-                    const dotColor =
-                      o.status === "completed" ? "bg-emerald-500" :
-                      o.status === "in_progress" ? "bg-blue-500" :
-                      o.status === "cancelled" ? "bg-red-500" : "bg-amber-500";
+                    const open = expandedId === o.id;
                     return (
-                      <TableRow key={o.id} className={`${idx % 2 === 1 ? "bg-slate-50/30" : ""} hover:bg-slate-50 transition-colors`}>
-                        <TableCell className="text-sm text-slate-500 font-medium">{idx + 1}</TableCell>
-                        <TableCell className="text-sm text-slate-600 whitespace-nowrap">{new Date(o.created_at).toLocaleDateString("ar-SA")}</TableCell>
-                        <TableCell>
-                          <span className="font-bold text-slate-800 text-sm whitespace-nowrap bg-slate-100 border border-slate-200 px-2 py-1 rounded inline-block">
-                            {o.vehicle_name}
-                          </span>
-                        </TableCell>
-                        <TableCell className="max-w-[280px] truncate text-sm text-slate-600" title={o.description}>{o.description}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`${pr.className} rounded-full text-xs font-bold whitespace-nowrap`}>{pr.label}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center print:hidden">
-                            <Select value={o.status} onValueChange={(v) => handleStatusChange(o.id, v)}>
-                              <SelectTrigger className={`h-8 w-[140px] rounded-lg text-xs font-semibold ${st.className}`}>
-                                <div className="flex items-center gap-1.5">
-                                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${o.status === "in_progress" ? "animate-pulse" : ""}`} />
-                                  <SelectValue />
-                                </div>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">قيد الانتظار</SelectItem>
-                                <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
-                                <SelectItem value="completed">مكتمل</SelectItem>
-                                <SelectItem value="cancelled">ملغي</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="hidden print:flex justify-center">
-                            <Badge variant="outline" className={st.className}>{st.label}</Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center text-sm text-slate-600">{o.items_count}</TableCell>
-                        <TableCell className="text-left font-bold text-slate-800 text-sm whitespace-nowrap">
+                      <tr key={o.id} className="border-b border-slate-100 last:border-0 hover:bg-blue-50/40 transition-colors align-middle">
+                        <td className="px-3 py-3 text-slate-400 font-medium">{idx + 1}</td>
+                        <td className="px-3 py-3 text-slate-600 truncate">{new Date(o.created_at).toLocaleDateString("ar-SA")}</td>
+                        <td className="px-3 py-3">
+                          <span className="block truncate font-semibold text-slate-800" title={o.vehicle_name}>{o.vehicle_name}</span>
+                          <span className="text-[11px] text-slate-400">{o.items_count} قطعة</span>
+                        </td>
+                        <td className="px-3 py-3 text-slate-600">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(open ? null : o.id)}
+                            title={open ? "إخفاء" : "اضغط لعرض النص كاملاً"}
+                            className={`text-right w-full ${open ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]" : "truncate block"} hover:text-blue-700`}
+                          >
+                            {o.description || "—"}
+                          </button>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${pr.className}`}>{pr.label}</span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex justify-center print:hidden">{statusSelect(o)}</div>
+                          <div className="hidden print:flex justify-center"><Badge variant="outline" className={st.className}>{st.label}</Badge></div>
+                        </td>
+                        <td className="px-3 py-3 text-left font-bold text-slate-800 truncate">
                           {o.cost.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">ر.س</span>
-                        </TableCell>
-                        <TableCell className="print:hidden">
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" variant="ghost" title="عرض التفاصيل" className="hover:bg-emerald-50 hover:text-emerald-600" onClick={() => handleViewDetails(o)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" title="تعديل" className="hover:bg-blue-50" onClick={() => openEdit(o)}>
-                              <Pencil className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            <Button size="sm" variant="ghost" title="حذف" className="hover:bg-red-50" onClick={() => handleDelete(o)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                        <td className="px-2 py-3 print:hidden">{actions(o)}</td>
+                      </tr>
                     );
                   })
                 )}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden print:hidden divide-y divide-slate-100">
+            {loading ? (
+              <p className="text-center py-10 text-slate-400">جاري التحميل...</p>
+            ) : filtered.length === 0 ? (
+              <p className="text-center py-10 text-slate-400">لا توجد أوامر صيانة</p>
+            ) : pageRows.map((o, i) => {
+              const pr = priorityLabels[o.priority] || priorityLabels.medium;
+              const open = expandedId === o.id;
+              return (
+                <div key={o.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-800 truncate">{o.vehicle_name}</p>
+                      <p className="text-xs text-slate-400">#{(safePage - 1) * PAGE_SIZE + i + 1} · {new Date(o.created_at).toLocaleDateString("ar-SA")}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${pr.className}`}>{pr.label}</span>
+                  </div>
+                  <button type="button" onClick={() => setExpandedId(open ? null : o.id)} className={`text-right w-full text-sm text-slate-600 ${open ? "break-words [overflow-wrap:anywhere]" : "line-clamp-2"}`}>
+                    {o.description || "—"}
+                  </button>
+                  <div className="grid grid-cols-2 gap-3 items-center">
+                    {statusSelect(o, true)}
+                    <p className="text-left font-bold text-slate-800">{o.cost.toLocaleString()} <span className="text-xs font-normal text-slate-400">ر.س</span></p>
+                  </div>
+                  <div className="flex justify-end border-t border-slate-100 pt-2">{actions(o)}</div>
+                </div>
+              );
+            })}
+          </div>
+
           {filtered.length > 0 && (
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-sm text-slate-500">إجمالي {filtered.length} أمر صيانة</span>
-              <span className="text-sm font-bold text-slate-800">
-                إجمالي التكاليف: <span className="text-emerald-700">{stats.totalCost.toLocaleString()} ر.س</span>
-              </span>
+            <div className="px-4 md:px-6 py-4 bg-slate-50/60 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                <span className="text-slate-500">إجمالي <b className="text-slate-700">{filtered.length}</b> أوامر</span>
+                <span className="text-slate-500">إجمالي التكاليف: <b className="text-blue-700">{stats.totalCost.toLocaleString()} ر.س</b></span>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1 print:hidden">
+                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg" disabled={safePage === 1} onClick={() => setPage(safePage - 1)} title="السابق">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, n) => n + 1)
+                    .filter(n => n === 1 || n === totalPages || Math.abs(n - safePage) <= 1)
+                    .map((n, i, arr) => (
+                      <span key={n} className="flex items-center gap-1">
+                        {i > 0 && n - arr[i - 1] > 1 && <span className="text-slate-400 px-1">…</span>}
+                        <Button size="sm" variant={n === safePage ? "default" : "outline"} className={`h-8 min-w-8 px-2 rounded-lg ${n === safePage ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`} onClick={() => setPage(n)}>{n}</Button>
+                      </span>
+                    ))}
+                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} title="التالي">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
