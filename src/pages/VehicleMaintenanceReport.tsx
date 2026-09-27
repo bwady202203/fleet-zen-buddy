@@ -270,9 +270,9 @@ const VehicleMaintenanceReport = () => {
                       <BadgeCheck className="h-5 w-5" />
                       <span className="font-extrabold text-base">الإجمالي النهائي</span>
                     </div>
-                    <div className="text-left" dir="ltr">
+                    <div className="flex items-baseline gap-2" dir="rtl">
                       <span className="text-2xl font-extrabold tracking-tight">{fmt(total)}</span>
-                      <span className="text-sm font-bold text-emerald-50/90 mr-1">ر.س</span>
+                      <span className="text-sm font-bold text-emerald-50/90">ر.س</span>
                     </div>
                   </div>
                 </div>
