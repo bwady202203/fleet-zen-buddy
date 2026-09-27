@@ -352,6 +352,11 @@ const MaintenanceOrdersReport = () => {
 
   const actions = (o: MaintenanceOrder) => (
     <div className="flex items-center justify-center gap-0.5">
+      <Link to={`/vehicle-maintenance-report?order=${o.id}`}>
+        <Button size="icon" variant="ghost" title="تقرير الصيانة" className="h-8 w-8 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600">
+          <FileText className="h-4 w-4" />
+        </Button>
+      </Link>
       <Button size="icon" variant="ghost" title="عرض التفاصيل" className="h-8 w-8 text-slate-500 hover:bg-blue-50 hover:text-blue-600" onClick={() => handleViewDetails(o)}>
         <Eye className="h-4 w-4" />
       </Button>

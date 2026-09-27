@@ -115,6 +115,7 @@ import VehicleCostReport from "./pages/VehicleCostReport";
 import MaintenancePurchaseInvoices from "./pages/MaintenancePurchaseInvoices";
 import NewMaintenanceOrder from "./pages/NewMaintenanceOrder";
 import MaintenanceOrdersReport from "./pages/MaintenanceOrdersReport";
+import VehicleMaintenanceReport from "./pages/VehicleMaintenanceReport";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import ZatcaHome from "./pages/zatca/ZatcaHome";
