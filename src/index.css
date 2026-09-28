@@ -196,6 +196,11 @@ All colors MUST be HSL.
     margin: 0 !important;
   }
 
+  html:has(.maintenance-orders-print),
+  body:has(.maintenance-orders-print) {
+    page: maintenance-orders;
+  }
+
   body:has(.maintenance-orders-print) .group\/sidebar-wrapper,
   body:has(.maintenance-orders-print) .group\/sidebar-wrapper > div,
   body:has(.maintenance-orders-print) .group\/sidebar-wrapper > div > div:not([data-sidebar]),
