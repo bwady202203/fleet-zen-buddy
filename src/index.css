@@ -262,115 +262,61 @@ All colors MUST be HSL.
     line-height: 1.55;
   }
 
-  .maintenance-print-heading {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 8mm;
-    padding-bottom: 4mm;
-    border-bottom: 1.5pt solid hsl(var(--primary));
-  }
+  .maintenance-orders-print { --mp-blue: 214 80% 42%; --mp-navy: 220 55% 18%; --mp-gray: 216 30% 96%; }
+  .maintenance-orders-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  .maintenance-print-heading h1 {
-    margin: 1mm 0 0;
-    font-size: 19pt;
-    font-weight: 800;
-    line-height: 1.35;
-  }
+  .mp-heading { display: flex; align-items: center; justify-content: space-between; gap: 6mm; padding-bottom: 4mm; border-bottom: 1.2pt solid hsl(var(--mp-blue)); }
+  .mp-title-wrap { display: flex; align-items: center; gap: 4mm; }
+  .mp-logo { width: 13mm; height: 13mm; border-radius: 3mm; background: hsl(var(--mp-navy)); color: hsl(0 0% 100%); display: flex; align-items: center; justify-content: center; }
+  .mp-logo svg { width: 7mm; height: 7mm; }
+  .mp-heading h1 { margin: 0; font-size: 20pt; font-weight: 800; line-height: 1.25; color: hsl(var(--mp-navy)); }
+  .mp-brand { margin: 0.5mm 0 0; font-size: 9pt; font-weight: 600; color: hsl(var(--mp-blue)); }
+  .mp-date-card { display: flex; flex-direction: column; align-items: center; padding: 2mm 4mm; border: 0.6pt solid hsl(214 40% 85%); border-radius: 2.5mm; background: hsl(var(--mp-gray)); font-size: 7.5pt; color: hsl(215 16% 47%); white-space: nowrap; }
+  .mp-date-card strong { color: hsl(var(--mp-navy)); font-size: 8.5pt; }
 
-  .maintenance-print-brand {
-    margin: 0;
-    color: hsl(var(--muted-foreground));
-    font-size: 9pt;
-    font-weight: 700;
-  }
+  .mp-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 4mm 0; }
+  .mp-card { padding: 2.5mm 3mm; border: 0.6pt solid hsl(214 32% 88%); border-right: 2pt solid hsl(var(--mp-blue)); border-radius: 2mm; background: hsl(var(--mp-gray)); display: flex; flex-direction: column; gap: 0.5mm; }
+  .mp-card span { font-size: 7.5pt; color: hsl(215 16% 47%); }
+  .mp-card strong { font-size: 10pt; color: hsl(var(--mp-navy)); font-weight: 800; }
+  .mp-card-accent { background: hsl(var(--mp-navy)); border-color: hsl(var(--mp-navy)); }
+  .mp-card-accent span { color: hsl(214 60% 85%); }
+  .mp-card-accent strong { color: hsl(0 0% 100%); }
 
-  .maintenance-print-date {
-    text-align: left;
-    color: hsl(var(--muted-foreground));
-    white-space: nowrap;
-    font-size: 8pt;
-  }
-
-  .maintenance-print-date strong {
-    color: hsl(var(--foreground));
-  }
-
-  .maintenance-print-meta {
-    display: flex;
-    justify-content: space-between;
-    gap: 3mm;
-    padding: 4mm 0;
-    color: hsl(var(--muted-foreground));
-    font-size: 8pt;
-  }
-
-  .maintenance-print-meta strong {
-    color: hsl(var(--foreground));
-  }
-
-  .maintenance-print-table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-    text-align: right;
-    font-size: 8.5pt;
-  }
-
+  .maintenance-print-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: right; font-size: 8.5pt; }
   .maintenance-col-number { width: 5%; }
-  .maintenance-col-date { width: 13%; }
-  .maintenance-col-vehicle { width: 18%; }
-  .maintenance-col-description { width: 30%; }
-  .maintenance-col-priority { width: 10%; }
+  .maintenance-col-date { width: 12%; }
+  .maintenance-col-vehicle { width: 17%; }
+  .maintenance-col-description { width: 32%; }
+  .maintenance-col-priority { width: 9%; }
   .maintenance-col-status { width: 13%; }
-  .maintenance-col-cost { width: 11%; }
+  .maintenance-col-cost { width: 12%; }
+  .maintenance-print-table thead { display: table-header-group; }
+  .maintenance-print-table th { padding: 2.6mm 2mm; background: hsl(var(--mp-navy)); color: hsl(0 0% 100%); font-weight: 700; font-size: 8.5pt; }
+  .maintenance-print-table td { padding: 2.4mm 2mm; border-bottom: 0.4pt solid hsl(214 32% 90%); vertical-align: middle; overflow-wrap: anywhere; color: hsl(222 30% 20%); }
+  .maintenance-print-table tbody tr:nth-child(even) td { background: hsl(var(--mp-gray)); }
+  .maintenance-print-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .mp-num { font-weight: 800; color: hsl(var(--mp-blue)) !important; text-align: center; }
+  .mp-vehicle { font-weight: 700; }
+  .mp-desc { display: table-cell; line-height: 1.5; }
+  .mp-status { display: inline-block; padding: 0.6mm 2.5mm; border-radius: 10mm; font-size: 7.5pt; font-weight: 700; border: 0.5pt solid; white-space: nowrap; }
+  .mp-status-completed { background: hsl(142 45% 94%); color: hsl(142 55% 28%); border-color: hsl(142 40% 78%); }
+  .mp-status-in_progress { background: hsl(30 80% 94%); color: hsl(28 70% 35%); border-color: hsl(30 60% 78%); }
+  .mp-status-pending { background: hsl(216 30% 94%); color: hsl(215 25% 35%); border-color: hsl(215 20% 80%); }
+  .mp-status-cancelled { background: hsl(0 60% 95%); color: hsl(0 55% 38%); border-color: hsl(0 45% 82%); }
+  .maintenance-print-table th:last-child, .maintenance-print-amount { text-align: left; white-space: nowrap; }
+  .maintenance-print-amount { font-weight: 800; color: hsl(var(--mp-navy)) !important; }
+  .maintenance-print-empty { text-align: center; padding: 10mm 0 !important; }
 
-  .maintenance-print-table thead {
-    display: table-header-group;
-  }
+  .mp-summary { display: grid; grid-template-columns: 1fr 2fr; gap: 3mm; margin-top: 5mm; break-inside: avoid; page-break-inside: avoid; }
+  .mp-summary-total { padding: 4mm; border-radius: 2.5mm; background: hsl(var(--mp-navy)); color: hsl(0 0% 100%); display: flex; flex-direction: column; justify-content: center; gap: 1mm; }
+  .mp-summary-total span { font-size: 9pt; color: hsl(214 60% 85%); }
+  .mp-summary-total strong { font-size: 16pt; font-weight: 800; }
+  .mp-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2mm; }
+  .mp-summary-grid div { padding: 2mm 3mm; border: 0.6pt solid hsl(214 32% 88%); border-radius: 2mm; background: hsl(var(--mp-gray)); display: flex; justify-content: space-between; align-items: center; font-size: 8pt; color: hsl(215 16% 47%); }
+  .mp-summary-grid strong { color: hsl(var(--mp-navy)); font-size: 10pt; }
 
-  .maintenance-print-table th {
-    padding: 2.5mm 1.5mm;
-    border-top: 1pt solid hsl(var(--border));
-    border-bottom: 1pt solid hsl(var(--primary));
-    background: hsl(var(--muted));
-    font-weight: 800;
-  }
+  .mp-footer { display: flex; justify-content: space-between; margin-top: 5mm; padding-top: 2mm; border-top: 0.8pt solid hsl(var(--mp-blue)); font-size: 7.5pt; color: hsl(215 16% 47%); break-inside: avoid; }
 
-  .maintenance-print-table td {
-    padding: 2.5mm 1.5mm;
-    border-bottom: 0.5pt solid hsl(var(--border));
-    vertical-align: top;
-    overflow-wrap: anywhere;
-  }
-
-  .maintenance-print-table tr {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .maintenance-print-table th:last-child,
-  .maintenance-print-amount {
-    text-align: left;
-    white-space: nowrap;
-  }
-
-  .maintenance-print-empty {
-    text-align: center;
-    padding: 10mm 0 !important;
-  }
-
-  .maintenance-print-total {
-    display: flex;
-    justify-content: space-between;
-    gap: 6mm;
-    padding: 3mm 2mm;
-    margin-top: 3mm;
-    border-top: 1.5pt solid hsl(var(--primary));
-    font-size: 11pt;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
 }
 
 /* Loading Cup Animations */

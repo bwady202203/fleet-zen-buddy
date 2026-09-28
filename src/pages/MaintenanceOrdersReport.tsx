@@ -645,18 +645,22 @@ const MaintenanceOrdersReport = () => {
       </main>
 
       {/* Independent print document: all filtered rows, rather than the current screen page. */}
-      <section className="maintenance-orders-print" aria-label="تقرير سجل أوامر الصيانة">
-        <div className="maintenance-print-heading">
-          <div>
-            <p className="maintenance-print-brand">نظام إدارة الأسطول والصيانة</p>
-            <h1>سجل أوامر الصيانة</h1>
+      <section className="maintenance-orders-print" dir="rtl" aria-label="تقرير سجل أوامر الصيانة">
+        <div className="mp-heading">
+          <div className="mp-title-wrap">
+            <div className="mp-logo"><Wrench /></div>
+            <div>
+              <h1>سجل أوامر الصيانة</h1>
+              <p className="mp-brand">نظام إدارة الأسطول والصيانة</p>
+            </div>
           </div>
-          <div className="maintenance-print-date">تاريخ التقرير<br /><strong>{today}</strong></div>
+          <div className="mp-date-card"><span>تاريخ التقرير</span><strong>{today}</strong></div>
         </div>
-        <div className="maintenance-print-meta">
-          <span>عدد الأوامر: <strong>{filtered.length.toLocaleString("ar-SA")}</strong></span>
-          <span>الفترة: <strong>{startDate || "البداية"} — {endDate || "اليوم"}</strong></span>
-          <span>الحالة: <strong>{statusFilter === "all" ? "جميع الحالات" : statusLabels[statusFilter]?.label}</strong></span>
+        <div className="mp-cards">
+          <div className="mp-card"><span>عدد الأوامر</span><strong>{filtered.length.toLocaleString("ar-SA")}</strong></div>
+          <div className="mp-card"><span>الفترة الزمنية</span><strong>{startDate || "البداية"} — {endDate || "اليوم"}</strong></div>
+          <div className="mp-card"><span>حالة الأوامر</span><strong>{statusFilter === "all" ? "جميع الحالات" : statusLabels[statusFilter]?.label}</strong></div>
+          <div className="mp-card mp-card-accent"><span>إجمالي التكلفة</span><strong>{stats.totalCost.toLocaleString("en-US", { maximumFractionDigits: 2 })} ر.س</strong></div>
         </div>
         <table className="maintenance-print-table">
           <colgroup>
@@ -677,22 +681,35 @@ const MaintenanceOrdersReport = () => {
               <tr><td colSpan={7} className="maintenance-print-empty">لا توجد أوامر صيانة مطابقة</td></tr>
             ) : filtered.map((o, i) => (
               <tr key={o.id}>
-                <td>{(i + 1).toLocaleString("ar-SA")}</td>
+                <td className="mp-num">{(i + 1).toLocaleString("ar-SA")}</td>
                 <td>{new Date(o.created_at).toLocaleDateString("ar-SA")}</td>
-                <td>{o.vehicle_name}</td>
-                <td>{o.description || "—"}</td>
+                <td className="mp-vehicle">{o.vehicle_name}</td>
+                <td className="mp-desc">{o.description || "—"}</td>
                 <td>{priorityLabels[o.priority]?.label || o.priority}</td>
-                <td>{statusLabels[o.status]?.label || o.status}</td>
+                <td><span className={`mp-status mp-status-${o.status}`}>{statusLabels[o.status]?.label || o.status}</span></td>
                 <td className="maintenance-print-amount">{o.cost.toLocaleString("en-US", { maximumFractionDigits: 2 })}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="maintenance-print-total">
-          <strong>إجمالي التكاليف</strong>
-          <strong>{stats.totalCost.toLocaleString("en-US", { maximumFractionDigits: 2 })} ر.س</strong>
+        <div className="mp-summary">
+          <div className="mp-summary-total">
+            <span>إجمالي التكاليف</span>
+            <strong>{stats.totalCost.toLocaleString("en-US", { maximumFractionDigits: 2 })} ر.س</strong>
+          </div>
+          <div className="mp-summary-grid">
+            <div><span>إجمالي الأوامر</span><strong>{stats.total.toLocaleString("ar-SA")}</strong></div>
+            <div><span>المكتملة</span><strong>{stats.completed.toLocaleString("ar-SA")}</strong></div>
+            <div><span>قيد التنفيذ</span><strong>{filtered.filter(o => o.status === "in_progress").length.toLocaleString("ar-SA")}</strong></div>
+            <div><span>متوسط تكلفة الأمر</span><strong>{(stats.total ? stats.totalCost / stats.total : 0).toLocaleString("en-US", { maximumFractionDigits: 2 })} ر.س</strong></div>
+          </div>
+        </div>
+        <div className="mp-footer">
+          <span>نظام إدارة الأسطول والصيانة</span>
+          <span>أُنشئ في: {new Date().toLocaleString("ar-SA")}</span>
         </div>
       </section>
+
 
       {/* Details Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
