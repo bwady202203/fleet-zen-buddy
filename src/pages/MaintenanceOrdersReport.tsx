@@ -378,7 +378,7 @@ const MaintenanceOrdersReport = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] overflow-x-hidden" dir="rtl" style={{ fontFamily: "Cairo, sans-serif" }}>
+    <div className="maintenance-orders-report min-h-screen bg-background overflow-x-hidden" dir="rtl">
       {/* Sticky Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200/70 shadow-[0_1px_3px_rgba(15,23,42,0.04)] print:hidden">
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-3">
@@ -416,7 +416,7 @@ const MaintenanceOrdersReport = () => {
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-6">
+      <main className="maintenance-orders-screen max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-6">
         {/* Print Header */}
         <div className="hidden print:block text-center mb-6">
           <h1 className="text-3xl font-bold">سجل أوامر الصيانة</h1>
@@ -643,6 +643,56 @@ const MaintenanceOrdersReport = () => {
           )}
         </div>
       </main>
+
+      {/* Independent print document: all filtered rows, rather than the current screen page. */}
+      <section className="maintenance-orders-print" aria-label="تقرير سجل أوامر الصيانة">
+        <div className="maintenance-print-heading">
+          <div>
+            <p className="maintenance-print-brand">نظام إدارة الأسطول والصيانة</p>
+            <h1>سجل أوامر الصيانة</h1>
+          </div>
+          <div className="maintenance-print-date">تاريخ التقرير<br /><strong>{today}</strong></div>
+        </div>
+        <div className="maintenance-print-meta">
+          <span>عدد الأوامر: <strong>{filtered.length.toLocaleString("ar-SA")}</strong></span>
+          <span>الفترة: <strong>{startDate || "البداية"} — {endDate || "اليوم"}</strong></span>
+          <span>الحالة: <strong>{statusFilter === "all" ? "جميع الحالات" : statusLabels[statusFilter]?.label}</strong></span>
+        </div>
+        <table className="maintenance-print-table">
+          <colgroup>
+            <col className="maintenance-col-number" />
+            <col className="maintenance-col-date" />
+            <col className="maintenance-col-vehicle" />
+            <col className="maintenance-col-description" />
+            <col className="maintenance-col-priority" />
+            <col className="maintenance-col-status" />
+            <col className="maintenance-col-cost" />
+          </colgroup>
+          <thead><tr>
+            <th>م</th><th>التاريخ</th><th>المركبة</th><th>وصف الصيانة</th>
+            <th>الأولوية</th><th>الحالة</th><th>التكلفة (ر.س)</th>
+          </tr></thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={7} className="maintenance-print-empty">لا توجد أوامر صيانة مطابقة</td></tr>
+            ) : filtered.map((o, i) => (
+              <tr key={o.id}>
+                <td>{(i + 1).toLocaleString("ar-SA")}</td>
+                <td>{new Date(o.created_at).toLocaleDateString("ar-SA")}</td>
+                <td>{o.vehicle_name}</td>
+                <td>{o.description || "—"}</td>
+                <td>{priorityLabels[o.priority]?.label || o.priority}</td>
+                <td>{statusLabels[o.status]?.label || o.status}</td>
+                <td className="maintenance-print-amount">{o.cost.toLocaleString("en-US", { maximumFractionDigits: 2 })}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="maintenance-print-total">
+          <strong>إجمالي التكاليف</strong>
+          <strong>{stats.totalCost.toLocaleString("en-US", { maximumFractionDigits: 2 })} ر.س</strong>
+        </div>
+      </section>
 
       {/* Details Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>

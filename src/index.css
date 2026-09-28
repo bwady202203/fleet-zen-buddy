@@ -163,6 +163,15 @@ All colors MUST be HSL.
 }
 
 /* Print styles for A4 invoice */
+.maintenance-orders-print {
+  display: none;
+}
+
+@page maintenance-orders {
+  size: A4 portrait;
+  margin: 18mm 14mm 16mm;
+}
+
 @media print {
   @page {
     size: A4;
@@ -194,6 +203,136 @@ All colors MUST be HSL.
   .page-break:last-child {
     page-break-after: avoid;
     break-after: avoid;
+  }
+
+  .maintenance-orders-report {
+    overflow: visible !important;
+    min-height: 0 !important;
+    background: hsl(var(--card)) !important;
+  }
+
+  .maintenance-orders-report .maintenance-orders-screen {
+    display: none !important;
+  }
+
+  .maintenance-orders-print {
+    display: block !important;
+    page: maintenance-orders;
+    width: 100%;
+    color: hsl(var(--foreground));
+    font-family: Cairo, sans-serif;
+    font-size: 9pt;
+    line-height: 1.55;
+  }
+
+  .maintenance-print-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8mm;
+    padding-bottom: 4mm;
+    border-bottom: 1.5pt solid hsl(var(--primary));
+  }
+
+  .maintenance-print-heading h1 {
+    margin: 1mm 0 0;
+    font-size: 19pt;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  .maintenance-print-brand {
+    margin: 0;
+    color: hsl(var(--muted-foreground));
+    font-size: 9pt;
+    font-weight: 700;
+  }
+
+  .maintenance-print-date {
+    text-align: left;
+    color: hsl(var(--muted-foreground));
+    white-space: nowrap;
+    font-size: 8pt;
+  }
+
+  .maintenance-print-date strong {
+    color: hsl(var(--foreground));
+  }
+
+  .maintenance-print-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 3mm;
+    padding: 4mm 0;
+    color: hsl(var(--muted-foreground));
+    font-size: 8pt;
+  }
+
+  .maintenance-print-meta strong {
+    color: hsl(var(--foreground));
+  }
+
+  .maintenance-print-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    text-align: right;
+    font-size: 8.5pt;
+  }
+
+  .maintenance-col-number { width: 5%; }
+  .maintenance-col-date { width: 13%; }
+  .maintenance-col-vehicle { width: 18%; }
+  .maintenance-col-description { width: 30%; }
+  .maintenance-col-priority { width: 10%; }
+  .maintenance-col-status { width: 13%; }
+  .maintenance-col-cost { width: 11%; }
+
+  .maintenance-print-table thead {
+    display: table-header-group;
+  }
+
+  .maintenance-print-table th {
+    padding: 2.5mm 1.5mm;
+    border-top: 1pt solid hsl(var(--border));
+    border-bottom: 1pt solid hsl(var(--primary));
+    background: hsl(var(--muted));
+    font-weight: 800;
+  }
+
+  .maintenance-print-table td {
+    padding: 2.5mm 1.5mm;
+    border-bottom: 0.5pt solid hsl(var(--border));
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  .maintenance-print-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .maintenance-print-table th:last-child,
+  .maintenance-print-amount {
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .maintenance-print-empty {
+    text-align: center;
+    padding: 10mm 0 !important;
+  }
+
+  .maintenance-print-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 6mm;
+    padding: 3mm 2mm;
+    margin-top: 3mm;
+    border-top: 1.5pt solid hsl(var(--primary));
+    font-size: 11pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 

@@ -1,0 +1,1 @@
+Print the maintenance orders register from its own print-only document, separate from the paginated screen table, so all filtered rows appear in the PDF and repeated A4 page margins remain reliable.
