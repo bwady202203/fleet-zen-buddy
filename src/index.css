@@ -173,6 +173,21 @@ All colors MUST be HSL.
 }
 
 @media print {
+  body:has(.maintenance-orders-print) .group\/sidebar-wrapper,
+  body:has(.maintenance-orders-print) .group\/sidebar-wrapper > div,
+  body:has(.maintenance-orders-print) .group\/sidebar-wrapper > div > div:not([data-sidebar]),
+  body:has(.maintenance-orders-print) .group\/sidebar-wrapper > div > div:not([data-sidebar]) > div {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body:has(.maintenance-orders-print) [data-sidebar] {
+    display: none !important;
+  }
+
   @page {
     size: A4;
     margin: 0;
