@@ -170,6 +170,12 @@ All colors MUST be HSL.
 @page maintenance-orders {
   size: A4 portrait;
   margin: 18mm 14mm 16mm;
+  @bottom-center {
+    content: "صفحة " counter(page) " من " counter(pages);
+    font-family: Cairo, sans-serif;
+    font-size: 8pt;
+    color: #64748b;
+  }
 }
 
 @media print {
