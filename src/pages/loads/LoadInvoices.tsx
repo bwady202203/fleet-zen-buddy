@@ -1220,17 +1220,17 @@ const LoadInvoices = () => {
 
         {/* View Invoice Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:max-w-full">
-            <DialogHeader className="print:hidden">
-              <div className="flex justify-between items-center">
-                <DialogTitle>عرض الفاتورة</DialogTitle>
-                <div className="flex gap-2">
-                  <Button onClick={handleDownloadPDF} size="sm" variant="outline">
-                    <Download className="h-4 w-4 ml-2" />
-                    تحميل PDF
+          <DialogContent className="load-invoice-dialog flex max-h-[96dvh] w-[calc(100vw-1rem)] max-w-4xl flex-col gap-0 overflow-hidden p-0 sm:w-[95vw] print:block print:max-w-full print:overflow-visible">
+            <DialogHeader className="shrink-0 border-b bg-background px-4 py-3 print:hidden sm:px-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <DialogTitle className="text-right text-base sm:text-lg">عرض الفاتورة</DialogTitle>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={handleDownloadPDF} size="sm" variant="outline" className="gap-1.5">
+                    <Download className="h-4 w-4" />
+                    PDF
                   </Button>
-                  <Button onClick={handlePrint} size="sm">
-                    <Printer className="h-4 w-4 ml-2" />
+                  <Button onClick={handlePrint} size="sm" className="gap-1.5">
+                    <Printer className="h-4 w-4" />
                     طباعة
                   </Button>
                 </div>
@@ -1238,10 +1238,11 @@ const LoadInvoices = () => {
             </DialogHeader>
             
             {selectedInvoice && (
-              <div ref={printRef} className="p-6 bg-white text-black print:p-8" style={{ maxHeight: '297mm' }}>
+              <div className="flex-1 overflow-y-auto overscroll-contain bg-muted/60 sm:p-3 print:overflow-visible print:bg-background print:p-0">
+              <div ref={printRef} className="load-invoice-preview mx-auto bg-card p-3 text-card-foreground shadow-sm sm:p-6 print:p-8 print:shadow-none" style={{ maxWidth: '210mm' }} dir="rtl">
                 {/* Invoice Header */}
                 <div className="border-b-2 pb-4 mb-4" style={{ borderColor: '#2563eb' }}>
-                  <div className="flex justify-between items-start gap-4">
+                  <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_auto_1fr]">
                     {/* Arabic Section - Supplier Info */}
                     <div className="flex-1">
                       <h1 className="text-xl font-bold mb-2" style={{ color: '#2563eb' }}>
@@ -1276,7 +1277,7 @@ const LoadInvoices = () => {
                     </div>
 
                     {/* QR Code in the center - ZATCA Compliant */}
-                    <div className="text-center flex-shrink-0">
+                    <div className="mx-auto text-center md:mx-0">
                       <h2 className="text-base font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية</h2>
                       <h3 className="text-xs font-medium mb-2" style={{ color: '#2563eb' }}>Tax Invoice</h3>
                       <ZATCAQRCode
@@ -1291,7 +1292,7 @@ const LoadInvoices = () => {
                     </div>
 
                     {/* English Section - Supplier Info */}
-                    <div className="flex-1 text-left" dir="ltr">
+                    <div className="min-w-0 text-left" dir="ltr">
                       {(selectedSupplier?.tax_number || companySettings?.tax_number) && (
                         <p className="text-xs text-gray-700 mb-1">
                           <span className="font-semibold">{selectedSupplier?.name_en || selectedSupplier?.name || companySettings?.supplier_name || 'Supplier Name'}</span>
@@ -1330,11 +1331,11 @@ const LoadInvoices = () => {
                 {/* Customer Info */}
                 <div className="mb-4">
                   <div className="p-3 rounded-lg border-2" style={{ backgroundColor: '#f1f5f9', borderColor: '#2563eb' }}>
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-bold text-base" style={{ color: '#2563eb' }}>بيانات العميل</h3>
-                      <h3 className="font-bold text-base" style={{ color: '#2563eb' }}>Customer Information</h3>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-1">
+                      <h3 className="text-sm font-bold sm:text-base" style={{ color: '#2563eb' }}>بيانات العميل</h3>
+                      <h3 className="text-xs font-bold sm:text-base" style={{ color: '#2563eb' }}>Customer Information</h3>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <p className="text-xs text-gray-600 mb-1">اسم العميل / Customer Name</p>
                         <p className="text-sm font-semibold text-gray-900">{selectedInvoice.companies?.name}</p>
@@ -1375,8 +1376,8 @@ const LoadInvoices = () => {
 
                 {/* Invoice Items */}
                 <div className="mb-4">
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
+                  <div className="overflow-x-auto rounded-lg border" dir="rtl">
+                    <Table className="min-w-[620px]">
                       <TableHeader>
                         <TableRow style={{ backgroundColor: '#dbeafe' }}>
                           <TableHead className="text-right font-bold" style={{ color: '#1e40af' }}>م<br/>#</TableHead>
@@ -1410,7 +1411,7 @@ const LoadInvoices = () => {
                 {/* Totals - Horizontal Layout */}
                 <div className="mb-4">
                   <div className="border-2 rounded-lg p-3" style={{ borderColor: '#2563eb', backgroundColor: '#f8fafc' }}>
-                    <div className="grid grid-cols-5 gap-2 text-center">
+                    <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-5">
                       <div className="border-l px-2">
                         <p className="text-xs text-gray-600 mb-1">الإجمالي قبل الخصم<br/>Subtotal</p>
                         <p className="text-sm font-bold">{selectedInvoice.subtotal?.toFixed(2)} ر.س</p>
@@ -1427,7 +1428,7 @@ const LoadInvoices = () => {
                         <p className="text-xs text-gray-600 mb-1">ض.ق.م (15%)<br/>VAT</p>
                         <p className="text-sm font-bold">{selectedInvoice.tax_amount?.toFixed(2)} ر.س</p>
                       </div>
-                      <div className="px-2" style={{ backgroundColor: '#dbeafe' }}>
+                      <div className="col-span-2 rounded px-2 py-2 sm:col-span-1 sm:py-0" style={{ backgroundColor: '#dbeafe' }}>
                         <p className="text-xs font-bold mb-1" style={{ color: '#1e40af' }}>الإجمالي الكلي<br/>Grand Total</p>
                         <p className="text-lg font-bold" style={{ color: '#2563eb' }}>{selectedInvoice.total_amount?.toFixed(2)} ر.س</p>
                       </div>
@@ -1445,7 +1446,7 @@ const LoadInvoices = () => {
 
                 {/* Signatures Section */}
                 <div className="mb-4">
-                  <div className="grid grid-cols-3 gap-4">
+                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                     <div className="border rounded-lg p-4 text-center" style={{ borderColor: '#2563eb', minHeight: '100px' }}>
                       <p className="text-sm font-bold mb-2" style={{ color: '#2563eb' }}>توقيع العميل</p>
                       <p className="text-xs text-gray-600">Customer Signature</p>
@@ -1475,6 +1476,7 @@ const LoadInvoices = () => {
                   <p className="text-base font-bold mb-1" style={{ color: '#2563eb' }}>شكراً لتعاملكم معنا</p>
                   <p className="text-xs text-gray-600">نتطلع لخدمتكم دائماً</p>
                 </div>
+              </div>
               </div>
             )}
           </DialogContent>
