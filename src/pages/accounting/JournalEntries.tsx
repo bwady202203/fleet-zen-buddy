@@ -307,6 +307,7 @@ const JournalEntries = () => {
         id: entry.id,
         entryNumber: entry.entry_number,
         universalSerial: entry.universal_serial,
+        reference: entry.reference,
         date: entry.date,
         description: entry.description,
         lines: entry.journal_entry_lines.map((line: any) => ({
