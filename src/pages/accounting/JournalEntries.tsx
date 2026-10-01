@@ -788,6 +788,7 @@ const JournalEntries = () => {
     if (filterAccount && !entry.lines.some((line: any) => 
       line.accountCode.includes(filterAccount) || line.accountName.includes(filterAccount)
     )) return false;
+    if (filterInvoicesOnly && !entry.reference?.startsWith('load_invoice_')) return false;
     return true;
   });
 
