@@ -1,1 +1,12 @@
-/nix/store/zccmygwl3jqyv571gxx7pnghrp1fs8xh-sandbox-python-env/bin/python3.13: can't open file '/dev-server/check_print.py': [Errno 2] No such file or directory
+Skipping host requirements validation logic because `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS` env variable is set.
+filter button found: 1
+rows before filter: 10
+rows after filter: 10
+ROW: 	72	LI-110762	JE-2026000863	30/09/2026	فاتورة نقل رقم 522986 - مؤسسة عبداللطيف الحمين للنقليات السعوديه	١٩٨٬٨٥٠٫٤١	١٩٨٬٨
+ROW: 	71	LI-110761	JE-2026000862	30/09/2026	فاتورة نقل رقم 424466 - مؤسسة عبداللطيف الحمين للنقليات السعوديه	٣٠٩٬٣٧٤٫٦١	٣٠٩٬٣
+ROW: 	70	LI-110650	JE-2026000732	31/08/2026	فاتورة نقل رقم 221115 - مؤسسة البدر للنقليات	٣٦٬٨٤٣٫٢٤	٣٦٬٨٤٣٫٢٤	
+ROW: 	69	LI-110649	JE-2026000731	31/08/2026	فاتورة نقل رقم 166768 - مؤسسة البدر للنقليات	٣٨٬٢٣٧٫٠٤	٣٨٬٢٣٧٫٠٤	
+ROW: 	68	LI-110641	JE-2026000723	31/08/2026	فاتورة نقل رقم 607856 - شركة ركن العاشر للمقاولات و النقليات والتخليص الجمركي	٦٨٬
+ROW: 	67	LI-110640	JE-2026000722	31/08/2026	فاتورة نقل رقم 530979 - شركة ركن العاشر للمقاولات و النقليات والتخليص الجمركي	٨٬٠
+button label after toggle: قيود الفواتير فقط (مفعّل)
+rows after toggle off: 10

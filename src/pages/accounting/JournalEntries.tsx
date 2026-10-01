@@ -81,6 +81,7 @@ const JournalEntries = () => {
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
+  const [filterInvoicesOnly, setFilterInvoicesOnly] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -216,7 +217,8 @@ const JournalEntries = () => {
   // إعادة ضبط الصفحة عند تغيير التصفية
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterDate, filterAccount]);
+  }, [filterDate, filterAccount, filterInvoicesOnly]);
+
 
   // Initialize opening entry lines after mount
   useEffect(() => {
@@ -305,6 +307,7 @@ const JournalEntries = () => {
         id: entry.id,
         entryNumber: entry.entry_number,
         universalSerial: entry.universal_serial,
+        reference: entry.reference,
         date: entry.date,
         description: entry.description,
         lines: entry.journal_entry_lines.map((line: any) => ({
@@ -786,6 +789,7 @@ const JournalEntries = () => {
     if (filterAccount && !entry.lines.some((line: any) => 
       line.accountCode.includes(filterAccount) || line.accountName.includes(filterAccount)
     )) return false;
+    if (filterInvoicesOnly && !entry.reference?.startsWith('load_invoice_')) return false;
     return true;
   });
 
@@ -1852,6 +1856,19 @@ const JournalEntries = () => {
                     placeholder="ابحث عن حساب... / Search account..."
                   />
                 </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant={filterInvoicesOnly ? "default" : "outline"}
+                    onClick={() => setFilterInvoicesOnly(prev => !prev)}
+                    className={cn("w-full gap-2", !filterInvoicesOnly && "text-muted-foreground")}
+                    title="عرض قيود فواتير الحمولات فقط"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {filterInvoicesOnly ? "قيود الفواتير فقط (مفعّل)" : "قيود الفواتير فقط"}
+                  </Button>
+                </div>
+
               </div>
             </CardContent>
           </Card>
