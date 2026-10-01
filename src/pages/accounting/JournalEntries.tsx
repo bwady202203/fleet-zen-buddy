@@ -1855,6 +1855,19 @@ const JournalEntries = () => {
                     placeholder="ابحث عن حساب... / Search account..."
                   />
                 </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant={filterInvoicesOnly ? "default" : "outline"}
+                    onClick={() => setFilterInvoicesOnly(prev => !prev)}
+                    className={cn("w-full gap-2", !filterInvoicesOnly && "text-muted-foreground")}
+                    title="عرض قيود فواتير الحمولات فقط"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {filterInvoicesOnly ? "قيود الفواتير فقط (مفعّل)" : "قيود الفواتير فقط"}
+                  </Button>
+                </div>
+
               </div>
             </CardContent>
           </Card>
