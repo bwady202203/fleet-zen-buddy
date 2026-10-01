@@ -380,53 +380,20 @@ const LoadInvoices = () => {
           const accruedRevenueAccountId = selectedCompany?.account_id || defaultAccruedRevenueAccountId;
           const revenueAccountId = 'c278c8b2-5b02-4c99-ba19-26dc8f59d050';
 
+          const vatAccountId = '7dedcbc0-8d5a-42ec-a081-caa3b6d87545';
+          const entryDesc = `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`;
+          const totalR = Math.round(totalAmount * 100) / 100;
+          const taxR = Math.round(taxAmount * 100) / 100;
+          const revenueR = Math.round((totalR - taxR) * 100) / 100;
+
+          // ledger entries are created by the DB trigger on journal_entry_lines
           const { error: linesError } = await supabase.from('journal_entry_lines').insert([
-            {
-              journal_entry_id: journalEntry.id,
-              account_id: accruedRevenueAccountId,
-              debit: totalAmount,
-              credit: 0,
-              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
-            },
-            {
-              journal_entry_id: journalEntry.id,
-              account_id: revenueAccountId,
-              debit: 0,
-              credit: totalAmount,
-              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
-            }
+            { journal_entry_id: journalEntry.id, account_id: accruedRevenueAccountId, debit: totalR, credit: 0, description: entryDesc },
+            { journal_entry_id: journalEntry.id, account_id: vatAccountId, debit: 0, credit: taxR, description: `ضريبة القيمة المضافة 15% - ${entryDesc}` },
+            { journal_entry_id: journalEntry.id, account_id: revenueAccountId, debit: 0, credit: revenueR, description: entryDesc },
           ]);
 
           if (linesError) throw linesError;
-
-          const { error: ledgerError } = await supabase.from('ledger_entries').insert([
-            {
-              account_id: accruedRevenueAccountId,
-              entry_date: formData.date,
-              debit: totalAmount,
-              credit: 0,
-              balance: totalAmount,
-              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
-              reference: `load_invoice_${invoice.id}`,
-              journal_entry_id: journalEntry.id,
-              created_by: user?.id,
-              organization_id: organizationId,
-            },
-            {
-              account_id: revenueAccountId,
-              entry_date: formData.date,
-              debit: 0,
-              credit: totalAmount,
-              balance: -totalAmount,
-              description: `فاتورة نقل رقم ${invoice.invoice_number} - ${companyName}`,
-              reference: `load_invoice_${invoice.id}`,
-              journal_entry_id: journalEntry.id,
-              created_by: user?.id,
-              organization_id: organizationId,
-            }
-          ]);
-
-          if (ledgerError) throw ledgerError;
         } catch (journalError) {
           console.error('Error creating journal entry:', journalError);
         }
