@@ -81,6 +81,7 @@ const JournalEntries = () => {
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
+  const [filterInvoicesOnly, setFilterInvoicesOnly] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [displayedEntries, setDisplayedEntries] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -216,7 +217,8 @@ const JournalEntries = () => {
   // إعادة ضبط الصفحة عند تغيير التصفية
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterDate, filterAccount]);
+  }, [filterDate, filterAccount, filterInvoicesOnly]);
+
 
   // Initialize opening entry lines after mount
   useEffect(() => {
