@@ -330,6 +330,36 @@ const LoadInvoices = () => {
 
       if (itemsError) throw itemsError;
 
+      // On edit with a changed customer: move the journal debit line to the new customer's account
+      if (isEditing && selectedInvoice.company_id !== formData.companyId) {
+        try {
+          const newCompany = companies.find(c => c.id === formData.companyId);
+          const oldCompany = companies.find(c => c.id === selectedInvoice.company_id);
+          const { data: je } = await supabase
+            .from('journal_entries')
+            .select('id')
+            .eq('reference', `load_invoice_${selectedInvoice.id}`)
+            .maybeSingle();
+          if (je && newCompany?.account_id) {
+            const desc = `فاتورة نقل رقم ${selectedInvoice.invoice_number} - ${newCompany.name}`;
+            await supabase.from('journal_entries').update({ description: desc }).eq('id', je.id);
+            const { data: debitLines } = await supabase
+              .from('journal_entry_lines')
+              .select('id, account_id')
+              .eq('journal_entry_id', je.id)
+              .gt('debit', 0);
+            const target = debitLines?.find(l => l.account_id === oldCompany?.account_id) || debitLines?.[0];
+            if (target) {
+              await supabase.from('journal_entry_lines')
+                .update({ account_id: newCompany.account_id, description: desc })
+                .eq('id', target.id);
+            }
+          }
+        } catch (e) {
+          console.error('Error updating journal customer:', e);
+        }
+      }
+
       // Create automatic journal entry only for NEW invoices
       if (!isEditing) {
         try {
@@ -743,7 +773,8 @@ const LoadInvoices = () => {
                       value={formData.companyId} 
                       onValueChange={(value) => {
                         setFormData({ ...formData, companyId: value });
-                        loadCompanyLoads(value);
+                        // عند التعديل: الإبقاء على أصناف الفاتورة كما هي وتغيير العميل فقط
+                        if (!selectedInvoice) loadCompanyLoads(value);
                       }}
                     >
                       <SelectTrigger className="bg-background">
