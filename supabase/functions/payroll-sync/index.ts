@@ -10,6 +10,7 @@ const Body = z.object({
   month: z.number().int().min(1).max(12).optional(),
   year: z.number().int().min(2000).max(2100).optional(),
   post: z.boolean().optional(),
+  sync_employees: z.boolean().optional(),
   only_refs: z.array(z.string().max(200)).max(2000).optional(),
 })
 
@@ -40,6 +41,52 @@ Deno.serve(async (req) => {
     const r = await fetch(`${BASE}?${q}`, { headers: { 'x-api-key': key } })
     if (!r.ok) throw new Error(`${type}: ${r.status} ${await r.text()}`)
     return (await r.json()).data ?? []
+  }
+
+  // ===== employees sync =====
+  if (b.sync_employees) {
+    try {
+      const r = await fetch(`${BASE}?type=employees`, { headers: { 'x-api-key': key } })
+      if (!r.ok) return json({ error: 'fetch_failed', message: `employees: ${r.status} ${await r.text()}` }, 502)
+      const payload = await r.json()
+      const list: any[] = payload.employees ?? payload.data ?? []
+      const { data: anyEmp } = await admin.from('employees').select('organization_id').limit(1).maybeSingle()
+      const orgId = anyEmp?.organization_id
+      const { data: existing } = await admin.from('employees').select('id, residence_number, national_id')
+      const byIq = new Map<string, string>()
+      for (const e of existing ?? []) {
+        if (e.residence_number) byIq.set(String(e.residence_number).trim(), e.id)
+        if (e.national_id) byIq.set(String(e.national_id).trim(), e.id)
+      }
+      let inserted = 0, updated = 0, skipped = 0
+      const errors: string[] = []
+      for (const emp of list) {
+        const iqama = String(emp.residence_number ?? emp.iqama_number ?? '').trim()
+        const name = String(emp.full_name ?? emp.name ?? '').trim()
+        if (!name || !iqama) { skipped++; continue }
+        const row: Record<string, unknown> = {
+          name,
+          residence_number: iqama,
+          national_id: emp.national_id ? String(emp.national_id) : null,
+          phone: emp.phone ?? null,
+          position: emp.job_title ?? emp.position ?? null,
+          salary: Number(emp.basic_salary ?? emp.salary ?? 0) || 0,
+          hire_date: emp.hire_date ?? null,
+          status: emp.status === 'inactive' ? 'inactive' : 'active',
+        }
+        const existingId = byIq.get(iqama)
+        if (existingId) {
+          const { error } = await admin.from('employees').update(row).eq('id', existingId)
+          if (error) errors.push(`${name}: ${error.message}`); else updated++
+        } else {
+          const { error } = await admin.from('employees').insert({ ...row, organization_id: orgId })
+          if (error) errors.push(`${name}: ${error.message}`); else inserted++
+        }
+      }
+      return json({ total: list.length, inserted, updated, skipped, errors: errors.slice(0, 20) })
+    } catch (e) {
+      return json({ error: 'fetch_failed', message: e instanceof Error ? e.message : String(e) }, 502)
+    }
   }
 
   const items: Item[] = []
