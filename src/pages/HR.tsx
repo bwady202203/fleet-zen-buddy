@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Users, DollarSign, Clock, Calendar, PlusCircle, MinusCircle, FileText, Wallet } from "lucide-react";
+import { ArrowRight, Users, DollarSign, Clock, Calendar, PlusCircle, MinusCircle, FileText, Wallet, BookOpenCheck } from "lucide-react";
 
 const HR = () => {
   const sections = [
@@ -38,6 +38,13 @@ const HR = () => {
       icon: MinusCircle,
       link: "/hr/deductions",
       color: "from-red-500 to-red-600"
+    },
+    {
+      title: "القيود التلقائية",
+      description: "قيود السلف والمخالفات والرواتب مع المعاينة والربط",
+      icon: BookOpenCheck,
+      link: "/hr/auto-journal",
+      color: "from-emerald-500 to-emerald-600"
     },
     {
       title: "الحضور والانصراف",
