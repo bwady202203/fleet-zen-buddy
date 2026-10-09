@@ -86,6 +86,13 @@ export const PayrollSyncCard = () => {
                       {i.entry_number && <div className="text-xs">{i.entry_number}</div>}
                       {i.error && <div className="text-xs text-destructive">{i.error}</div>}
                     </td>
+                    <td className="p-2 text-center">
+                      {i.status === "ready" && (
+                        <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" disabled={!!busy || !!postingRef} onClick={() => postOne(i.ref)}>
+                          {postingRef === i.ref ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} ترحيل
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
