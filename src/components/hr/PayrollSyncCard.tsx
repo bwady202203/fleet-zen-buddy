@@ -25,11 +25,11 @@ export const PayrollSyncCard = () => {
   const [items, setItems] = useState<any[]>([]);
   const [busy, setBusy] = useState<"load" | "post" | null>(null);
 
-  const call = async (post: boolean) => {
+  const call = async (post: boolean, refs?: string[]) => {
     setBusy(post ? "post" : "load");
     const [y, m] = from.split("-").map(Number);
     const { data, error } = await supabase.functions.invoke("payroll-sync", {
-      body: { from, to, month: m, year: y, post, only_refs: post ? items.filter((i) => i.status === "ready").map((i) => i.ref) : undefined },
+      body: { from, to, month: m, year: y, post, only_refs: post ? (refs ?? items.filter((i) => i.status === "ready").map((i) => i.ref)) : undefined },
     });
     setBusy(null);
     if (error || data?.error) {
@@ -39,6 +39,13 @@ export const PayrollSyncCard = () => {
     }
     setItems(data.items ?? []);
     if (post) toast({ title: "تم ترحيل القيود", description: `${(data.items ?? []).filter((i: any) => i.status === "posted").length} قيد` });
+  };
+
+  const [postingRef, setPostingRef] = useState<string | null>(null);
+  const postOne = async (ref: string) => {
+    setPostingRef(ref);
+    await call(true, [ref]);
+    setPostingRef(null);
   };
 
   const ready = items.filter((i) => i.status === "ready");
@@ -64,7 +71,7 @@ export const PayrollSyncCard = () => {
             <table className="w-full text-sm">
               <thead className="bg-muted"><tr>
                 <th className="p-2 text-right">النوع</th><th className="p-2 text-right">الموظف</th><th className="p-2">التاريخ</th>
-                <th className="p-2">المبلغ</th><th className="p-2 text-right">البيان</th><th className="p-2">الحالة</th>
+                <th className="p-2">المبلغ</th><th className="p-2 text-right">البيان</th><th className="p-2">الحالة</th><th className="p-2">ترحيل</th>
               </tr></thead>
               <tbody>
                 {items.map((i) => (
@@ -78,6 +85,13 @@ export const PayrollSyncCard = () => {
                       <Badge variant={STATUS[i.status]?.v ?? "outline"}>{STATUS[i.status]?.l ?? i.status}</Badge>
                       {i.entry_number && <div className="text-xs">{i.entry_number}</div>}
                       {i.error && <div className="text-xs text-destructive">{i.error}</div>}
+                    </td>
+                    <td className="p-2 text-center">
+                      {i.status === "ready" && (
+                        <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" disabled={!!busy || !!postingRef} onClick={() => postOne(i.ref)}>
+                          {postingRef === i.ref ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} ترحيل
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
