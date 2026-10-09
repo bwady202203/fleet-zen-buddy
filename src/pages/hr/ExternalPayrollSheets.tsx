@@ -131,6 +131,21 @@ const ExternalPayrollSheets = () => {
           <span className="text-sm font-semibold">إجمالي الصافي: {money(totals.net)} ر.س</span>
         </div>
 
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <Button size="sm" variant={monthFilter === "all" ? "default" : "outline"} className="shrink-0 rounded-full" onClick={() => setMonthFilter("all")}>
+            الكل ({sheets.filter((s) => yearFilter === "all" || s.year === Number(yearFilter)).length})
+          </Button>
+          {MONTHS_AR.map((m, i) => {
+            const n = sheets.filter((s) => s.month === i + 1 && (yearFilter === "all" || s.year === Number(yearFilter))).length;
+            if (!n) return null;
+            return (
+              <Button key={i} size="sm" variant={monthFilter === String(i + 1) ? "default" : "outline"} className="shrink-0 rounded-full" onClick={() => setMonthFilter(String(i + 1))}>
+                {m} ({n})
+              </Button>
+            );
+          })}
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center py-24"><LoadingCup /></div>
         ) : filtered.length === 0 ? (
