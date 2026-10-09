@@ -10,6 +10,7 @@ const Body = z.object({
   month: z.number().int().min(1).max(12).optional(),
   year: z.number().int().min(2000).max(2100).optional(),
   post: z.boolean().optional(),
+  sync_employees: z.boolean().optional(),
   only_refs: z.array(z.string().max(200)).max(2000).optional(),
 })
 
