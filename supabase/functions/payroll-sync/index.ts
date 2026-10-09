@@ -11,6 +11,7 @@ const Body = z.object({
   year: z.number().int().min(2000).max(2100).optional(),
   post: z.boolean().optional(),
   sync_employees: z.boolean().optional(),
+  view_sheets: z.boolean().optional(),
   only_refs: z.array(z.string().max(200)).max(2000).optional(),
 })
 
@@ -84,6 +85,17 @@ Deno.serve(async (req) => {
         }
       }
       return json({ total: list.length, inserted, updated, skipped, errors: errors.slice(0, 20) })
+    } catch (e) {
+      return json({ error: 'fetch_failed', message: e instanceof Error ? e.message : String(e) }, 502)
+    }
+  }
+
+  // ===== view external payroll sheets (read-only) =====
+  if (b.view_sheets) {
+    try {
+      const mY = { month: b.month?.toString(), year: b.year?.toString() }
+      const [appr, disb] = await Promise.all([get('payroll-approved', mY), get('payroll-disbursed', mY)])
+      return json({ approved: appr, disbursed: disb })
     } catch (e) {
       return json({ error: 'fetch_failed', message: e instanceof Error ? e.message : String(e) }, 502)
     }

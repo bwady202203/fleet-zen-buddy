@@ -96,6 +96,7 @@ import Payroll from "./pages/hr/Payroll";
 import Advances from "./pages/hr/Advances";
 import Additions from "./pages/hr/Additions";
 import HrAutoJournal from "./pages/hr/HrAutoJournal";
+import ExternalPayrollSheets from "./pages/hr/ExternalPayrollSheets";
 import Deductions from "./pages/hr/Deductions";
 import Leaves from "./pages/hr/Leaves";
 import Attendance from "./pages/hr/Attendance";
@@ -205,6 +206,7 @@ const App = () => {
                                   <Route path="/hr/additions" element={<Additions />} />
                                   <Route path="/hr/deductions" element={<Deductions />} />
                                   <Route path="/hr/auto-journal" element={<HrAutoJournal />} />
+                                  <Route path="/hr/external-payroll-sheets" element={<ExternalPayrollSheets />} />
                   <Route path="/hr/leaves" element={<Leaves />} />
                   <Route path="/hr/attendance" element={<Attendance />} />
                   <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
