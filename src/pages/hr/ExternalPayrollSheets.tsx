@@ -105,7 +105,7 @@ const ExternalPayrollSheets = () => {
             <p className="text-sm text-muted-foreground">عرض مباشر لكشوف الرواتب المعتمدة والمصروفة من برنامج الرواتب</p>
           </div>
           <Button variant="outline" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />} تحديث
+            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />} استيراد كل الكشوفات
           </Button>
         </div>
       </header>
@@ -129,6 +129,21 @@ const ExternalPayrollSheets = () => {
           <Badge variant="secondary" className="h-9 rounded-xl px-3 text-sm">{totals.count} كشف</Badge>
           <Badge variant="secondary" className="h-9 rounded-xl px-3 text-sm gap-1"><Users className="h-3.5 w-3.5" /> {totals.employees} موظف</Badge>
           <span className="text-sm font-semibold">إجمالي الصافي: {money(totals.net)} ر.س</span>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <Button size="sm" variant={monthFilter === "all" ? "default" : "outline"} className="shrink-0 rounded-full" onClick={() => setMonthFilter("all")}>
+            الكل ({sheets.filter((s) => yearFilter === "all" || s.year === Number(yearFilter)).length})
+          </Button>
+          {MONTHS_AR.map((m, i) => {
+            const n = sheets.filter((s) => s.month === i + 1 && (yearFilter === "all" || s.year === Number(yearFilter))).length;
+            if (!n) return null;
+            return (
+              <Button key={i} size="sm" variant={monthFilter === String(i + 1) ? "default" : "outline"} className="shrink-0 rounded-full" onClick={() => setMonthFilter(String(i + 1))}>
+                {m} ({n})
+              </Button>
+            );
+          })}
         </div>
 
         {isLoading ? (
