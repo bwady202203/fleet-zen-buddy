@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { PayrollSyncCard } from "@/components/hr/PayrollSyncCard";
 
 const ORG = "8449f832-4c11-4f27-b650-294106680b15";
 const EVENTS = [
@@ -182,6 +183,8 @@ const HrAutoJournal = () => {
             )}
           </CardContent>
         </Card>
+
+        <PayrollSyncCard />
 
         <Card className="lg:col-span-2">
           <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Code2 className="h-5 w-5" /> الربط مع برنامج خارجي (API)</CardTitle></CardHeader>
