@@ -41,6 +41,13 @@ export const PayrollSyncCard = () => {
     if (post) toast({ title: "تم ترحيل القيود", description: `${(data.items ?? []).filter((i: any) => i.status === "posted").length} قيد` });
   };
 
+  const [postingRef, setPostingRef] = useState<string | null>(null);
+  const postOne = async (ref: string) => {
+    setPostingRef(ref);
+    await call(true, [ref]);
+    setPostingRef(null);
+  };
+
   const ready = items.filter((i) => i.status === "ready");
   const total = ready.reduce((s, i) => s + Number(i.amount || 0), 0);
 
