@@ -25,11 +25,11 @@ export const PayrollSyncCard = () => {
   const [items, setItems] = useState<any[]>([]);
   const [busy, setBusy] = useState<"load" | "post" | null>(null);
 
-  const call = async (post: boolean) => {
+  const call = async (post: boolean, refs?: string[]) => {
     setBusy(post ? "post" : "load");
     const [y, m] = from.split("-").map(Number);
     const { data, error } = await supabase.functions.invoke("payroll-sync", {
-      body: { from, to, month: m, year: y, post, only_refs: post ? items.filter((i) => i.status === "ready").map((i) => i.ref) : undefined },
+      body: { from, to, month: m, year: y, post, only_refs: post ? (refs ?? items.filter((i) => i.status === "ready").map((i) => i.ref)) : undefined },
     });
     setBusy(null);
     if (error || data?.error) {
