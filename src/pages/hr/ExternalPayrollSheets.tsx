@@ -105,7 +105,7 @@ const ExternalPayrollSheets = () => {
             <p className="text-sm text-muted-foreground">عرض مباشر لكشوف الرواتب المعتمدة والمصروفة من برنامج الرواتب</p>
           </div>
           <Button variant="outline" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />} تحديث
+            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />} استيراد كل الكشوفات
           </Button>
         </div>
       </header>
