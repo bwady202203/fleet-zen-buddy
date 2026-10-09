@@ -71,7 +71,7 @@ export const PayrollSyncCard = () => {
             <table className="w-full text-sm">
               <thead className="bg-muted"><tr>
                 <th className="p-2 text-right">النوع</th><th className="p-2 text-right">الموظف</th><th className="p-2">التاريخ</th>
-                <th className="p-2">المبلغ</th><th className="p-2 text-right">البيان</th><th className="p-2">الحالة</th>
+                <th className="p-2">المبلغ</th><th className="p-2 text-right">البيان</th><th className="p-2">الحالة</th><th className="p-2">ترحيل</th>
               </tr></thead>
               <tbody>
                 {items.map((i) => (
