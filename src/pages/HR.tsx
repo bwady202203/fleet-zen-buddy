@@ -47,6 +47,13 @@ const HR = () => {
       color: "from-emerald-500 to-emerald-600"
     },
     {
+      title: "كشوف الرواتب الخارجية",
+      description: "عرض كشوف الرواتب المعتمدة والمصروفة من برنامج الرواتب",
+      icon: BookOpenCheck,
+      link: "/hr/external-payroll-sheets",
+      color: "from-sky-500 to-sky-600"
+    },
+    {
       title: "الحضور والانصراف",
       description: "تتبع أوقات الدوام",
       icon: Clock,
