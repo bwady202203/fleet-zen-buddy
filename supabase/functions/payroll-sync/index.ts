@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   const { data: u } = token ? await admin.auth.getUser(token) : { data: { user: null } }
   if (!u.user) return json({ error: 'Unauthorized' }, 401)
 
-  const key = Deno.env.get('PAYROLL_API_KEY')
+  const key = Deno.env.get('PAYROLL_SYNC_API_KEY') || Deno.env.get('PAYROLL_API_KEY')
   if (!key) return json({ error: 'missing_key', message: 'لم يتم إدخال مفتاح برنامج الرواتب بعد' }, 400)
 
   let raw: unknown = {}
