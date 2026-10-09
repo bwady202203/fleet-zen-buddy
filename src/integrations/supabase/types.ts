@@ -1673,6 +1673,7 @@ export type Database = {
       }
       employees: {
         Row: {
+          account_id: string | null
           address: string | null
           bank_account_number: string | null
           bank_name: string | null
@@ -1697,6 +1698,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          account_id?: string | null
           address?: string | null
           bank_account_number?: string | null
           bank_name?: string | null
@@ -1721,6 +1723,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          account_id?: string | null
           address?: string | null
           bank_account_number?: string | null
           bank_name?: string | null
@@ -1745,6 +1748,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "employees_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employees_organization_id_fkey"
             columns: ["organization_id"]
@@ -1806,6 +1816,65 @@ export type Database = {
             columns: ["load_type_id"]
             isOneToOne: false
             referencedRelation: "load_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_journal_settings: {
+        Row: {
+          auto_post: boolean
+          employees_parent_account_id: string | null
+          organization_id: string
+          payment_account_id: string | null
+          salary_expense_account_id: string | null
+          updated_at: string
+          violation_account_id: string | null
+        }
+        Insert: {
+          auto_post?: boolean
+          employees_parent_account_id?: string | null
+          organization_id: string
+          payment_account_id?: string | null
+          salary_expense_account_id?: string | null
+          updated_at?: string
+          violation_account_id?: string | null
+        }
+        Update: {
+          auto_post?: boolean
+          employees_parent_account_id?: string | null
+          organization_id?: string
+          payment_account_id?: string | null
+          salary_expense_account_id?: string | null
+          updated_at?: string
+          violation_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_journal_settings_employees_parent_account_id_fkey"
+            columns: ["employees_parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_journal_settings_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_journal_settings_salary_expense_account_id_fkey"
+            columns: ["salary_expense_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_journal_settings_violation_account_id_fkey"
+            columns: ["violation_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -4527,6 +4596,22 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hr_employee_account: {
+        Args: { p_create?: boolean; p_employee_id: string }
+        Returns: string
+      }
+      hr_post_journal: {
+        Args: {
+          p_amount: number
+          p_date: string
+          p_description?: string
+          p_employee_id: string
+          p_event: string
+          p_preview?: boolean
+          p_reference?: string
+        }
+        Returns: Json
       }
       initialize_organization_chart_of_accounts: {
         Args: { p_organization_id: string }
