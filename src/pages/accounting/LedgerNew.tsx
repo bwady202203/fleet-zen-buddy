@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -498,54 +499,54 @@ export default function LedgerNew() {
 
   const renderLedgerReport = (isPreview = false) => (
     <div className="ledger-print-area">
-      <section className={`ledger-print-sheet border border-border bg-card text-card-foreground shadow-xl ${isPreview ? "mx-auto" : ""}`}>
-        <div className="ledger-paper-head border-b border-primary/25 pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="text-sm font-bold text-primary">دفتر الأستاذ</div>
-              <h2 className="mt-1 text-2xl font-black tracking-normal text-foreground">
-                {selectedAccountData ? `${selectedAccountData.code} - ${selectedAccountData.name_ar}` : "اختر حساباً"}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">{selectedAccountData?.name_en || ""}</p>
+      <section className={`ledger-print-sheet ${isPreview ? "mx-auto" : ""}`}>
+        <div className="ledger-paper-head">
+          <div className="ledger-title-block">
+            <div className="ledger-eyebrow">دفتر الأستاذ <span>•</span> كشف حساب</div>
+            <h2>{selectedAccountData?.name_ar || "اختر حساباً"}</h2>
+            <div className="ledger-account-identity">
+              <span dir="ltr">{selectedAccountData?.code}</span>
+              {selectedAccountData?.name_en && <span dir="auto">{selectedAccountData.name_en}</span>}
             </div>
-            <div className="text-sm leading-7 text-muted-foreground sm:text-left">
-              <div>الفترة: <span className="font-bold text-foreground">{periodLabel}</span></div>
-              <div>الفرع: <span className="font-bold text-foreground">{selectedBranchData ? selectedBranchData.name_ar : "جميع الفروع"}</span></div>
-              <div>تاريخ الطباعة: <span className="font-bold text-foreground">{getGregorianDate()} • {getHijriDate()}</span></div>
-            </div>
+          </div>
+          <dl className="ledger-report-meta">
+            <div><dt>الفترة</dt><dd>{periodLabel}</dd></div>
+            <div><dt>الفرع</dt><dd>{selectedBranchData?.name_ar || "جميع الفروع"}</dd></div>
+            <div><dt>تاريخ الإصدار</dt><dd>{getGregorianDate()}<span>{getHijriDate()}</span></dd></div>
+          </dl>
+        </div>
+
+        <div className="ledger-summary-grid">
+          <div className="ledger-summary-item">
+            <span>الرصيد الافتتاحي</span>
+            <strong dir="ltr">{formatNumber(openingBalance)}</strong>
+          </div>
+          <div className="ledger-summary-item ledger-summary-debit">
+            <span>إجمالي المدين</span>
+            <strong dir="ltr">{formatNumber(totalDebit)}</strong>
+          </div>
+          <div className="ledger-summary-item ledger-summary-credit">
+            <span>إجمالي الدائن</span>
+            <strong dir="ltr">{formatNumber(totalCredit)}</strong>
+          </div>
+          <div className="ledger-summary-item ledger-summary-closing">
+            <span>الرصيد الختامي</span>
+            <strong dir="ltr">{formatNumber(closingBalance)}</strong>
           </div>
         </div>
 
-        <div className="ledger-summary-grid my-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="rounded-lg border border-border bg-muted/30 p-3">
-            <div className="text-xs font-semibold text-muted-foreground">الرصيد الافتتاحي</div>
-            <div className="mt-1 text-lg font-black text-foreground">{formatNumber(openingBalance)}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-muted/30 p-3">
-            <div className="text-xs font-semibold text-muted-foreground">إجمالي المدين</div>
-            <div className="mt-1 text-lg font-black text-primary">{formatNumber(totalDebit)}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-muted/30 p-3">
-            <div className="text-xs font-semibold text-muted-foreground">إجمالي الدائن</div>
-            <div className="mt-1 text-lg font-black text-destructive">{formatNumber(totalCredit)}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-primary/10 p-3">
-            <div className="text-xs font-semibold text-muted-foreground">الرصيد الختامي</div>
-            <div className="mt-1 text-lg font-black text-foreground">{formatNumber(closingBalance)}</div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto rounded-lg border border-border ledger-table-wrap">
-          <table className="ledger-print-table w-full border-collapse text-sm">
+        <div className="ledger-table-caption"><strong>الحركات المالية</strong><span>{ledgerEntries.length.toLocaleString('ar-SA')} حركة</span></div>
+        <div className="ledger-table-wrap">
+          <table className="ledger-print-table">
+            <colgroup>
+              <col className="ledger-col-date" /><col className="ledger-col-reference" />
+              <col className="ledger-col-description" /><col className="ledger-col-branch" />
+              <col className="ledger-col-amount" /><col className="ledger-col-amount" /><col className="ledger-col-amount" />
+            </colgroup>
             <thead>
-              <tr className="bg-primary/10">
-                <th className="w-[92px] p-3 text-right font-black">التاريخ</th>
-                <th className="w-[118px] p-3 text-right font-black">رقم القيد</th>
-                <th className="min-w-[240px] p-3 text-right font-black">البيان</th>
-                <th className="w-[110px] p-3 text-right font-black">الفرع</th>
-                <th className="w-[112px] p-3 text-center font-black">مدين</th>
-                <th className="w-[112px] p-3 text-center font-black">دائن</th>
-                <th className="w-[124px] p-3 text-center font-black">الرصيد</th>
+              <tr>
+                <th>التاريخ</th><th>رقم القيد</th><th>البيان</th><th>الفرع</th>
+                <th>مدين</th><th>دائن</th><th>الرصيد</th>
               </tr>
             </thead>
             <tbody>
@@ -569,12 +570,13 @@ export default function LedgerNew() {
               ) : (
                 ledgerEntries.map((entry) => (
                   <tr key={entry.id} className="ledger-entry-row border-t border-border">
-                    <td className="p-3 text-right whitespace-nowrap">{toDisplayDate(entry.entry_date)}</td>
+                    <td className="ledger-date"><span dir="ltr">{toDisplayDate(entry.entry_date)}</span></td>
                     <td className="p-3 text-right">
                       <Button
                         type="button"
                         variant="link"
                         className="ledger-reference-button h-auto p-0 text-sm font-bold"
+                        dir="ltr"
                         onClick={() => fetchEntryDetails(entry.journal_entry_id)}
                         disabled={loadingEntry || isPreview}
                       >
@@ -602,6 +604,7 @@ export default function LedgerNew() {
             )}
           </table>
         </div>
+        <div className="ledger-paper-footer"><span>دفتر الأستاذ • {selectedAccountData?.code}</span><span>نهاية كشف الحساب</span></div>
       </section>
     </div>
   );
@@ -832,154 +835,10 @@ export default function LedgerNew() {
       {selectedAccount && (
         renderLedgerReport(false)
       )}
-
-      {/* Print Styles */}
-      <style>{`
-        .ledger-print-sheet {
-          width: 100%;
-          padding: 1.25rem;
-          border-radius: 0.75rem;
-        }
-
-        .ledger-print-table th,
-        .ledger-print-table td {
-          border-inline-end: 1px solid hsl(var(--border));
-        }
-
-        .ledger-print-table th:last-child,
-        .ledger-print-table td:last-child {
-          border-inline-end: 0;
-        }
-
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 10mm;
-          }
-
-          html,
-          body {
-            background: hsl(var(--card)) !important;
-          }
-
-          .print\\:hidden,
-          [data-sidebar],
-          aside,
-          nav,
-          header,
-          .ledger-report-container > *:not(.ledger-print-area),
-          .ledger-no-print {
-            display: none !important;
-          }
-
-          .ledger-report-container {
-            display: block !important;
-            width: 100%;
-            max-width: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            direction: rtl;
-            font-family: 'Cairo', 'Arial', sans-serif;
-            color: hsl(var(--foreground)) !important;
-            background: hsl(var(--card)) !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-
-          .ledger-print-area {
-            display: block !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-
-          .ledger-print-sheet {
-            display: block !important;
-            width: 100% !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-          }
-
-          .ledger-paper-head {
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-            margin-bottom: 10px !important;
-            padding-bottom: 8px !important;
-          }
-
-          .ledger-summary-grid {
-            display: grid !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            gap: 6px !important;
-            margin: 8px 0 10px !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-
-          .ledger-table-wrap {
-            overflow: visible !important;
-            border-radius: 0 !important;
-          }
-
-          .ledger-print-table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            font-size: 8.8pt !important;
-            line-height: 1.35 !important;
-          }
-
-          .ledger-print-table th,
-          .ledger-print-table td {
-            border: 1px solid hsl(var(--border)) !important;
-            padding: 5px 6px !important;
-            text-align: right !important;
-            vertical-align: top !important;
-          }
-
-          .ledger-print-table th {
-            background-color: hsl(var(--muted)) !important;
-            font-weight: bold !important;
-          }
-
-          .ledger-print-table td:nth-child(5),
-          .ledger-print-table td:nth-child(6),
-          .ledger-print-table td:nth-child(7),
-          .ledger-print-table th:nth-child(5),
-          .ledger-print-table th:nth-child(6),
-          .ledger-print-table th:nth-child(7) {
-            text-align: center !important;
-          }
-
-          .ledger-reference-button {
-            display: inline !important;
-            color: hsl(var(--foreground)) !important;
-            text-decoration: none !important;
-          }
-
-          .ledger-print-table thead {
-            display: table-header-group !important;
-          }
-
-          .ledger-print-table tfoot {
-            display: table-footer-group !important;
-          }
-
-          .ledger-entry-row {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-
-          .ledger-totals-row {
-            font-weight: bold !important;
-            page-break-before: avoid !important;
-            break-before: avoid !important;
-          }
-        }
-      `}</style>
+      {selectedAccount && createPortal(
+        <div className="ledger-print-document" dir="rtl">{renderLedgerReport(true)}</div>,
+        document.body
+      )}
 
       <Dialog open={printPreviewOpen} onOpenChange={setPrintPreviewOpen}>
         <DialogContent className="max-w-7xl max-h-[94vh] overflow-hidden print:hidden" dir="rtl">
@@ -992,13 +851,13 @@ export default function LedgerNew() {
               </Button>
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[78vh] bg-muted/40 p-4 rounded-lg">
-            <div className="min-w-[210mm] pb-6">
-              <div className="ledger-preview-sheet mx-auto w-[210mm] min-h-[297mm] bg-card shadow-xl">
+          <div className="ledger-preview-scroll">
+            <div className="ledger-preview-canvas">
+              <div className="ledger-preview-sheet">
                 {renderLedgerReport(true)}
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 

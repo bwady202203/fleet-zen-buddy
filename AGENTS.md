@@ -1,1 +1,2 @@
 Print the maintenance orders register from its own print-only document, separate from the paginated screen table, so all filtered rows appear in the PDF and repeated A4 page margins remain reliable.
+Render ledger printing through a body-level print-only portal using the same report as the preview, with fixed proportional columns and named A4 page margins, to isolate application chrome and prevent clipped content.
