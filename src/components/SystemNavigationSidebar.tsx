@@ -148,6 +148,8 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "سندات السلف", path: "/hr/advances", icon: Wallet },
       { title: "سندات الإضافي", path: "/hr/additions", icon: Receipt },
       { title: "سندات الخصم", path: "/hr/deductions", icon: Receipt },
+      { title: "القيود التلقائية", path: "/hr/auto-journal", icon: FileSpreadsheet },
+      { title: "كشوف الرواتب الخارجية", path: "/hr/external-payroll-sheets", icon: FileSpreadsheet },
       { title: "الحضور والانصراف", path: "/hr/attendance", icon: Gauge },
       { title: "الإجازات", path: "/hr/leaves", icon: FileText },
     ],
