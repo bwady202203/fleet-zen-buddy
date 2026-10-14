@@ -246,6 +246,18 @@ export const SystemIconsBar = () => {
               <span className="hidden sm:inline text-xs font-bold">الإدارية</span>
             </Button>
             <Button
+              asChild
+              variant="default"
+              size="sm"
+              className="h-8 gap-1.5 bg-gradient-to-r from-rose-600 to-rose-700 text-white hover:opacity-90 shadow-md"
+              title="الموارد البشرية: موقع wisehrsuite.store"
+            >
+              <a href="https://wisehrsuite.store" target="_blank" rel="noopener noreferrer">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs font-bold">الموارد البشرية</span>
+              </a>
+            </Button>
+            <Button
               onClick={() => navigate('/settings-hub')}
               variant="default"
               size="sm"
