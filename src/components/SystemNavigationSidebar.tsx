@@ -286,7 +286,7 @@ export const navigationGroups: NavigationGroup[] = [
     icon: User,
     module: null,
     children: [],
-    standaloneHref: "https://wisehrsuite.store",
+    standalonePath: "/hr/portal",
   },
   {
     key: "settings",
