@@ -47,6 +47,7 @@ import IncomeStatement from "./pages/accounting/IncomeStatement";
 import CostCenters from "./pages/accounting/CostCenters";
 import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
+import CrusherApp from "./pages/accounting/CrusherApp";
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import CollectionReceipts from "./pages/accounting/CollectionReceipts";
 import PurchaseOrder from "./pages/accounting/PurchaseOrder";
@@ -188,7 +189,8 @@ const App = () => {
                                   <Route path="/accounting/income-statement" element={<IncomeStatement />} />
                                   <Route path="/accounting/cost-centers" element={<CostCenters />} />
                                   <Route path="/accounting/branches" element={<Branches />} />
-                                  <Route path="/accounting/projects" element={<Projects />} />
+<Route path="/accounting/projects" element={<Projects />} />
+                                  <Route path="/accounting/crusher" element={<CrusherApp />} />
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
