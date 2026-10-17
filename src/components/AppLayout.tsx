@@ -1,4 +1,5 @@
-import { ReactNode, type CSSProperties } from "react";
+import { ReactNode, useState, type CSSProperties } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { SystemNavigationSidebar } from "@/components/SystemNavigationSidebar";
 import { SystemIconsBar } from "@/components/SystemIconsBar";
@@ -10,6 +11,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const exportToExcel = async () => {
     try {
       const { data: vehiclesData } = await supabase
