@@ -18,7 +18,7 @@ const GroupApp = () => {
                 <Layers className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-bold leading-tight">برنامج المجموعة</h1>
+                <h1 className="text-lg font-bold leading-tight">برنامج المجمعة</h1>
                 <p className="text-xs text-muted-foreground">يعمل داخل النظام الحالي</p>
               </div>
             </div>
@@ -34,7 +34,7 @@ const GroupApp = () => {
       <main className="flex-1 min-h-0">
         <iframe
           src={GROUP_URL}
-          title="برنامج المجموعة"
+          title="برنامج المجمعة"
           className="w-full h-full border-0"
           allow="clipboard-read; clipboard-write"
         />
