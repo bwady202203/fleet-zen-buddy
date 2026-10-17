@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounting } from "@/contexts/AccountingContext";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plus, Pencil, Trash2, Search, Factory, ChevronLeft } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 
@@ -213,25 +213,6 @@ const Projects = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Link to="/accounting/crusher" className="block mb-6 group">
-          <Card className="overflow-hidden border-amber-500/40 bg-gradient-to-l from-amber-500/10 via-card to-card hover:shadow-lg hover:border-amber-500/70 transition-all">
-            <CardContent className="p-4 sm:p-5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 flex items-center justify-center text-white shadow-md shrink-0">
-                  <Factory className="h-6 w-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold">برنامج الكسارة</h2>
-                  <p className="text-sm text-muted-foreground">الدخول إلى واجهة برنامج الكسارة داخل النظام</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-bold text-sm shrink-0">
-                فتح
-                <ChevronLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
