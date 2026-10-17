@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { resolvePasswordTarget } from './password-target.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,7 +49,12 @@ serve(async (req) => {
       throw new Error('Only admins can change user passwords');
     }
 
-    const { userId, newPassword } = await req.json();
+    const body = await req.json();
+    const useStoredPasswordForSelf = body.useStoredPasswordForSelf === true;
+    const userId = resolvePasswordTarget(user.id, body.userId, useStoredPasswordForSelf);
+    const newPassword = useStoredPasswordForSelf
+      ? Deno.env.get('QUICK_LOGIN_ADMIN_PASSWORD')
+      : body.newPassword;
 
     if (!userId || !newPassword) {
       throw new Error('Missing required fields');
@@ -70,8 +76,25 @@ serve(async (req) => {
       throw updateError;
     }
 
+    if (useStoredPasswordForSelf) {
+      if (!user.email) throw new Error('Account email unavailable');
+      const verifier = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+      const { data, error: signInError } = await verifier.auth.signInWithPassword({
+        email: user.email,
+        password: newPassword,
+      });
+      if (signInError || !data.session) {
+        throw new Error('Password changed, but sign-in verification failed');
+      }
+      await verifier.auth.signOut();
+    }
+
     return new Response(
-      JSON.stringify({ success: true, message: 'Password changed successfully' }),
+      JSON.stringify({ success: true, signInVerified: useStoredPasswordForSelf, message: 'Password changed successfully' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
