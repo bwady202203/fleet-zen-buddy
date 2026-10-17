@@ -464,6 +464,53 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
                 const groupOpen = openGroups.includes(group.key);
                 const colors = groupColors[group.key] ?? defaultGroupColor;
 
+                // مجموعات تُعرض كصف واحد في نفس المستوى (بدون قائمة فرعية)
+                if (group.standalonePath || group.standaloneHref) {
+                  const standaloneActive = group.standalonePath
+                    ? isPathActive(location.pathname, group.standalonePath)
+                    : false;
+                  const standaloneInner = (
+                    <>
+                      <span
+                        className={cn(
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover/nav:scale-110 group-hover/nav:rotate-3",
+                          colors.iconBox,
+                        )}
+                      >
+                        <GroupIcon className="h-6 w-6" />
+                      </span>
+                      {!collapsed && (
+                        <span className="flex-1 text-right text-[15px] font-bold tracking-wide">{group.title}</span>
+                      )}
+                    </>
+                  );
+                  return (
+                    <SidebarMenuItem key={group.key}>
+                      <SidebarMenuButton
+                        asChild
+                        size="lg"
+                        isActive={false}
+                        tooltip={{ children: group.title, side: "left" }}
+                        className={cn(
+                          "group/nav h-14 cursor-pointer justify-start gap-3 rounded-2xl border-r-4 border-transparent bg-transparent transition-all duration-300 active:scale-95",
+                          colors.hover,
+                          standaloneActive && colors.active,
+                        )}
+                      >
+                        {group.standaloneHref ? (
+                          <a href={group.standaloneHref} target="_blank" rel="noopener noreferrer" onClick={closeMobile}>
+                            {standaloneInner}
+                          </a>
+                        ) : (
+                          <NavLink to={group.standalonePath ?? "#"} onClick={closeMobile}>
+                            {standaloneInner}
+                          </NavLink>
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
+
                 return (
                   <Collapsible key={group.key} open={groupOpen && !collapsed} onOpenChange={() => toggleGroup(group.key)} asChild>
                     <SidebarMenuItem>
