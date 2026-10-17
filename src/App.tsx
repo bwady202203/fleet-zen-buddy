@@ -49,7 +49,9 @@ import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import CrusherApp from "./pages/accounting/CrusherApp";
 import GroupApp from "./pages/accounting/GroupApp";
+import SpecialInvoicesApp from "./pages/accounting/SpecialInvoicesApp";
 import HrPortalApp from "./pages/hr/HrPortalApp";
+
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import CollectionReceipts from "./pages/accounting/CollectionReceipts";
 import PurchaseOrder from "./pages/accounting/PurchaseOrder";
@@ -193,7 +195,9 @@ const App = () => {
                                   <Route path="/accounting/branches" element={<Branches />} />
 <Route path="/accounting/projects" element={<Projects />} />
 <Route path="/accounting/crusher" element={<CrusherApp />} />
-                                  <Route path="/accounting/group-app" element={<GroupApp />} />
+<Route path="/accounting/group-app" element={<GroupApp />} />
+                                  <Route path="/accounting/special-invoices" element={<SpecialInvoicesApp />} />
+
                                   <Route path="/hr/portal" element={<HrPortalApp />} />
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
