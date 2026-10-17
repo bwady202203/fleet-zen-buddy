@@ -48,6 +48,7 @@ import CostCenters from "./pages/accounting/CostCenters";
 import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import CrusherApp from "./pages/accounting/CrusherApp";
+import GroupApp from "./pages/accounting/GroupApp";
 import HrPortalApp from "./pages/hr/HrPortalApp";
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import CollectionReceipts from "./pages/accounting/CollectionReceipts";
@@ -191,7 +192,8 @@ const App = () => {
                                   <Route path="/accounting/cost-centers" element={<CostCenters />} />
                                   <Route path="/accounting/branches" element={<Branches />} />
 <Route path="/accounting/projects" element={<Projects />} />
-                                  <Route path="/accounting/crusher" element={<CrusherApp />} />
+<Route path="/accounting/crusher" element={<CrusherApp />} />
+                                  <Route path="/accounting/group-app" element={<GroupApp />} />
                                   <Route path="/hr/portal" element={<HrPortalApp />} />
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />

@@ -14,6 +14,7 @@ import {
   FileText,
   Gauge,
   Home,
+  Layers,
   Landmark,
   LayoutGrid,
   Package,
@@ -291,6 +292,14 @@ export const navigationGroups: NavigationGroup[] = [
     standalonePath: "/hr/portal",
   },
   {
+    key: "group-app",
+    title: "برنامج المجموعة",
+    icon: Layers,
+    module: null,
+    children: [],
+    standalonePath: "/accounting/group-app",
+  },
+  {
     key: "settings",
     title: "الإعدادات",
     icon: Settings,
@@ -385,10 +394,15 @@ const groupColors: Record<string, GroupColor> = {
     hover: "hover:bg-amber-50",
     active: "bg-amber-50/80 text-amber-900 border-amber-600",
   },
-  "hr-portal": {
+"hr-portal": {
     iconBox: "bg-gradient-to-br from-rose-600 to-rose-700 text-white",
     hover: "hover:bg-rose-50",
     active: "bg-rose-50/80 text-rose-900 border-rose-600",
+  },
+  "group-app": {
+    iconBox: "bg-gradient-to-br from-indigo-600 to-violet-700 text-white",
+    hover: "hover:bg-indigo-50",
+    active: "bg-indigo-50/80 text-indigo-900 border-indigo-600",
   },
   settings: {
     iconBox: "bg-slate-200 text-slate-600",
