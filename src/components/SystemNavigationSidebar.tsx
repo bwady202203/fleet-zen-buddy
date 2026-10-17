@@ -17,6 +17,8 @@ import {
   Landmark,
   LayoutGrid,
   Package,
+  PanelRightClose,
+  PanelRightOpen,
   Receipt,
   Settings,
   ShieldCheck,
@@ -408,7 +410,7 @@ interface SystemNavigationSidebarProps {
 export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSidebarProps) {
   const location = useLocation();
   const { hasPermission } = usePermissions();
-  const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
+  const { state, setOpen, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
 
   // المجموعات المعروضة في القائمة الجانبية: الأسطول والمحاسبة والحمولات تُعرض كتبويبات في الشاشة الرئيسية
@@ -440,7 +442,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
 
   return (
     <Sidebar side="right" collapsible="icon" className="print:hidden">
-      <SidebarHeader className="border-b border-sidebar-border p-3">
+      <SidebarHeader className={cn("border-b border-sidebar-border p-3", collapsed && "items-center")}>
         <NavLink to="/" onClick={closeMobile} className="flex h-12 items-center gap-3 overflow-hidden rounded-md px-1">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary">
             <img src={wizerLogo.url} alt="ويزر" className="h-7 w-7 object-contain" />
@@ -452,6 +454,19 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
             </span>
           )}
         </NavLink>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title={collapsed ? "إظهار القائمة الجانبية (Ctrl+B)" : "طي القائمة الجانبية (Ctrl+B)"}
+          aria-label={collapsed ? "إظهار القائمة الجانبية" : "طي القائمة الجانبية"}
+          className={cn(
+            "flex shrink-0 items-center gap-2 rounded-xl border border-sidebar-border bg-muted/40 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+            collapsed ? "h-9 w-9 justify-center" : "h-9 w-full justify-start px-3 text-[13px] font-bold",
+          )}
+        >
+          {collapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+          {!collapsed && <span>طي القائمة</span>}
+        </button>
       </SidebarHeader>
 
       <SidebarContent className="py-2">
