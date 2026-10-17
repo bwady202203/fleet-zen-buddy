@@ -18,9 +18,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
-      return localStorage.getItem(SIDEBAR_OPEN_KEY) !== "false";
+      return localStorage.getItem(SIDEBAR_OPEN_KEY) === "true";
     } catch {
-      return true;
+      return false;
     }
   });
 
