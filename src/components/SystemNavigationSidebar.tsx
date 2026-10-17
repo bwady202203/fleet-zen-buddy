@@ -293,7 +293,7 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     key: "group-app",
-    title: "برنامج المجموعة",
+    title: "برنامج المجمعة",
     icon: Layers,
     module: null,
     children: [],
