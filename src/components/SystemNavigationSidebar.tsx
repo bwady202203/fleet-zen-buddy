@@ -300,6 +300,15 @@ export const navigationGroups: NavigationGroup[] = [
     standalonePath: "/accounting/group-app",
   },
   {
+    key: "special-invoices",
+    title: "الفواتير الخاصة",
+    icon: Receipt,
+    module: null,
+    children: [],
+    standalonePath: "/accounting/special-invoices",
+  },
+
+  {
     key: "settings",
     title: "الإعدادات",
     icon: Settings,
@@ -399,10 +408,15 @@ const groupColors: Record<string, GroupColor> = {
     hover: "hover:bg-rose-50",
     active: "bg-rose-50/80 text-rose-900 border-rose-600",
   },
-  "group-app": {
+"group-app": {
     iconBox: "bg-gradient-to-br from-indigo-600 to-violet-700 text-white",
     hover: "hover:bg-indigo-50",
     active: "bg-indigo-50/80 text-indigo-900 border-indigo-600",
+  },
+  "special-invoices": {
+    iconBox: "bg-gradient-to-br from-emerald-600 to-teal-700 text-white",
+    hover: "hover:bg-emerald-50",
+    active: "bg-emerald-50/80 text-emerald-900 border-emerald-600",
   },
   settings: {
     iconBox: "bg-slate-200 text-slate-600",
