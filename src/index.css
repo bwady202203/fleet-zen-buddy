@@ -534,3 +534,84 @@ All colors MUST be HSL.
 .animate-float-soft {
   animation: float-soft 5s ease-in-out infinite;
 }
+
+/* ===== كشوف الرواتب الخارجية — مستند طباعة A4 عرضي ===== */
+.extpayroll-print-document { display: none; }
+
+@media print {
+  @page extpayroll-sheet {
+    size: A4 landscape;
+    margin: 12mm 12mm 14mm;
+  }
+  body:has(> .extpayroll-print-document) > *:not(.extpayroll-print-document) {
+    display: none !important;
+  }
+  .extpayroll-print-document {
+    display: block !important;
+    page: extpayroll-sheet;
+    font-family: "Cairo", sans-serif;
+    color: hsl(218 35% 19%);
+    direction: rtl;
+  }
+  .extp-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 2.5pt solid hsl(218 35% 19%); padding-bottom: 8pt; margin-bottom: 8pt;
+  }
+  .extp-doc-kind { font-size: 8.5pt; letter-spacing: 1pt; color: hsl(199 76% 34%); font-weight: 700; }
+  .extp-sheet-name { font-size: 17pt; font-weight: 800; margin-top: 2pt; }
+  .extp-sheet-meta { font-size: 10pt; color: hsl(215 16% 44%); margin-top: 2pt; }
+  .extp-head-left { text-align: left; }
+  .extp-state {
+    display: inline-block; font-size: 9pt; font-weight: 700;
+    border: 1.2pt solid; border-radius: 999px; padding: 2pt 12pt;
+  }
+  .extp-state-disbursed { color: hsl(164 65% 29%); border-color: hsl(164 65% 29%); }
+  .extp-state-approved { color: hsl(199 76% 34%); border-color: hsl(199 76% 34%); }
+  .extp-date { font-size: 8pt; color: hsl(215 16% 44%); margin-top: 4pt; }
+  .extp-chips { display: flex; gap: 6pt; margin-bottom: 8pt; }
+  .extp-chip {
+    flex: 1; border: 1pt solid hsl(214 28% 83%); border-radius: 6pt;
+    padding: 5pt 8pt; text-align: center; background: hsl(210 35% 97%);
+  }
+  .extp-chip-label { font-size: 7.5pt; color: hsl(215 16% 44%); }
+  .extp-chip-value { font-size: 11pt; font-weight: 800; margin-top: 1pt; }
+  .extp-chip-net { background: hsl(218 35% 19%); border-color: hsl(218 35% 19%); }
+  .extp-chip-net .extp-chip-label, .extp-chip-net .extp-chip-value { color: #fff; }
+  .extp-table {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+    font-size: 7.6pt;
+  }
+  .extp-table th {
+    background: hsl(218 35% 19%); color: #fff; font-weight: 700;
+    border: 0.6pt solid hsl(218 35% 19%); padding: 4pt 2pt; text-align: center;
+    font-size: 7.4pt;
+  }
+  .extp-table td {
+    border: 0.6pt solid hsl(214 28% 83%); padding: 3.2pt 3pt;
+    overflow-wrap: anywhere; vertical-align: middle;
+  }
+  .extp-table tbody tr:nth-child(even) td { background: hsl(210 35% 97%); }
+  .extp-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .extp-c { text-align: center; }
+  .extp-num { direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; }
+  .extp-name { font-weight: 700; }
+  .extp-strong { font-weight: 700; }
+  .extp-pos { color: hsl(164 65% 29%); }
+  .extp-warn { color: hsl(35 92% 33%); }
+  .extp-neg { color: hsl(0 72% 45%); }
+  .extp-net { font-weight: 800; background: hsl(199 76% 34% / 0.08) !important; }
+  .extp-table tfoot td {
+    background: hsl(218 35% 19%); color: #fff; font-weight: 800;
+    border-color: hsl(218 35% 19%); font-size: 7.8pt;
+  }
+  .extp-signatures {
+    display: flex; justify-content: space-around; gap: 24pt;
+    margin-top: 22pt; break-inside: avoid; page-break-inside: avoid;
+  }
+  .extp-sign { flex: 1; text-align: center; }
+  .extp-sign-role { font-size: 9pt; font-weight: 700; }
+  .extp-sign-line {
+    margin: 26pt 18pt 0; border-top: 1pt solid hsl(218 35% 19%);
+    padding-top: 3pt; font-size: 7.5pt; color: hsl(215 16% 44%);
+  }
+}
