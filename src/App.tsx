@@ -48,6 +48,7 @@ import CostCenters from "./pages/accounting/CostCenters";
 import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import CrusherApp from "./pages/accounting/CrusherApp";
+import HrPortalApp from "./pages/hr/HrPortalApp";
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import CollectionReceipts from "./pages/accounting/CollectionReceipts";
 import PurchaseOrder from "./pages/accounting/PurchaseOrder";
