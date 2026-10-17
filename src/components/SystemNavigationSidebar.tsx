@@ -8,6 +8,7 @@ import {
   Calculator,
   ChevronDown,
   ClipboardList,
+  Factory,
   FileCheck2,
   FileSpreadsheet,
   FileText,
@@ -264,6 +265,7 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "الفروع", path: "/accounting/branches", icon: Building2 },
       { title: "المشاريع", path: "/accounting/projects", icon: ClipboardList },
       { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
+      { title: "برنامج الكسارة", path: "/accounting/crusher", icon: Factory },
     ],
   },
   {
