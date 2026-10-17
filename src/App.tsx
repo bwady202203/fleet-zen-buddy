@@ -192,6 +192,7 @@ const App = () => {
                                   <Route path="/accounting/branches" element={<Branches />} />
 <Route path="/accounting/projects" element={<Projects />} />
                                   <Route path="/accounting/crusher" element={<CrusherApp />} />
+                                  <Route path="/hr/portal" element={<HrPortalApp />} />
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />
