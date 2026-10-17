@@ -10,8 +10,30 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+const SIDEBAR_OPEN_KEY = "wizer:sidebar-open";
+
+
+
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_OPEN_KEY) !== "false";
+    } catch {
+      return true;
+    }
+  });
+
+  const handleSidebarChange = (open: boolean) => {
+    setSidebarOpen(open);
+    try {
+      localStorage.setItem(SIDEBAR_OPEN_KEY, String(open));
+    } catch {
+      // ignore storage failures
+    }
+  };
+
+
   const exportToExcel = async () => {
     try {
       const { data: vehiclesData } = await supabase
@@ -56,6 +78,8 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <SidebarProvider
+      open={sidebarOpen}
+      onOpenChange={handleSidebarChange}
       style={{ "--sidebar-width": "19rem", "--sidebar-width-icon": "4rem" } as CSSProperties}
     >
       <div className="min-h-screen flex w-full bg-background" dir="rtl">
