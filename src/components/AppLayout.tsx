@@ -61,7 +61,18 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="min-h-screen flex w-full bg-background" dir="rtl">
         <SystemNavigationSidebar onExportFleet={exportToExcel} />
         <div className="flex-1 flex flex-col min-w-0">
-          <SystemIconsBar />
+          <div className="relative">
+            {!headerCollapsed && <SystemIconsBar />}
+            <button
+              type="button"
+              onClick={() => setHeaderCollapsed((v) => !v)}
+              title={headerCollapsed ? "إظهار الشريط العلوي" : "طي الشريط العلوي"}
+              className="absolute top-1 left-2 z-40 flex items-center gap-1 rounded-full border bg-background/90 px-2 py-0.5 text-[11px] text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground transition-colors"
+            >
+              {headerCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+              {headerCollapsed ? "إظهار" : "طي"}
+            </button>
+          </div>
           <div className="flex-1 min-w-0">{children}</div>
         </div>
       </div>
