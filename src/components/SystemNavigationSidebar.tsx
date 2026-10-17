@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Truck,
+  User,
   Users,
   Wallet,
   Wrench,
@@ -60,6 +61,10 @@ export type NavigationGroup = {
   icon: LucideIcon;
   module: string | null;
   children: NavigationChild[];
+  // مجموعة تُعرض كصف واحد في نفس المستوى (بدون قائمة فرعية)
+  standalonePath?: string;
+  // مجموعة تُعرض كصف واحد يفتح رابطًا خارجيًا في تبويب جديد
+  standaloneHref?: string;
 };
 
 export const navigationGroups: NavigationGroup[] = [
@@ -265,8 +270,23 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "الفروع", path: "/accounting/branches", icon: Building2 },
       { title: "المشاريع", path: "/accounting/projects", icon: ClipboardList },
       { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
-      { title: "برنامج الكسارة", path: "/accounting/crusher", icon: Factory },
     ],
+  },
+  {
+    key: "crusher",
+    title: "برنامج الكسارة",
+    icon: Factory,
+    module: "accounting",
+    children: [],
+    standalonePath: "/accounting/crusher",
+  },
+  {
+    key: "hr-portal",
+    title: "الموارد البشرية",
+    icon: User,
+    module: null,
+    children: [],
+    standaloneHref: "https://wisehrsuite.store",
   },
   {
     key: "settings",
@@ -357,6 +377,16 @@ const groupColors: Record<string, GroupColor> = {
     iconBox: "bg-indigo-100 text-indigo-600",
     hover: "hover:bg-indigo-50",
     active: "bg-indigo-50/80 text-indigo-900 border-indigo-600",
+  },
+  crusher: {
+    iconBox: "bg-gradient-to-br from-amber-500 to-orange-700 text-white",
+    hover: "hover:bg-amber-50",
+    active: "bg-amber-50/80 text-amber-900 border-amber-600",
+  },
+  "hr-portal": {
+    iconBox: "bg-gradient-to-br from-rose-600 to-rose-700 text-white",
+    hover: "hover:bg-rose-50",
+    active: "bg-rose-50/80 text-rose-900 border-rose-600",
   },
   settings: {
     iconBox: "bg-slate-200 text-slate-600",
