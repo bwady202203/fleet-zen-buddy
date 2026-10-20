@@ -16,11 +16,12 @@ import { ArrowRight, Plus, Star, Printer, Eye, EyeOff, Trash2, Building2, Landma
 import { cn } from "@/lib/utils";
 import { numberToWords } from "@/lib/numberToWords";
 
-type BankKey = "riyadh" | "rajhi";
+type BankKey = "riyadh" | "rajhi" | "namariq_rajhi";
 
 const BANK_CONFIG: Record<BankKey, { code: string; name: string; theme: string; primary: string; accent: string; icon: any }> = {
   riyadh: { code: "111004", name: "بنك الرياض شركة الرمال", theme: "from-blue-700 to-sky-600", primary: "#0a4a8a", accent: "#0c7a5f", icon: Building2 },
   rajhi: { code: "111001", name: "بنك الراجحي شركة الرمال", theme: "from-emerald-700 to-green-600", primary: "#0c7a5f", accent: "#0a4a8a", icon: Landmark },
+  namariq_rajhi: { code: "110841", name: "بنك الراجحي شركة نمارق الريادة", theme: "from-amber-600 to-orange-600", primary: "#9a4a0a", accent: "#0a4a8a", icon: Landmark },
 };
 
 interface Account { id: string; code: string; name_ar: string; }
