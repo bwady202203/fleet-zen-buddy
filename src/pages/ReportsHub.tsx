@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Eye, Printer } from "lucide-react";
+import { GroupReportDocument, GroupReportPrintPortal, groupReportStyles } from "@/components/reports/GroupReportPrint";
 
 // واجهة الربط العامة لبرنامج المجمعة (مفتاح قراءة عام)
 const GROUP_API_URL = "https://iaxjpbjmvfizoxdgmqhb.supabase.co/rest/v1";
@@ -97,6 +100,7 @@ const GroupReportTab = () => {
   const [expenses, setExpenses] = useState<GroupExpense[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const loadReport = useCallback(async () => {
     setLoading(true);
@@ -138,6 +142,23 @@ const GroupReportTab = () => {
 
   return (
     <div className="space-y-6">
+      <style>{groupReportStyles}</style>
+      <GroupReportPrintPortal fromDate={fromDate} toDate={toDate} invoices={invoices} expenses={expenses} />
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-[230mm] max-h-[92vh] overflow-y-auto" dir="rtl">
+          <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+            <DialogTitle>معاينة التقرير — A4</DialogTitle>
+            <Button size="sm" className="gap-2 ml-8" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" /> طباعة / تحميل PDF
+            </Button>
+          </DialogHeader>
+          <div className="bg-muted p-4 rounded-md">
+            <div className="bg-background shadow-lg mx-auto" style={{ width: "210mm", minHeight: "297mm", padding: "14mm" }}>
+              <GroupReportDocument fromDate={fromDate} toDate={toDate} invoices={invoices} expenses={expenses} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* فلاتر الفترة */}
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 pt-6">
@@ -168,6 +189,12 @@ const GroupReportTab = () => {
               <RefreshCw className="h-4 w-4" />
             )}
             تحديث التقرير
+          </Button>
+          <Button variant="outline" className="gap-2" disabled={loading} onClick={() => setPreviewOpen(true)}>
+            <Eye className="h-4 w-4" /> معاينة
+          </Button>
+          <Button variant="outline" className="gap-2" disabled={loading} onClick={() => window.print()}>
+            <Printer className="h-4 w-4" /> تحميل PDF
           </Button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarDays className="h-4 w-4" />
