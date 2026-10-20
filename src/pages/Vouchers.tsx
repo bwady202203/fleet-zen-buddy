@@ -149,6 +149,15 @@ const sections: Section[] = [
     art: "mosque",
   },
   {
+    title: "سند قبض - بنك الراجحي (نمارق الريادة)",
+    englishTitle: "Collection Receipt – Rajhi Bank (Namariq)",
+    description: "سندات قبض إلى بنك الراجحي شركة نمارق الريادة مع قيد تلقائي",
+    link: "/accounting/bank-collection-receipt?bank=namariq_rajhi",
+    gradient: "from-amber-500 via-orange-600 to-rose-700",
+    ring: "ring-amber-300/40",
+    art: "mosque",
+  },
+  {
     title: "سند صرف - بنك الرياض",
     englishTitle: "Payment Voucher – Riyadh Bank",
     description: "سندات الصرف من بنك الرياض مع قيد تلقائي",
