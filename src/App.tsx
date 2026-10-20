@@ -51,6 +51,7 @@ import CrusherApp from "./pages/accounting/CrusherApp";
 import GroupApp from "./pages/accounting/GroupApp";
 import SpecialInvoicesApp from "./pages/accounting/SpecialInvoicesApp";
 import HrPortalApp from "./pages/hr/HrPortalApp";
+import ReportsHub from "./pages/ReportsHub";
 
 import PaymentVouchers from "./pages/accounting/PaymentVouchers";
 import CollectionReceipts from "./pages/accounting/CollectionReceipts";
@@ -197,6 +198,7 @@ const App = () => {
 <Route path="/accounting/crusher" element={<CrusherApp />} />
 <Route path="/accounting/group-app" element={<GroupApp />} />
                                   <Route path="/accounting/special-invoices" element={<SpecialInvoicesApp />} />
+                                  <Route path="/reports" element={<ReportsHub />} />
 
                                   <Route path="/hr/portal" element={<HrPortalApp />} />
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />

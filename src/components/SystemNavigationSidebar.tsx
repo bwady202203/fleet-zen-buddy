@@ -307,6 +307,14 @@ export const navigationGroups: NavigationGroup[] = [
     children: [],
     standalonePath: "/accounting/special-invoices",
   },
+  {
+    key: "reports",
+    title: "التقارير",
+    icon: BarChart3,
+    module: null,
+    children: [],
+    standalonePath: "/reports",
+  },
 
   {
     key: "settings",
@@ -417,6 +425,11 @@ const groupColors: Record<string, GroupColor> = {
     iconBox: "bg-gradient-to-br from-emerald-600 to-teal-700 text-white",
     hover: "hover:bg-emerald-50",
     active: "bg-emerald-50/80 text-emerald-900 border-emerald-600",
+  },
+  reports: {
+    iconBox: "bg-gradient-to-br from-sky-600 to-cyan-700 text-white",
+    hover: "hover:bg-sky-50",
+    active: "bg-sky-50/80 text-sky-900 border-sky-600",
   },
   settings: {
     iconBox: "bg-slate-200 text-slate-600",
