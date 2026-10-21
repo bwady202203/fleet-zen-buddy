@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Printer } from "lucide-react";
 import { GroupReportDocument, GroupReportPrintPortal, groupReportStyles } from "@/components/reports/GroupReportPrint";
+import CrusherReportTab from "@/components/reports/CrusherReportTab";
+import { Factory } from "lucide-react";
 
 // واجهة الربط العامة لبرنامج المجمعة (مفتاح قراءة عام)
 const GROUP_API_URL = "https://iaxjpbjmvfizoxdgmqhb.supabase.co/rest/v1";
@@ -405,7 +407,7 @@ const ReportsHub = () => {
               <Layers className="h-4 w-4" />
               تقرير المجمعة
             </TabsTrigger>
-            <TabsTrigger value="tab2">التقرير الثاني</TabsTrigger>
+            <TabsTrigger value="tab2" className="gap-1.5"><Factory className="h-4 w-4" />تقرير الكسارة</TabsTrigger>
             <TabsTrigger value="tab3">التقرير الثالث</TabsTrigger>
             <TabsTrigger value="tab4">التقرير الرابع</TabsTrigger>
           </TabsList>
@@ -414,7 +416,7 @@ const ReportsHub = () => {
             <GroupReportTab />
           </TabsContent>
           <TabsContent value="tab2" className="mt-6">
-            <PlaceholderTab title="التقرير الثاني" />
+            <CrusherReportTab />
           </TabsContent>
           <TabsContent value="tab3" className="mt-6">
             <PlaceholderTab title="التقرير الثالث" />
