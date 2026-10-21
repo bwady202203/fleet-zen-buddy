@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Factory, Loader2, RefreshCw, Scale, Truck, Building2 } from "lucide-react";
+import { Eye, Printer, Factory, Loader2, RefreshCw, Scale, Truck, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { groupReportStyles } from "./GroupReportPrint";
+import { CrusherReportDocument, CrusherReportPrintPortal } from "./CrusherReportPrint";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Shipment {
@@ -32,6 +35,7 @@ const CrusherReportTab = () => {
   const [rows, setRows] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,6 +85,23 @@ const CrusherReportTab = () => {
 
   return (
     <div className="space-y-6">
+      <style>{groupReportStyles}</style>
+      <CrusherReportPrintPortal fromDate={fromDate} toDate={toDate} rows={rows} byMaterial={byMaterial} byClient={byClient} />
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-[230mm] max-h-[92vh] overflow-y-auto" dir="rtl">
+          <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+            <DialogTitle>معاينة تقرير الكسارة — A4</DialogTitle>
+            <Button size="sm" className="gap-2 ml-8" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" /> طباعة / تحميل PDF
+            </Button>
+          </DialogHeader>
+          <div className="bg-muted p-4 rounded-md">
+            <div className="bg-background shadow-lg mx-auto" style={{ width: "210mm", minHeight: "297mm", padding: "14mm" }}>
+              <CrusherReportDocument fromDate={fromDate} toDate={toDate} rows={rows} byMaterial={byMaterial} byClient={byClient} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 pt-6">
           <div className="space-y-1.5"><Label htmlFor="cr-from">من تاريخ</Label>
@@ -89,6 +110,12 @@ const CrusherReportTab = () => {
             <Input id="cr-to" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-44" /></div>
           <Button onClick={load} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} تحديث التقرير
+          </Button>
+          <Button variant="outline" className="gap-2" disabled={loading} onClick={() => setPreviewOpen(true)}>
+            <Eye className="h-4 w-4" /> معاينة
+          </Button>
+          <Button variant="outline" className="gap-2" disabled={loading} onClick={() => window.print()}>
+            <Printer className="h-4 w-4" /> تحميل PDF
           </Button>
           <span className="flex items-center gap-2 text-sm text-muted-foreground"><Factory className="h-4 w-4" />البيانات تُستورد مباشرة من برنامج الكسارة</span>
         </CardContent>
