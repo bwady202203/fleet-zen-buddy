@@ -31,7 +31,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Wallet className="h-5 w-5 text-teal-600" />
+            <Wallet className="h-5 w-5 text-blue-600" />
             نموذج طلب عهدة
           </DialogTitle>
         </DialogHeader>
@@ -70,7 +70,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
             {/* التفقيط التلقائي */}
             <div className="rounded-lg border bg-muted/40 p-4">
               <div className="text-xs text-muted-foreground mb-1">المبلغ كتابةً (تفقيط تلقائي)</div>
-              <div className="font-bold text-teal-700 leading-relaxed min-h-[1.5rem]">
+              <div className="font-bold text-blue-700 leading-relaxed min-h-[1.5rem]">
                 {amount > 0 ? numberToWords(amount) : "—"}
               </div>
             </div>
@@ -81,7 +81,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
               <div className="text-muted-foreground mb-2">السلام عليكم ورحمة الله وبركاته، وبعد:</div>
               <p>
                 نأمل من سيادتكم صرف عهدة نقدية بمبلغ وقدره{" "}
-                <span className="font-bold text-teal-700">
+                <span className="font-bold text-blue-700">
                   {amount > 0 ? amount.toLocaleString("en-US", { minimumFractionDigits: 2 }) : "⋯⋯"} ريال سعودي
                 </span>{" "}
                 وذلك للمصروفات الخاصة بالشركة.
@@ -95,7 +95,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
               <Button
                 onClick={() => setPreview(true)}
                 disabled={!valid}
-                className="bg-teal-600 hover:bg-teal-700 gap-2"
+                className="bg-blue-700 hover:bg-blue-800 gap-2"
               >
                 <Eye className="h-4 w-4" />
                 معاينة وطباعة
@@ -108,7 +108,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
               <Button variant="outline" onClick={() => setPreview(false)}>
                 رجوع للتعديل
               </Button>
-              <Button onClick={handlePrint} className="bg-teal-600 hover:bg-teal-700 gap-2">
+              <Button onClick={handlePrint} className="bg-blue-700 hover:bg-blue-800 gap-2">
                 <Printer className="h-4 w-4" />
                 طباعة / حفظ PDF
               </Button>
