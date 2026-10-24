@@ -1,10 +1,10 @@
 import { describe, expect, mock, test } from "bun:test";
 
-let inserted: Record<string, unknown> | undefined;
+let inserted;
 const saved = { id: "request-1", request_number: "CR-2025-000002", request_date: "2025-12-13", amount: 5000, created_at: "2026-10-24" };
 mock.module("@/integrations/supabase/client", () => ({
   supabase: { from: () => ({
-    insert: (values: Record<string, unknown>) => {
+    insert: (values) => {
       inserted = values;
       return { select: () => ({ single: async () => ({ data: saved, error: null }) }) };
     },
