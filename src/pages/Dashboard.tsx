@@ -9,12 +9,15 @@ import { StatsCard } from "@/components/StatsCard";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
 import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
+import CustodyRequestDialog from "@/components/CustodyRequestDialog";
+import { useState } from "react";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
   const { hasPermission } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
+  const [custodyRequestOpen, setCustodyRequestOpen] = useState(false);
   const handleTabChange = (value: string) => {
     if (value === "overview") {
       searchParams.delete("tab");
@@ -105,7 +108,15 @@ const Dashboard = () => {
 
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" dir="rtl">
-          <TabsList className="mx-auto mb-8 flex w-full max-w-4xl flex-wrap justify-center">
+          <div className="mx-auto mb-8 flex w-full max-w-5xl items-center gap-3">
+            <Button
+              onClick={() => setCustodyRequestOpen(true)}
+              className="shrink-0 gap-2 bg-teal-600 hover:bg-teal-700 text-white shadow-md"
+            >
+              <Wallet className="h-4 w-4" />
+              طلب عهدة
+            </Button>
+            <TabsList className="flex w-full flex-wrap justify-center">
             <TabsTrigger value="overview" className="flex-1">نظرة سريعة</TabsTrigger>
             <TabsTrigger value="accounting" className="flex-1">المحاسبة</TabsTrigger>
             <TabsTrigger value="loads" className="flex-1">إدارة الحمولات</TabsTrigger>
@@ -113,7 +124,8 @@ const Dashboard = () => {
             <TabsTrigger value="hr" className="flex-1">الموارد البشرية</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" dir="rtl">
             <DashboardOverview />
@@ -360,6 +372,8 @@ const Dashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <CustodyRequestDialog open={custodyRequestOpen} onOpenChange={setCustodyRequestOpen} />
     </main>
   </div>
 );
