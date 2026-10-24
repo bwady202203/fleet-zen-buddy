@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, Printer, Wallet } from "lucide-react";
 import { numberToWords } from "@/lib/numberToWords";
-import { CustodyRequestDocument } from "./CustodyRequestPrint";
+import { CustodyRequestDocument, printCustodyRequest } from "./CustodyRequestPrint";
 
 interface CustodyRequestDialogProps {
   open: boolean;
@@ -23,8 +23,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
   const valid = amount > 0 && !!date;
 
   const handlePrint = () => {
-    // طباعة المعاينة نفسها عبر نافذة الطباعة
-    window.print();
+    printCustodyRequest(amount, date);
   };
 
   return (
