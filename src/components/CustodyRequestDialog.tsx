@@ -149,7 +149,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
                 <span className="font-bold text-primary">
                   {amount > 0 ? amount.toLocaleString("en-US", { minimumFractionDigits: 2 }) : "⋯⋯"} ريال سعودي
                 </span>{" "}
-                وذلك للمصروفات الخاصة بالشركة.
+                ، وتُحوَّل على حساب بنك الرياض لصرفها حسب توجيهاتكم.
               </p>
             </div>
 
