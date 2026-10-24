@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { numberToWords } from "@/lib/numberToWords";
+import omarSignature from "@/assets/omar-signature.png.asset.json";
 
 interface CustodyRequestPrintProps {
   amount: number;
