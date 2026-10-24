@@ -5,6 +5,7 @@ import { numberToWords } from "@/lib/numberToWords";
 interface CustodyRequestPrintProps {
   amount: number;
   date: string; // YYYY-MM-DD
+  requestNo?: string;
 }
 
 const BLUE_DARK = "#1e3a8a";
@@ -40,7 +41,7 @@ const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** مستند طباعة طلب عهدة — مقاس A4 (210×297mm) بحدود مضبوطة */
-export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProps) => (
+export const CustodyRequestDocument = ({ amount, date, requestNo }: CustodyRequestPrintProps) => (
   <div
     dir="rtl"
     style={{
@@ -81,7 +82,7 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
-            marginBottom: "5mm",
+            marginBottom: "3mm",
           }}
         >
           <div>
@@ -92,19 +93,21 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
               Soft Sand Industrial Company
             </div>
           </div>
-          <div
-            style={{
-              border: `1.5px solid ${BLUE_BORDER}`,
-              borderRadius: "6px",
-              padding: "1.5mm 4mm",
-              fontSize: "10px",
-              color: BLUE,
-              fontWeight: 700,
-              background: BLUE_LIGHT,
-            }}
-          >
-            نموذج رقم: HR-01
-          </div>
+        </div>
+
+        {/* شريط رقم النموذج */}
+        <div
+          style={{
+            border: `1.5px solid ${BLUE_BORDER}`,
+            borderRadius: "6px",
+            background: BLUE_LIGHT,
+            padding: "1.5mm 4mm",
+            marginBottom: "4mm",
+            display: "flex",
+            justifyContent: "flex-start",
+          }}
+        >
+          <span style={{ fontSize: "10px", color: BLUE, fontWeight: 700 }}>نموذج رقم: HR-01</span>
         </div>
 
         {/* شريط العنوان */}
@@ -130,31 +133,46 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
           />
         </div>
 
-        {/* التاريخان: الميلادي في جانب والهجري في الجهة المقابلة */}
+        {/* التاريخان ورقم الطلب: الميلادي يمين، رقم الطلب وسط، الهجري يسار */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "flex-start",
             fontSize: "13px",
-            marginBottom: "8mm",
+            marginBottom: "12mm",
             color: "#334155",
           }}
         >
-          <div>
-            <span style={{ fontWeight: 700, color: BLUE_DARK }}>التاريخ: </span>
-            {gregorianOf(date)} م
+          <div style={{ width: "33%" }}>
+            <div style={{ fontWeight: 700, color: BLUE_DARK }}>التاريخ:</div>
+            <div>{gregorianOf(date)} م</div>
           </div>
-          <div>
-            <span style={{ fontWeight: 700, color: BLUE_DARK }}>الموافق: </span>
-            {hijriOf(date)} هـ
+          <div style={{ width: "33%", textAlign: "center" }}>
+            <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>
+              طلب رقم {requestNo || "⋯⋯"}
+            </div>
+          </div>
+          <div style={{ width: "33%", textAlign: "left" }}>
+            <div style={{ fontWeight: 700, color: BLUE_DARK }}>الموافق:</div>
+            <div>{hijriOf(date)} هـ</div>
           </div>
         </div>
 
-        {/* المخاطَب */}
-        <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "2mm" }}>
-          السيد / المدير العام المحترم
+        {/* المخاطَب: السيد/المدير العام يمين وكلمة المحترم في الجهة الأخرى */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "16px",
+            fontWeight: 700,
+            marginBottom: "3mm",
+          }}
+        >
+          <div>السيد / المدير العام</div>
+          <div>المحترم</div>
         </div>
-        <div style={{ fontSize: "14px", marginBottom: "7mm", color: "#334155" }}>
+        <div style={{ fontSize: "14px", marginBottom: "8mm", color: "#334155" }}>
           السلام عليكم ورحمة الله وبركاته، وبعد:
         </div>
 
@@ -162,15 +180,19 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
         <div
           style={{
             fontSize: "15px",
-            lineHeight: 2.3,
+            lineHeight: 2.4,
             textAlign: "justify",
-            marginBottom: "7mm",
+            marginBottom: "8mm",
           }}
         >
-          نأمل من سيادتكم صرف عهدة نقدية بمبلغ وقدره{" "}
-          <span style={{ fontWeight: 800, color: BLUE_DARK }}>{fmt(amount)} ريال سعودي</span>{" "}
-          <span style={{ fontWeight: 700 }}>({numberToWords(amount)})</span>، وذلك للمصروفات
-          الخاصة بالشركة.
+          نأمل من سيادتكم صرف عهدة نقدية بمبلغ وقدره
+          <br />
+          <span style={{ fontWeight: 800, color: BLUE_DARK, fontSize: "17px" }}>
+            {fmt(amount)} ريال سعودي
+          </span>
+          <br />
+          <span style={{ fontWeight: 700 }}>({numberToWords(amount)})</span>
+          ، وذلك للمصروفات الخاصة بالشركة.
         </div>
 
         {/* صندوق المبلغ */}
@@ -194,30 +216,28 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
           >
             تفاصيل المبلغ المطلوب
           </div>
-          <div style={{ display: "flex" }}>
-            <div
-              style={{
-                flex: 1,
-                padding: "4mm 4mm",
-                textAlign: "center",
-                borderLeft: `1.5px solid ${BLUE}`,
-                background: BLUE_LIGHT,
-              }}
-            >
-              <div style={{ fontSize: "11px", color: "#475569", marginBottom: "1.5mm" }}>
-                المبلغ رقمًا
-              </div>
-              <div style={{ fontSize: "22px", fontWeight: 800, color: BLUE_DARK }}>
-                {fmt(amount)} <span style={{ fontSize: "13px" }}>ر.س</span>
-              </div>
+          <div
+            style={{
+              background: BLUE_LIGHT,
+              textAlign: "center",
+              padding: "4mm",
+              borderBottom: `1.5px solid ${BLUE}`,
+            }}
+          >
+            <div style={{ fontSize: "11px", color: "#475569", marginBottom: "1.5mm" }}>
+              المبلغ رقمًا
             </div>
-            <div style={{ flex: 2, padding: "4mm 4mm" }}>
-              <div style={{ fontSize: "11px", color: "#475569", marginBottom: "1.5mm" }}>
-                المبلغ كتابةً
-              </div>
-              <div style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1.9 }}>
-                {numberToWords(amount)}
-              </div>
+            <div style={{ fontSize: "22px", fontWeight: 800, color: BLUE_DARK }}>
+              {fmt(amount)}
+            </div>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: BLUE_DARK }}>ر.س</div>
+          </div>
+          <div style={{ padding: "4mm 5mm" }}>
+            <div style={{ fontSize: "11px", color: "#475569", marginBottom: "1.5mm" }}>
+              المبلغ كتابةً
+            </div>
+            <div style={{ fontSize: "14px", fontWeight: 700, lineHeight: 1.9 }}>
+              {numberToWords(amount)}
             </div>
           </div>
         </div>
@@ -227,7 +247,7 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
           وتقبلوا خالص الشكر والتقدير،،،
         </div>
 
-        {/* التوقيعات */}
+        {/* التوقيعات بالأسفل */}
         <div
           style={{
             display: "flex",
@@ -235,11 +255,12 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
             marginTop: "auto",
             textAlign: "center",
             fontSize: "13px",
+            padding: "0 8mm",
           }}
         >
-          {["مقدم الطلب", "المدير المالي", "المدير العام"].map((role) => (
-            <div key={role} style={{ width: "30%" }}>
-              <div style={{ fontWeight: 700, color: BLUE_DARK, marginBottom: "12mm" }}>{role}</div>
+          {["مقدم الطلب", "المدير المالي"].map((role) => (
+            <div key={role} style={{ width: "38%" }}>
+              <div style={{ fontWeight: 700, color: BLUE_DARK, marginBottom: "10mm" }}>{role}</div>
               <div
                 style={{
                   borderTop: "1.5px dashed #94a3b8",
@@ -259,7 +280,7 @@ export const CustodyRequestDocument = ({ amount, date }: CustodyRequestPrintProp
 );
 
 /** طباعة طلب العهدة عبر مستند معزول في body */
-export const printCustodyRequest = (amount: number, date: string) => {
+export const printCustodyRequest = (amount: number, date: string, requestNo?: string) => {
   const host = document.createElement("div");
   host.id = "custody-request-print-document";
   document.body.appendChild(host);
@@ -278,7 +299,7 @@ export const printCustodyRequest = (amount: number, date: string) => {
   document.head.appendChild(style);
 
   const root = createRoot(host);
-  root.render(<CustodyRequestDocument amount={amount} date={date} />);
+  root.render(<CustodyRequestDocument amount={amount} date={date} requestNo={requestNo} />);
 
   setTimeout(() => {
     window.print();
