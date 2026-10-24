@@ -1,2 +1,2 @@
-- [ ] Add automatic custody request numbers and persistent organization-scoped register.
-- [ ] Verify saving, reading back, previewing and printing requests.
+- [x] Add automatic custody request numbers and persistent organization-scoped register.
+- [x] Verify saving, reading back, previewing and printing requests.
