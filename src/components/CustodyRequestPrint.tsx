@@ -288,12 +288,18 @@ export const printCustodyRequest = (amount: number, date: string, requestNo?: st
   const style = document.createElement("style");
   style.id = "custody-request-print-style";
   style.textContent = `
+    #custody-request-print-document { display: none; }
     @page custody-request { size: A4 portrait; margin: 0; }
+    @page { size: A4 portrait; margin: 0; }
     @media print {
-      body * { display: none !important; }
-      #custody-request-print-document, #custody-request-print-document * { display: block !important; }
-      #custody-request-print-document { position: absolute; top: 0; right: 0; }
-      @page { size: A4 portrait; margin: 0; }
+      html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; height: auto !important; overflow: visible !important; }
+      body > *:not(#custody-request-print-document) { display: none !important; }
+      #custody-request-print-document {
+        display: block !important; position: absolute; top: 0; left: 0;
+        width: 210mm; height: 297mm; overflow: hidden; page: custody-request;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+      #custody-request-print-document * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   `;
   document.head.appendChild(style);
@@ -301,14 +307,20 @@ export const printCustodyRequest = (amount: number, date: string, requestNo?: st
   const root = createRoot(host);
   root.render(<CustodyRequestDocument amount={amount} date={date} requestNo={requestNo} />);
 
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => {
-      root.unmount();
-      host.remove();
-      style.remove();
-    }, 500);
-  }, 300);
+  const cleanup = () => {
+    root.unmount();
+    host.remove();
+    style.remove();
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+
+  const fontsReady = (document as any).fonts?.ready ?? Promise.resolve();
+  Promise.resolve(fontsReady).then(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setTimeout(() => window.print(), 100);
+    }));
+  });
 };
 
 const CustodyRequestPrint = (props: CustodyRequestPrintProps) =>
