@@ -372,6 +372,8 @@ const Dashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <CustodyRequestDialog open={custodyRequestOpen} onOpenChange={setCustodyRequestOpen} />
     </main>
   </div>
 );
