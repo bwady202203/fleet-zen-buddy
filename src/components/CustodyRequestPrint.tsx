@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { numberToWords } from "@/lib/numberToWords";
+import omarSignature from "@/assets/omar-signature.png.asset.json";
 
 interface CustodyRequestPrintProps {
   amount: number;
@@ -260,7 +261,16 @@ export const CustodyRequestDocument = ({ amount, date, requestNo }: CustodyReque
         >
           {["مقدم الطلب", "المدير المالي"].map((role) => (
             <div key={role} style={{ width: "38%" }}>
-              <div style={{ fontWeight: 700, color: BLUE_DARK, marginBottom: "10mm" }}>{role}</div>
+              <div style={{ fontWeight: 700, color: BLUE_DARK, marginBottom: "3mm" }}>{role}</div>
+              {role === "مقدم الطلب" && (
+                <div style={{ height: "14mm", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <img
+                    src={omarSignature.url}
+                    alt="توقيع مقدم الطلب"
+                    style={{ maxWidth: "48mm", maxHeight: "14mm", objectFit: "contain" }}
+                  />
+                </div>
+              )}
               <div
                 style={{
                   borderTop: "1.5px dashed #94a3b8",
