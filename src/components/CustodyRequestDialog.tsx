@@ -17,13 +17,14 @@ const today = () => new Date().toISOString().slice(0, 10);
 const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps) => {
   const [amountRaw, setAmountRaw] = useState("");
   const [date, setDate] = useState(today());
+  const [requestNo, setRequestNo] = useState("");
   const [preview, setPreview] = useState(false);
 
   const amount = parseFloat(amountRaw) || 0;
   const valid = amount > 0 && !!date;
 
   const handlePrint = () => {
-    printCustodyRequest(amount, date);
+    printCustodyRequest(amount, date, requestNo);
   };
 
   return (
@@ -38,7 +39,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
 
         {!preview ? (
           <div className="space-y-5 py-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="custody-amount">المبلغ (ر.س)</Label>
                 <Input
@@ -53,6 +54,21 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
                   }}
                   className="text-lg font-bold text-center"
                   autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="custody-no">رقم الطلب</Label>
+                <Input
+                  id="custody-no"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="مثال: 1411"
+                  value={requestNo}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/^\d*$/.test(v)) setRequestNo(v);
+                  }}
+                  className="text-lg font-bold text-center"
                 />
               </div>
               <div className="space-y-2">
@@ -115,7 +131,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
             </div>
             <div className="overflow-auto border rounded-lg bg-slate-100 p-2 flex justify-center">
               <div style={{ transform: "scale(0.62)", transformOrigin: "top center" }}>
-                <CustodyRequestDocument amount={amount} date={date} />
+                <CustodyRequestDocument amount={amount} date={date} requestNo={requestNo} />
               </div>
             </div>
           </div>
