@@ -1,3 +1,4 @@
 Print the maintenance orders register from its own print-only document, separate from the paginated screen table, so all filtered rows appear in the PDF and repeated A4 page margins remain reliable.
 Render ledger printing through a body-level print-only portal using the same report as the preview, with fixed proportional columns and named A4 page margins, to isolate application chrome and prevent clipped content.
 Stored-secret password resets must authenticate an administrator and target only that caller; verify password sign-in server-side without returning credentials, so account recovery cannot become a public reset bypass.
+Custody requests are immutable organization-scoped records numbered by a database insert trigger using their request-date year and a sequence; preview and reprinting reuse the existing custody request document to keep A4 output identical.

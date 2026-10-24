@@ -1068,6 +1068,44 @@ export type Database = {
           },
         ]
       }
+      custody_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          organization_id: string
+          request_date: string
+          request_number: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          organization_id: string
+          request_date?: string
+          request_number: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          organization_id?: string
+          request_date?: string
+          request_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custody_transfers: {
         Row: {
           amount: number
