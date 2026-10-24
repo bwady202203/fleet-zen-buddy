@@ -9,12 +9,15 @@ import { StatsCard } from "@/components/StatsCard";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
 import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
+import CustodyRequestDialog from "@/components/CustodyRequestDialog";
+import { useState } from "react";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
   const { hasPermission } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
+  const [custodyRequestOpen, setCustodyRequestOpen] = useState(false);
   const handleTabChange = (value: string) => {
     if (value === "overview") {
       searchParams.delete("tab");
