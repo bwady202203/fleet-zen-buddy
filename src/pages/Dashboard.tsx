@@ -124,7 +124,8 @@ const Dashboard = () => {
             <TabsTrigger value="hr" className="flex-1">الموارد البشرية</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" dir="rtl">
             <DashboardOverview />
