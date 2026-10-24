@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { numberToWords } from "@/lib/numberToWords";
 
 interface CustodyRequestPrintProps {
@@ -238,7 +239,6 @@ export const printCustodyRequest = (amount: number, date: string) => {
   `;
   document.head.appendChild(style);
 
-  const { createRoot } = require("react-dom/client");
   const root = createRoot(host);
   root.render(<CustodyRequestDocument amount={amount} date={date} />);
 
