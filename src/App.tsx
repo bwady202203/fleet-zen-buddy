@@ -98,6 +98,7 @@ import DeliveryReceipts from "./pages/loads/DeliveryReceipts";
 import CommissionsReport from "./pages/loads/CommissionsReport";
 import CustomerStatement from "./pages/loads/CustomerStatement";
 import Employees from "./pages/hr/Employees";
+import EmployeeViolations from "./pages/hr/EmployeeViolations";
 import Payroll from "./pages/hr/Payroll";
 import Advances from "./pages/hr/Advances";
 import Additions from "./pages/hr/Additions";
@@ -213,6 +214,7 @@ const App = () => {
                                  <Route path="/accounting/bank-collection-receipt" element={<BankCollectionReceipt />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />
+                                  <Route path="/hr/employee-violations" element={<EmployeeViolations />} />
                                   <Route path="/hr/payroll" element={<Payroll />} />
                                   <Route path="/hr/advances" element={<Advances />} />
                                   <Route path="/hr/additions" element={<Additions />} />
