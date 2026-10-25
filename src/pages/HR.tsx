@@ -1,9 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowRight, Users, DollarSign, Clock, Calendar, PlusCircle, MinusCircle, FileText, Wallet, BookOpenCheck } from "lucide-react";
+import { ArrowRight, Users, DollarSign, Clock, Calendar, PlusCircle, MinusCircle, FileText, Wallet, BookOpenCheck, FileWarning } from "lucide-react";
 
 const HR = () => {
   const sections = [
+    {
+      title: "مخالفات الموظفين",
+      description: "جدول المخالفات",
+      icon: FileWarning,
+      link: "/hr/employee-violations",
+      color: "from-red-500 to-red-600"
+    },
     {
       title: "بيانات الموظفين",
       description: "إدارة معلومات الموظفين",
