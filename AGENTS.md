@@ -3,3 +3,4 @@ Render ledger printing through a body-level print-only portal using the same rep
 Stored-secret password resets must authenticate an administrator and target only that caller; verify password sign-in server-side without returning credentials, so account recovery cannot become a public reset bypass.
 Custody requests are immutable organization-scoped records numbered by a database insert trigger using their request-date year and a sequence; preview and reprinting reuse the existing custody request document to keep A4 output identical.
 Employee violation lookups use a fixed Google Sheet only from an authenticated server function restricted to the linked connection owner's account; cache reads briefly and return only exact residence-number matches to prevent cross-organization disclosure.
+The standalone employee violations route sits outside AppLayout and uses a dedicated sign-in route returning directly to the lookup; keep the existing in-system HR route available.

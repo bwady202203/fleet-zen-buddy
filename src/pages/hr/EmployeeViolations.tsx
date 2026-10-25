@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 interface LookupResult { headers: string[]; rows: string[][]; total: number; count: number; residenceNumber: string; updatedAt: string; source: string }
 const number = new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 });
 
-export default function EmployeeViolations() {
+export default function EmployeeViolations({ standalone = false }: { standalone?: boolean }) {
   const { userRole } = useAuth();
   const [residence, setResidence] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,11 +40,11 @@ export default function EmployeeViolations() {
   return <main className="container mx-auto max-w-6xl px-4 py-6 space-y-6" dir="rtl">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-5">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild><Link to="/hr" aria-label="رجوع للموارد البشرية"><ArrowRight className="h-5 w-5" /></Link></Button>
+        {!standalone && <Button variant="ghost" size="icon" asChild><Link to="/hr" aria-label="رجوع للموارد البشرية"><ArrowRight className="h-5 w-5" /></Link></Button>}
         <div><h1 className="text-2xl font-bold">مخالفات الموظفين</h1><p className="text-sm text-muted-foreground mt-1">جدول المخالفات · Google Sheets</p></div>
       </div>
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={async () => { try { await navigator.clipboard.writeText(`${window.location.origin}/hr/employee-violations`); toast({ title: "تم نسخ رابط الصفحة" }); } catch { toast({ title: "تعذر نسخ الرابط", variant: "destructive" }); } }}><Copy className="h-4 w-4 ml-2" />نسخ الرابط</Button>
+        <Button variant="outline" size="sm" onClick={async () => { try { await navigator.clipboard.writeText(`${window.location.origin}/employee-violations`); toast({ title: "تم نسخ رابط الصفحة" }); } catch { toast({ title: "تعذر نسخ الرابط", variant: "destructive" }); } }}><Copy className="h-4 w-4 ml-2" />نسخ الرابط</Button>
         <Button variant="outline" size="icon" asChild><a href="https://docs.google.com/spreadsheets/d/1IPhZ2--0wjGZcZfqXoOlYJZytPR6J-CwLoOQTzwb2_o/edit" target="_blank" rel="noopener noreferrer" aria-label="فتح الشيت"><ExternalLink className="h-4 w-4" /></a></Button>
       </div>
     </header>
