@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchCustodyRequests, saveCustodyRequest, type CustodyRequestRecord } from "@/lib/custodyRequests";
 import CustodyRequestRegister from "./CustodyRequestRegister";
 import { numberToWords } from "@/lib/numberToWords";
-import { CustodyRequestDocument, printCustodyRequest } from "./CustodyRequestPrint";
+import { printCustodyRequest } from "./CustodyRequestPrint";
+import CustodyRequestPreview from "./CustodyRequestPreview";
 
 interface CustodyRequestDialogProps {
   open: boolean;
@@ -72,7 +73,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="w-[calc(100%-1rem)] max-w-3xl max-h-[92dvh] overflow-y-auto overflow-x-hidden rounded-lg p-3 sm:p-6" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Wallet className="h-5 w-5 text-primary" />
@@ -169,8 +170,8 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
             </div>
           </div>
         ) : (
-          <div className="space-y-4 py-2">
-            <div className="flex gap-2 justify-between items-center print:hidden">
+          <div className="min-w-0 space-y-3 py-2">
+            <div className="sticky -top-3 z-10 flex flex-wrap gap-2 justify-between items-center bg-background py-2 print:hidden sm:-top-6">
               <Button variant="outline" onClick={() => setPreview(false)}>
                 رجوع
               </Button>
@@ -179,11 +180,7 @@ const CustodyRequestDialog = ({ open, onOpenChange }: CustodyRequestDialogProps)
                 طباعة / حفظ PDF
               </Button>
             </div>
-            <div className="overflow-auto border rounded-lg bg-muted p-2 flex justify-center">
-              <div style={{ transform: "scale(0.62)", transformOrigin: "top center" }}>
-                <CustodyRequestDocument amount={amount} date={date} requestNo={requestNo} />
-              </div>
-            </div>
+            <CustodyRequestPreview amount={amount} date={date} requestNo={requestNo} />
           </div>
         )}
       </DialogContent>
