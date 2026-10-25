@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { LogIn, Calculator, KeyRound, Hash } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-const Auth = () => {
+const Auth = ({ returnTo = '/' }: { returnTo?: string }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +43,7 @@ const Auth = () => {
         return;
       }
       toast.success('تم تسجيل الدخول');
-      navigate('/');
+      navigate(returnTo, { replace: true });
     } catch {
       toast.error('حدث خطأ');
       setPinCode('');
@@ -54,9 +54,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(returnTo, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, returnTo]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +86,7 @@ const Auth = () => {
 
     } else {
       toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/');
+      navigate(returnTo, { replace: true });
     }
   };
 

@@ -159,6 +159,8 @@ const App = () => {
                         <BrowserRouter>
                           <Routes>
                             <Route path="/auth" element={<Auth />} />
+                            <Route path="/employee-violations/login" element={<Auth returnTo="/employee-violations" />} />
+                            <Route path="/employee-violations" element={<ProtectedRoute loginPath="/employee-violations/login"><EmployeeViolations standalone /></ProtectedRoute>} />
                             <Route path="/reset-password" element={<ResetPassword />} />
                             
                             {/* Protected Routes with Icons Bar */}
