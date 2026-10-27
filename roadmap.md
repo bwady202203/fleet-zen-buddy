@@ -4,3 +4,4 @@
 - [x] Fit custody request preview to mobile screens and verify A4 printing.
 - [x] Add and verify a fresh code prompt each time automatic HR journals are opened.
 - [x] Add and verify employment fields exclusively beneath salary payable accounts.
+- [x] Import and verify uploaded salary payable accounts with residence-number codes.
