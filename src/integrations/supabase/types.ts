@@ -430,10 +430,13 @@ export type Database = {
       chart_of_accounts: {
         Row: {
           balance: number
+          basic_salary: number | null
           code: string
           created_at: string | null
+          hire_date: string | null
           id: string
           is_active: boolean | null
+          job_title: string | null
           level: number | null
           name_ar: string
           name_en: string
@@ -444,10 +447,13 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          basic_salary?: number | null
           code: string
           created_at?: string | null
+          hire_date?: string | null
           id?: string
           is_active?: boolean | null
+          job_title?: string | null
           level?: number | null
           name_ar: string
           name_en: string
@@ -458,10 +464,13 @@ export type Database = {
         }
         Update: {
           balance?: number
+          basic_salary?: number | null
           code?: string
           created_at?: string | null
+          hire_date?: string | null
           id?: string
           is_active?: boolean | null
+          job_title?: string | null
           level?: number | null
           name_ar?: string
           name_en?: string

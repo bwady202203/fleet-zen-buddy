@@ -6,3 +6,4 @@ Custody request screen previews measure their available width and reserve the sc
 Employee violation lookups use a fixed Google Sheet only from an authenticated server function restricted to the linked connection owner's account; cache reads briefly and return only exact residence-number matches to prevent cross-organization disclosure.
 The standalone employee violations route sits outside AppLayout and uses a dedicated sign-in route returning directly to the lookup; keep the existing in-system HR route available.
 Automatic HR journal entry confirmation is a mount-scoped UI gate; mount journal content only after confirmation to defer data reads, and keep existing authenticated server permissions authoritative because a UI code is not authorization.
+Store employment metadata on chart-of-accounts records and gate its form and save payload by salary-payable ancestry, so unrelated account forms remain unchanged.
