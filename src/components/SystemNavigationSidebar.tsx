@@ -272,7 +272,7 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "الفروع", path: "/accounting/branches", icon: Building2 },
       { title: "المشاريع", path: "/accounting/projects", icon: ClipboardList },
       { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
-      { title: "القيود التلقائية", path: "/hr/auto-journal", icon: FileSpreadsheet },
+      { title: "المعلمات", path: "/hr/auto-journal", icon: FileSpreadsheet },
       { title: "التقارير", path: "/reports", icon: BarChart3 },
     ],
   },
