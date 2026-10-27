@@ -1214,10 +1214,30 @@ const ChartOfAccounts = () => {
                     />
                   </div>
                   
+                  {showEmploymentFields && (
+                    <fieldset className="border-t border-border pt-4 space-y-4">
+                      <legend className="px-2 text-sm font-semibold text-primary">بيانات الرواتب المستحقة</legend>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="account-hire-date">تاريخ التعيين</Label>
+                          <Input id="account-hire-date" type="date" value={formData.hire_date}
+                            onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="account-basic-salary">الراتب الأساسي</Label>
+                          <Input id="account-basic-salary" type="text" inputMode="decimal" dir="ltr"
+                            value={formData.basic_salary} placeholder="0.00"
+                            onChange={(e) => setFormData({ ...formData, basic_salary: e.target.value })} />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="account-job-title">الوظيفة</Label>
+                          <Input id="account-job-title" value={formData.job_title}
+                            onChange={(e) => setFormData({ ...formData, job_title: e.target.value })} />
+                        </div>
+                      </div>
+                    </fieldset>
+                  )}
                   <div className="flex justify-end gap-2 pt-4">
-                    {showEmploymentFields && (
-                      <span className="sr-only">بيانات حساب الرواتب المستحقة</span>
-                    )}
                     <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                       إلغاء / Cancel
                     </Button>
