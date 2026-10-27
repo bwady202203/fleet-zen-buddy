@@ -157,7 +157,6 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "سندات السلف", path: "/hr/advances", icon: Wallet },
       { title: "سندات الإضافي", path: "/hr/additions", icon: Receipt },
       { title: "سندات الخصم", path: "/hr/deductions", icon: Receipt },
-      { title: "القيود التلقائية", path: "/hr/auto-journal", icon: FileSpreadsheet },
       { title: "كشوف الرواتب الخارجية", path: "/hr/external-payroll-sheets", icon: FileSpreadsheet },
       { title: "الحضور والانصراف", path: "/hr/attendance", icon: Gauge },
       { title: "الإجازات", path: "/hr/leaves", icon: FileText },
@@ -273,6 +272,8 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "الفروع", path: "/accounting/branches", icon: Building2 },
       { title: "المشاريع", path: "/accounting/projects", icon: ClipboardList },
       { title: "تقرير حساب", path: "/account-report", icon: FileSpreadsheet },
+      { title: "القيود التلقائية", path: "/hr/auto-journal", icon: FileSpreadsheet },
+      { title: "التقارير", path: "/reports", icon: BarChart3 },
     ],
   },
   {
@@ -306,14 +307,6 @@ export const navigationGroups: NavigationGroup[] = [
     module: null,
     children: [],
     standalonePath: "/accounting/special-invoices",
-  },
-  {
-    key: "reports",
-    title: "التقارير",
-    icon: BarChart3,
-    module: null,
-    children: [],
-    standalonePath: "/reports",
   },
 
   {
