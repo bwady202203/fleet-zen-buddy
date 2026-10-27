@@ -47,7 +47,7 @@ const HR = () => {
       color: "from-red-500 to-red-600"
     },
     {
-      title: "القيود التلقائية",
+      title: "المعلمات",
       description: "قيود السلف والمخالفات والرواتب مع المعاينة والربط",
       icon: BookOpenCheck,
       link: "/hr/auto-journal",

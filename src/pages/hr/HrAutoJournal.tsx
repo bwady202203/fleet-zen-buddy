@@ -84,7 +84,7 @@ const HrAutoJournalContent = () => {
         <div className="container mx-auto flex items-center gap-4 px-4 py-5">
           <Link to="/hr" aria-label="رجوع"><ArrowRight className="h-6 w-6" /></Link>
           <div>
-            <h1 className="text-2xl font-bold">القيود التلقائية للموارد البشرية</h1>
+            <h1 className="text-2xl font-bold">المعلمات للموارد البشرية</h1>
             <p className="text-sm text-muted-foreground">السلف والمخالفات وإثبات الرواتب وصرفها تُرحَّل تلقائيًا لدفتر اليومية</p>
           </div>
         </div>
@@ -223,7 +223,7 @@ const HrAutoJournal = () => {
       <Card className="w-full max-w-sm">
         <CardHeader className="items-center text-center">
           <LockKeyhole className="mb-2 h-8 w-8 text-primary" />
-          <CardTitle className="text-xl">القيود التلقائية</CardTitle>
+          <CardTitle className="text-xl">المعلمات</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={(event) => {
@@ -240,7 +240,7 @@ const HrAutoJournal = () => {
               <Input id="hr-journal-entry-code" type="password" inputMode="numeric" autoComplete="off" autoFocus maxLength={6} dir="ltr" className="text-center" value={code} aria-invalid={error} aria-describedby={error ? "hr-journal-code-error" : undefined} onChange={(event) => { setCode(event.target.value); setError(false); }} />
               {error && <p id="hr-journal-code-error" role="alert" className="text-sm text-destructive">الكود غير صحيح، حاول مرة أخرى.</p>}
             </div>
-            <Button type="submit" className="w-full gap-2"><LockKeyhole className="h-4 w-4" />فتح القيود التلقائية</Button>
+            <Button type="submit" className="w-full gap-2"><LockKeyhole className="h-4 w-4" />فتح المعلمات</Button>
             <Button asChild variant="outline" className="w-full gap-2"><Link to="/hr"><ArrowRight className="h-4 w-4" />رجوع</Link></Button>
           </form>
         </CardContent>
