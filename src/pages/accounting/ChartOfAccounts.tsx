@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
+import { isUnderSalaryPayable, salaryPayableMetadata } from "@/lib/salaryPayableAccounts";
 
 interface Account {
   id: string;
@@ -45,6 +46,9 @@ interface Account {
   balance: number;
   created_at: string;
   updated_at: string;
+  hire_date: string | null;
+  basic_salary: number | null;
+  job_title: string | null;
 }
 
 const ChartOfAccounts = () => {
@@ -69,7 +73,11 @@ const ChartOfAccounts = () => {
     type: "asset",
     is_active: true,
     balance: 0,
+    hire_date: "",
+    basic_salary: "",
+    job_title: "",
   });
+  const showEmploymentFields = isUnderSalaryPayable(formData.parent_id, accounts);
 
   useEffect(() => {
     fetchAccounts();
@@ -289,10 +297,15 @@ const ChartOfAccounts = () => {
     e.preventDefault();
     
     try {
+      const { hire_date, basic_salary, job_title, ...accountFields } = formData;
+      const payload = {
+        ...accountFields,
+        ...salaryPayableMetadata(showEmploymentFields, { hire_date, basic_salary, job_title }),
+      };
       if (editingAccount) {
         const { error } = await supabase
           .from('chart_of_accounts')
-          .update(formData)
+          .update(payload)
           .eq('id', editingAccount.id);
 
         if (error) throw error;
@@ -304,7 +317,7 @@ const ChartOfAccounts = () => {
       } else {
         const { error } = await supabase
           .from('chart_of_accounts')
-          .insert([formData]);
+          .insert([payload]);
 
         if (error) throw error;
 
@@ -324,6 +337,9 @@ const ChartOfAccounts = () => {
       
       if (error?.code === '23505') {
         errorMessage = "رمز الحساب موجود بالفعل. الرجاء استخدام رمز مختلف";
+      }
+      if (error instanceof Error && error.message === "أدخل راتبًا أساسيًا صحيحًا غير سالب") {
+        errorMessage = error.message;
       }
       
       toast({
@@ -386,6 +402,9 @@ const ChartOfAccounts = () => {
       type: accountType,
       is_active: true,
       balance: 0,
+      hire_date: "",
+      basic_salary: "",
+      job_title: "",
     });
     setEditingAccount(null);
   };
@@ -466,6 +485,9 @@ const ChartOfAccounts = () => {
       type: account.type,
       is_active: account.is_active,
       balance: account.balance,
+      hire_date: account.hire_date || "",
+      basic_salary: account.basic_salary == null ? "" : String(account.basic_salary),
+      job_title: account.job_title || "",
     });
     setDialogOpen(true);
   };
@@ -1076,7 +1098,7 @@ const ChartOfAccounts = () => {
                     إضافة حساب جديد
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto" dir="rtl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingAccount ? "تعديل الحساب" : "إضافة حساب جديد"}
@@ -1109,7 +1131,7 @@ const ChartOfAccounts = () => {
                         value={formData.parent_id || "none"}
                         onValueChange={(value) => {
                           console.log('Parent changed to:', value);
-                          setFormData({ ...formData, parent_id: value === "none" ? null : value });
+                          setFormData({ ...formData, parent_id: value === "none" ? null : value, hire_date: "", basic_salary: "", job_title: "" });
                         }}
                       >
                         <SelectTrigger>
@@ -1193,6 +1215,9 @@ const ChartOfAccounts = () => {
                   </div>
                   
                   <div className="flex justify-end gap-2 pt-4">
+                    {showEmploymentFields && (
+                      <span className="sr-only">بيانات حساب الرواتب المستحقة</span>
+                    )}
                     <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                       إلغاء / Cancel
                     </Button>
