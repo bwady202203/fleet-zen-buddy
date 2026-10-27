@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, Loader2, Save, Send, Code2 } from "lucide-react";
+import { ArrowRight, Eye, Loader2, Save, Send, Code2, LockKeyhole } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { PayrollSyncCard } from "@/components/hr/PayrollSyncCard";
+import { isHrJournalEntryCodeValid } from "@/lib/hrJournalEntryCode";
 
 const ORG = "8449f832-4c11-4f27-b650-294106680b15";
 const EVENTS = [
@@ -27,7 +28,7 @@ const FIELDS = [
 
 type Acc = { id: string; code: string; name_ar: string };
 
-const HrAutoJournal = () => {
+const HrAutoJournalContent = () => {
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<Acc[]>([]);
   const [employees, setEmployees] = useState<{ id: string; name: string; employee_number: string | null }[]>([]);
@@ -206,6 +207,44 @@ Content-Type: application/json
           </CardContent>
         </Card>
       </main>
+    </div>
+  );
+};
+
+const HrAutoJournal = () => {
+  const [unlocked, setUnlocked] = useState(false);
+  const [code, setCode] = useState("");
+  const [error, setError] = useState(false);
+
+  if (unlocked) return <HrAutoJournalContent />;
+
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center p-4" dir="rtl">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="items-center text-center">
+          <LockKeyhole className="mb-2 h-8 w-8 text-primary" />
+          <CardTitle className="text-xl">القيود التلقائية</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={(event) => {
+            event.preventDefault();
+            if (!isHrJournalEntryCodeValid(code)) {
+              setError(true);
+              return;
+            }
+            setCode("");
+            setUnlocked(true);
+          }}>
+            <div className="space-y-2">
+              <Label htmlFor="hr-journal-entry-code">كود الدخول</Label>
+              <Input id="hr-journal-entry-code" type="password" inputMode="numeric" autoComplete="off" autoFocus maxLength={6} dir="ltr" className="text-center" value={code} aria-invalid={error} aria-describedby={error ? "hr-journal-code-error" : undefined} onChange={(event) => { setCode(event.target.value); setError(false); }} />
+              {error && <p id="hr-journal-code-error" role="alert" className="text-sm text-destructive">الكود غير صحيح، حاول مرة أخرى.</p>}
+            </div>
+            <Button type="submit" className="w-full gap-2"><LockKeyhole className="h-4 w-4" />فتح القيود التلقائية</Button>
+            <Button asChild variant="outline" className="w-full gap-2"><Link to="/hr"><ArrowRight className="h-4 w-4" />رجوع</Link></Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
