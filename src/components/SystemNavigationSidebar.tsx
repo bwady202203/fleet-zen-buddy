@@ -445,7 +445,8 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   const location = useLocation();
   const { hasPermission } = usePermissions();
   const { state, setOpen, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
-  const collapsed = state === "collapsed";
+  // على الجوال تُعرض القائمة كورقة بعرض كامل دائمًا، ولا تنطبق عليها حالة الطي الخاصة بسطح المكتب
+  const collapsed = !isMobile && state === "collapsed";
 
   // المجموعات المعروضة في القائمة الجانبية: الأسطول والمحاسبة والحمولات تُعرض كتبويبات في الشاشة الرئيسية
   const hiddenGroupKeys = ["fleet", "accounting", "loads", "hr"];
