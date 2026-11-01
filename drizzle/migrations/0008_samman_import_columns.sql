@@ -1,0 +1,5 @@
+ALTER TABLE public.samman_shipments DROP CONSTRAINT IF EXISTS samman_shipments_organization_id_invoice_number_key;
+ALTER TABLE public.samman_shipments ALTER COLUMN invoice_number DROP NOT NULL;
+ALTER TABLE public.samman_shipments ADD COLUMN IF NOT EXISTS client_name text, ADD COLUMN IF NOT EXISTS driver_name text, ADD COLUMN IF NOT EXISTS supplier_name text, ADD COLUMN IF NOT EXISTS company_name text, ADD COLUMN IF NOT EXISTS company_registration text, ADD COLUMN IF NOT EXISTS serial_code text, ADD COLUMN IF NOT EXISTS previous_serial_code text, ADD COLUMN IF NOT EXISTS drive_file_id text, ADD COLUMN IF NOT EXISTS drive_invoice_file_id text;
+CREATE INDEX IF NOT EXISTS samman_shipments_invoice_idx ON public.samman_shipments (organization_id, invoice_number);
+ALTER TABLE public.samman_drivers DROP CONSTRAINT IF EXISTS samman_drivers_organization_id_driver_name_key;

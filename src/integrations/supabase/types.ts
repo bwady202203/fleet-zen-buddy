@@ -3809,20 +3809,26 @@ export type Database = {
       samman_shipments: {
         Row: {
           client_id: string | null
+          client_name: string | null
           company_id: string | null
+          company_name: string | null
+          company_registration: string | null
           created_at: string
           created_by: string | null
           document_number: number
+          drive_file_id: string | null
           drive_file_url: string | null
+          drive_invoice_file_id: string | null
           drive_invoice_file_url: string | null
           driver_id: string | null
+          driver_name: string | null
           driver_signature: string | null
           empty_weight: number
           entry_date: string
           exit_date: string | null
           full_weight: number
           id: string
-          invoice_number: string
+          invoice_number: string | null
           invoice_pdf_path: string | null
           invoice_value: number
           kilometers: number
@@ -3831,30 +3837,39 @@ export type Database = {
           net_weight: number | null
           organization_id: string
           pdf_path: string | null
+          previous_serial_code: string | null
           previous_serial_id: string | null
           print_number: number
           receiver_signature: string | null
+          serial_code: string | null
           serial_id: string | null
           shipment_number: string | null
           supplier_id: string | null
+          supplier_name: string | null
           updated_at: string
         }
         Insert: {
           client_id?: string | null
+          client_name?: string | null
           company_id?: string | null
+          company_name?: string | null
+          company_registration?: string | null
           created_at?: string
           created_by?: string | null
           document_number?: number
+          drive_file_id?: string | null
           drive_file_url?: string | null
+          drive_invoice_file_id?: string | null
           drive_invoice_file_url?: string | null
           driver_id?: string | null
+          driver_name?: string | null
           driver_signature?: string | null
           empty_weight?: number
           entry_date?: string
           exit_date?: string | null
           full_weight?: number
           id?: string
-          invoice_number: string
+          invoice_number?: string | null
           invoice_pdf_path?: string | null
           invoice_value?: number
           kilometers?: number
@@ -3863,30 +3878,39 @@ export type Database = {
           net_weight?: number | null
           organization_id: string
           pdf_path?: string | null
+          previous_serial_code?: string | null
           previous_serial_id?: string | null
           print_number?: number
           receiver_signature?: string | null
+          serial_code?: string | null
           serial_id?: string | null
           shipment_number?: string | null
           supplier_id?: string | null
+          supplier_name?: string | null
           updated_at?: string
         }
         Update: {
           client_id?: string | null
+          client_name?: string | null
           company_id?: string | null
+          company_name?: string | null
+          company_registration?: string | null
           created_at?: string
           created_by?: string | null
           document_number?: number
+          drive_file_id?: string | null
           drive_file_url?: string | null
+          drive_invoice_file_id?: string | null
           drive_invoice_file_url?: string | null
           driver_id?: string | null
+          driver_name?: string | null
           driver_signature?: string | null
           empty_weight?: number
           entry_date?: string
           exit_date?: string | null
           full_weight?: number
           id?: string
-          invoice_number?: string
+          invoice_number?: string | null
           invoice_pdf_path?: string | null
           invoice_value?: number
           kilometers?: number
@@ -3895,12 +3919,15 @@ export type Database = {
           net_weight?: number | null
           organization_id?: string
           pdf_path?: string | null
+          previous_serial_code?: string | null
           previous_serial_id?: string | null
           print_number?: number
           receiver_signature?: string | null
+          serial_code?: string | null
           serial_id?: string | null
           shipment_number?: string | null
           supplier_id?: string | null
+          supplier_name?: string | null
           updated_at?: string
         }
         Relationships: [
