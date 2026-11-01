@@ -293,6 +293,26 @@ export const navigationGroups: NavigationGroup[] = [
     standalonePath: "/accounting/crusher-pro",
   },
   {
+    key: "crusher-shipments",
+    title: "عرض الشحنات",
+    icon: ClipboardList,
+    module: "accounting",
+    children: [],
+    standalonePath: "/accounting/crusher-shipments",
+  },
+  {
+    key: "crusher-data",
+    title: "بيانات الكسارة",
+    icon: Users,
+    module: "accounting",
+    children: [
+      { title: "السائقين", path: "/accounting/crusher-data?tab=driver" },
+      { title: "السريال نمبر", path: "/accounting/crusher-data?tab=serial" },
+      { title: "الشركات", path: "/accounting/crusher-data?tab=company" },
+      { title: "الموردين", path: "/accounting/crusher-data?tab=supplier" },
+    ],
+  },
+  {
     key: "hr-portal",
     title: "الموارد البشرية",
     icon: User,
@@ -407,6 +427,8 @@ const groupColors: Record<string, GroupColor> = {
     hover: "hover:bg-indigo-50",
     active: "bg-indigo-50/80 text-indigo-900 border-indigo-600",
   },
+  "crusher-shipments": { iconBox: "bg-gradient-to-br from-sky-400 to-cyan-600 text-white", hover: "hover:bg-sky-50", active: "bg-sky-50/80 text-sky-900 border-sky-600" },
+  "crusher-data": { iconBox: "bg-gradient-to-br from-cyan-500 to-teal-600 text-white", hover: "hover:bg-cyan-50", active: "bg-cyan-50/80 text-cyan-900 border-cyan-600" },
   "crusher-pro": {
     iconBox: "bg-gradient-to-br from-sky-500 to-blue-700 text-white",
     hover: "hover:bg-sky-50",
