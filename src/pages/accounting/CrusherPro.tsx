@@ -1,3 +1,4 @@
+import { useCrusherProgram } from "@/lib/crusherProgram";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Factory, FileText, Plus, Scale, Building2 } from "lucide-react";
@@ -24,6 +25,7 @@ const F = ({ label, children }: any) => (<div className="space-y-1.5"><Label cla
 const sel = "w-full h-10 rounded-md border border-input bg-background px-3 text-sm";
 
 export default function CrusherPro() {
+  const prog = useCrusherProgram();
   const [orgId, setOrgId] = useState<string | null>(null);
   const [drivers, setDrivers] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
@@ -48,7 +50,7 @@ export default function CrusherPro() {
         (supabase as any).from("suppliers").select("name"),
         (supabase as any).from("companies").select("name"),
       ]);
-      const { data: lk } = await (supabase as any).from("crusher_lookups").select("kind,name");
+      const { data: lk } = await (supabase as any).from("crusher_lookups").select("kind,name").eq("program", prog.key);
       const pick = (k: string) => (lk || []).filter((x: any) => x.kind === k).map((x: any) => x.name);
       const uniq = (a: string[]) => Array.from(new Set(a.filter(Boolean)));
       setDrivers(uniq([...pick("driver"), ...(d.data || []).map((x: any) => x.name)]));
@@ -77,7 +79,7 @@ export default function CrusherPro() {
       const up = await supabase.storage.from("crusher-invoices").upload(path, file, { contentType: "application/pdf" });
       if (up.error) throw up.error;
       const { data, error } = await (supabase as any).from("crusher_shipments").insert({
-        organization_id: orgId, establishment: f.establishment,
+        organization_id: orgId, program: prog.key, establishment: f.establishment,
         entry_at: new Date(`${f.entryDate}T${f.entryTime || "00:00"}`).toISOString(),
         exit_at: f.exitDate ? new Date(`${f.exitDate}T${f.exitTime || "00:00"}`).toISOString() : null,
         material_type: f.material || null, client_name: f.client || null, kilometers: num(f.km),
@@ -98,7 +100,7 @@ export default function CrusherPro() {
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
           <Link to="/accounting/projects" className="hover:text-primary"><ArrowRight className="h-6 w-6" /></Link>
           <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"><Factory className="h-5 w-5" /></div>
-          <div><h1 className="text-lg font-bold">برنامج كسارة مطور</h1><p className="text-xs text-muted-foreground">الرئيسية — تسجيل شحنة</p></div>
+          <div><h1 className="text-lg font-bold">{prog.name}</h1><p className="text-xs text-muted-foreground">الرئيسية — تسجيل شحنة</p></div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-6 max-w-5xl space-y-5">

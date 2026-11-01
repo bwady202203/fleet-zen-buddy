@@ -1,3 +1,4 @@
+import { useCrusherProgram } from "@/lib/crusherProgram";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -72,16 +73,17 @@ export function ShipmentDocument({ r }: { r: Row }) {
 export default function CrusherShipmentsList({ refreshKey }: { refreshKey: number }) {
   const R = ranges();
   const [range, setRange] = useState<[string, string]>(R.month);
+  const prog = useCrusherProgram();
   const [rows, setRows] = useState<Row[]>([]);
   const [preview, setPreview] = useState<Row | null>(null);
   const [printing, setPrinting] = useState<Row | null>(null);
 
   const load = async () => {
-    const { data, error } = await (supabase as any).from("crusher_shipments").select("*")
+    const { data, error } = await (supabase as any).from("crusher_shipments").select("*").eq("program", prog.key)
       .gte("entry_at", `${range[0]}T00:00:00`).lte("entry_at", `${range[1]}T23:59:59`).order("doc_number", { ascending: false });
     if (error) toast.error(error.message); else setRows(data || []);
   };
-  useEffect(() => { load(); }, [range[0], range[1], refreshKey]);
+  useEffect(() => { load(); }, [range[0], range[1], refreshKey, prog.key]);
 
   const pdfUrl = async (p: string, download = false) => {
     const { data, error } = await supabase.storage.from("crusher-invoices").createSignedUrl(p, 120, download ? { download: true } : undefined);

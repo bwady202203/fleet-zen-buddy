@@ -329,6 +329,20 @@ export const navigationGroups: NavigationGroup[] = [
     standalonePath: "/accounting/group-app",
   },
   {
+    key: "samman",
+    title: "برنامج الصمان",
+    icon: Truck,
+    module: "accounting",
+    children: [
+      { title: "شحنة جديدة", path: "/samman/new" },
+      { title: "عرض الشحنات", path: "/samman/shipments" },
+      { title: "السائقين", path: "/samman/data?tab=driver" },
+      { title: "السريال نمبر", path: "/samman/data?tab=serial" },
+      { title: "الشركات", path: "/samman/data?tab=company" },
+      { title: "الموردين", path: "/samman/data?tab=supplier" },
+    ],
+  },
+  {
     key: "special-invoices",
     title: "الفواتير الخاصة",
     icon: Receipt,
@@ -428,6 +442,7 @@ const groupColors: Record<string, GroupColor> = {
     active: "bg-indigo-50/80 text-indigo-900 border-indigo-600",
   },
   "crusher-shipments": { iconBox: "bg-gradient-to-br from-sky-400 to-cyan-600 text-white", hover: "hover:bg-sky-50", active: "bg-sky-50/80 text-sky-900 border-sky-600" },
+  samman: { iconBox: "bg-gradient-to-br from-yellow-500 to-amber-700 text-white", hover: "hover:bg-yellow-50", active: "bg-yellow-50/80 text-yellow-900 border-yellow-600" },
   "crusher-data": { iconBox: "bg-gradient-to-br from-cyan-500 to-teal-600 text-white", hover: "hover:bg-cyan-50", active: "bg-cyan-50/80 text-cyan-900 border-cyan-600" },
   "crusher-pro": {
     iconBox: "bg-gradient-to-br from-sky-500 to-blue-700 text-white",

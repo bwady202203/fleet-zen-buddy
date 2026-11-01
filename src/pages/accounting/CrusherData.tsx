@@ -1,3 +1,4 @@
+import { useCrusherProgram } from "@/lib/crusherProgram";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, Building2, Hash, Plus, Trash2, Truck, Users } from "lucide-react";
@@ -14,6 +15,7 @@ const KINDS = [
 ] as const;
 
 export default function CrusherData() {
+  const prog = useCrusherProgram();
   const [sp, setSp] = useSearchParams();
   const kind = sp.get("tab") || "driver";
   const cfg = KINDS.find((x) => x.k === kind) || KINDS[0];
@@ -26,16 +28,16 @@ export default function CrusherData() {
     const { data } = await (supabase as any).rpc("get_user_organization", { _user_id: u.user.id }); setOrgId(data);
   })(); }, []);
   const load = async () => {
-    const { data } = await (supabase as any).from("crusher_lookups").select("*").eq("kind", cfg.k).order("created_at", { ascending: false });
+    const { data } = await (supabase as any).from("crusher_lookups").select("*").eq("kind", cfg.k).eq("program", prog.key).order("created_at", { ascending: false });
     setRows(data || []);
   };
-  useEffect(() => { load(); setName(""); setExtra(""); }, [cfg.k]);
+  useEffect(() => { load(); setName(""); setExtra(""); }, [cfg.k, prog.key]);
 
   const add = async () => {
     const n = name.trim(); if (!n || !orgId) return;
     if (cfg.k === "serial" && !/^\d{8}$/.test(n)) { toast.error("السريال يجب أن يكون 8 أرقام"); return; }
     if (rows.some((r) => r.name === n)) { toast.error("موجود مسبقًا"); return; }
-    const { error } = await (supabase as any).from("crusher_lookups").insert({ organization_id: orgId, kind: cfg.k, name: n, extra: extra.trim() || null });
+    const { error } = await (supabase as any).from("crusher_lookups").insert({ organization_id: orgId, program: prog.key, kind: cfg.k, name: n, extra: extra.trim() || null });
     if (error) toast.error(error.message); else { toast.success("تمت الإضافة"); setName(""); setExtra(""); load(); }
   };
   const del = async (id: string) => {
@@ -48,8 +50,8 @@ export default function CrusherData() {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/accounting/crusher-pro" className="hover:text-primary"><ArrowRight className="h-6 w-6" /></Link>
-          <div><h1 className="text-lg font-bold">بيانات الكسارة</h1><p className="text-xs text-muted-foreground">السائقين • السريال • الشركات • الموردين</p></div>
+          <Link to={prog.base} className="hover:text-primary"><ArrowRight className="h-6 w-6" /></Link>
+          <div><h1 className="text-lg font-bold">بيانات {prog.name}</h1><p className="text-xs text-muted-foreground">السائقين • السريال • الشركات • الموردين</p></div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-6 max-w-4xl space-y-4">
