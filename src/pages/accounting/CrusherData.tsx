@@ -1,4 +1,5 @@
 import { useCrusherProgram } from "@/lib/crusherProgram";
+import { listSammanLookup, addSammanLookup, deleteSammanLookup } from "@/lib/sammanData";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowRight, Building2, Hash, Plus, Trash2, Truck, Users } from "lucide-react";
@@ -28,6 +29,7 @@ export default function CrusherData() {
     const { data } = await (supabase as any).rpc("get_user_organization", { _user_id: u.user.id }); setOrgId(data);
   })(); }, []);
   const load = async () => {
+    if (prog.key === "samman") { try { setRows(await listSammanLookup(cfg.k)); } catch (e: any) { toast.error(e.message); } return; }
     const { data } = await (supabase as any).from("crusher_lookups").select("*").eq("kind", cfg.k).eq("program", prog.key).order("created_at", { ascending: false });
     setRows(data || []);
   };
@@ -37,12 +39,12 @@ export default function CrusherData() {
     const n = name.trim(); if (!n || !orgId) return;
     if (cfg.k === "serial" && !/^\d{8}$/.test(n)) { toast.error("السريال يجب أن يكون 8 أرقام"); return; }
     if (rows.some((r) => r.name === n)) { toast.error("موجود مسبقًا"); return; }
-    const { error } = await (supabase as any).from("crusher_lookups").insert({ organization_id: orgId, program: prog.key, kind: cfg.k, name: n, extra: extra.trim() || null });
+    const { error } = prog.key === "samman" ? await addSammanLookup(cfg.k, orgId, n, extra.trim() || null) : await (supabase as any).from("crusher_lookups").insert({ organization_id: orgId, program: prog.key, kind: cfg.k, name: n, extra: extra.trim() || null });
     if (error) toast.error(error.message); else { toast.success("تمت الإضافة"); setName(""); setExtra(""); load(); }
   };
   const del = async (id: string) => {
     if (!confirm("حذف هذا السجل؟")) return;
-    const { error } = await (supabase as any).from("crusher_lookups").delete().eq("id", id);
+    const { error } = prog.key === "samman" ? await deleteSammanLookup(cfg.k, id) : await (supabase as any).from("crusher_lookups").delete().eq("id", id);
     if (error) toast.error(error.message); else load();
   };
 

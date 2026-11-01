@@ -1,4 +1,5 @@
 import { useCrusherProgram } from "@/lib/crusherProgram";
+import { listSammanLookup, saveSammanShipment } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Factory, FileText, Plus, Scale, Building2 } from "lucide-react";
@@ -45,6 +46,13 @@ export default function CrusherPro() {
       if (!u.user) return;
       const { data: org } = await (supabase as any).rpc("get_user_organization", { _user_id: u.user.id });
       setOrgId(org);
+      if (prog.key === "samman") {
+        const [d, s2, c, sr, m] = await Promise.all(["driver", "supplier", "client", "serial", "material"].map((k) => listSammanLookup(k)));
+        const names = (a: any[]) => Array.from(new Set(a.map((x) => x.name).filter(Boolean))) as string[];
+        setDrivers(names(d)); setSuppliers(names(s2)); setClients(names(c));
+        setSerials(names(sr.filter((x) => x.raw.status === "available"))); if (m.length) setMaterials(names(m));
+        return;
+      }
       const [d, s, c] = await Promise.all([
         (supabase as any).from("drivers").select("name").eq("is_active", true).order("name"),
         (supabase as any).from("suppliers").select("name"),
@@ -78,7 +86,7 @@ export default function CrusherPro() {
       const path = `${orgId}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
       const up = await supabase.storage.from("crusher-invoices").upload(path, file, { contentType: "application/pdf" });
       if (up.error) throw up.error;
-      const { data, error } = await (supabase as any).from("crusher_shipments").insert({
+      const payload = {
         organization_id: orgId, program: prog.key, establishment: f.establishment,
         entry_at: new Date(`${f.entryDate}T${f.entryTime || "00:00"}`).toISOString(),
         exit_at: f.exitDate ? new Date(`${f.exitDate}T${f.exitTime || "00:00"}`).toISOString() : null,
@@ -86,8 +94,10 @@ export default function CrusherPro() {
         driver_name: f.driver || null, shipment_number: f.shipment || null, supplier_name: f.supplier || null,
         invoice_number: f.invNo.trim(), invoice_value: num(f.invValue), previous_serial: f.prevSerial.trim(),
         invoice_pdf_path: path, empty_weight: num(f.emptyW), full_weight: num(f.fullW),
-      }).select("serial_number").single();
-      if (error) throw error;
+      };
+      let data: any;
+      if (prog.key === "samman") { const { data: u } = await supabase.auth.getUser(); data = await saveSammanShipment(orgId, u.user?.id ?? null, payload); }
+      else { const r = await (supabase as any).from("crusher_shipments").insert(payload).select("serial_number").single(); if (r.error) throw r.error; data = r.data; }
       toast.success(`تم حفظ الشحنة — السريال الجديد: ${data.serial_number}`);
       setF({ ...empty, entryDate: today(), entryTime: nowTime() }); setFile(null); setRefresh((x) => x + 1);
     } catch (e: any) { toast.error(e.message || "تعذر الحفظ"); }
