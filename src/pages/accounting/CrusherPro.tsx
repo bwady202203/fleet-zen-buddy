@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-const ESTABLISHMENTS = ["soft industrial remal company - 2050147220"];
+const ESTABLISHMENTS = ["soft industrial remal company - 2050147243"];
 const MAT_KEY = "crusher_pro_materials";
 const num = (v: string) => (v.trim() === "" ? 0 : Number(v.replace(",", ".")) || 0);
 const today = () => new Date().toISOString().slice(0, 10);
