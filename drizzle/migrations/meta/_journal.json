@@ -43,6 +43,13 @@
       "when": 1793548125169,
       "tag": "0005_crusher_lookups",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793553172044,
+      "tag": "0006_samman_program",
+      "breakpoints": true
     }
   ]
 }

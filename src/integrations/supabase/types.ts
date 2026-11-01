@@ -910,6 +910,7 @@ export type Database = {
           kind: string
           name: string
           organization_id: string
+          program: string
         }
         Insert: {
           created_at?: string
@@ -918,6 +919,7 @@ export type Database = {
           kind: string
           name: string
           organization_id: string
+          program?: string
         }
         Update: {
           created_at?: string
@@ -926,6 +928,7 @@ export type Database = {
           kind?: string
           name?: string
           organization_id?: string
+          program?: string
         }
         Relationships: []
       }
@@ -950,6 +953,7 @@ export type Database = {
           net_weight: number | null
           organization_id: string
           previous_serial: string
+          program: string
           serial_number: string | null
           shipment_number: string | null
           supplier_name: string | null
@@ -974,6 +978,7 @@ export type Database = {
           net_weight?: number | null
           organization_id: string
           previous_serial: string
+          program?: string
           serial_number?: string | null
           shipment_number?: string | null
           supplier_name?: string | null
@@ -998,6 +1003,7 @@ export type Database = {
           net_weight?: number | null
           organization_id?: string
           previous_serial?: string
+          program?: string
           serial_number?: string | null
           shipment_number?: string | null
           supplier_name?: string | null
