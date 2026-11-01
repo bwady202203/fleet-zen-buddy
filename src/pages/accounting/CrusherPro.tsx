@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import CrusherShipmentsList from "@/components/crusher/CrusherShipmentsList";
 
 const ESTABLISHMENTS = ["soft industrial remal company - 2050147243"];
 const MAT_KEY = "crusher_pro_materials";
@@ -29,6 +28,7 @@ export default function CrusherPro() {
   const [drivers, setDrivers] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [clients, setClients] = useState<string[]>([]);
+  const [serials, setSerials] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>(() => JSON.parse(localStorage.getItem(MAT_KEY) || '["بحص","رمل","كسارة"]'));
   const [saving, setSaving] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -48,9 +48,13 @@ export default function CrusherPro() {
         (supabase as any).from("suppliers").select("name"),
         (supabase as any).from("companies").select("name"),
       ]);
-      setDrivers((d.data || []).map((x: any) => x.name).filter(Boolean));
-      setSuppliers((s.data || []).map((x: any) => x.name).filter(Boolean));
-      setClients((c.data || []).map((x: any) => x.name).filter(Boolean));
+      const { data: lk } = await (supabase as any).from("crusher_lookups").select("kind,name");
+      const pick = (k: string) => (lk || []).filter((x: any) => x.kind === k).map((x: any) => x.name);
+      const uniq = (a: string[]) => Array.from(new Set(a.filter(Boolean)));
+      setDrivers(uniq([...pick("driver"), ...(d.data || []).map((x: any) => x.name)]));
+      setSuppliers(uniq([...pick("supplier"), ...(s.data || []).map((x: any) => x.name)]));
+      setClients(uniq([...pick("company"), ...(c.data || []).map((x: any) => x.name)]));
+      setSerials(pick("serial"));
     })();
   }, []);
 
@@ -121,7 +125,7 @@ export default function CrusherPro() {
           <div className="grid md:grid-cols-4 gap-4">
             <F label="رقم الفاتورة *"><Input value={f.invNo} onChange={set("invNo")} placeholder="رقم الفاتورة" /></F>
             <F label="قيمة الفاتورة (ر.س)"><Input inputMode="decimal" value={f.invValue} onChange={set("invValue")} placeholder="0.00" /></F>
-            <F label="رقم سريال الفاتورة السابقة *"><Input inputMode="numeric" maxLength={8} value={f.prevSerial} onChange={set("prevSerial")} placeholder="8 أرقام" /></F>
+            <F label="رقم سريال الفاتورة السابقة *"><Input inputMode="numeric" maxLength={8} value={f.prevSerial} onChange={set("prevSerial")} placeholder="8 أرقام" list="crusher-serials" /><datalist id="crusher-serials">{serials.map((x) => <option key={x} value={x} />)}</datalist></F>
             <F label="ملف PDF الفاتورة *"><Input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} /></F>
           </div>
         </Section>
@@ -138,7 +142,7 @@ export default function CrusherPro() {
           {saving ? "جارٍ الحفظ..." : ready ? "حفظ الشحنة" : "يجب إدخال رقم الفاتورة + سريال سابق + رفع PDF"}
         </Button>
       </main>
-      <div className="container mx-auto px-4 pb-8"><h2 className="font-bold text-lg mb-3">عرض الشحنات</h2><CrusherShipmentsList refreshKey={refresh} /></div>
+
     </div>
   );
 }

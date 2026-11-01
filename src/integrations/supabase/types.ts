@@ -902,6 +902,33 @@ export type Database = {
           },
         ]
       }
+      crusher_lookups: {
+        Row: {
+          created_at: string
+          extra: string | null
+          id: string
+          kind: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          extra?: string | null
+          id?: string
+          kind: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          extra?: string | null
+          id?: string
+          kind?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
       crusher_shipments: {
         Row: {
           client_name: string | null

@@ -49,6 +49,8 @@ import Branches from "./pages/accounting/Branches";
 import Projects from "./pages/accounting/Projects";
 import CrusherApp from "./pages/accounting/CrusherApp";
 import CrusherPro from "./pages/accounting/CrusherPro";
+import CrusherShipments from "./pages/accounting/CrusherShipments";
+import CrusherData from "./pages/accounting/CrusherData";
 import GroupApp from "./pages/accounting/GroupApp";
 import SpecialInvoicesApp from "./pages/accounting/SpecialInvoicesApp";
 import HrPortalApp from "./pages/hr/HrPortalApp";
@@ -201,6 +203,8 @@ const App = () => {
 <Route path="/accounting/projects" element={<Projects />} />
 <Route path="/accounting/crusher" element={<CrusherApp />} />
 <Route path="/accounting/crusher-pro" element={<CrusherPro />} />
+<Route path="/accounting/crusher-shipments" element={<CrusherShipments />} />
+<Route path="/accounting/crusher-data" element={<CrusherData />} />
 <Route path="/accounting/group-app" element={<GroupApp />} />
                                   <Route path="/accounting/special-invoices" element={<SpecialInvoicesApp />} />
                                   <Route path="/reports" element={<ReportsHub />} />
