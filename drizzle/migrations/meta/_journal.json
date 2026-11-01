@@ -36,6 +36,13 @@
       "when": 1793547944124,
       "tag": "0004_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793548125169,
+      "tag": "0005_crusher_lookups",
+      "breakpoints": true
     }
   ]
 }
