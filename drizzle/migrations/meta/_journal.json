@@ -29,6 +29,13 @@
       "when": 1793545154318,
       "tag": "0003_crusher_shipments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793547944124,
+      "tag": "0004_migration",
+      "breakpoints": true
     }
   ]
 }

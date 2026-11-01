@@ -907,6 +907,7 @@ export type Database = {
           client_name: string | null
           created_at: string
           created_by: string | null
+          doc_number: number
           driver_name: string | null
           empty_weight: number | null
           entry_at: string
@@ -930,6 +931,7 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           created_by?: string | null
+          doc_number?: number
           driver_name?: string | null
           empty_weight?: number | null
           entry_at?: string
@@ -953,6 +955,7 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           created_by?: string | null
+          doc_number?: number
           driver_name?: string | null
           empty_weight?: number | null
           entry_at?: string
