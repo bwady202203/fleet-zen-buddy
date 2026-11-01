@@ -206,6 +206,9 @@ const App = () => {
 <Route path="/accounting/crusher-shipments" element={<CrusherShipments />} />
 <Route path="/accounting/crusher-data" element={<CrusherData />} />
 <Route path="/accounting/group-app" element={<GroupApp />} />
+<Route path="/samman/new" element={<CrusherPro />} />
+<Route path="/samman/shipments" element={<CrusherShipments />} />
+<Route path="/samman/data" element={<CrusherData />} />
                                   <Route path="/accounting/special-invoices" element={<SpecialInvoicesApp />} />
                                   <Route path="/reports" element={<ReportsHub />} />
 
