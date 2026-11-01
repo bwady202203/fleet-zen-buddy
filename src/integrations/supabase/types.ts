@@ -902,6 +902,78 @@ export type Database = {
           },
         ]
       }
+      crusher_shipments: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          driver_name: string | null
+          empty_weight: number | null
+          entry_at: string
+          establishment: string | null
+          exit_at: string | null
+          full_weight: number | null
+          id: string
+          invoice_number: string
+          invoice_pdf_path: string
+          invoice_value: number | null
+          kilometers: number | null
+          material_type: string | null
+          net_weight: number | null
+          organization_id: string
+          previous_serial: string
+          serial_number: string | null
+          shipment_number: string | null
+          supplier_name: string | null
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          driver_name?: string | null
+          empty_weight?: number | null
+          entry_at?: string
+          establishment?: string | null
+          exit_at?: string | null
+          full_weight?: number | null
+          id?: string
+          invoice_number: string
+          invoice_pdf_path: string
+          invoice_value?: number | null
+          kilometers?: number | null
+          material_type?: string | null
+          net_weight?: number | null
+          organization_id: string
+          previous_serial: string
+          serial_number?: string | null
+          shipment_number?: string | null
+          supplier_name?: string | null
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          driver_name?: string | null
+          empty_weight?: number | null
+          entry_at?: string
+          establishment?: string | null
+          exit_at?: string | null
+          full_weight?: number | null
+          id?: string
+          invoice_number?: string
+          invoice_pdf_path?: string
+          invoice_value?: number | null
+          kilometers?: number | null
+          material_type?: string | null
+          net_weight?: number | null
+          organization_id?: string
+          previous_serial?: string
+          serial_number?: string | null
+          shipment_number?: string | null
+          supplier_name?: string | null
+        }
+        Relationships: []
+      }
       custody_expenses: {
         Row: {
           amount: number
