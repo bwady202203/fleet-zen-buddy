@@ -1,4 +1,5 @@
 import { useCrusherProgram } from "@/lib/crusherProgram";
+import { listSammanShipments, deleteSammanShipment } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -79,6 +80,7 @@ export default function CrusherShipmentsList({ refreshKey }: { refreshKey: numbe
   const [printing, setPrinting] = useState<Row | null>(null);
 
   const load = async () => {
+    if (prog.key === "samman") { try { setRows(await listSammanShipments(range[0], range[1])); } catch (e: any) { toast.error(e.message); } return; }
     const { data, error } = await (supabase as any).from("crusher_shipments").select("*").eq("program", prog.key)
       .gte("entry_at", `${range[0]}T00:00:00`).lte("entry_at", `${range[1]}T23:59:59`).order("doc_number", { ascending: false });
     if (error) toast.error(error.message); else setRows(data || []);
@@ -89,17 +91,19 @@ export default function CrusherShipmentsList({ refreshKey }: { refreshKey: numbe
     const { data, error } = await supabase.storage.from("crusher-invoices").createSignedUrl(p, 120, download ? { download: true } : undefined);
     if (error) { toast.error(error.message); return null; } return data.signedUrl;
   };
-  const openPdf = async (r: Row, dl = false) => { const w = window.open("", "_blank"); const u = await pdfUrl(r.invoice_pdf_path, dl); if (u && w) w.location.href = u; else w?.close(); };
+  const openPdf = async (r: Row, dl = false) => { const ext = /^https?:/.test(r.invoice_pdf_path || "") ? r.invoice_pdf_path : (!r.invoice_pdf_path ? r.drive_invoice_file_url || r.drive_file_url : null);
+    if (ext) { window.open(ext, "_blank"); return; } if (!r.invoice_pdf_path) { toast.error("لا يوجد ملف PDF"); return; } const w = window.open("", "_blank"); const u = await pdfUrl(r.invoice_pdf_path, dl); if (u && w) w.location.href = u; else w?.close(); };
   const replacePdf = (r: Row) => {
     const i = document.createElement("input"); i.type = "file"; i.accept = "application/pdf";
     i.onchange = async () => { const f = i.files?.[0]; if (!f) return;
+      if (!r.invoice_pdf_path || /^https?:/.test(r.invoice_pdf_path)) { toast.error("استبدال ملفات البرنامج القديم غير متاح"); return; }
       const { error } = await supabase.storage.from("crusher-invoices").upload(r.invoice_pdf_path, f, { upsert: true, contentType: "application/pdf" });
       error ? toast.error(error.message) : toast.success("تم استبدال ملف PDF"); };
     i.click();
   };
   const del = async (r: Row) => {
     if (prompt("أدخل رمز الأمان للحذف") !== "363636") { toast.error("رمز غير صحيح"); return; }
-    const { error } = await (supabase as any).from("crusher_shipments").delete().eq("id", r.id);
+    const { error } = prog.key === "samman" ? await deleteSammanShipment(r.id) : await (supabase as any).from("crusher_shipments").delete().eq("id", r.id);
     if (error) toast.error(error.message); else { toast.success("تم الحذف"); load(); }
   };
   const doPrint = (r: Row) => { setPrinting(r); setTimeout(() => { window.print(); setTimeout(() => setPrinting(null), 500); }, 300); };
