@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import CrusherShipmentsList from "@/components/crusher/CrusherShipmentsList";
 
 const ESTABLISHMENTS = ["soft industrial remal company - 2050147243"];
 const MAT_KEY = "crusher_pro_materials";
@@ -30,6 +31,7 @@ export default function CrusherPro() {
   const [clients, setClients] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>(() => JSON.parse(localStorage.getItem(MAT_KEY) || '["بحص","رمل","كسارة"]'));
   const [saving, setSaving] = useState(false);
+  const [refresh, setRefresh] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const empty = { establishment: ESTABLISHMENTS[0], entryDate: today(), entryTime: nowTime(), exitDate: "", exitTime: "", material: "", client: "", km: "0", driver: "", shipment: "", supplier: "", invNo: "", invValue: "", prevSerial: "", emptyW: "", fullW: "" };
   const [f, setF] = useState(empty);
@@ -81,7 +83,7 @@ export default function CrusherPro() {
       }).select("serial_number").single();
       if (error) throw error;
       toast.success(`تم حفظ الشحنة — السريال الجديد: ${data.serial_number}`);
-      setF({ ...empty, entryDate: today(), entryTime: nowTime() }); setFile(null);
+      setF({ ...empty, entryDate: today(), entryTime: nowTime() }); setFile(null); setRefresh((x) => x + 1);
     } catch (e: any) { toast.error(e.message || "تعذر الحفظ"); }
     setSaving(false);
   };
@@ -136,6 +138,7 @@ export default function CrusherPro() {
           {saving ? "جارٍ الحفظ..." : ready ? "حفظ الشحنة" : "يجب إدخال رقم الفاتورة + سريال سابق + رفع PDF"}
         </Button>
       </main>
+      <div className="container mx-auto px-4 pb-8"><h2 className="font-bold text-lg mb-3">عرض الشحنات</h2><CrusherShipmentsList refreshKey={refresh} /></div>
     </div>
   );
 }
