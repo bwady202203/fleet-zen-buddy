@@ -57,6 +57,13 @@
       "when": 1793553316209,
       "tag": "0007_samman_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793553430913,
+      "tag": "0008_samman_import_columns",
+      "breakpoints": true
     }
   ]
 }
