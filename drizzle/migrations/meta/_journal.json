@@ -50,6 +50,13 @@
       "when": 1793553172044,
       "tag": "0006_samman_program",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793553316209,
+      "tag": "0007_samman_schema",
+      "breakpoints": true
     }
   ]
 }

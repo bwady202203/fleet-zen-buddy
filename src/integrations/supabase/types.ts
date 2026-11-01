@@ -3538,6 +3538,450 @@ export type Database = {
         }
         Relationships: []
       }
+      samman_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      samman_clients: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          kilometers_per_shipment: number
+          name: string
+          organization_id: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          kilometers_per_shipment?: number
+          name: string
+          organization_id: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          kilometers_per_shipment?: number
+          name?: string
+          organization_id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      samman_companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          registration_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          registration_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          registration_number?: string | null
+        }
+        Relationships: []
+      }
+      samman_drivers: {
+        Row: {
+          created_at: string
+          driver_name: string
+          id: string
+          is_hidden: boolean
+          last_reset_date: string | null
+          organization_id: string
+          total_kilometers: number
+          vehicle_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          driver_name: string
+          id?: string
+          is_hidden?: boolean
+          last_reset_date?: string | null
+          organization_id: string
+          total_kilometers?: number
+          vehicle_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          driver_name?: string
+          id?: string
+          is_hidden?: boolean
+          last_reset_date?: string | null
+          organization_id?: string
+          total_kilometers?: number
+          vehicle_number?: string | null
+        }
+        Relationships: []
+      }
+      samman_employees: {
+        Row: {
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          name: string
+          organization_id: string
+          profession: string | null
+          residence_number: string | null
+          salary: number
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          name: string
+          organization_id: string
+          profession?: string | null
+          residence_number?: string | null
+          salary?: number
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          name?: string
+          organization_id?: string
+          profession?: string | null
+          residence_number?: string | null
+          salary?: number
+          start_date?: string | null
+        }
+        Relationships: []
+      }
+      samman_material_types: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
+      samman_overtime_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          hourly_rate: number
+          hours: number
+          id: string
+          notes: string | null
+          organization_id: string
+          record_date: string
+          total_amount: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          hourly_rate?: number
+          hours?: number
+          id?: string
+          notes?: string | null
+          organization_id: string
+          record_date?: string
+          total_amount?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          hourly_rate?: number
+          hours?: number
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          record_date?: string
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samman_overtime_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "samman_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      samman_serial_numbers: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          serial_code: string
+          status: string
+          used_at: string | null
+          used_by_shipment_id: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          serial_code: string
+          status?: string
+          used_at?: string | null
+          used_by_shipment_id?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          serial_code?: string
+          status?: string
+          used_at?: string | null
+          used_by_shipment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samman_serial_used_by_fk"
+            columns: ["used_by_shipment_id"]
+            isOneToOne: false
+            referencedRelation: "samman_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      samman_shipments: {
+        Row: {
+          client_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          document_number: number
+          drive_file_url: string | null
+          drive_invoice_file_url: string | null
+          driver_id: string | null
+          driver_signature: string | null
+          empty_weight: number
+          entry_date: string
+          exit_date: string | null
+          full_weight: number
+          id: string
+          invoice_number: string
+          invoice_pdf_path: string | null
+          invoice_value: number
+          kilometers: number
+          manager_signature: string | null
+          material_type_id: string | null
+          net_weight: number | null
+          organization_id: string
+          pdf_path: string | null
+          previous_serial_id: string | null
+          print_number: number
+          receiver_signature: string | null
+          serial_id: string | null
+          shipment_number: string | null
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          document_number?: number
+          drive_file_url?: string | null
+          drive_invoice_file_url?: string | null
+          driver_id?: string | null
+          driver_signature?: string | null
+          empty_weight?: number
+          entry_date?: string
+          exit_date?: string | null
+          full_weight?: number
+          id?: string
+          invoice_number: string
+          invoice_pdf_path?: string | null
+          invoice_value?: number
+          kilometers?: number
+          manager_signature?: string | null
+          material_type_id?: string | null
+          net_weight?: number | null
+          organization_id: string
+          pdf_path?: string | null
+          previous_serial_id?: string | null
+          print_number?: number
+          receiver_signature?: string | null
+          serial_id?: string | null
+          shipment_number?: string | null
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          document_number?: number
+          drive_file_url?: string | null
+          drive_invoice_file_url?: string | null
+          driver_id?: string | null
+          driver_signature?: string | null
+          empty_weight?: number
+          entry_date?: string
+          exit_date?: string | null
+          full_weight?: number
+          id?: string
+          invoice_number?: string
+          invoice_pdf_path?: string | null
+          invoice_value?: number
+          kilometers?: number
+          manager_signature?: string | null
+          material_type_id?: string | null
+          net_weight?: number | null
+          organization_id?: string
+          pdf_path?: string | null
+          previous_serial_id?: string | null
+          print_number?: number
+          receiver_signature?: string | null
+          serial_id?: string | null
+          shipment_number?: string | null
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samman_shipments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "samman_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "samman_shipments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "samman_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "samman_shipments_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "samman_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "samman_shipments_material_type_id_fkey"
+            columns: ["material_type_id"]
+            isOneToOne: false
+            referencedRelation: "samman_material_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "samman_shipments_previous_serial_id_fkey"
+            columns: ["previous_serial_id"]
+            isOneToOne: false
+            referencedRelation: "samman_serial_numbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "samman_shipments_serial_id_fkey"
+            columns: ["serial_id"]
+            isOneToOne: false
+            referencedRelation: "samman_serial_numbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "samman_shipments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "samman_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      samman_suppliers: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       smart_journal_account_order: {
         Row: {
           account_order: string[]
