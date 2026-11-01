@@ -285,6 +285,14 @@ export const navigationGroups: NavigationGroup[] = [
     standalonePath: "/accounting/crusher",
   },
   {
+    key: "crusher-pro",
+    title: "برنامج كسارة مطور",
+    icon: Factory,
+    module: "accounting",
+    children: [],
+    standalonePath: "/accounting/crusher-pro",
+  },
+  {
     key: "hr-portal",
     title: "الموارد البشرية",
     icon: User,
@@ -398,6 +406,11 @@ const groupColors: Record<string, GroupColor> = {
     iconBox: "bg-indigo-100 text-indigo-600",
     hover: "hover:bg-indigo-50",
     active: "bg-indigo-50/80 text-indigo-900 border-indigo-600",
+  },
+  "crusher-pro": {
+    iconBox: "bg-gradient-to-br from-sky-500 to-blue-700 text-white",
+    hover: "hover:bg-sky-50",
+    active: "bg-sky-50/80 text-sky-900 border-sky-600",
   },
   crusher: {
     iconBox: "bg-gradient-to-br from-amber-500 to-orange-700 text-white",
