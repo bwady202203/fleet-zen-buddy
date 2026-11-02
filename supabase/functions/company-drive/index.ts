@@ -59,7 +59,7 @@ Deno.serve(async req => {
       const meta = await (await drive(`/drive/v3/files/${id}?fields=name,mimeType,appProperties,trashed`)).json();
       if (meta.trashed || meta.appProperties?.wiseracc_org !== org || meta.mimeType === "application/vnd.google-apps.folder") return json({ error: "الملف غير متاح للشركة" }, 403);
       const file = await drive(`/drive/v3/files/${id}?alt=media`);
-      return new Response(file.body, { headers: { ...corsHeaders, "Content-Type": meta.mimeType || "application/octet-stream", "Cache-Control": "no-store" } });
+      return new Response(file.body, { headers: { ...corsHeaders, "Content-Type": "application/octet-stream", "Cache-Control": "no-store" } });
     }
     const files: unknown[] = [];
     let pageToken: string | undefined;
