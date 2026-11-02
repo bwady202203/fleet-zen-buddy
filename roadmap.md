@@ -7,3 +7,4 @@
 - [x] Import and verify uploaded salary payable accounts with residence-number codes.
 - [x] Reduce initial page loading by deferring unused page modules and verify navigation.
 - [x] Add and verify company Google Drive file storage in the documents archive, retaining existing files.
+- [ ] Restore complete journal visibility and verify January–September 2026 against stored records.
