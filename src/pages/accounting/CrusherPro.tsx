@@ -21,13 +21,13 @@ const Section = ({ title, subtitle, icon: Icon, tone, children, note }: any) => 
       <span className={`shipment-chip shipment-chip-${tone}`}><Icon className="h-5 w-5" /></span>
       <div className="min-w-0">
         <h2 className="font-bold text-foreground leading-6">{title}</h2>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="shipment-subtitle">{subtitle}</p>}
       </div>
     </div>
     {note && (
-      <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground">{note}</p>
+      <p className="shipment-note">{note}</p>
     )}
-    {children}
+    <div className="shipment-body">{children}</div>
   </section>
 );
 
@@ -165,7 +165,7 @@ export default function CrusherPro() {
               </div>
             </F>
             <F label="نوع المواد | Material Type">
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <select className={sel} value={f.material} onChange={set("material")}>
                   <option value="">اختر نوع المادة | Select Material Type</option>
                   {materials.map((m) => <option key={m}>{m}</option>)}
