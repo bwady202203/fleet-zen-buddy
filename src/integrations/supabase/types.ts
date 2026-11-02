@@ -5244,6 +5244,15 @@ export type Database = {
         Returns: undefined
       }
       is_org_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_backup_storage_objects: {
+        Args: { _limit: number; _offset: number }
+        Returns: {
+          bucket_id: string
+          mimetype: string
+          name: string
+          size: number
+        }[]
+      }
       next_advance_number: { Args: never; Returns: string }
       user_in_org: {
         Args: { _org_id: string; _user_id: string }
