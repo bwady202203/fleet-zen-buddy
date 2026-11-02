@@ -2,11 +2,12 @@ import { useCrusherProgram } from "@/lib/crusherProgram";
 import { listSammanLookup, saveSammanShipment } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Factory, FileText, Plus, Scale, Building2, CalendarClock, Hash, Truck } from "lucide-react";
+import { ArrowRight, Factory, FileText, Plus, Scale, Building2, CalendarClock, Hash, Truck, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import OptionPickerDialog from "@/components/OptionPickerDialog";
 import { toast } from "sonner";
 
 const ESTABLISHMENTS = ["soft industrial remal company - 2050147243"];
@@ -44,6 +45,13 @@ const F = ({ label, required, children }: any) => (
 const sel = "shipment-field w-full h-10 px-3 text-sm";
 const inp = "shipment-field h-10 text-sm";
 
+const Trigger = ({ value, placeholder, onClick }: any) => (
+  <button type="button" onClick={onClick} className={`${inp} w-full flex items-center justify-between gap-2 px-3 text-right`}>
+    <span className={value ? "truncate text-foreground" : "truncate text-foreground/50"}>{value || placeholder}</span>
+    <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+  </button>
+);
+
 export default function CrusherPro() {
   const prog = useCrusherProgram();
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -55,6 +63,7 @@ export default function CrusherPro() {
   const [saving, setSaving] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [file, setFile] = useState<File | null>(null);
+  const [picker, setPicker] = useState<null | "material" | "client">(null);
   const empty = { establishment: ESTABLISHMENTS[0], entryDate: today(), entryTime: nowTime(), exitDate: "", exitTime: "", material: "", client: "", km: "0", driver: "", shipment: "", supplier: "", invNo: "", invValue: "", prevSerial: "", emptyW: "", fullW: "" };
   const [f, setF] = useState(empty);
   const set = (k: keyof typeof empty) => (e: any) => setF((p) => ({ ...p, [k]: e.target.value }));
@@ -166,18 +175,12 @@ export default function CrusherPro() {
             </F>
             <F label="نوع المواد | Material Type">
               <div className="flex gap-3">
-                <select className={sel} value={f.material} onChange={set("material")}>
-                  <option value="">اختر نوع المادة | Select Material Type</option>
-                  {materials.map((m) => <option key={m}>{m}</option>)}
-                </select>
+                <Trigger value={f.material} placeholder="اختر نوع المادة | Select Material Type" onClick={() => setPicker("material")} />
                 <Button type="button" size="icon" onClick={addMaterial} aria-label="إضافة نوع مادة" className="h-10 w-10 shrink-0 rounded-[10px]"><Plus className="h-4 w-4" /></Button>
               </div>
             </F>
             <F label="اسم العميل | Client Name">
-              <select className={sel} value={f.client} onChange={set("client")}>
-                <option value="">اختر العميل | Select Client</option>
-                {clients.map((c) => <option key={c}>{c}</option>)}
-              </select>
+              <Trigger value={f.client} placeholder="اختر العميل | Select Client" onClick={() => setPicker("client")} />
             </F>
             <F label="عدد الكيلومترات | Kilometers">
               <Input inputMode="decimal" className={inp} value={f.km} onChange={set("km")} />
@@ -261,6 +264,30 @@ export default function CrusherPro() {
           </div>
         </div>
       </main>
+
+      <OptionPickerDialog
+        open={picker === "material"}
+        onOpenChange={(o) => !o && setPicker(null)}
+        title="اختيار نوع المواد"
+        subtitle="اختر المادة المطلوبة من البطاقات أو ابحث عنها"
+        options={materials}
+        value={f.material}
+        searchPlaceholder="ابحث عن مادة..."
+        emptyHint="لا توجد مادة بهذا الاسم"
+        onSelect={(v) => { setF((p) => ({ ...p, material: v })); setPicker(null); }}
+      />
+
+      <OptionPickerDialog
+        open={picker === "client"}
+        onOpenChange={(o) => !o && setPicker(null)}
+        title="اختيار العميل"
+        subtitle="اختر العميل المطلوب من البطاقات أو ابحث عنه"
+        options={clients}
+        value={f.client}
+        searchPlaceholder="ابحث عن عميل..."
+        emptyHint="لا يوجد عميل بهذا الاسم"
+        onSelect={(v) => { setF((p) => ({ ...p, client: v })); setPicker(null); }}
+      />
     </div>
   );
 }
