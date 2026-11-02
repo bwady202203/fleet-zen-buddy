@@ -223,8 +223,8 @@ export default function CrusherPro() {
             </F>
             <F label="ملف PDF الفاتورة" required>
               <label className={`${inp} flex items-center justify-between gap-2 px-3 cursor-pointer`}>
-                <span className="truncate text-xs text-foreground/70">{file ? file.name : "اختر ملف PDF"}</span>
                 <span className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">تصفّح</span>
+                <span className="truncate text-xs text-foreground/70">{file ? file.name : "اختر ملف PDF"}</span>
                 <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </label>
               <span className={`shipment-pill ${file ? "shipment-pill-ok" : ""}`}><FileText className="h-3.5 w-3.5" /> {file ? "مرفوع" : "مطلوب"}</span>
