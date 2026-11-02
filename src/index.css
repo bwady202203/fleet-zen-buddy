@@ -620,3 +620,49 @@ All colors MUST be HSL.
     padding-top: 3pt; font-size: 7.5pt; color: hsl(215 16% 44%);
   }
 }
+
+/* ===== Shipment registration form (crusher / samman) ===== */
+.shipment-page { background: linear-gradient(180deg, hsl(var(--muted)) 0%, hsl(var(--background)) 42%); }
+.shipment-panel {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  box-shadow: var(--panel-shadow);
+}
+.shipment-field {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--field-line));
+  border-radius: 10px;
+  box-shadow: var(--field-shadow);
+  color: hsl(var(--foreground));
+}
+.shipment-field::placeholder { color: hsl(var(--muted-foreground) / 0.75); }
+.shipment-field:focus,
+.shipment-field:focus-visible {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.18), var(--field-shadow);
+}
+.shipment-chip {
+  width: 38px; height: 38px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.shipment-chip-blue { background: hsl(var(--primary) / 0.12); color: hsl(var(--primary)); }
+.shipment-chip-amber { background: hsl(var(--chart-3) / 0.16); color: hsl(var(--chart-3)); }
+.shipment-chip-green { background: hsl(var(--accent) / 0.12); color: hsl(var(--accent)); }
+.shipment-step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: hsl(var(--muted-foreground));
+}
+.shipment-step b {
+  width: 22px; height: 22px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: hsl(var(--card)); color: hsl(var(--primary));
+  box-shadow: var(--field-shadow); font-size: 11px;
+}
+.shipment-net {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--field-line));
+  border-radius: 10px;
+  box-shadow: var(--field-shadow);
+}
