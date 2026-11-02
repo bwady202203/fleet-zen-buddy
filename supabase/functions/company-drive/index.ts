@@ -18,7 +18,7 @@ Deno.serve(async req => {
     if (error || !data.user) return json({ error: "يلزم تسجيل الدخول" }, 401);
     const { data: admin, error: roleError } = await client.rpc("has_role", { _user_id: data.user.id, _role: "admin" });
     if (roleError || !canUseCompanyDrive(data.user.id, admin === true)) return json({ error: "ملفات درايف متاحة لمسؤول حساب الشركة المرتبط فقط" }, 403);
-    const { data: profile, error: profileError } = await client.from("profiles").select("organization_id").eq("id", data.user.id).single();
+    const { data: profile, error: profileError } = await client.from("user_organizations").select("organization_id").eq("user_id", data.user.id).limit(1).single();
     if (profileError || !profile?.organization_id) return json({ error: "لم يتم تحديد الشركة" }, 403);
     const org = profile.organization_id;
     const apiKey = Deno.env.get("GOOGLE_DRIVE_API_KEY");
