@@ -210,30 +210,27 @@ export default function CrusherPro() {
           <div className="grid md:grid-cols-4 gap-4">
             <F label="رقم الفاتورة" required>
               <Input className={inp} value={f.invNo} onChange={set("invNo")} placeholder="رقم الفاتورة" />
+              <span className={`shipment-pill ${f.invNo.trim() ? "shipment-pill-ok" : ""}`}><Hash className="h-3.5 w-3.5" /> {f.invNo.trim() ? "مكتمل" : "مطلوب"}</span>
             </F>
             <F label="قيمة الفاتورة (ر.س)">
               <Input inputMode="decimal" className={inp} value={f.invValue} onChange={set("invValue")} placeholder="0.00" />
+              <span className="shipment-subtitle">القيمة الإجمالية للفاتورة</span>
             </F>
             <F label="رقم سريال الفاتورة السابقة" required>
               <Input inputMode="numeric" maxLength={8} className={inp} value={f.prevSerial} onChange={set("prevSerial")} placeholder="8 أرقام" list="crusher-serials" />
               <datalist id="crusher-serials">{serials.map((x) => <option key={x} value={x} />)}</datalist>
+              <span className={`shipment-pill ${/^\d{8}$/.test(f.prevSerial.trim()) ? "shipment-pill-ok" : ""}`}><Hash className="h-3.5 w-3.5" /> {/^\d{8}$/.test(f.prevSerial.trim()) ? "مكتمل" : "مطلوب (8 أرقام)"}</span>
             </F>
             <F label="ملف PDF الفاتورة" required>
-              <Input type="file" accept="application/pdf" className={`${inp} text-xs text-right file:ml-3`} onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <label className={`${inp} flex items-center justify-between gap-2 px-3 cursor-pointer`}>
+                <span className="truncate text-xs text-foreground/70">{file ? file.name : "اختر ملف PDF"}</span>
+                <span className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">تصفّح</span>
+                <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              </label>
+              <span className={`shipment-pill ${file ? "shipment-pill-ok" : ""}`}><FileText className="h-3.5 w-3.5" /> {file ? "مرفوع" : "مطلوب"}</span>
             </F>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className={`shipment-pill ${f.invNo.trim() ? "shipment-pill-ok" : ""}`}>
-              <Hash className="h-3.5 w-3.5" /> رقم الفاتورة {f.invNo.trim() ? "مكتمل" : "مطلوب"}
-            </span>
-            <span className={`shipment-pill ${/^\d{8}$/.test(f.prevSerial.trim()) ? "shipment-pill-ok" : ""}`}>
-              <Hash className="h-3.5 w-3.5" /> السريال السابق {/^\d{8}$/.test(f.prevSerial.trim()) ? "مكتمل" : "مطلوب (8 أرقام)"}
-            </span>
-            <span className={`shipment-pill ${file ? "shipment-pill-ok" : ""}`}>
-              <FileText className="h-3.5 w-3.5" /> ملف PDF {file ? "مرفوع" : "مطلوب"}
-            </span>
-            <span className="shipment-pill">{serials.length.toLocaleString("en-US")} سريال متاح للاختيار</span>
-          </div>
+          <p className="shipment-subtitle">{serials.length.toLocaleString("en-US")} سريال متاح للاختيار</p>
         </Section>
 
         <Section title="بيانات الوزن | Weight Data" subtitle="الوزن الصافي يُحتسب تلقائيًا" icon={Scale} tone="green">
