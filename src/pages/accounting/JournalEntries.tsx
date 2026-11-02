@@ -32,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
-import { fetchAllJournalPages, isJournalDateInRange } from "@/lib/journalEntryLoading";
+import { fetchAllJournalPages, isJournalDateInRange, todayISODate, SEPTEMBER_2026_START } from "@/lib/journalEntryLoading";
 
 interface Account {
   id: string;
@@ -82,7 +82,7 @@ const JournalEntries = () => {
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
   const [filterFromDate, setFilterFromDate] = useState("2026-01-01");
-  const [filterToDate, setFilterToDate] = useState("2026-09-30");
+  const [filterToDate, setFilterToDate] = useState(todayISODate);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [filterAccount, setFilterAccount] = useState("");
   const [filterInvoicesOnly, setFilterInvoicesOnly] = useState(false);
