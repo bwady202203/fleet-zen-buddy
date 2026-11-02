@@ -45,6 +45,11 @@ All colors MUST be HSL.
     --hr-surface: 200 25% 97%;
     --hr-shadow: 0 12px 32px -18px hsl(173 40% 20% / 0.35);
 
+    /* Shipment registration form (crusher / samman) */
+    --field-line: 214 31% 88%;
+    --field-shadow: 0 0 0 3px hsl(0 0% 100%), 0 8px 18px -12px hsl(214 35% 25% / 0.45);
+    --panel-shadow: 0 22px 45px -30px hsl(214 40% 25% / 0.45);
+
     
     --chart-1: 217 91% 60%;
     --chart-2: 142 76% 36%;
