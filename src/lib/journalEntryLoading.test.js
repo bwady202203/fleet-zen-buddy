@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { fetchAllJournalPages, isJournalDateInRange } from "./journalEntryLoading";
+import { fetchAllJournalPages, isJournalDateInRange, todayISODate, SEPTEMBER_2026_START } from "./journalEntryLoading";
 
 test("loads all 3205 entries beyond the API row limit without duplicates", async () => {
   const source = Array.from({ length: 3205 }, (_, id) => ({ id }));
@@ -16,4 +16,14 @@ test("includes all dates January through September 2026 and excludes neighboring
 });
 test("fails explicitly rather than returning incomplete pages", async () => {
   expect(fetchAllJournalPages(async () => ({ data: null, error: new Error("failed") }))).rejects.toThrow("failed");
+});
+test("September-through-today range keeps October and November 2026 entries", () => {
+  const to = todayISODate(new Date(2026, 10, 2));
+  expect(to).toBe("2026-11-02");
+  expect(SEPTEMBER_2026_START).toBe("2026-09-01");
+  expect(isJournalDateInRange("2026-09-01", SEPTEMBER_2026_START, to)).toBe(true);
+  expect(isJournalDateInRange("2026-10-15", SEPTEMBER_2026_START, to)).toBe(true);
+  expect(isJournalDateInRange("2026-11-02", SEPTEMBER_2026_START, to)).toBe(true);
+  expect(isJournalDateInRange("2026-08-31", SEPTEMBER_2026_START, to)).toBe(false);
+  expect(isJournalDateInRange("2026-11-03", SEPTEMBER_2026_START, to)).toBe(false);
 });
