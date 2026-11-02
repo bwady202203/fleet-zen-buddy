@@ -87,12 +87,32 @@ export default function CrusherShipmentsList({ refreshKey }: { refreshKey: numbe
   };
   useEffect(() => { load(); }, [range[0], range[1], refreshKey, prog.key]);
 
-  const pdfUrl = async (p: string, download = false) => {
-    const { data, error } = await supabase.storage.from("crusher-invoices").createSignedUrl(p, 120, download ? { download: true } : undefined);
-    if (error) { toast.error(error.message); return null; } return data.signedUrl;
+  const fetchPdfBlob = async (r: Row): Promise<Blob | null> => {
+    const ext = /^https?:/.test(r.invoice_pdf_path || "") ? r.invoice_pdf_path : (!r.invoice_pdf_path ? r.drive_invoice_file_url || r.drive_file_url : null);
+    if (ext) {
+      const { data: s } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pdf-proxy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${s.session?.access_token}` },
+        body: JSON.stringify({ url: ext }),
+      });
+      if (!res.ok) { toast.error("تعذّر جلب الملف"); return null; }
+      return new Blob([await res.arrayBuffer()], { type: "application/pdf" });
+    }
+    if (!r.invoice_pdf_path) { toast.error("لا يوجد ملف PDF"); return null; }
+    const { data, error } = await supabase.storage.from("crusher-invoices").download(r.invoice_pdf_path);
+    if (error || !data) { toast.error(error?.message || "تعذّر جلب الملف"); return null; }
+    return new Blob([data], { type: "application/pdf" });
   };
-  const openPdf = async (r: Row, dl = false) => { const ext = /^https?:/.test(r.invoice_pdf_path || "") ? r.invoice_pdf_path : (!r.invoice_pdf_path ? r.drive_invoice_file_url || r.drive_file_url : null);
-    if (ext) { window.open(ext, "_blank"); return; } if (!r.invoice_pdf_path) { toast.error("لا يوجد ملف PDF"); return; } const w = window.open("", "_blank"); const u = await pdfUrl(r.invoice_pdf_path, dl); if (u && w) w.location.href = u; else w?.close(); };
+  const openPdf = async (r: Row, dl = false) => {
+    const w = dl ? null : window.open("", "_blank");
+    const b = await fetchPdfBlob(r);
+    if (!b) { w?.close(); return; }
+    const u = URL.createObjectURL(b);
+    if (dl) { const a = document.createElement("a"); a.href = u; a.download = `invoice-${r.doc_number ?? "file"}.pdf`; document.body.appendChild(a); a.click(); a.remove(); }
+    else if (w) w.location.href = u; else window.open(u, "_blank");
+    setTimeout(() => URL.revokeObjectURL(u), 60_000);
+  };
   const replacePdf = (r: Row) => {
     const i = document.createElement("input"); i.type = "file"; i.accept = "application/pdf";
     i.onchange = async () => { const f = i.files?.[0]; if (!f) return;
