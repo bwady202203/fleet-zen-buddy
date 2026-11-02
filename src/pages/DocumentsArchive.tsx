@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import CompanyDriveStorage from "@/components/CompanyDriveStorage";
 
 const BUCKET = "document-archive";
 const MAX_SIZE = 25 * 1024 * 1024;
@@ -280,6 +281,7 @@ export default function DocumentsArchive() {
         </div>
       </header>
 
+      <CompanyDriveStorage />
       <main className="container mx-auto grid gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <Card>
           <CardHeader>
