@@ -1873,6 +1873,7 @@ const JournalEntries = () => {
                   />
                 </div>
                 <div className="flex flex-wrap items-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => { setFilterFromDate(SEPTEMBER_2026_START); setFilterToDate(todayISODate()); setFilterDate(""); }}>سبتمبر حتى اليوم</Button>
                   <Button type="button" variant="outline" onClick={() => { setFilterFromDate(""); setFilterToDate(""); setFilterDate(""); setFilterAccount(""); setFilterInvoicesOnly(false); }}>كل الفترات</Button>
                   <Button
                     type="button"

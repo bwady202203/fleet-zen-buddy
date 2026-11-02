@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { fetchAllJournalPages, isJournalDateInRange } from "./journalEntryLoading";
+import { fetchAllJournalPages, isJournalDateInRange, todayISODate, SEPTEMBER_2026_START } from "./journalEntryLoading";
 
 test("loads all 3205 entries beyond the API row limit without duplicates", async () => {
   const source = Array.from({ length: 3205 }, (_, id) => ({ id }));
