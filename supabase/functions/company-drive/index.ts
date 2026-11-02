@@ -56,7 +56,7 @@ Deno.serve(async req => {
     if (parsed.data.action === "migrate") {
       const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
       const offset = parsed.data.offset ?? 0, limit = parsed.data.limit ?? 10;
-      const { data: objs, error: oe } = await admin.schema("storage").from("objects").select("bucket_id,name,metadata").in("bucket_id", ["document-archive", "journal-documents", "crusher-invoices"]).order("created_at").range(offset, offset + limit - 1);
+      const { data: objs, error: oe } = await admin.rpc("list_backup_storage_objects", { _offset: offset, _limit: limit });
       if (oe) return json({ error: oe.message }, 500);
       const findFolder = async (name: string, parent?: string) => {
         const q = `${filter} and mimeType='application/vnd.google-apps.folder' and name='${name.replace(/'/g, "\\'")}'` + (parent ? ` and '${parent}' in parents` : "");
@@ -77,9 +77,9 @@ Deno.serve(async req => {
         const folderId = await findFolder(o.bucket_id, backup);
         const boundary = `wiseracc_${crypto.randomUUID()}`;
         const metadata = { name: o.name.replace(/\//g, "_").slice(0, 255), parents: [folderId], appProperties: { wiseracc_org: org, wiseracc_src: hash } };
-        const body = new Blob([`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${o.metadata?.mimetype || "application/octet-stream"}\r\n\r\n`, blob, `\r\n--${boundary}--\r\n`]);
+        const body = new Blob([`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${o.mimetype || "application/octet-stream"}\r\n\r\n`, blob, `\r\n--${boundary}--\r\n`]);
         const up = await (await drive("/upload/drive/v3/files?uploadType=multipart&fields=id,size", { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${boundary}` }, body })).json();
-        results.push({ name: o.name, status: Number(up.size) === Number(o.metadata?.size) ? "copied" : "size_mismatch" });
+        results.push({ name: o.name, status: Number(up.size) === Number(o.size) ? "copied" : "size_mismatch" });
       }
       return json({ offset, count: objs?.length ?? 0, results });
     }
