@@ -5,3 +5,5 @@
 - [x] Add and verify a fresh code prompt each time automatic HR journals are opened.
 - [x] Add and verify employment fields exclusively beneath salary payable accounts.
 - [x] Import and verify uploaded salary payable accounts with residence-number codes.
+- [ ] Reduce initial page loading by deferring unused page modules and verify navigation.
+- [ ] Add and verify company Google Drive file storage in the documents archive, retaining existing files.
