@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useDeleteConfirmation } from "@/components/DeleteConfirmationDialog";
+import { fetchAllJournalPages, isJournalDateInRange } from "@/lib/journalEntryLoading";
 
 interface Account {
   id: string;
@@ -80,6 +81,9 @@ const JournalEntries = () => {
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
+  const [filterFromDate, setFilterFromDate] = useState("2026-01-01");
+  const [filterToDate, setFilterToDate] = useState("2026-09-30");
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [filterAccount, setFilterAccount] = useState("");
   const [filterInvoicesOnly, setFilterInvoicesOnly] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
@@ -217,7 +221,7 @@ const JournalEntries = () => {
   // إعادة ضبط الصفحة عند تغيير التصفية
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterDate, filterAccount, filterInvoicesOnly]);
+  }, [filterDate, filterFromDate, filterToDate, filterAccount, filterInvoicesOnly]);
 
 
   // Initialize opening entry lines after mount
@@ -284,8 +288,9 @@ const JournalEntries = () => {
   };
 
   const fetchJournalEntries = async () => {
+    setIsLoadingEntries(true);
     try {
-      const { data: entries, error: entriesError } = await supabase
+      const entries = await fetchAllJournalPages((from, to) => supabase
         .from('journal_entries')
         .select(`
           *,
@@ -299,9 +304,8 @@ const JournalEntries = () => {
         `)
         .order('created_at', { ascending: false })
         .order('entry_number', { ascending: false })
-        .limit(5000);
-
-      if (entriesError) throw entriesError;
+        .order('id', { ascending: false })
+        .range(from, to));
 
       const formattedEntries = entries?.map(entry => ({
         id: entry.id,
@@ -313,8 +317,8 @@ const JournalEntries = () => {
         lines: entry.journal_entry_lines.map((line: any) => ({
           id: line.id,
           accountId: line.account_id,
-          accountCode: line.chart_of_accounts.code,
-          accountName: line.chart_of_accounts.name_ar,
+          accountCode: line.chart_of_accounts?.code || "",
+          accountName: line.chart_of_accounts?.name_ar || "حساب غير متاح",
           costCenterId: line.cost_center_id,
           costCenterCode: line.cost_centers?.code,
           costCenterName: line.cost_centers?.name_ar,
@@ -335,6 +339,9 @@ const JournalEntries = () => {
       setDisplayedEntries(formattedEntries);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
+      toast({ title: "تعذر تحميل جميع القيود", description: "أعد المحاولة لتجنب عرض بيانات غير مكتملة", variant: "destructive" });
+    } finally {
+      setIsLoadingEntries(false);
     }
   };
 
@@ -785,6 +792,7 @@ const JournalEntries = () => {
   };
 
   const filteredEntries = displayedEntries.filter(entry => {
+    if (!isJournalDateInRange(entry.date, filterFromDate, filterToDate)) return false;
     if (filterDate && entry.date !== filterDate) return false;
     if (filterAccount && !entry.lines.some((line: any) => 
       line.accountCode.includes(filterAccount) || line.accountName.includes(filterAccount)
@@ -1839,7 +1847,15 @@ const JournalEntries = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <Label htmlFor="journal-from-date">من تاريخ</Label>
+                  <Input id="journal-from-date" type="date" value={filterFromDate} onChange={e => setFilterFromDate(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="journal-to-date">إلى تاريخ</Label>
+                  <Input id="journal-to-date" type="date" value={filterToDate} onChange={e => setFilterToDate(e.target.value)} />
+                </div>
                 <div>
                   <Label>التاريخ / Date</Label>
                   <Input
@@ -1856,7 +1872,8 @@ const JournalEntries = () => {
                     placeholder="ابحث عن حساب... / Search account..."
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex flex-wrap items-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => { setFilterFromDate(""); setFilterToDate(""); setFilterDate(""); setFilterAccount(""); setFilterInvoicesOnly(false); }}>كل الفترات</Button>
                   <Button
                     type="button"
                     variant={filterInvoicesOnly ? "default" : "outline"}
@@ -1870,6 +1887,7 @@ const JournalEntries = () => {
                 </div>
 
               </div>
+              <p role="status" className="mt-3 text-sm text-muted-foreground">{isLoadingEntries ? "جاري تحميل جميع القيود…" : `${filteredEntries.length.toLocaleString('ar-SA')} قيد في الفترة المحددة — ${displayedEntries.length.toLocaleString('ar-SA')} قيد محمّل`}</p>
             </CardContent>
           </Card>
 
@@ -1877,6 +1895,7 @@ const JournalEntries = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>سجل القيود اليومية / Journal Entries Register</CardTitle>
+                <Button variant="outline" size="icon" aria-label="تحديث قيود اليومية" title="تحديث قيود اليومية" disabled={isLoadingEntries} onClick={fetchJournalEntries}><RefreshCw className={cn("h-4 w-4", isLoadingEntries && "animate-spin")} /></Button>
                 <Button 
                   variant="outline" 
                   size="sm"

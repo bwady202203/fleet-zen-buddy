@@ -8,4 +8,5 @@ The standalone employee violations route sits outside AppLayout and uses a dedic
 Automatic HR journal entry confirmation is a mount-scoped UI gate; mount journal content only after confirmation to defer data reads, and keep existing authenticated server permissions authoritative because a UI code is not authorization.
 Store employment metadata on chart-of-accounts records and gate its form and save payload by salary-payable ancestry, so unrelated account forms remain unchanged.
 Lazy-load page modules at route boundaries while preserving providers and authentication, so unused feature screens do not delay initial opening.
+Journal registers fetch all authorized entries in bounded range batches with deterministic ordering, then apply inclusive date-range filters; never replace full retrieval with a large limit.
 Company Drive storage uses authenticated server-only connector calls restricted to the connected company administrator, organization-tagged files, and a dedicated Drive folder; preserve existing archive storage to avoid implicit migration or data loss.
