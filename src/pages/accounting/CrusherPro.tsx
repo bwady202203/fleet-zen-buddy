@@ -242,7 +242,7 @@ export default function CrusherPro() {
               <Input inputMode="decimal" className={inp} value={f.fullW} onChange={set("fullW")} placeholder="0.00" />
             </F>
             <F label="الوزن الصافي (كجم)">
-              <div className="shipment-net h-10 flex items-center justify-center font-bold text-primary tabular-nums">
+              <div className="shipment-net h-10 flex items-center justify-center font-bold text-foreground tabular-nums">
                 {net.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </div>
             </F>
