@@ -97,7 +97,9 @@ export default function CrusherPro() {
   }, []);
 
   const net = useMemo(() => num(f.fullW) - num(f.emptyW), [f.fullW, f.emptyW]);
-  const ready = f.invNo.trim() && /^\d{8}$/.test(f.prevSerial.trim()) && file;
+  const serialOk = /^\d{8}$/.test(f.prevSerial.trim());
+  const unlocked = serialOk && !!file;
+  const ready = f.invNo.trim() && unlocked;
 
   const addMaterial = () => {
     const m = prompt("اسم نوع المادة الجديد")?.trim();
@@ -159,6 +161,26 @@ export default function CrusherPro() {
           </F>
         </Section>
 
+        <Section title="سريال الفاتورة وملف PDF (إجباري)" subtitle="أدخلهما أولًا لتفعيل باقي الحقول" icon={FileText} tone="amber">
+          <div className="grid md:grid-cols-2 gap-4">
+            <F label="رقم سريال الفاتورة السابقة" required>
+              <Input inputMode="numeric" maxLength={8} className={inp} value={f.prevSerial} onChange={set("prevSerial")} placeholder="8 أرقام" list="crusher-serials" />
+              <datalist id="crusher-serials">{serials.map((x) => <option key={x} value={x} />)}</datalist>
+              <span className={`shipment-pill ${serialOk ? "shipment-pill-ok" : ""}`}><Hash className="h-3.5 w-3.5" /> {serialOk ? "مكتمل" : "مطلوب (8 أرقام)"}</span>
+            </F>
+            <F label="ملف PDF الفاتورة" required>
+              <label className={`${inp} flex items-center justify-between gap-2 px-3 cursor-pointer`}>
+                <span className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">تصفّح</span>
+                <span className="truncate text-xs text-foreground/70">{file ? file.name : "اختر ملف PDF"}</span>
+                <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => { const x = e.target.files?.[0] || null; if (x && x.type !== "application/pdf" && !x.name.toLowerCase().endsWith(".pdf")) { toast.error("الملف يجب أن يكون PDF"); return; } setFile(x); }} />
+              </label>
+              <span className={`shipment-pill ${file ? "shipment-pill-ok" : ""}`}><FileText className="h-3.5 w-3.5" /> {file ? "مرفوع" : "مطلوب"}</span>
+            </F>
+          </div>
+          <p className="shipment-subtitle">{serials.length.toLocaleString("en-US")} سريال متاح للاختيار{unlocked ? "" : " — باقي الحقول مقفلة حتى يكتمل السريال والملف"}</p>
+        </Section>
+
+        <fieldset disabled={!unlocked} className={`space-y-5 min-w-0 transition-opacity ${unlocked ? "" : "opacity-50 pointer-events-none"}`}>
         <Section title="حركة الشحنة | Shipment Movement" subtitle="أوقات الدخول والخروج والبيانات الميدانية" icon={CalendarClock} tone="blue">
           <div className="grid md:grid-cols-2 gap-4">
             <F label="تاريخ ووقت الدخول | Entry Date & Time">
@@ -210,7 +232,7 @@ export default function CrusherPro() {
           tone="amber"
           note="يجب إدخال رقم الفاتورة ورقم سريال صادر من فاتورة سابقة ورفع ملف PDF. سيتم توليد سريال جديد تلقائيًا للفاتورة الحالية."
         >
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <F label="رقم الفاتورة" required>
               <Input className={inp} value={f.invNo} onChange={set("invNo")} placeholder="رقم الفاتورة" />
               <span className={`shipment-pill ${f.invNo.trim() ? "shipment-pill-ok" : ""}`}><Hash className="h-3.5 w-3.5" /> {f.invNo.trim() ? "مكتمل" : "مطلوب"}</span>
@@ -219,21 +241,7 @@ export default function CrusherPro() {
               <Input inputMode="decimal" className={inp} value={f.invValue} onChange={set("invValue")} placeholder="0.00" />
               <span className="shipment-subtitle">القيمة الإجمالية للفاتورة</span>
             </F>
-            <F label="رقم سريال الفاتورة السابقة" required>
-              <Input inputMode="numeric" maxLength={8} className={inp} value={f.prevSerial} onChange={set("prevSerial")} placeholder="8 أرقام" list="crusher-serials" />
-              <datalist id="crusher-serials">{serials.map((x) => <option key={x} value={x} />)}</datalist>
-              <span className={`shipment-pill ${/^\d{8}$/.test(f.prevSerial.trim()) ? "shipment-pill-ok" : ""}`}><Hash className="h-3.5 w-3.5" /> {/^\d{8}$/.test(f.prevSerial.trim()) ? "مكتمل" : "مطلوب (8 أرقام)"}</span>
-            </F>
-            <F label="ملف PDF الفاتورة" required>
-              <label className={`${inp} flex items-center justify-between gap-2 px-3 cursor-pointer`}>
-                <span className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">تصفّح</span>
-                <span className="truncate text-xs text-foreground/70">{file ? file.name : "اختر ملف PDF"}</span>
-                <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-              </label>
-              <span className={`shipment-pill ${file ? "shipment-pill-ok" : ""}`}><FileText className="h-3.5 w-3.5" /> {file ? "مرفوع" : "مطلوب"}</span>
-            </F>
           </div>
-          <p className="shipment-subtitle">{serials.length.toLocaleString("en-US")} سريال متاح للاختيار</p>
         </Section>
 
         <Section title="بيانات الوزن | Weight Data" subtitle="الوزن الصافي يُحتسب تلقائيًا" icon={Scale} tone="green">
@@ -251,6 +259,7 @@ export default function CrusherPro() {
             </F>
           </div>
         </Section>
+        </fieldset>
 
         <div className="shipment-panel p-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
