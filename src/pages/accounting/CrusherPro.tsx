@@ -124,7 +124,7 @@ export default function CrusherPro() {
   };
 
   return (
-    <div className={`shipment-page min-h-screen ${refresh < 0 ? "opacity-95" : ""}`} dir="rtl">
+    <div className="shipment-page min-h-screen" dir="rtl">
       <header className="border-b bg-card/90 backdrop-blur">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
