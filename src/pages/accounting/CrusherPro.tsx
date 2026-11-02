@@ -219,20 +219,20 @@ export default function CrusherPro() {
               <datalist id="crusher-serials">{serials.map((x) => <option key={x} value={x} />)}</datalist>
             </F>
             <F label="ملف PDF الفاتورة" required>
-              <Input type="file" accept="application/pdf" className={`${inp} pt-1.5 file:mr-2`} onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <Input type="file" accept="application/pdf" className={`${inp} text-xs text-right file:ml-3`} onChange={(e) => setFile(e.target.files?.[0] || null)} />
             </F>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold ${f.invNo.trim() ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+            <span className={`shipment-pill ${f.invNo.trim() ? "shipment-pill-ok" : ""}`}>
               <Hash className="h-3.5 w-3.5" /> رقم الفاتورة {f.invNo.trim() ? "مكتمل" : "مطلوب"}
             </span>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold ${/^\d{8}$/.test(f.prevSerial.trim()) ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+            <span className={`shipment-pill ${/^\d{8}$/.test(f.prevSerial.trim()) ? "shipment-pill-ok" : ""}`}>
               <Hash className="h-3.5 w-3.5" /> السريال السابق {/^\d{8}$/.test(f.prevSerial.trim()) ? "مكتمل" : "مطلوب (8 أرقام)"}
             </span>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold ${file ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+            <span className={`shipment-pill ${file ? "shipment-pill-ok" : ""}`}>
               <FileText className="h-3.5 w-3.5" /> ملف PDF {file ? "مرفوع" : "مطلوب"}
             </span>
-            <span className="text-muted-foreground">{serials.length.toLocaleString("en-US")} سريال متاح للاختيار</span>
+            <span className="shipment-pill">{serials.length.toLocaleString("en-US")} سريال متاح للاختيار</span>
           </div>
         </Section>
 
@@ -254,7 +254,7 @@ export default function CrusherPro() {
 
         <div className="shipment-panel p-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/75">
               <Truck className="h-4 w-4" />
               {ready ? "جميع البيانات الإجبارية مكتملة — يمكنك الحفظ" : "أكمل رقم الفاتورة + سريال سابق (8 أرقام) + رفع PDF"}
             </div>
