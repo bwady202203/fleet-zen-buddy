@@ -4,7 +4,7 @@ import { z } from "npm:zod@3";
 import { canUseCompanyDrive } from "./access.ts";
 
 const BASE = "https://connector-gateway.lovable.dev/google_drive";
-const schema = z.object({ action: z.enum(["list", "download"]), fileId: z.string().regex(/^[\w-]+$/).optional() }).strict();
+const schema = z.object({ action: z.enum(["list", "download", "migrate"]), fileId: z.string().regex(/^[\w-]+$/).optional(), offset: z.number().int().min(0).optional(), limit: z.number().int().min(1).max(25).optional() }).strict();
 
 Deno.serve(async req => {
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -53,6 +53,36 @@ Deno.serve(async req => {
     }
     const parsed = schema.safeParse(await req.json());
     if (!parsed.success) return json({ error: "طلب غير صحيح" }, 400);
+    if (parsed.data.action === "migrate") {
+      const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+      const offset = parsed.data.offset ?? 0, limit = parsed.data.limit ?? 10;
+      const { data: objs, error: oe } = await admin.schema("storage").from("objects").select("bucket_id,name,metadata").in("bucket_id", ["document-archive", "journal-documents", "crusher-invoices"]).order("created_at").range(offset, offset + limit - 1);
+      if (oe) return json({ error: oe.message }, 500);
+      const findFolder = async (name: string, parent?: string) => {
+        const q = `${filter} and mimeType='application/vnd.google-apps.folder' and name='${name.replace(/'/g, "\\'")}'` + (parent ? ` and '${parent}' in parents` : "");
+        const r = await (await drive(`/drive/v3/files?${new URLSearchParams({ q, fields: "files(id)", pageSize: "1" })}`)).json();
+        if (r.files?.[0]?.id) return r.files[0].id as string;
+        const f = await (await drive("/drive/v3/files", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, mimeType: "application/vnd.google-apps.folder", appProperties: { wiseracc_org: org }, ...(parent ? { parents: [parent] } : {}) }) })).json();
+        return f.id as string;
+      };
+      const root = await findFolder("ملفات شركة الرمال - WiserAcc");
+      const backup = await findFolder("نسخة من ملفات النظام", root);
+      const results: { name: string; status: string }[] = [];
+      for (const o of objs ?? []) {
+        const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${o.bucket_id}/${o.name}`)))).slice(0, 16).map(b => b.toString(16).padStart(2, "0")).join("");
+        const exists = await (await drive(`/drive/v3/files?${new URLSearchParams({ q: `trashed = false and appProperties has { key='wiseracc_src' and value='${hash}' }`, fields: "files(id)", pageSize: "1" })}`)).json();
+        if (exists.files?.length) { results.push({ name: o.name, status: "exists" }); continue; }
+        const { data: blob, error: de } = await admin.storage.from(o.bucket_id).download(o.name);
+        if (de || !blob) { results.push({ name: o.name, status: "download_failed" }); continue; }
+        const folderId = await findFolder(o.bucket_id, backup);
+        const boundary = `wiseracc_${crypto.randomUUID()}`;
+        const metadata = { name: o.name.replace(/\//g, "_").slice(0, 255), parents: [folderId], appProperties: { wiseracc_org: org, wiseracc_src: hash } };
+        const body = new Blob([`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${o.metadata?.mimetype || "application/octet-stream"}\r\n\r\n`, blob, `\r\n--${boundary}--\r\n`]);
+        const up = await (await drive("/upload/drive/v3/files?uploadType=multipart&fields=id,size", { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${boundary}` }, body })).json();
+        results.push({ name: o.name, status: Number(up.size) === Number(o.metadata?.size) ? "copied" : "size_mismatch" });
+      }
+      return json({ offset, count: objs?.length ?? 0, results });
+    }
     if (parsed.data.action === "download") {
       if (!parsed.data.fileId) return json({ error: "اختر الملف" }, 400);
       const id = parsed.data.fileId;
