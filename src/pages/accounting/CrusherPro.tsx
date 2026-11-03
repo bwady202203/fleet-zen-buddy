@@ -1,5 +1,5 @@
 import { useCrusherProgram } from "@/lib/crusherProgram";
-import { listSammanLookup, saveSammanShipment } from "@/lib/sammanData";
+import { listSammanLookup, saveSammanShipment, getLastSammanSerial } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Factory, FileText, Plus, Scale, Building2, CalendarClock, Hash, Truck, ChevronDown } from "lucide-react";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import OptionPickerDialog from "@/components/OptionPickerDialog";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const ESTABLISHMENTS = ["soft industrial remal company - 2050147243"];
 const MAT_KEY = "crusher_pro_materials";
@@ -63,6 +65,7 @@ export default function CrusherPro() {
   const [saving, setSaving] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [file, setFile] = useState<File | null>(null);
+  const [savedSerial, setSavedSerial] = useState<null | { serial: string; prev: string; inv: string }>(null);
   const [picker, setPicker] = useState<null | "material" | "client">(null);
   const empty = { establishment: ESTABLISHMENTS[0], entryDate: today(), entryTime: nowTime(), exitDate: "", exitTime: "", material: "", client: "", km: "0", driver: "", shipment: "", supplier: "", invNo: "", invValue: "", prevSerial: "", emptyW: "", fullW: "" };
   const [f, setF] = useState(empty);
@@ -79,6 +82,7 @@ export default function CrusherPro() {
         const names = (a: any[]) => Array.from(new Set(a.map((x) => x.name).filter(Boolean))) as string[];
         setDrivers(names(d)); setSuppliers(names(s2)); setClients(names(c));
         setSerials(names(sr.filter((x) => x.raw.status === "available"))); if (m.length) setMaterials(names(m));
+        const last = await getLastSammanSerial(); if (last) setF((p) => ({ ...p, prevSerial: p.prevSerial || last }));
         return;
       }
       const [d, s, c] = await Promise.all([
@@ -129,7 +133,8 @@ export default function CrusherPro() {
       if (prog.key === "samman") { const { data: u } = await supabase.auth.getUser(); data = await saveSammanShipment(orgId, u.user?.id ?? null, payload); }
       else { const r = await (supabase as any).from("crusher_shipments").insert(payload).select("serial_number").single(); if (r.error) throw r.error; data = r.data; }
       toast.success(`تم حفظ الشحنة — السريال الجديد: ${data.serial_number}`);
-      setF({ ...empty, entryDate: today(), entryTime: nowTime() }); setFile(null); setRefresh((x) => x + 1);
+      setSavedSerial({ serial: data.serial_number, prev: f.prevSerial.trim(), inv: f.invNo.trim() });
+      setF({ ...empty, entryDate: today(), entryTime: nowTime(), prevSerial: prog.key === "samman" ? String(data.serial_number) : "" }); setFile(null); setRefresh((x) => x + 1);
     } catch (e: any) { toast.error(e.message || "تعذر الحفظ"); }
     setSaving(false);
   };
@@ -297,6 +302,17 @@ export default function CrusherPro() {
         emptyHint="لا يوجد عميل بهذا الاسم"
         onSelect={(v) => { setF((p) => ({ ...p, client: v })); setPicker(null); }}
       />
+      <Dialog open={!!savedSerial} onOpenChange={(o) => !o && setSavedSerial(null)}>
+        <DialogContent dir="rtl" className="max-w-sm text-center">
+          <DialogHeader><DialogTitle className="text-center">تم حفظ الفاتورة — السريال الجديد</DialogTitle></DialogHeader>
+          {savedSerial && (<div className="flex flex-col items-center gap-3">
+            <div className="text-4xl font-bold tracking-widest text-foreground">{savedSerial.serial}</div>
+            <div className="rounded-lg bg-card p-3 border"><QRCodeSVG value={`INV:${savedSerial.inv}|SN:${savedSerial.serial}|PREV:${savedSerial.prev}`} size={150} /></div>
+            <p className="text-sm text-muted-foreground">أدخل هذا الرقم في حقل السريال عند إنشاء الفاتورة التالية (تمت تعبئته تلقائيًا).</p>
+            <Button onClick={() => setSavedSerial(null)} className="w-full">متابعة</Button>
+          </div>)}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
