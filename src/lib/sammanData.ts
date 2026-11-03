@@ -79,7 +79,7 @@ async function findOrCreate(kind: string, orgId: string, name: string | null) {
 export async function saveSammanShipment(orgId: string, userId: string | null, v: any) {
   const prev = (v.previous_serial as string).trim();
   const { data: dup } = await db.from("samman_shipments").select("id").eq("previous_serial_code", prev).limit(1);
-  if (dup?.length) throw new Error(`السريال ${prev} مُدخل سابقًا في فاتورة أخرى — أدخل آخر سريال تم توليده`);
+  if (dup?.length) throw new Error(`السريال ${prev} مُدخل سابقًا في فاتورة أخرى — أدخل سريالًا لم يُستخدم من قبل`);
   const next = await generateSammanSerial();
   const [company_id, client_id, supplier_id, material_type_id, driver_id, previous_serial_id, serial_id] = await Promise.all([
     findOrCreate("company", orgId, v.establishment), findOrCreate("client", orgId, v.client_name),
