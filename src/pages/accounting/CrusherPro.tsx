@@ -1,5 +1,5 @@
 import { useCrusherProgram } from "@/lib/crusherProgram";
-import { listSammanLookup, saveSammanShipment, getLastSammanSerial } from "@/lib/sammanData";
+import { listSammanLookup, saveSammanShipment, getSammanDriverBySerial } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Factory, FileText, Plus, Scale, Building2, CalendarClock, Hash, Truck, ChevronDown } from "lucide-react";
@@ -82,7 +82,6 @@ export default function CrusherPro() {
         const names = (a: any[]) => Array.from(new Set(a.map((x) => x.name).filter(Boolean))) as string[];
         setDrivers(names(d)); setSuppliers(names(s2)); setClients(names(c));
         setSerials(names(sr.filter((x) => x.raw.status === "available"))); if (m.length) setMaterials(names(m));
-        const last = await getLastSammanSerial(); if (last) setF((p) => ({ ...p, prevSerial: p.prevSerial || last }));
         return;
       }
       const [d, s, c] = await Promise.all([
@@ -99,6 +98,17 @@ export default function CrusherPro() {
       setSerials(pick("serial"));
     })();
   }, []);
+
+  useEffect(() => {
+    if (prog.key !== "samman" || !/^\d{8}$/.test(f.prevSerial.trim())) return;
+    let live = true;
+    getSammanDriverBySerial(f.prevSerial).then((d) => {
+      if (!live || !d) return;
+      setDrivers((list) => (list.includes(d) ? list : [d, ...list]));
+      setF((p) => ({ ...p, driver: d }));
+    });
+    return () => { live = false; };
+  }, [f.prevSerial]);
 
   const net = useMemo(() => num(f.fullW) - num(f.emptyW), [f.fullW, f.emptyW]);
   const serialOk = /^\d{8}$/.test(f.prevSerial.trim());
@@ -134,7 +144,7 @@ export default function CrusherPro() {
       else { const r = await (supabase as any).from("crusher_shipments").insert(payload).select("serial_number").single(); if (r.error) throw r.error; data = r.data; }
       toast.success(`تم حفظ الشحنة — السريال الجديد: ${data.serial_number}`);
       setSavedSerial({ serial: data.serial_number, prev: f.prevSerial.trim(), inv: f.invNo.trim() });
-      setF({ ...empty, entryDate: today(), entryTime: nowTime(), prevSerial: prog.key === "samman" ? String(data.serial_number) : "" }); setFile(null); setRefresh((x) => x + 1);
+      setF({ ...empty, entryDate: today(), entryTime: nowTime(), prevSerial: "" }); setFile(null); setRefresh((x) => x + 1);
     } catch (e: any) { toast.error(e.message || "تعذر الحفظ"); }
     setSaving(false);
   };

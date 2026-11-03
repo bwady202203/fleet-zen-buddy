@@ -79,7 +79,7 @@ async function findOrCreate(kind: string, orgId: string, name: string | null) {
 export async function saveSammanShipment(orgId: string, userId: string | null, v: any) {
   const prev = (v.previous_serial as string).trim();
   const { data: dup } = await db.from("samman_shipments").select("id").eq("previous_serial_code", prev).limit(1);
-  if (dup?.length) throw new Error(`السريال ${prev} مُدخل سابقًا في فاتورة أخرى — أدخل آخر سريال تم توليده`);
+  if (dup?.length) throw new Error(`السريال ${prev} مُدخل سابقًا في فاتورة أخرى — أدخل سريالًا لم يُستخدم من قبل`);
   const next = await generateSammanSerial();
   const [company_id, client_id, supplier_id, material_type_id, driver_id, previous_serial_id, serial_id] = await Promise.all([
     findOrCreate("company", orgId, v.establishment), findOrCreate("client", orgId, v.client_name),
@@ -115,4 +115,12 @@ export async function generateSammanSerial(): Promise<string> {
 export async function getLastSammanSerial(): Promise<string> {
   const { data } = await db.from("samman_shipments").select("serial_code").order("created_at", { ascending: false }).limit(1);
   return data?.[0]?.serial_code || "";
+}
+
+/** Driver of the shipment that generated (or previously used) this serial. */
+export async function getSammanDriverBySerial(code: string): Promise<string> {
+  const c = code.trim();
+  if (!/^\d{8,}$/.test(c)) return "";
+  const { data } = await db.from("samman_shipments").select("driver_name").or(`serial_code.eq.${c},previous_serial_code.eq.${c}`).not("driver_name", "is", null).order("created_at", { ascending: false }).limit(1);
+  return data?.[0]?.driver_name || "";
 }
