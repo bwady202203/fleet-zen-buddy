@@ -1,5 +1,5 @@
 import { useCrusherProgram } from "@/lib/crusherProgram";
-import { listSammanLookup, saveSammanShipment, getLastSammanSerial, getSammanDriverBySerial } from "@/lib/sammanData";
+import { listSammanLookup, saveSammanShipment, getSammanDriverBySerial } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Factory, FileText, Plus, Scale, Building2, CalendarClock, Hash, Truck, ChevronDown } from "lucide-react";
