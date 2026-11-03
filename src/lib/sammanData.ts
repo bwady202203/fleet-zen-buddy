@@ -116,3 +116,11 @@ export async function getLastSammanSerial(): Promise<string> {
   const { data } = await db.from("samman_shipments").select("serial_code").order("created_at", { ascending: false }).limit(1);
   return data?.[0]?.serial_code || "";
 }
+
+/** Driver of the shipment that generated (or previously used) this serial. */
+export async function getSammanDriverBySerial(code: string): Promise<string> {
+  const c = code.trim();
+  if (!/^\d{8,}$/.test(c)) return "";
+  const { data } = await db.from("samman_shipments").select("driver_name").or(`serial_code.eq.${c},previous_serial_code.eq.${c}`).not("driver_name", "is", null).order("created_at", { ascending: false }).limit(1);
+  return data?.[0]?.driver_name || "";
+}
