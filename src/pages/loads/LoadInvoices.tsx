@@ -284,16 +284,22 @@ const LoadInvoices = () => {
 
       } else {
         // Create new invoice
-        // Continuous 6-digit sequence starting after 261010 (October 2026 series)
+        // Separate 6-digit sequence per supplier: Remal 261xxx, Sultan 262xxx, others 263xxx+
+        const SUPPLIER_PREFIX: Record<string, string> = {
+          'f3605b36-d511-4622-84e9-d1d2c503dac5': '261',
+          '81095627-d2d6-4711-a2bb-63842ccdc46d': '262',
+          'bd819ad1-56d1-40a1-a7b3-658ae6b4fa47': '263',
+        };
+        const prefix = SUPPLIER_PREFIX[formData.supplierId || ''] || '269';
         const { data: lastRows } = await supabase
           .from('load_invoices')
           .select('invoice_number')
-          .gte('invoice_number', '261001')
-          .lte('invoice_number', '269999')
+          .gte('invoice_number', `${prefix}001`)
+          .lte('invoice_number', `${prefix}999`)
           .order('invoice_number', { ascending: false })
           .limit(1);
-        const lastNum = lastRows?.[0]?.invoice_number ? parseInt(lastRows[0].invoice_number, 10) : 261010;
-        const invoiceNumber = String(Math.max(lastNum, 261010) + 1);
+        const lastNum = lastRows?.[0]?.invoice_number ? parseInt(lastRows[0].invoice_number, 10) : parseInt(`${prefix}000`, 10);
+        const invoiceNumber = String(lastNum + 1);
 
         const { data: newInvoice, error: invoiceError } = await supabase
           .from('load_invoices')
