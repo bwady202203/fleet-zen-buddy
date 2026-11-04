@@ -506,7 +506,7 @@ interface SystemNavigationSidebarProps {
 
 export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSidebarProps) {
   const location = useLocation();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isSammanOnly } = usePermissions();
   const { state, setOpen, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
   // على الجوال تُعرض القائمة كورقة بعرض كامل دائمًا، ولا تنطبق عليها حالة الطي الخاصة بسطح المكتب
   const collapsed = !isMobile && state === "collapsed";
@@ -514,8 +514,13 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   // المجموعات المعروضة في القائمة الجانبية: الأسطول والمحاسبة والحمولات تُعرض كتبويبات في الشاشة الرئيسية
   const hiddenGroupKeys = ["fleet", "accounting", "loads", "hr"];
   const visibleGroups = useMemo(
-    () => navigationGroups.filter((group) => !hiddenGroupKeys.includes(group.key) && (!group.module || hasPermission(group.module, "view"))),
-    [hasPermission],
+    () => navigationGroups.filter((group) => {
+      if (hiddenGroupKeys.includes(group.key)) return false;
+      // حساب مخصص لبرنامج الصمان: لا تظهر له أي مجموعة أخرى
+      if (isSammanOnly) return group.key === "samman";
+      return !group.module || hasPermission(group.module, "view");
+    }),
+    [hasPermission, isSammanOnly],
   );
 
   const activeGroupKeys = useMemo(

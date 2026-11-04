@@ -14,6 +14,8 @@ interface PermissionsContextType {
   permissions: ModulePermission[];
   loading: boolean;
   hasPermission: (moduleName: string, action?: 'view' | 'create' | 'edit' | 'delete') => boolean;
+  // حساب مخصص لبرنامج الصمان فقط: يملك صلاحية الصمان ولا يملك المحاسبة
+  isSammanOnly: boolean;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
@@ -96,8 +98,13 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
+  // حساب مخصص لبرنامج الصمان فقط: يملك صلاحية الصمان ولا يملك المحاسبة
+  const isSammanOnly = userRole !== 'admin'
+    && hasPermission('samman', 'view')
+    && !hasPermission('accounting', 'view');
+
   return (
-    <PermissionsContext.Provider value={{ permissions, loading, hasPermission }}>
+    <PermissionsContext.Provider value={{ permissions, loading, hasPermission, isSammanOnly }}>
       {children}
     </PermissionsContext.Provider>
   );

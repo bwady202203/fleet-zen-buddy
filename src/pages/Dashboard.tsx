@@ -10,11 +10,12 @@ import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
 import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
 import CustodyRequestDialog from "@/components/CustodyRequestDialog";
+import SammanDashboard from "@/components/dashboard/SammanDashboard";
 import { useState } from "react";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isSammanOnly } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
   const [custodyRequestOpen, setCustodyRequestOpen] = useState(false);
@@ -95,6 +96,9 @@ const Dashboard = () => {
 
   // تصفية الأقسام حسب الصلاحيات
   const modules = allModules.filter(module => hasPermission(module.module, 'view'));
+
+  // حساب مخصص لبرنامج الصمان: تُعرض لوحة الصمان فقط
+  if (isSammanOnly) return <SammanDashboard />;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
