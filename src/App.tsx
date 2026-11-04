@@ -55,6 +55,7 @@ const CrusherShipments = lazy(() => import("./pages/accounting/CrusherShipments"
 const CrusherData = lazy(() => import("./pages/accounting/CrusherData"));
 const GroupApp = lazy(() => import("./pages/accounting/GroupApp"));
 const SpecialInvoicesApp = lazy(() => import("./pages/accounting/SpecialInvoicesApp"));
+const DataCards = lazy(() => import("./pages/DataCards"));
 const HrPortalApp = lazy(() => import("./pages/hr/HrPortalApp"));
 const ReportsHub = lazy(() => import("./pages/ReportsHub"));
 
@@ -213,6 +214,7 @@ const App = () => {
 <Route path="/samman/shipments" element={<CrusherShipments />} />
 <Route path="/samman/data" element={<CrusherData />} />
                                   <Route path="/accounting/special-invoices" element={<SpecialInvoicesApp />} />
+                                  <Route path="/data" element={<DataCards />} />
                                   <Route path="/reports" element={<ReportsHub />} />
 
                                   <Route path="/hr/portal" element={<HrPortalApp />} />
