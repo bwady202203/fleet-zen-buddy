@@ -37,6 +37,7 @@ const MODULES = [
   { id: 'spare_parts', name: 'قطع الغيار' },
   { id: 'custody', name: 'العهد' },
   { id: 'vouchers', name: 'السندات' },
+  { id: 'samman', name: 'برنامج الصمان' },
 ];
 
 const UsersManagement = () => {
