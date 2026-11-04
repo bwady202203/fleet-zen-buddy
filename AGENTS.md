@@ -10,3 +10,4 @@ Store employment metadata on chart-of-accounts records and gate its form and sav
 Lazy-load page modules at route boundaries while preserving providers and authentication, so unused feature screens do not delay initial opening.
 Journal registers fetch all authorized entries in bounded range batches with deterministic ordering, then apply inclusive date-range filters; never replace full retrieval with a large limit.
 Company Drive storage uses authenticated server-only connector calls restricted to the connected company administrator, organization-tagged files, and a dedicated Drive folder; preserve existing archive storage to avoid implicit migration or data loss.
+A login restricted to a single module is granted a dedicated permission row and detected in PermissionsContext; enforce that restriction in the route wrapper as well as the side menu, so typed URLs cannot reach other screens.
