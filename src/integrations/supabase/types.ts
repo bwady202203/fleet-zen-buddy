@@ -1270,6 +1270,48 @@ export type Database = {
           },
         ]
       }
+      data_cards: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          notes: string
+          number: string
+          organization_id: string
+          phone: string
+          secret: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          notes?: string
+          number?: string
+          organization_id: string
+          phone?: string
+          secret?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          notes?: string
+          number?: string
+          organization_id?: string
+          phone?: string
+          secret?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_locations: {
         Row: {
           created_at: string
