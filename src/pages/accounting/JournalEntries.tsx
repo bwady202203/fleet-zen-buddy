@@ -120,7 +120,7 @@ const JournalEntries = () => {
       if (error) throw error;
       toast({ title: "تم تحديث التاريخ بنجاح" });
       setInlineDateEditId(null);
-      fetchJournalEntries();
+      refreshSingleEntry(entryId);
     } catch (error) {
       console.error('Error updating date:', error);
       toast({ title: "خطأ", description: "فشل في تحديث التاريخ", variant: "destructive" });
@@ -169,9 +169,15 @@ const JournalEntries = () => {
           schema: 'public',
           table: 'journal_entries'
         },
-        () => {
-          console.log('Journal entry changed, refreshing...');
-          fetchJournalEntries();
+        (payload: any) => {
+          if (payload.eventType === 'DELETE') {
+            if (payload.old?.id) removeEntryLocally(payload.old.id);
+            return;
+          }
+          const id = payload.new?.id;
+          if (!id) return;
+          clearTimeout(realtimeTimers.current[id]);
+          realtimeTimers.current[id] = setTimeout(() => refreshSingleEntry(id), 800);
         }
       )
       .subscribe();
@@ -287,27 +293,7 @@ const JournalEntries = () => {
     }
   };
 
-  const fetchJournalEntries = async () => {
-    setIsLoadingEntries(true);
-    try {
-      const entries = await fetchAllJournalPages((from, to) => supabase
-        .from('journal_entries')
-        .select(`
-          *,
-          journal_entry_lines (
-            *,
-            chart_of_accounts (code, name_ar),
-            cost_centers (code, name_ar),
-            projects (code, name_ar),
-            branches (code, name_ar)
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .order('entry_number', { ascending: false })
-        .order('id', { ascending: false })
-        .range(from, to));
-
-      const formattedEntries = entries?.map(entry => ({
+  const formatJournalEntry = (entry: any) => ({
         id: entry.id,
         entryNumber: entry.entry_number,
         universalSerial: entry.universal_serial,
@@ -334,7 +320,63 @@ const JournalEntries = () => {
         })),
         totalDebit: entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.debit), 0),
         totalCredit: entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.credit), 0),
-      })) || [];
+  });
+
+  const JOURNAL_SELECT = `
+          *,
+          journal_entry_lines (
+            *,
+            chart_of_accounts (code, name_ar),
+            cost_centers (code, name_ar),
+            projects (code, name_ar),
+            branches (code, name_ar)
+          )
+        `;
+
+  // تحديث قيد واحد فقط في القائمة بدل إعادة تحميل كل القيود
+  const refreshSingleEntry = async (entryId: string) => {
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .select(JOURNAL_SELECT)
+      .eq('id', entryId)
+      .maybeSingle();
+    if (error) { console.error('Error refreshing entry:', error); return; }
+    setDisplayedEntries((prev: any[]) => {
+      if (!data) return prev.filter(e => e.id !== entryId);
+      const formatted = formatJournalEntry(data);
+      const idx = prev.findIndex(e => e.id === entryId);
+      if (idx === -1) return [formatted, ...prev];
+      const next = [...prev]; next[idx] = formatted; return next;
+    });
+  };
+
+  const removeEntryLocally = (entryId: string) => {
+    setDisplayedEntries((prev: any[]) => prev.filter(e => e.id !== entryId));
+  };
+
+  const realtimeTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const fetchJournalEntries = async () => {
+    setIsLoadingEntries(true);
+    try {
+      const entries = await fetchAllJournalPages((from, to) => supabase
+        .from('journal_entries')
+        .select(`
+          *,
+          journal_entry_lines (
+            *,
+            chart_of_accounts (code, name_ar),
+            cost_centers (code, name_ar),
+            projects (code, name_ar),
+            branches (code, name_ar)
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .order('entry_number', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to));
+
+      const formattedEntries = (entries || []).map(formatJournalEntry);
 
       setDisplayedEntries(formattedEntries);
     } catch (error) {
@@ -697,6 +739,7 @@ const JournalEntries = () => {
       }
 
       console.log('✅ تم حفظ جميع السطور بنجاح');
+      refreshSingleEntry(journalEntry.id);
 
 
       toast({
@@ -774,7 +817,7 @@ const JournalEntries = () => {
             description: "تم حذف القيد بنجاح / Entry deleted successfully",
           });
 
-          fetchJournalEntries();
+          removeEntryLocally(entryId);
         } catch (error) {
           console.error('Error deleting entry:', error);
           toast({
@@ -945,7 +988,7 @@ const JournalEntries = () => {
       });
 
       setDetailDialogOpen(false);
-      fetchJournalEntries();
+      refreshSingleEntry(editingEntry.id);
     } catch (error) {
       console.error('Error updating entry:', error);
       toast({
