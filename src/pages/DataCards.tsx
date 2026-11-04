@@ -56,7 +56,7 @@ export default function DataCards() {
 
   const add = (category: string) => setRows((r) => [...r, {
     id: crypto.randomUUID(), category, title: "", number: "", secret: "", phone: "", notes: "",
-    sort_order: (r.at(-1)?.sort_order ?? 0) + 1, _new: true, _dirty: true,
+    sort_order: (r[r.length - 1]?.sort_order ?? 0) + 1, _new: true, _dirty: true,
   }]);
 
   const copy = (v: string) => { navigator.clipboard.writeText(v); toast.success("تم النسخ"); };
