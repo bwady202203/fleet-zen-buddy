@@ -81,7 +81,7 @@ const JournalEntries = () => {
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [filterDate, setFilterDate] = useState("");
-  const [filterFromDate, setFilterFromDate] = useState("2026-01-01");
+  const [filterFromDate, setFilterFromDate] = useState(() => todayISODate().slice(0, 8) + "01");
   const [filterToDate, setFilterToDate] = useState(todayISODate);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [filterAccount, setFilterAccount] = useState("");
@@ -152,6 +152,14 @@ const JournalEntries = () => {
   };
 
   
+  const rangeMounted = useRef(false);
+  useEffect(() => {
+    if (!rangeMounted.current) { rangeMounted.current = true; return; }
+    const t = setTimeout(() => fetchJournalEntries(), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterFromDate, filterToDate]);
+
   useEffect(() => {
     fetchAccounts();
     fetchCostCenters();
@@ -356,29 +364,35 @@ const JournalEntries = () => {
 
   const realtimeTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
+  const fetchSeq = useRef(0);
+  const rangeRef = useRef({ from: filterFromDate, to: filterToDate });
+  rangeRef.current = { from: filterFromDate, to: filterToDate };
+
   const fetchJournalEntries = async () => {
+    const seq = ++fetchSeq.current;
+    const { from: rangeFrom, to: rangeTo } = rangeRef.current;
     setIsLoadingEntries(true);
     try {
-      const entries = await fetchAllJournalPages((from, to) => supabase
-        .from('journal_entries')
-        .select(`
-          *,
-          journal_entry_lines (
-            *,
-            chart_of_accounts (code, name_ar),
-            cost_centers (code, name_ar),
-            projects (code, name_ar),
-            branches (code, name_ar)
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .order('entry_number', { ascending: false })
-        .order('id', { ascending: false })
-        .range(from, to));
-
-      const formattedEntries = (entries || []).map(formatJournalEntry);
-
-      setDisplayedEntries(formattedEntries);
+      const collected: any[] = [];
+      await fetchAllJournalPages(async (from, to) => {
+        let q = supabase
+          .from('journal_entries')
+          .select(JOURNAL_SELECT);
+        if (rangeFrom) q = q.gte('date', rangeFrom);
+        if (rangeTo) q = q.lte('date', rangeTo);
+        const res = await q
+          .order('created_at', { ascending: false })
+          .order('entry_number', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, to);
+        if (!res.error && res.data && seq === fetchSeq.current) {
+          collected.push(...res.data.map(formatJournalEntry));
+          setDisplayedEntries([...collected]); // عرض تدريجي
+        }
+        return res;
+      });
+      if (seq !== fetchSeq.current) return;
+      setDisplayedEntries(collected);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
       toast({ title: "تعذر تحميل جميع القيود", description: "أعد المحاولة لتجنب عرض بيانات غير مكتملة", variant: "destructive" });
