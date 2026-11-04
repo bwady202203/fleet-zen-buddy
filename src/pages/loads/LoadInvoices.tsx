@@ -284,7 +284,16 @@ const LoadInvoices = () => {
 
       } else {
         // Create new invoice
-        const invoiceNumber = `${Date.now().toString().slice(-6)}`;
+        // Sequential 6-digit number: YYMM + 2-digit sequence by invoice date month
+        const prefix = String(formData.date).slice(2, 4) + String(formData.date).slice(5, 7);
+        const { data: lastRows } = await supabase
+          .from('load_invoices')
+          .select('invoice_number')
+          .like('invoice_number', `${prefix}__`)
+          .order('invoice_number', { ascending: false })
+          .limit(1);
+        const lastSeq = lastRows?.[0]?.invoice_number ? parseInt(lastRows[0].invoice_number.slice(4), 10) : 0;
+        const invoiceNumber = `${prefix}${String(lastSeq + 1).padStart(2, '0')}`;
 
         const { data: newInvoice, error: invoiceError } = await supabase
           .from('load_invoices')
