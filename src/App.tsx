@@ -14,6 +14,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { EmployeeTransactionsProvider } from "@/contexts/EmployeeTransactionsContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import SammanOnlyGuard from "@/components/SammanOnlyGuard";
 import { AppLayout } from "@/components/AppLayout";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AccountReport = lazy(() => import("./pages/AccountReport"));
@@ -173,6 +174,7 @@ const App = () => {
                             {/* Protected Routes with Icons Bar */}
                             <Route path="/*" element={
                               <ProtectedRoute>
+                                <SammanOnlyGuard>
                                 <AppLayout>
                                 <Routes>
                                   <Route path="/" element={<Dashboard />} />
@@ -310,6 +312,7 @@ const App = () => {
                                   <Route path="*" element={<NotFound />} />
                                 </Routes>
                                 </AppLayout>
+                                </SammanOnlyGuard>
                               </ProtectedRoute>
                             } />
                           </Routes>
