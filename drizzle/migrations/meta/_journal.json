@@ -78,6 +78,13 @@
       "when": 1793807482962,
       "tag": "0010_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794054382229,
+      "tag": "0011_create_data_documents",
+      "breakpoints": true
     }
   ]
 }
