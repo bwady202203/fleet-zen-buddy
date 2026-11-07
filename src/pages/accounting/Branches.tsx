@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -161,20 +162,10 @@ const Branches = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Link to="/accounting" className="hover:text-primary transition-colors">
-              <ArrowRight className="h-6 w-6" />
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Building2 className="h-8 w-8" />
-                الفروع
-              </h1>
-              <p className="text-muted-foreground mt-1">
+          <AccountingPageHeader title={<><Building2 className="h-8 w-8" />الفروع
+              </>} titleClassName="text-3xl font-bold flex items-center gap-2" description={<p className="text-muted-foreground mt-1">
                 إدارة فروع المؤسسة
-              </p>
-            </div>
-            <Dialog open={open} onOpenChange={(isOpen) => {
+              </p>} actions={<><Dialog open={open} onOpenChange={(isOpen) => {
               setOpen(isOpen);
               if (!isOpen) resetForm();
             }}>
@@ -276,8 +267,7 @@ const Branches = () => {
                   </div>
                 </form>
               </DialogContent>
-            </Dialog>
-          </div>
+            </Dialog></>} />
         </div>
       </header>
 

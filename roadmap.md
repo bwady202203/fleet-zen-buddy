@@ -8,3 +8,5 @@
 - [x] Reduce initial page loading by deferring unused page modules and verify navigation.
 - [x] Add and verify company Google Drive file storage in the documents archive, retaining existing files.
 - [x] Restore complete journal visibility and verify January–September 2026 against stored records (1501 of 3205 entries).
+- [x] Centralize accounting page headers and direct all accounting header arrows to /accounting without altering content or data.
+- [x] Verify direct opening, refresh and header return across 42 accounting destinations, plus desktop/mobile header layout.

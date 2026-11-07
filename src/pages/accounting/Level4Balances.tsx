@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -221,13 +222,8 @@ export default function Level4Balances() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
-      <div className="flex justify-between items-center print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold">أرصدة حسابات المستوى الرابع</h1>
-          <p className="text-muted-foreground mt-2">
-            عرض كافة الأرصدة المدينة والدائنة لحسابات المستوى الرابع
-          </p>
-        </div>
+      <div className="flex justify-between items-center print:hidden flex-col items-stretch gap-4 md:flex-row md:items-center">
+        <AccountingPageHeader title="أرصدة حسابات المستوى الرابع" titleClassName="text-3xl font-bold" description="عرض كافة الأرصدة المدينة والدائنة لحسابات المستوى الرابع" />
         <Button onClick={handlePrint} variant="outline">
           <Printer className="ml-2 h-4 w-4" />
           طباعة

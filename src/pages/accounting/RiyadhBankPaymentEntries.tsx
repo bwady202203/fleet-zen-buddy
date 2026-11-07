@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -559,18 +560,10 @@ export default function RiyadhBankPaymentEntries() {
   return (
     <div className="min-h-screen bg-muted/30" dir="rtl">
       <div className="bg-card border-b px-6 py-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/accounting")}>
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-            <Landmark className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold">قيود بنك الرياض للسداد</h1>
-              <p className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between flex-wrap gap-3 flex-col items-stretch gap-4 md:flex-row md:items-center">
+          <AccountingPageHeader title={<>قيود بنك الرياض للسداد</>} titleClassName="text-xl font-bold" description={<p className="text-xs text-muted-foreground">
                 لصق عمليات السداد من بنك الرياض وإنشاء قيد لكل تاريخ
-              </p>
-              <button
+              </p>} icon={<><Landmark className="h-6 w-6 text-primary" /></>}><button
                 type="button"
                 onClick={() => { setCreditPickerOpen(true); setCreditSearch(""); }}
                 className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-1 rounded border bg-primary/5 hover:bg-primary/10"
@@ -578,9 +571,7 @@ export default function RiyadhBankPaymentEntries() {
               >
                 <Settings2 className="h-3.5 w-3.5" />
                 الطرف الدائن: {getAccount(creditAccountId)?.name_ar || "بنك الرياض"}
-              </button>
-            </div>
-          </div>
+              </button></AccountingPageHeader>
           <div className="flex items-center gap-2">
             {rows.length > 0 && (
               <Button variant="outline" onClick={() => setRows([])}>

@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -2308,14 +2309,8 @@ export default function SmartJournalEntries() {
       <div className="min-h-screen bg-gray-50" dir="rtl">
         {/* Header */}
         <div className="bg-white border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => navigate('/accounting')} className="gap-2">
-                <ArrowRight className="h-4 w-4" />
-                رجوع
-              </Button>
-              <h1 className="text-xl font-semibold text-gray-900">قيود ذكية</h1>
-            </div>
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
+            <AccountingPageHeader title={<>قيود ذكية</>} titleClassName="text-xl font-semibold text-gray-900" description={<p className="mt-1 text-sm text-muted-foreground">تسجيل القيود المحاسبية</p>} />
             <div className="flex items-center gap-2">
               {/* Help & Instructions Dialog */}
               <Dialog>

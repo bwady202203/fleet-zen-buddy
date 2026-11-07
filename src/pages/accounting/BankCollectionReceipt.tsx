@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -353,18 +354,7 @@ export default function BankCollectionReceipt() {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className={cn("border-b bg-gradient-to-r shadow-lg", bank.theme)}>
-        <div className="container mx-auto px-4 py-5 flex justify-between items-center">
-          <div className="flex items-center gap-3 text-white">
-            <Icon className="h-9 w-9" />
-            <div>
-              <h1 className="text-2xl font-bold">سند قبض - {bank.name}</h1>
-              <p className="text-sm opacity-90">رمز الحساب: {bank.code}</p>
-            </div>
-          </div>
-          <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => navigate("/vouchers")}>
-            <ArrowRight className="h-5 w-5 ml-2" /> رجوع
-          </Button>
-        </div>
+        <div className="container mx-auto px-4 py-5"><AccountingPageHeader title={<>سند قبض - {bank.name}</>} titleClassName="text-2xl font-bold" description={<p className="text-sm opacity-90">رمز الحساب: {bank.code}</p>} icon={<><Icon className="h-9 w-9" /></>} className="text-primary-foreground" /></div>
       </header>
 
       <main className="container mx-auto px-4 py-6">

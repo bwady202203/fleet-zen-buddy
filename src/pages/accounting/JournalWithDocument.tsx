@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { ChangeEvent, ClipboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -452,17 +453,8 @@ export default function JournalWithDocument() {
   return (
     <main className="min-h-screen bg-background p-4 md:p-8" dir="rtl" onPaste={handlePaste}>
       <div className="mx-auto max-w-[1500px] space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" asChild aria-label="العودة">
-              <Link to="/accounting"><ArrowRight className="h-5 w-5" /></Link>
-            </Button>
-            <div>
-              <p className="text-sm font-medium text-primary">المعاملات البنكية المؤتمتة</p>
-              <h1 className="text-3xl font-bold tracking-normal">قيد يومية مع المستند</h1>
-              <p className="mt-1 text-sm text-muted-foreground">الصق صورة إشعار البنك، راجع البيانات، ثم احفظ القيد والمستند معاً.</p>
-            </div>
-          </div>
+        <header className="flex flex-wrap items-center justify-between gap-4 flex-col items-stretch gap-4 md:flex-row md:items-center">
+          <AccountingPageHeader title={<>قيد يومية مع المستند</>} titleClassName="text-3xl font-bold tracking-normal" description={<p className="mt-1 text-sm text-muted-foreground">الصق صورة إشعار البنك، راجع البيانات، ثم احفظ القيد والمستند معاً.</p>} eyebrow={<p className="text-sm font-medium text-primary">المعاملات البنكية المؤتمتة</p>} />
           <Button variant="outline" onClick={() => void loadPage()} disabled={loading}>
             <RefreshCcw className="ml-2 h-4 w-4" /> تحديث السجل
           </Button>

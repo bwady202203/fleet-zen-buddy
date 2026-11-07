@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -174,16 +175,8 @@ const SalesInvoice = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/accounting" className="hover:text-primary transition-colors">
-                <ArrowRight className="h-6 w-6" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold">فواتير المبيعات</h1>
-                <p className="text-muted-foreground mt-1">إدارة فواتير المبيعات</p>
-              </div>
-            </div>
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
+            <AccountingPageHeader title={<>فواتير المبيعات</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">إدارة فواتير المبيعات</p>} />
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="lg">

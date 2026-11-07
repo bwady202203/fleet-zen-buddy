@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1066,18 +1067,10 @@ const ChartOfAccounts = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/accounting" className="hover:text-primary transition-colors">
-                <ArrowRight className="h-6 w-6" />
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold">شجرة الحسابات</h1>
-                <p className="text-muted-foreground mt-1">
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
+            <AccountingPageHeader title={<>شجرة الحسابات</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                   إدارة الدليل المحاسبي - 4 مستويات
-                </p>
-              </div>
-            </div>
+                </p>} />
             <div className="flex gap-2">
               <Button onClick={handleRefreshLedger} variant="outline" className="gap-2">
                 <RefreshCw className="h-4 w-4" />

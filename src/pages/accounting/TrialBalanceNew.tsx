@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -341,14 +342,8 @@ export default function TrialBalanceNew() {
   return (
     <div className="container mx-auto p-6 print:p-0" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 print:hidden">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/accounting")}>
-            <ArrowRight className="ml-2" />
-            العودة
-          </Button>
-          <h1 className="text-3xl font-bold">ميزان المراجعة</h1>
-        </div>
+      <div className="flex items-center justify-between mb-6 print:hidden flex-col items-stretch gap-4 md:flex-row md:items-center">
+        <AccountingPageHeader title={<>ميزان المراجعة</>} titleClassName="text-3xl font-bold" description={<p className="mt-1 text-sm text-muted-foreground">عرض أرصدة الحسابات ومراجعتها</p>} />
         <Button
           onClick={handlePrint}
           disabled={trialBalanceData.length === 0}

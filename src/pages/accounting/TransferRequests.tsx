@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
  import { useState, useEffect } from 'react';
  import { supabase } from '@/integrations/supabase/client';
  import { Button } from '@/components/ui/button';
@@ -1379,15 +1380,7 @@ const [newDateValue, setNewDateValue] = useState('');
          <div className="container mx-auto px-4 py-6">
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div>
-               <div className="flex items-center gap-3">
-                 <div className="p-2.5 bg-primary/10 rounded-xl">
-                   <SendHorizontal className="h-6 w-6 text-primary" />
-                 </div>
-                 <div>
-                   <h1 className="text-2xl sm:text-3xl font-bold">طلبات التحويل</h1>
-                   <p className="text-muted-foreground mt-1">إدارة طلبات التحويل المالية</p>
-                 </div>
-               </div>
+               <AccountingPageHeader title="طلبات التحويل" description="إدارة طلبات التحويل المالية" titleClassName="text-2xl sm:text-3xl font-bold" icon={<div className="p-2.5 bg-primary/10 rounded-xl"><SendHorizontal className="h-6 w-6 text-primary" /></div>} />
              </div>
              <div className="flex items-center gap-3 flex-wrap">
                <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-lg">
@@ -1402,12 +1395,6 @@ const [newDateValue, setNewDateValue] = useState('');
                   <Button variant="secondary" size="sm" className="gap-2">
                     <Search className="h-4 w-4" />
                     جداول قوائم التحويل
-                  </Button>
-                </Link>
-                <Link to="/accounting">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <ArrowRight className="h-4 w-4" />
-                    العودة للمحاسبة
                   </Button>
                 </Link>
 

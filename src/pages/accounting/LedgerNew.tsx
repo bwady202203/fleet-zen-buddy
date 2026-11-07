@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -612,14 +613,8 @@ export default function LedgerNew() {
   return (
     <div className="container mx-auto p-6 print:p-0 ledger-report-container" dir="rtl">
       {/* Navigation Header - Hidden during print */}
-      <div className="flex items-center justify-between mb-4 print:hidden">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/accounting")}>
-            <ArrowRight className="ml-2" />
-            العودة
-          </Button>
-          <h1 className="text-2xl font-bold">كشف الحساب</h1>
-        </div>
+      <div className="flex items-center justify-between mb-4 print:hidden flex-col items-stretch gap-4 md:flex-row md:items-center">
+        <AccountingPageHeader title={<>كشف الحساب</>} titleClassName="text-2xl font-bold" description={<p className="mt-1 text-sm text-muted-foreground">حركة الحسابات التفصيلية</p>} />
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handlePreviewPrint} disabled={!selectedAccount}>
               <Eye className="ml-2 h-4 w-4" />
