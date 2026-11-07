@@ -30,6 +30,11 @@ const Accounting = () => {
     }
   }, [searchParams, premiumUnlocked]);
 
+  // العودة من أي شاشة محاسبية تفتح الصفحة من الأعلى (أقسام المحاسبة) وليس عند المستوى المميز
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handlePremiumSubmit = () => {
     if (premiumCode.trim() === PREMIUM_CODE) {
       setPremiumUnlocked(true);
