@@ -10,6 +10,9 @@ const accounts = [
   { id: "a106", code: "111106" },
   { id: "a51010", code: "51010" },
   { id: "a405", code: "510405" },
+  { id: "a413", code: "510413" },
+  { id: "a408", code: "510408" },
+  { id: "a302", code: "520302" },
 ];
 
 describe("bank entry keyword rules", () => {
@@ -25,6 +28,12 @@ describe("bank entry keyword rules", () => {
     expect(findAccountByKeywordRules(accounts, ["مشتريات الكساره"])).toBe("a51010");
   });
 
+  test("batteries, tracking and medical insurance rules", () => {
+    expect(findAccountByKeywordRules(accounts, ["شراء بطاريات"])).toBe("a413");
+    expect(findAccountByKeywordRules(accounts, ["تتبع المركبات"])).toBe("a408");
+    expect(findAccountByKeywordRules(accounts, ["تأمين طبي"])).toBe("a302");
+  });
+
   test("unknown text matches nothing", () => {
     expect(findAccountByKeywordRules(accounts, ["شحن رصيد"])).toBeNull();
     expect(findAccountByKeywordRules(accounts, [""])).toBeNull();
@@ -33,7 +42,7 @@ describe("bank entry keyword rules", () => {
 
   test("every rule points at a real code", () => {
     expect(BANK_KEYWORD_RULES.map((r) => r.code).sort()).toEqual(
-      ["111104", "111106", "51010", "510405"].sort()
+      ["111104", "111106", "51010", "510405", "510413", "510408", "520302"].sort()
     );
   });
 

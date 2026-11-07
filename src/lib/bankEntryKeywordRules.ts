@@ -29,6 +29,12 @@ export const BANK_KEYWORD_RULES: KeywordRule[] = [
   { words: ["مشتريات الكسارة", "مشتريات الكساره"], code: "51010" },
   // تذاكر سفر وانتقالات
   { words: ["تاكسي", "تكسي", "taxi"], code: "510405" },
+  // بطاريات
+  { words: ["بطاريات", "بطارية", "بطاريه", "battery", "batteries"], code: "510413" },
+  // اجهزة تتبع
+  { words: ["تتبع المركبات", "تتبع", "tracking"], code: "510408" },
+  // التامين الطبي والعلاج
+  { words: ["تامين طبي", "تأمين طبي", "التامين الطبي", "medical insurance"], code: "520302" },
 ];
 
 export const findAccountByKeywordRules = <T extends KeywordRuleAccount>(
