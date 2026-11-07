@@ -108,6 +108,7 @@ export default function DataDocuments() {
     if (!currentOrganizationId || saving) return;
     if (!pending.some(item => item.file)) return toast.error("الصق صورة أو PDF في المربع أولًا");
     if (pending.some(item => item.file && !item.title.trim())) return toast.error("أدخل اسمًا لكل مستند");
+    persistOrder([...pending.filter(item => item.file).map(item => item.id), ...orderDocuments(rows, order).map(item => item.id)]);
     setSaving(true);
     try {
       for (const item of pending) {
