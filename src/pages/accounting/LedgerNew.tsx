@@ -614,7 +614,7 @@ export default function LedgerNew() {
       {/* Navigation Header - Hidden during print */}
       <div className="flex items-center justify-between mb-4 print:hidden">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/accounting")}>
+          <Button variant="ghost" onClick={() => navigate("/")}>
             <ArrowRight className="ml-2" />
             العودة
           </Button>
