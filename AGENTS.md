@@ -14,3 +14,4 @@ A login restricted to a single module is granted a dedicated permission row and 
 Accounting subpage headers and the permanent return control share accountingNavigation's fixed destination; preserve page-owned tools, print containers and non-accounting module aliases so navigation changes cannot alter operations or permissions.
 Data Documents uses organization-scoped administrator RLS and private storage; render PDF pages locally with PDF.js and share files or expiring signed links so previews never require public buckets.
 Data Documents empty cards are unsaved paste targets; persist display order by stable document IDs in organization-and-user-scoped browser storage without changing document permissions or schema.
+Automatic bank-statement account matching uses word-to-account rules declared in one testable lib module so they stay covered by tests and cannot drift per screen.
