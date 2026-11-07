@@ -11,3 +11,5 @@
 - [x] Centralize accounting page headers and direct all accounting header arrows to /accounting without altering content or data.
 - [x] Verify direct opening, refresh and header return across 42 accounting destinations, plus desktop/mobile header layout.
 - [x] Unify accounting header and permanent return buttons to the pictured home accounting cards and verify both controls.
+- [x] Add Data Documents below Data with private image/PDF upload and paste, naming, previews, sharing and download.
+- [x] Verify document saving, reloading and download on desktop/mobile.
