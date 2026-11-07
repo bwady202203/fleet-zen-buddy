@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";

@@ -180,6 +180,7 @@ const App = () => {
                                   <Route path="/" element={<Dashboard />} />
                                   <Route path="/account-report" element={<AccountReport />} />
                                   <Route path="/vouchers" element={<Vouchers />} />
+                                  <Route path="/accounting/vouchers" element={<Vouchers />} />
                                   <Route path="/users" element={<UsersManagement />} />
                                   <Route path="/admin-panel" element={<AdminPanel />} />
                                   <Route path="/settings-hub" element={<SettingsHub />} />
