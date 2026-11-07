@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -772,20 +773,10 @@ export default function PaymentVouchers() {
 
   return (
     <div className="container mx-auto p-6" dir="rtl">
-      {/* Back Button */}
-      <div className="mb-4">
-        <Button variant="ghost" onClick={() => navigate("/?tab=accounting")} className="gap-2">
-          <ArrowRight className="h-4 w-4" />
-          رجوع
-        </Button>
-      </div>
+      <AccountingPageHeader title="سندات الصرف" description="إدارة سندات الصرف" className="mb-4" icon={<FileText className="h-6 w-6" />} />
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-6 w-6" />
-              سندات الصرف
-            </CardTitle>
             <Button onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4 ml-2" />
               سند صرف جديد

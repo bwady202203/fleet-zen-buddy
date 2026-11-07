@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -603,9 +604,9 @@ export default function PurchaseOrder() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AccountingPageHeader title="طلبات الشراء" description="إدارة طلبات الشراء من الموردين" />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">طلبات الشراء</CardTitle>
           <Button onClick={() => setShowForm(true)}>
             <Plus className="ml-2 h-4 w-4" />
             طلب شراء جديد

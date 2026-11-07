@@ -1,4 +1,5 @@
 import { ChangeEvent, ClipboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -263,21 +264,7 @@ export default function DocumentsArchive() {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-primary to-primary/70 p-3 shadow-lg">
-              <FileText className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">أرشيف الفواتير والمستندات</h1>
-              <p className="text-sm text-muted-foreground">الصق صورة أو ارفع PDF مع نص للبحث عنه لاحقاً</p>
-            </div>
-          </div>
-          <Link to="/">
-            <Button variant="outline">
-              <ArrowRight className="ml-2 h-4 w-4" />
-              العودة للرئيسية
-            </Button>
-          </Link>
+          <AccountingPageHeader title="أرشيف الفواتير والمستندات" description="الصق صورة أو ارفع PDF مع نص للبحث عنه لاحقاً" icon={<div className="rounded-xl bg-gradient-to-br from-primary to-primary/70 p-3 shadow-lg"><FileText className="h-6 w-6 text-primary-foreground" /></div>} />
         </div>
       </header>
 
