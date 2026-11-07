@@ -10,4 +10,4 @@
 - [x] Restore complete journal visibility and verify January–September 2026 against stored records (1501 of 3205 entries).
 - [x] Centralize accounting page headers and direct all accounting header arrows to /accounting without altering content or data.
 - [x] Verify direct opening, refresh and header return across 42 accounting destinations, plus desktop/mobile header layout.
-- [ ] Unify accounting header and permanent return buttons to the pictured home accounting cards and verify both controls.
+- [x] Unify accounting header and permanent return buttons to the pictured home accounting cards and verify both controls.
