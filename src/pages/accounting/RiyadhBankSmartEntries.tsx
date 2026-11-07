@@ -401,9 +401,15 @@ export default function RiyadhBankSmartEntries() {
     }
 
     snapshot(rows);
-    setRows(parsed);
+    // Unmatched rows first so the user can assign accounts immediately (stable order otherwise)
+    const sortedParsed = [
+      ...parsed.filter((r) => !r.selectedAccountId),
+      ...parsed.filter((r) => r.selectedAccountId),
+    ];
+    setRows(sortedParsed);
     const matched = parsed.filter((r) => r.selectedAccountId).length;
-    toast.success(`تم تحليل ${parsed.length} عملية — تم مطابقة ${matched} حساب تلقائياً`);
+    const unmatched = parsed.length - matched;
+    toast.success(`تم تحليل ${parsed.length} عملية — تم مطابقة ${matched} حساب تلقائياً${unmatched ? ` — ${unmatched} سطر بدون حساب في الأعلى` : ""}`);
   };
 
   const filteredAccounts = useMemo(() => {
