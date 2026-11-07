@@ -42,7 +42,7 @@ describe("bank entry keyword rules", () => {
 
   test("every rule points at a real code", () => {
     expect(BANK_KEYWORD_RULES.map((r) => r.code).sort()).toEqual(
-      ["111104", "111106", "51010", "510405"].sort()
+      ["111104", "111106", "51010", "510405", "510413", "510408", "520302"].sort()
     );
   });
 
