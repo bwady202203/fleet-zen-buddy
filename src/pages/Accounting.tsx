@@ -582,8 +582,34 @@ const Accounting = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {sections.map((section) => (
+            <Link key={section.title} to={section.link}>
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">
+                <CardHeader>
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${section.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <section.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                    {section.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{section.description}</p>
+                  <div className="mt-4 pt-4 border-t">
+                    <span className="text-sm text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
+                      فتح
+                      <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
         {/* المستوى المميز */}
-        <section id="premium-section" className="mb-10">
+        <section id="premium-section" className="mt-10">
           {!premiumUnlocked ? (
             <Card
               onClick={() => setPremiumOpen(true)}
@@ -671,32 +697,6 @@ const Accounting = () => {
           </DialogContent>
         </Dialog>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-          {sections.map((section) => (
-            <Link key={section.title} to={section.link}>
-              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full border-2 hover:border-primary/50">
-                <CardHeader>
-                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${section.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <section.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                    {section.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{section.description}</p>
-                  <div className="mt-4 pt-4 border-t">
-                    <span className="text-sm text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
-                      فتح
-                      <span className="group-hover:translate-x-[-4px] transition-transform">←</span>
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
       </main>
     </div>
   );
