@@ -315,7 +315,7 @@ const BankReconciliation = () => {
     <div className="min-h-screen bg-background p-4 md:p-6" dir="rtl">
       <div className="max-w-[1500px] mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 print:hidden">
+        <div className="flex items-center justify-between gap-3 print:hidden flex-col items-stretch gap-4 md:flex-row md:items-center">
           <AccountingPageHeader title={<>مطابقة البنوك</>} titleClassName="text-2xl font-bold" description={<p className="text-sm text-muted-foreground">مقارنة كشف حساب البنك مع قيود اليومية لكل تاريخ</p>} />
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={exportExcel} disabled={!compareRows.length}>

@@ -258,7 +258,7 @@ const IncomeStatement = () => {
       `}</style>
       <header className="border-b bg-card no-print">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
             <AccountingPageHeader title={<>قائمة الدخل</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">الإيرادات والمصروفات</p>} />
             <Button onClick={() => window.print()}>
               <Printer className="h-4 w-4 ml-2" />

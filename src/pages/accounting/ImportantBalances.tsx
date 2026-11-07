@@ -765,7 +765,7 @@ const ImportantBalances = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
             <AccountingPageHeader title={<>أرصدة الحسابات الهامة</>} titleClassName="text-xl font-bold" description={<p className="text-sm text-muted-foreground">مراقبة أرصدة العهد والبنوك والحسابات المهمة</p>} />
             <Button onClick={handleOpenAdd} className="gap-2">
               <Plus className="h-4 w-4" />

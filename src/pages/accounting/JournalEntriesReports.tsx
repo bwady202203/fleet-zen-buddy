@@ -262,7 +262,7 @@ const JournalEntriesReports = () => {
       <div className="min-h-screen bg-background" dir="rtl">
         <header className="border-b bg-card no-print">
           <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
               <AccountingPageHeader title={<>تقارير القيود اليومية</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                     تقارير تفصيلية للقيود المحاسبية
                   </p>} />

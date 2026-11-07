@@ -95,7 +95,7 @@ const PurchaseReturn = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card print:hidden">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
             <AccountingPageHeader title={<>مرتجعات المشتريات</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">إدارة مرتجعات المشتريات</p>} />
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>

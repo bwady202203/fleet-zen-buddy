@@ -311,7 +311,7 @@ const Vouchers = () => {
       <AnimatedBackground />
       <header className="border-b border-white/20 bg-white/10 backdrop-blur-md text-slate-900 dark:text-slate-100 shadow-sm">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-col items-stretch gap-4 md:flex-row md:items-center">
             <AccountingPageHeader title="إدارة السندات" description="سندات الصرف البنكية ومصروفات العهد" titleClassName="text-3xl font-bold bg-gradient-to-r from-fuchsia-500 via-sky-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_200%]" />
           </div>
         </div>

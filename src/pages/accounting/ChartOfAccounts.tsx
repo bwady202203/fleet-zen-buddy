@@ -1067,7 +1067,7 @@ const ChartOfAccounts = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
             <AccountingPageHeader title={<>شجرة الحسابات</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                   إدارة الدليل المحاسبي - 4 مستويات
                 </p>} />

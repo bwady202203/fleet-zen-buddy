@@ -175,7 +175,7 @@ const TransferRequestsArchive = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-5 flex items-center justify-between flex-wrap gap-3">
+        <div className="container mx-auto px-4 py-5 flex items-center justify-between flex-wrap gap-3 flex-col items-stretch gap-4 md:flex-row md:items-center">
           <AccountingPageHeader title="جداول قوائم التحويل" description="بحث بالتاريخ أو المبلغ وتصدير إكسل" icon={<div className="p-2 bg-primary/10 rounded-lg"><ListChecks className="h-6 w-6 text-primary" /></div>} />
           <div className="flex items-center gap-2">
             <Button onClick={exportExcel} className="gap-2">

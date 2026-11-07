@@ -560,7 +560,7 @@ export default function RiyadhBankPaymentEntries() {
   return (
     <div className="min-h-screen bg-muted/30" dir="rtl">
       <div className="bg-card border-b px-6 py-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3 flex-col items-stretch gap-4 md:flex-row md:items-center">
           <AccountingPageHeader title={<>قيود بنك الرياض للسداد</>} titleClassName="text-xl font-bold" description={<p className="text-xs text-muted-foreground">
                 لصق عمليات السداد من بنك الرياض وإنشاء قيد لكل تاريخ
               </p>} icon={<><Landmark className="h-6 w-6 text-primary" /></>}><button

@@ -263,7 +263,7 @@ export default function DocumentsArchive() {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
-        <div className="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-5">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-5 flex-col items-stretch gap-4 md:flex-row md:items-center">
           <AccountingPageHeader title="أرشيف الفواتير والمستندات" description="الصق صورة أو ارفع PDF مع نص للبحث عنه لاحقاً" icon={<div className="rounded-xl bg-gradient-to-br from-primary to-primary/70 p-3 shadow-lg"><FileText className="h-6 w-6 text-primary-foreground" /></div>} />
         </div>
       </header>

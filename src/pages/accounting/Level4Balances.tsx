@@ -222,7 +222,7 @@ export default function Level4Balances() {
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
-      <div className="flex justify-between items-center print:hidden">
+      <div className="flex justify-between items-center print:hidden flex-col items-stretch gap-4 md:flex-row md:items-center">
         <AccountingPageHeader title="أرصدة حسابات المستوى الرابع" titleClassName="text-3xl font-bold" description="عرض كافة الأرصدة المدينة والدائنة لحسابات المستوى الرابع" />
         <Button onClick={handlePrint} variant="outline">
           <Printer className="ml-2 h-4 w-4" />

@@ -670,7 +670,7 @@ export default function BankStatementImport() {
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
           <AccountingPageHeader title={<>استيراد كشف حساب بنكي</>} titleClassName="text-xl font-semibold text-gray-900" description={<p className="mt-1 text-sm text-muted-foreground">استيراد الحركات البنكية ومراجعتها</p>} icon={<FileSpreadsheet className="h-6 w-6 text-primary" />} />
           <div className="flex items-center gap-2">
             <Button

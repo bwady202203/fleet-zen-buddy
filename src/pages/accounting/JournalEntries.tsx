@@ -1347,7 +1347,7 @@ const JournalEntries = () => {
       <div className="min-h-screen bg-background" dir="rtl">
         <header className="border-b bg-card">
           <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
               <AccountingPageHeader title={<>سند قيد يومية / Journal Entry Voucher</>} titleClassName="text-3xl font-bold text-center" description={<p className="mt-1 text-sm text-muted-foreground">تسجيل قيد يومية</p>} />
             </div>
           </div>
@@ -1837,7 +1837,7 @@ const JournalEntries = () => {
       <div className="min-h-screen bg-background screen-only-content" dir="rtl">
         <header className="border-b bg-card no-print">
           <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-col items-stretch gap-4 md:flex-row md:items-center">
               <AccountingPageHeader title={<>القيود اليومية</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                     تسجيل ومتابعة القيود المحاسبية اليومية
                   </p>} />

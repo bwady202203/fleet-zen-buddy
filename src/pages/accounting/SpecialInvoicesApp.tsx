@@ -21,7 +21,7 @@ const SpecialInvoicesApp = () => {
   return (
     <div className="h-screen flex flex-col bg-background" dir="rtl">
       <header className="border-b bg-card shrink-0">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-col items-stretch gap-4 md:flex-row md:items-center">
           <AccountingPageHeader title={<>الفواتير الخاصة</>} titleClassName="text-lg font-bold leading-tight" description={<p className="text-xs text-muted-foreground">يعمل داخل النظام الحالي</p>} icon={<div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white shadow">
                 <Receipt className="h-5 w-5" />
               </div>} />

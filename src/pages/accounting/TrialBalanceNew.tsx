@@ -342,7 +342,7 @@ export default function TrialBalanceNew() {
   return (
     <div className="container mx-auto p-6 print:p-0" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 print:hidden">
+      <div className="flex items-center justify-between mb-6 print:hidden flex-col items-stretch gap-4 md:flex-row md:items-center">
         <AccountingPageHeader title={<>ميزان المراجعة</>} titleClassName="text-3xl font-bold" description={<p className="mt-1 text-sm text-muted-foreground">عرض أرصدة الحسابات ومراجعتها</p>} />
         <Button
           onClick={handlePrint}
