@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Factory,
   FileCheck2,
+  FileImage,
   FileSpreadsheet,
   FileText,
   Gauge,
@@ -358,6 +359,14 @@ export const navigationGroups: NavigationGroup[] = [
     children: [],
     standalonePath: "/data",
   },
+  {
+    key: "data-documents",
+    title: "داتا مستندات",
+    icon: FileImage,
+    module: null,
+    children: [],
+    standalonePath: "/data-documents",
+  },
 
   {
     key: "settings",
@@ -483,6 +492,16 @@ const groupColors: Record<string, GroupColor> = {
     active: "bg-slate-50/80 text-slate-900 border-slate-600",
   },
   reports: {
+    iconBox: "bg-gradient-to-br from-sky-600 to-cyan-700 text-white",
+    hover: "hover:bg-sky-50",
+    active: "bg-sky-50/80 text-sky-900 border-sky-600",
+  },
+  "data-documents": {
+    iconBox: "bg-primary text-primary-foreground",
+    hover: "hover:bg-accent",
+    active: "bg-accent text-accent-foreground border-primary",
+  },
+  unusedReports: {
     iconBox: "bg-gradient-to-br from-sky-600 to-cyan-700 text-white",
     hover: "hover:bg-sky-50",
     active: "bg-sky-50/80 text-sky-900 border-sky-600",
