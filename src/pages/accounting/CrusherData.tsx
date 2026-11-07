@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useCrusherProgram } from "@/lib/crusherProgram";
 import { listSammanLookup, addSammanLookup, deleteSammanLookup } from "@/lib/sammanData";
 import { useEffect, useState } from "react";
@@ -51,10 +52,10 @@ export default function CrusherData() {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+        {prog.key === "samman" ? (<div className="container mx-auto px-4 py-3 flex items-center gap-3">
           <Link to={prog.base} className="hover:text-primary"><ArrowRight className="h-6 w-6" /></Link>
           <div><h1 className="text-lg font-bold">بيانات {prog.name}</h1><p className="text-xs text-muted-foreground">السائقين • السريال • الشركات • الموردين</p></div>
-        </div>
+        </div>) : (<div className="container mx-auto px-4 py-3"><AccountingPageHeader title={<>بيانات {prog.name}</>} titleClassName="text-lg font-bold" description={<p className="text-xs text-muted-foreground">السائقين • السريال • الشركات • الموردين</p>} /></div>)}
       </header>
       <main className="container mx-auto px-4 py-6 max-w-4xl space-y-4">
         <div className="flex flex-wrap gap-2">

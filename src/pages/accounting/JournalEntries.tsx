@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import React, { useState, useEffect, Fragment, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1347,14 +1348,7 @@ const JournalEntries = () => {
         <header className="border-b bg-card">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Link to="/accounting/journal-entries" className="hover:text-primary transition-colors">
-                  <ArrowRight className="h-6 w-6" />
-                </Link>
-                <div>
-                  <h1 className="text-3xl font-bold text-center">سند قيد يومية / Journal Entry Voucher</h1>
-                </div>
-              </div>
+              <AccountingPageHeader title={<>سند قيد يومية / Journal Entry Voucher</>} titleClassName="text-3xl font-bold text-center" description={<p className="mt-1 text-sm text-muted-foreground">تسجيل قيد يومية</p>} />
             </div>
           </div>
         </header>
@@ -1844,17 +1838,9 @@ const JournalEntries = () => {
         <header className="border-b bg-card no-print">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Link to="/accounting" className="hover:text-primary transition-colors">
-                  <ArrowRight className="h-6 w-6" />
-                </Link>
-                <div>
-                  <h1 className="text-3xl font-bold">القيود اليومية</h1>
-                  <p className="text-muted-foreground mt-1">
+              <AccountingPageHeader title={<>القيود اليومية</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                     تسجيل ومتابعة القيود المحاسبية اليومية
-                  </p>
-                </div>
-              </div>
+                  </p>} />
               <div className="flex gap-2 flex-wrap">
                 <Button 
                   variant="outline" 

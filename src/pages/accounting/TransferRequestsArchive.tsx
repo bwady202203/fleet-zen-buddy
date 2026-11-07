@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -175,26 +176,12 @@ const TransferRequestsArchive = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-5 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <ListChecks className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">جداول قوائم التحويل</h1>
-              <p className="text-sm text-muted-foreground">بحث بالتاريخ أو المبلغ وتصدير إكسل</p>
-            </div>
-          </div>
+          <AccountingPageHeader title="جداول قوائم التحويل" description="بحث بالتاريخ أو المبلغ وتصدير إكسل" icon={<div className="p-2 bg-primary/10 rounded-lg"><ListChecks className="h-6 w-6 text-primary" /></div>} />
           <div className="flex items-center gap-2">
             <Button onClick={exportExcel} className="gap-2">
               <FileDown className="h-4 w-4" />
               تحميل إكسل
             </Button>
-            <Link to="/accounting/transfer-requests">
-              <Button variant="outline" size="sm" className="gap-2">
-                <ArrowRight className="h-4 w-4" />
-                طلبات التحويل
-              </Button>
-            </Link>
           </div>
         </div>
       </header>

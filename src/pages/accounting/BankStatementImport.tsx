@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -670,16 +671,7 @@ export default function BankStatementImport() {
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/accounting')} className="gap-2">
-              <ArrowRight className="h-4 w-4" />
-              رجوع
-            </Button>
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-6 w-6 text-teal-600" />
-              <h1 className="text-xl font-semibold text-gray-900">استيراد كشف حساب بنكي</h1>
-            </div>
-          </div>
+          <AccountingPageHeader title={<>استيراد كشف حساب بنكي</>} titleClassName="text-xl font-semibold text-gray-900" description={<p className="mt-1 text-sm text-muted-foreground">استيراد الحركات البنكية ومراجعتها</p>} icon={<FileSpreadsheet className="h-6 w-6 text-primary" />} />
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

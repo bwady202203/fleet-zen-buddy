@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -765,15 +766,7 @@ const ImportantBalances = () => {
       <header className="border-b bg-card print:hidden">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link to="/accounting">
-                <Button variant="ghost" size="icon"><ArrowRight className="h-5 w-5" /></Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold">أرصدة الحسابات الهامة</h1>
-                <p className="text-sm text-muted-foreground">مراقبة أرصدة العهد والبنوك والحسابات المهمة</p>
-              </div>
-            </div>
+            <AccountingPageHeader title={<>أرصدة الحسابات الهامة</>} titleClassName="text-xl font-bold" description={<p className="text-sm text-muted-foreground">مراقبة أرصدة العهد والبنوك والحسابات المهمة</p>} />
             <Button onClick={handleOpenAdd} className="gap-2">
               <Plus className="h-4 w-4" />
               إضافة حساب

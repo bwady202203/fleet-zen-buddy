@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -315,18 +316,7 @@ const BankReconciliation = () => {
       <div className="max-w-[1500px] mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 print:hidden">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/accounting">
-                <ArrowRight className="h-4 w-4 ml-1" />
-                رجوع
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">مطابقة البنوك</h1>
-              <p className="text-sm text-muted-foreground">مقارنة كشف حساب البنك مع قيود اليومية لكل تاريخ</p>
-            </div>
-          </div>
+          <AccountingPageHeader title={<>مطابقة البنوك</>} titleClassName="text-2xl font-bold" description={<p className="text-sm text-muted-foreground">مقارنة كشف حساب البنك مع قيود اليومية لكل تاريخ</p>} />
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={exportExcel} disabled={!compareRows.length}>
               <Download className="h-4 w-4 ml-1" /> تصدير Excel

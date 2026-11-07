@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -294,26 +295,16 @@ export default function BankDepositsEntries() {
     <div className="min-h-screen bg-muted/30" dir="rtl">
       <div className="bg-card border-b px-6 py-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/accounting")}>
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-            <Landmark className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold">قيود الإيداعات البنكية</h1>
-              <p className="text-xs text-muted-foreground">
+          <AccountingPageHeader title={<>قيود الإيداعات البنكية</>} titleClassName="text-xl font-bold" description={<p className="text-xs text-muted-foreground">
                 لصق الإيداعات (المبلغ / الاسم / التاريخ) والتنبؤ بالحساب وإنشاء قيد لكل تاريخ
-              </p>
-              <button
+              </p>} icon={<><Landmark className="h-6 w-6 text-primary" /></>}><button
                 type="button"
                 onClick={() => { setDebitPickerOpen(true); setSearch(""); }}
                 className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-1 rounded border bg-primary/5 hover:bg-primary/10"
               >
                 <Settings2 className="h-3.5 w-3.5" />
                 الطرف المدين: {getAccount(debitAccountId)?.name_ar || "بنك الرياض"}
-              </button>
-            </div>
-          </div>
+              </button></AccountingPageHeader>
           <div className="flex items-center gap-2">
             {rows.length > 0 && (
               <>

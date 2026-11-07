@@ -1,3 +1,4 @@
+import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
 import { useCrusherProgram } from "@/lib/crusherProgram";
 import { listSammanLookup, saveSammanShipment, getSammanDriverBySerial } from "@/lib/sammanData";
 import { useEffect, useMemo, useState } from "react";
@@ -153,14 +154,14 @@ export default function CrusherPro() {
     <div className="shipment-page min-h-screen" dir="rtl">
       <header className="border-b bg-card/90 backdrop-blur">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
+          {prog.key === "samman" ? (<div className="flex items-center gap-3">
             <Link to="/accounting/projects" className="hover:text-primary" aria-label="رجوع"><ArrowRight className="h-6 w-6" /></Link>
             <span className="shipment-chip shipment-chip-blue"><Factory className="h-5 w-5" /></span>
             <div className="min-w-0">
               <h1 className="text-lg font-bold leading-6">{prog.name}</h1>
               <p className="text-xs text-muted-foreground">الرئيسية — تسجيل شحنة</p>
             </div>
-          </div>
+          </div>) : (<AccountingPageHeader title={<>{prog.name}</>} titleClassName="text-lg font-bold leading-6" description={<p className="text-xs text-muted-foreground">الرئيسية — تسجيل شحنة</p>} icon={<><span className="shipment-chip shipment-chip-blue"><Factory className="h-5 w-5" /></span></>} />)}
           <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
             <span className="shipment-step"><b>1</b> معلومات المؤسسة والمواد</span>
             <span className="shipment-step"><b>2</b> بيانات الفاتورة</span>
