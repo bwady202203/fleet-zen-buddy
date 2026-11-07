@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { ArrowRight, Loader2, Save, Trash2, Search, Wand2, Landmark, CalendarDays, X, LayoutGrid, Plus, GripVertical, ArrowDownToLine, Star, Settings2, Undo2, Eye, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { findAccountByKeywordRules } from "@/lib/bankEntryKeywordRules";
 
 interface Account {
   id: string;
@@ -351,23 +352,9 @@ export default function RiyadhBankSmartEntries() {
     return partial ? partial.id : null;
   };
 
-  // قواعد ثابتة: كلمة في السطر → رمز حساب
-  const KEYWORD_RULES: { words: string[]; code: string }[] = [
-    { words: ["بكرشوم", "باكرشوم"], code: "111104" },
-    { words: ["عهدة عمر", "عهده عمر"], code: "111106" },
-    { words: ["مشتريات الكسارة", "مشتريات الكساره"], code: "51010" },
-    { words: ["تاكسي", "تكسي", "taxi"], code: "510405" },
-  ];
-  const findAccountByRules = (...texts: string[]): string | null => {
-    const hay = normalizeAr(texts.join(" "));
-    for (const r of KEYWORD_RULES) {
-      if (r.words.some((w) => hay.includes(normalizeAr(w)))) {
-        const acc = accounts.find((a) => a.code === r.code);
-        if (acc) return acc.id;
-      }
-    }
-    return null;
-  };
+  // قواعد ثابتة: كلمة في السطر → رمز حساب (src/lib/bankEntryKeywordRules.ts)
+  const findAccountByRules = (...texts: string[]): string | null =>
+    findAccountByKeywordRules(accounts, texts);
 
   const handleParse = () => {
     const lines = rawData.split("\n").map((l) => l.trim()).filter(Boolean);
