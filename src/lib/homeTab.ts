@@ -1,4 +1,5 @@
 import { navigationGroups } from "@/components/SystemNavigationSidebar";
+import { ACCOUNTING_DASHBOARD_PATH } from "@/lib/accountingNavigation";
 
 export type HomeTab = "overview" | "accounting" | "loads" | "fleet" | "hr" | "favorites" | "statistics";
 
@@ -40,10 +41,10 @@ export const getHomeTabForPath = (pathname: string): HomeTab => {
 
 /** مسار الرجوع إلى الشاشة الرئيسية مع التبويب المناسب */
 export const getHomePathForPath = (pathname: string): string => {
-  // من شاشة أقسام المحاسبة نفسها يرجع للرئيسية
-  if (pathname === "/accounting" || pathname === "/accounting/") return "/";
+  // العودة إلى بطاقات المحاسبة المالية في الشاشة الرئيسية
+  if (pathname === "/accounting" || pathname.startsWith("/accounting/")) return ACCOUNTING_DASHBOARD_PATH;
   const tab = getHomeTabForPath(pathname);
   // الشاشات المحاسبية ترجع لشاشة أقسام المحاسبة المالية مباشرة
-  if (tab === "accounting") return "/accounting";
+  if (tab === "accounting") return ACCOUNTING_DASHBOARD_PATH;
   return tab === "overview" ? "/" : `/?tab=${tab}`;
 };

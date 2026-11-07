@@ -11,13 +11,16 @@ import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
 import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
 import CustodyRequestDialog from "@/components/CustodyRequestDialog";
 import SammanDashboard from "@/components/dashboard/SammanDashboard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
   const { hasPermission, isSammanOnly } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
+  useEffect(() => {
+    if (activeTab === "accounting") window.scrollTo(0, 0);
+  }, [activeTab]);
   const [custodyRequestOpen, setCustodyRequestOpen] = useState(false);
   const handleTabChange = (value: string) => {
     if (value === "overview") {
