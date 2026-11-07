@@ -351,6 +351,23 @@ export default function RiyadhBankSmartEntries() {
     return partial ? partial.id : null;
   };
 
+  // قواعد ثابتة: كلمة في السطر → رمز حساب
+  const KEYWORD_RULES: { words: string[]; code: string }[] = [
+    { words: ["بكرشوم", "باكرشوم"], code: "111104" },
+    { words: ["عهدة عمر", "عهده عمر"], code: "111106" },
+    { words: ["مشتريات الكسارة", "مشتريات الكساره"], code: "51010" },
+  ];
+  const findAccountByRules = (...texts: string[]): string | null => {
+    const hay = normalizeAr(texts.join(" "));
+    for (const r of KEYWORD_RULES) {
+      if (r.words.some((w) => hay.includes(normalizeAr(w)))) {
+        const acc = accounts.find((a) => a.code === r.code);
+        if (acc) return acc.id;
+      }
+    }
+    return null;
+  };
+
   const handleParse = () => {
     const lines = rawData.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) {
@@ -391,7 +408,7 @@ export default function RiyadhBankSmartEntries() {
         toName,
         // الوصف دائماً من العمود رقم 2
         description: status,
-        selectedAccountId: findAccountByName(toName),
+        selectedAccountId: findAccountByRules(toName, fromName, status, reference, payType) || findAccountByName(toName),
       });
     }
 
