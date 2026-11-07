@@ -356,6 +356,7 @@ export default function RiyadhBankSmartEntries() {
     { words: ["بكرشوم", "باكرشوم"], code: "111104" },
     { words: ["عهدة عمر", "عهده عمر"], code: "111106" },
     { words: ["مشتريات الكسارة", "مشتريات الكساره"], code: "51010" },
+    { words: ["تاكسي", "تكسي", "taxi"], code: "510405" },
   ];
   const findAccountByRules = (...texts: string[]): string | null => {
     const hay = normalizeAr(texts.join(" "));
