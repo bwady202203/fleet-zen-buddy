@@ -41,5 +41,7 @@ export const getHomeTabForPath = (pathname: string): HomeTab => {
 /** مسار الرجوع إلى الشاشة الرئيسية مع التبويب المناسب */
 export const getHomePathForPath = (pathname: string): string => {
   const tab = getHomeTabForPath(pathname);
+  // الشاشات المحاسبية ترجع لشاشة أقسام المحاسبة المالية مباشرة
+  if (tab === "accounting") return "/accounting";
   return tab === "overview" ? "/" : `/?tab=${tab}`;
 };
