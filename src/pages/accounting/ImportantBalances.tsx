@@ -1,4 +1,5 @@
 import AccountingPageHeader from "@/components/accounting/AccountingPageHeader";
+import MonthlyBankComparison from "@/components/accounting/MonthlyBankComparison";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,7 +55,7 @@ const ImportantBalances = () => {
   const [ledgerLoading, setLedgerLoading] = useState(false);
 
   // Monthly view state
-  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals' | 'bankComparison'>('overview');
   const [revenueExpenseFilter, setRevenueExpenseFilter] = useState<'revenue' | 'expense'>('revenue');
   const [monthlyAccountId, setMonthlyAccountId] = useState<string>('');
   const [monthlyDate, setMonthlyDate] = useState<Date>(new Date());
@@ -775,9 +776,9 @@ const ImportantBalances = () => {
         </div>
       </header>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'overview' | 'monthly' | 'noMovement' | 'revenueExpense' | 'dailyTotals')} className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
         <div className="container mx-auto px-4 pt-3 print:hidden">
-          <TabsList>
+          <TabsList className="h-auto flex flex-wrap justify-start gap-1">
             <TabsTrigger value="overview" className="gap-2">
               <LayoutGrid className="h-4 w-4" />
               نظرة عامة
@@ -797,6 +798,10 @@ const ImportantBalances = () => {
             <TabsTrigger value="dailyTotals" className="gap-2">
               <CalendarDays className="h-4 w-4" />
               الحركة اليومية
+            </TabsTrigger>
+            <TabsTrigger value="bankComparison" className="gap-2">
+              <Landmark className="h-4 w-4" />
+              المقارنة الشهرية مع البنك
             </TabsTrigger>
           </TabsList>
 
@@ -1512,6 +1517,9 @@ const ImportantBalances = () => {
               </>
             )}
           </div>
+        </TabsContent>
+        <TabsContent value="bankComparison" className="mt-0">
+          <MonthlyBankComparison />
         </TabsContent>
       </Tabs>
 
