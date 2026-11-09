@@ -106,7 +106,10 @@ export default function MonthlyBankComparison() {
     setReading(true);
     try {
       const XLSX = await import('xlsx');
-      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const isText = /\.(csv|tsv)$/i.test(file.name);
+      const workbook = isText
+        ? XLSX.read(await file.text(), { type: 'string', raw: true, FS: /\.tsv$/i.test(file.name) ? '\t' : undefined })
+        : XLSX.read(await file.arrayBuffer(), { type: 'array' });
       const next: Record<string, unknown[][]> = {};
       for (const name of workbook.SheetNames) next[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: '' });
       const name = workbook.SheetNames[0];
@@ -118,7 +121,7 @@ export default function MonthlyBankComparison() {
 
   const parsePaste = async () => {
     const XLSX = await import('xlsx');
-    const workbook = XLSX.read(paste, { type: 'string', FS: paste.includes('\t') ? '\t' : ',' });
+    const workbook = XLSX.read(paste, { type: 'string', raw: true, FS: paste.includes('\t') ? '\t' : undefined });
     const name = workbook.SheetNames[0];
     if (!name) return;
     setRaw(XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: '' }));
