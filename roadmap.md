@@ -14,3 +14,5 @@
 - [x] Add Data Documents below Data with private image/PDF upload and paste, naming, previews, sharing and download.
 - [x] Verify document saving, reloading and download on desktop/mobile.
 - [x] Add empty paste-target document cards and reorder controls; verify paste, saving and retained order.
+- [x] Add monthly daily debit/credit comparison tab in Important Balances with bank statement import.
+- [x] Test date aggregation and differences; verify authenticated import comparison and mobile layout.

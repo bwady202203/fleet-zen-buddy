@@ -15,3 +15,4 @@ Accounting subpage headers and the permanent return control share accountingNavi
 Data Documents uses organization-scoped administrator RLS and private storage; render PDF pages locally with PDF.js and share files or expiring signed links so previews never require public buckets.
 Data Documents empty cards are unsaved paste targets; persist display order by stable document IDs in organization-and-user-scoped browser storage without changing document permissions or schema.
 Automatic bank-statement account matching uses word-to-account rules declared in one testable lib module so they stay covered by tests and cannot drift per screen.
+Important Balances bank comparison uses a separate tab with deterministic batched month-only journal reads and a pure date/amount aggregation module; imported statements remain comparison-only and never write journal entries.
