@@ -179,9 +179,7 @@ const PremiumLoadsRegister = () => {
       const quantity = validated.quantity;
       const commissions = validated.commissions;
 
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const { error } = await supabase.from("loads").insert({
+      const { error } = await supabase.rpc("register_premium_load", { p_load: {
         load_number: validated.loadNumber,
         invoice_number: formData.invoiceNumber || null,
         invoice_date: validated.invoiceDate,
@@ -197,8 +195,7 @@ const PremiumLoadsRegister = () => {
         delivery_to: validated.deliveryTo,
         load_date: formData.loadDate || null,
         unload_date: formData.unloadDate || null,
-        created_by: user?.id,
-      });
+      } });
 
       if (error) throw error;
 
