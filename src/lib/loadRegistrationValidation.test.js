@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { premiumLoadRegistrationSchema, requiredLoadFieldLabels } from "./loadRegistrationValidation";
+import { premiumLoadRegistrationSchema, standardLoadRegistrationSchema, requiredLoadFieldLabels } from "./loadRegistrationValidation";
 
 const valid = {
   loadNumber: "TEST-125", invoiceDate: "2026-11-12",
@@ -24,5 +24,20 @@ describe("arrow-marked load registration fields", () => {
   test("numeric values are validated without silently accepting partial numbers", () => {
     expect(premiumLoadRegistrationSchema.safeParse({ ...valid, quantity: "42abc" }).success).toBe(false);
     expect(premiumLoadRegistrationSchema.parse({ ...valid, quantity: "42,5" }).quantity).toBe(42.5);
+  });
+});
+
+describe("standard load registration", () => {
+  const standard = { ...valid, driverCommission: "0", deliveryCommission: "0", unitPrice: "12.5" };
+  for (const field of [...Object.keys(requiredLoadFieldLabels).filter((field) => field !== "commissions"), "driverCommission", "deliveryCommission", "unitPrice"]) {
+    test(`${field} is mandatory on standard registration`, () => {
+      expect(standardLoadRegistrationSchema.safeParse({ ...standard, [field]: "" }).success).toBe(false);
+    });
+  }
+  test("complete standard registration preserves numeric values", () => {
+    const parsed = standardLoadRegistrationSchema.parse(standard);
+    expect(parsed.unitPrice).toBe(12.5);
+    expect(parsed.unloadQuantity).toBe(42.1);
+    expect(parsed.driverCommission).toBe(0);
   });
 });

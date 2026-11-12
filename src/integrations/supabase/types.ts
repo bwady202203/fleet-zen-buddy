@@ -5344,6 +5344,7 @@ export type Database = {
       }
       next_advance_number: { Args: never; Returns: string }
       register_premium_load: { Args: { p_load: Json }; Returns: string }
+      register_standard_load: { Args: { p_load: Json }; Returns: string }
       user_in_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
