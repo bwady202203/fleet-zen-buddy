@@ -92,6 +92,13 @@
       "when": 1794472579729,
       "tag": "0012_validate_premium_load_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794472789153,
+      "tag": "0013_validate_standard_load_registration",
+      "breakpoints": true
     }
   ]
 }
