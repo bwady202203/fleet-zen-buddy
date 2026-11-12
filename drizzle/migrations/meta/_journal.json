@@ -85,6 +85,13 @@
       "when": 1794054382229,
       "tag": "0011_create_data_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794472579729,
+      "tag": "0012_validate_premium_load_registration",
+      "breakpoints": true
     }
   ]
 }
