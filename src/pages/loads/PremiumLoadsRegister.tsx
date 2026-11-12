@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { premiumLoadRegistrationSchema, requiredLoadFieldLabels, type RequiredLoadField } from "@/lib/loadRegistrationValidation";
 
 const PremiumLoadsRegister = () => {
   const navigate = useNavigate();
@@ -39,6 +40,27 @@ const PremiumLoadsRegister = () => {
   const [loadTypes, setLoadTypes] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [validationAttempted, setValidationAttempted] = useState(false);
+  const validation = premiumLoadRegistrationSchema.safeParse(formData);
+  const fieldErrors: Partial<Record<RequiredLoadField, string>> = {};
+  if (validationAttempted && !validation.success) {
+    for (const issue of validation.error.issues) {
+      const field = issue.path[0] as RequiredLoadField;
+      if (!fieldErrors[field]) fieldErrors[field] = issue.message;
+    }
+  }
+  const requiredLabel = (field: RequiredLoadField, english: string) => (
+    <Label htmlFor={field}>{requiredLoadFieldLabels[field]} / {english} <span className="text-destructive">*</span></Label>
+  );
+  const errorMessage = (field: RequiredLoadField) => fieldErrors[field] ? (
+    <p id={`${field}-error`} className="text-sm text-destructive" role="alert">{fieldErrors[field]}</p>
+  ) : null;
+  const requiredProps = (field: RequiredLoadField) => ({
+    id: field,
+    "aria-required": true as const,
+    "aria-invalid": Boolean(fieldErrors[field]),
+    "aria-describedby": fieldErrors[field] ? `${field}-error` : undefined,
+  });
   const [driverSearchOpen, setDriverSearchOpen] = useState(false);
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
   const [locationDialog, setLocationDialog] = useState<null | "from" | "to">(null);
@@ -127,12 +149,21 @@ const PremiumLoadsRegister = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationAttempted(true);
+    const result = premiumLoadRegistrationSchema.safeParse(formData);
+    if (!result.success) {
+      toast({ title: "يرجى استكمال الحقول المطلوبة", description: result.error.issues.map((issue) => issue.message).join("، "), variant: "destructive" });
+      const firstField = result.error.issues[0]?.path[0];
+      if (typeof firstField === "string") document.getElementById(firstField)?.focus();
+      return;
+    }
+    const validated = result.data;
     setLoading(true);
     try {
       const { data: existingLoad } = await supabase
         .from("loads")
         .select("id")
-        .eq("load_number", formData.loadNumber)
+        .eq("load_number", validated.loadNumber)
         .maybeSingle();
 
       if (existingLoad) {
@@ -145,34 +176,32 @@ const PremiumLoadsRegister = () => {
         return;
       }
 
-      const quantity = parseFloat(formData.quantity) || 0;
-      const commissions = parseFloat(formData.commissions) || 0;
+      const quantity = validated.quantity;
+      const commissions = validated.commissions;
 
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const { error } = await supabase.from("loads").insert({
-        load_number: formData.loadNumber,
+      const { error } = await supabase.rpc("register_premium_load", { p_load: {
+        load_number: validated.loadNumber,
         invoice_number: formData.invoiceNumber || null,
-        invoice_date: formData.invoiceDate || null,
+        invoice_date: validated.invoiceDate,
         date: formData.date,
-        company_id: formData.companyId || null,
-        load_type_id: formData.loadTypeId || null,
-        driver_id: formData.driverId || null,
-        truck_number: formData.truckNumber || null,
+        company_id: validated.companyId,
+        load_type_id: validated.loadTypeId,
+        driver_id: validated.driverId,
+        truck_number: validated.truckNumber,
         quantity,
-        unload_quantity: formData.unloadQuantity === "" ? null : parseFloat(formData.unloadQuantity) || 0,
+        unload_quantity: validated.unloadQuantity,
         driver_commission: commissions,
-        delivery_from: formData.deliveryFrom || null,
-        delivery_to: formData.deliveryTo || null,
+        delivery_from: validated.deliveryFrom,
+        delivery_to: validated.deliveryTo,
         load_date: formData.loadDate || null,
         unload_date: formData.unloadDate || null,
-        created_by: user?.id,
-      });
+      } });
 
       if (error) throw error;
 
       toast({ title: "تم الحفظ بنجاح", description: "تم تسجيل الحمولة بنجاح" });
 
+      setValidationAttempted(false);
       setFormData({
         date: new Date().toISOString().split("T")[0],
         loadNumber: "",
@@ -229,7 +258,7 @@ const PremiumLoadsRegister = () => {
             <CardTitle>بيانات الشحنة / Load Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form noValidate onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="date">التاريخ / Date</Label>
@@ -243,14 +272,15 @@ const PremiumLoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="loadNumber">رقم الشحنة / Load Number</Label>
+                  {requiredLabel("loadNumber", "Load Number")}
                   <Input
-                    id="loadNumber"
+                    {...requiredProps("loadNumber")}
+                    required
                     value={formData.loadNumber}
                     onChange={(e) => setFormData({ ...formData, loadNumber: e.target.value })}
-                    required
                     placeholder="أدخل رقم الشحنة / Enter load number"
                   />
+                  {errorMessage("loadNumber")}
                 </div>
 
                 <div className="space-y-2">
@@ -264,13 +294,15 @@ const PremiumLoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="invoiceDate">تاريخ الفاتورة / Invoice Date</Label>
+                  {requiredLabel("invoiceDate", "Invoice Date")}
                   <Input
-                    id="invoiceDate"
+                    {...requiredProps("invoiceDate")}
+                    required
                     type="date"
                     value={formData.invoiceDate}
                     onChange={(e) => setFormData({ ...formData, invoiceDate: e.target.value })}
                   />
+                  {errorMessage("invoiceDate")}
                 </div>
 
                 <div className="space-y-2">
@@ -294,9 +326,9 @@ const PremiumLoadsRegister = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>اسم العميل / Customer Name</Label>
+                  {requiredLabel("companyId", "Customer Name")}
                   <Select value={formData.companyId} onValueChange={(value) => setFormData({ ...formData, companyId: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger {...requiredProps("companyId")}>
                       <SelectValue placeholder="اختر العميل / Select customer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -307,13 +339,14 @@ const PremiumLoadsRegister = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errorMessage("companyId")}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>نوع الحمولة / Load Type</Label>
+                  {requiredLabel("loadTypeId", "Load Type")}
                   <div className="flex gap-2">
                     <Select value={formData.loadTypeId} onValueChange={(value) => setFormData({ ...formData, loadTypeId: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger {...requiredProps("loadTypeId")}>
                         <SelectValue placeholder="اختر نوع الحمولة / Select load type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -328,13 +361,14 @@ const PremiumLoadsRegister = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+                  {errorMessage("loadTypeId")}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>اسم السائق / Driver Name</Label>
+                  {requiredLabel("driverId", "Driver Name")}
                   <Popover open={driverSearchOpen} onOpenChange={setDriverSearchOpen}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" aria-expanded={driverSearchOpen} className="w-full justify-between">
+                      <Button type="button" {...requiredProps("driverId")} variant="outline" role="combobox" aria-expanded={driverSearchOpen} className="w-full justify-between">
                         {formData.driverId
                           ? drivers.find((driver) => driver.id === formData.driverId)?.name
                           : "اختر السائق / Select driver..."}
@@ -365,40 +399,46 @@ const PremiumLoadsRegister = () => {
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  {errorMessage("driverId")}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="truckNumber">رقم الشاحنة / Truck Number</Label>
+                  {requiredLabel("truckNumber", "Truck Number")}
                   <Input
-                    id="truckNumber"
+                    {...requiredProps("truckNumber")}
+                    required
                     value={formData.truckNumber}
                     onChange={(e) => setFormData({ ...formData, truckNumber: e.target.value })}
                     placeholder="أدخل رقم الشاحنة / Enter truck number"
                   />
+                  {errorMessage("truckNumber")}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">كمية التحميل / Load Quantity</Label>
+                  {requiredLabel("quantity", "Load Quantity")}
                   <Input
-                    id="quantity"
+                    {...requiredProps("quantity")}
+                    required
                     type="text"
                     inputMode="decimal"
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    required
                   />
+                  {errorMessage("quantity")}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="unloadQuantity">كمية التنزيل / Unload Quantity</Label>
+                  {requiredLabel("unloadQuantity", "Unload Quantity")}
                   <Input
-                    id="unloadQuantity"
+                    {...requiredProps("unloadQuantity")}
+                    required
                     type="text"
                     inputMode="decimal"
                     value={formData.unloadQuantity}
                     onChange={(e) => setFormData({ ...formData, unloadQuantity: e.target.value })}
                     placeholder="0.00"
                   />
+                  {errorMessage("unloadQuantity")}
                 </div>
 
                 <div className="space-y-2">
@@ -414,25 +454,27 @@ const PremiumLoadsRegister = () => {
 
 
                 <div className="space-y-2">
-                  <Label htmlFor="commissions">عمولات / Commissions</Label>
+                  {requiredLabel("commissions", "Commissions")}
                   <Input
-                    id="commissions"
+                    {...requiredProps("commissions")}
+                    required
                     type="text"
                     inputMode="decimal"
                     value={formData.commissions}
                     onChange={(e) => setFormData({ ...formData, commissions: e.target.value })}
                     placeholder="0.00"
                   />
+                  {errorMessage("commissions")}
                   {formData.companyId && (
                     <p className="text-xs text-muted-foreground">يتم استدعاؤها تلقائياً حسب الشركة والكمية</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>التوصيل من / Delivery From</Label>
+                  {requiredLabel("deliveryFrom", "Delivery From")}
                   <div className="flex gap-2">
                     <Select value={formData.deliveryFrom} onValueChange={(value) => setFormData({ ...formData, deliveryFrom: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger {...requiredProps("deliveryFrom")}>
                         <SelectValue placeholder="اختر نقطة التحميل" />
                       </SelectTrigger>
                       <SelectContent>
@@ -445,13 +487,14 @@ const PremiumLoadsRegister = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+                  {errorMessage("deliveryFrom")}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>التوصيل الى / Delivery To</Label>
+                  {requiredLabel("deliveryTo", "Delivery To")}
                   <div className="flex gap-2">
                     <Select value={formData.deliveryTo} onValueChange={(value) => setFormData({ ...formData, deliveryTo: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger {...requiredProps("deliveryTo")}>
                         <SelectValue placeholder="اختر نقطة التسليم" />
                       </SelectTrigger>
                       <SelectContent>
@@ -464,6 +507,7 @@ const PremiumLoadsRegister = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+                  {errorMessage("deliveryTo")}
                 </div>
               </div>
 
