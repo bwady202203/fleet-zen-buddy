@@ -38,3 +38,11 @@ export const premiumLoadRegistrationSchema = z.object({
   deliveryFrom: requiredText(requiredLoadFieldLabels.deliveryFrom),
   deliveryTo: requiredText(requiredLoadFieldLabels.deliveryTo),
 });
+
+export const standardLoadRegistrationSchema = premiumLoadRegistrationSchema
+  .omit({ commissions: true })
+  .extend({
+    driverCommission: requiredAmount("عمولة السائق"),
+    deliveryCommission: requiredAmount("عمولة التوصيل"),
+    unitPrice: requiredAmount("السعر"),
+  });
