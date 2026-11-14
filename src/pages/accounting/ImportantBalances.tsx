@@ -40,6 +40,9 @@ interface LedgerEntry {
 
 type DateFilter = 'all' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'lastWeek' | 'specificDay';
 
+// The "أيام بدون حركة" tab works on this single account only: بنك الرياض شركة الرمال
+const NO_MOVEMENT_ACCOUNT_CODE = "111004";
+
 const ImportantBalances = () => {
   const { toast } = useToast();
   const [watchedAccounts, setWatchedAccounts] = useState<WatchedAccount[]>([]);
@@ -242,6 +245,13 @@ const ImportantBalances = () => {
       setMonthlyAccountId(watchedAccounts[0].account_id);
     }
   }, [activeTab, watchedAccounts]);
+
+  // "أيام بدون حركة" has no account picking: it always shows بنك الرياض شركة الرمال
+  useEffect(() => {
+    if (activeTab !== 'noMovement') return;
+    const acc = allAccountsList.find(a => String(a.code) === NO_MOVEMENT_ACCOUNT_CODE);
+    if (acc && monthlyAccountId !== acc.id) setMonthlyAccountId(acc.id);
+  }, [activeTab, allAccountsList, monthlyAccountId]);
 
   const loadMonthlyView = async () => {
     if (!monthlyAccountId) return;
@@ -638,6 +648,10 @@ const ImportantBalances = () => {
     () => allAccountsList.filter(a => String(a.code).startsWith('113') || String(a.name_ar).includes('عهد')),
     [allAccountsList]
   );
+  const noMovementAccount = useMemo(
+    () => allAccountsList.find(a => String(a.code) === NO_MOVEMENT_ACCOUNT_CODE) || null,
+    [allAccountsList]
+  );
   const dayMovementMap = useMemo(() => {
     const m = new Map<string, boolean>();
     monthlyDays.forEach(d => m.set(d.date, d.debit > 0 || d.credit > 0));
@@ -649,7 +663,7 @@ const ImportantBalances = () => {
     openDayEntries(format(d, 'yyyy-MM-dd'));
   };
 
-  const renderQuickPickers = () => (
+  const renderQuickPickers = (showAccounts = true) => (
     <div className="bg-card border rounded-lg p-3 space-y-3 print:hidden">
       <div className="flex items-start gap-2">
         <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-1.5 w-[70px]">الشهور</span>
@@ -705,7 +719,7 @@ const ImportantBalances = () => {
         </div>
       </div>
 
-      {bankQuickAccounts.length > 0 && (
+      {showAccounts && bankQuickAccounts.length > 0 && (
         <div className="flex items-start gap-2 border-t pt-3">
           <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-2 w-[70px]">البنوك</span>
           <div className="flex flex-wrap gap-2">
@@ -732,7 +746,7 @@ const ImportantBalances = () => {
         </div>
       )}
 
-      {custodyQuickAccounts.length > 0 && (
+      {showAccounts && custodyQuickAccounts.length > 0 && (
         <div className="flex items-start gap-2 border-t pt-3">
           <span className="text-xs font-bold text-muted-foreground whitespace-nowrap pt-2 w-[70px]">العهد</span>
           <div className="flex flex-wrap gap-2">
@@ -1044,23 +1058,15 @@ const ImportantBalances = () => {
         </TabsContent>
         <TabsContent value="noMovement" className="mt-0" dir="rtl">
           <div className="container mx-auto px-4 py-4 space-y-4" dir="rtl">
-            {/* Controls: account select + month nav */}
+            {/* Controls: fixed account + month nav */}
             <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
               <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">الحساب:</span>
-                <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="اختر حساباً" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[400px]">
-                    {allAccountsList.map(a => (
-                      <SelectItem key={a.id} value={a.id}>
-                        <span className="font-mono text-xs ml-2">{a.code}</span>
-                        {a.name_ar}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Landmark className="h-4 w-4 text-primary/70" />
+                <span className="text-sm font-bold">
+                  {noMovementAccount
+                    ? `${noMovementAccount.code} ${noMovementAccount.name_ar}`
+                    : 'بنك الرياض شركة الرمال'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1079,10 +1085,10 @@ const ImportantBalances = () => {
               </div>
             </div>
 
-            {renderQuickPickers()}
+            {renderQuickPickers(false)}
 
             {!monthlyAccountId ? (
-              <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب</div>
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : monthlyLoading ? (
               <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : (
