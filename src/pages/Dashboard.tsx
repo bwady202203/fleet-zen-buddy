@@ -223,6 +223,32 @@ const Dashboard = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="crusherData" dir="rtl">
+            <div className="mb-4 text-center">
+              <h2 className="text-2xl font-bold mb-1">بيانات الكسارة</h2>
+              <p className="text-muted-foreground text-sm">السائقين • السريال نمبر • الشركات • الموردين</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {[
+                { title: "السائقين", path: "/accounting/crusher-data?tab=driver", icon: Users },
+                { title: "السريال نمبر", path: "/accounting/crusher-data?tab=serial", icon: Hash },
+                { title: "الشركات", path: "/accounting/crusher-data?tab=company", icon: Building2 },
+                { title: "الموردين", path: "/accounting/crusher-data?tab=supplier", icon: Truck },
+              ].map((item) => (
+                <Link key={item.path} to={item.path}>
+                  <Card className="h-full transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+                    <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+                      <div className="rounded-xl bg-cyan-100 p-3 text-cyan-700">
+                        <item.icon className="h-7 w-7" />
+                      </div>
+                      <span className="font-semibold">{item.title}</span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </TabsContent>
+
           <TabsContent value="modules" dir="rtl">
             <div className="hidden">
               {modules.map((module) => (
