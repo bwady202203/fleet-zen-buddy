@@ -580,6 +580,71 @@ All colors MUST be HSL.
   }
 }
 
+/* === تبويبات الرئيسية: خط متوهج يدور حول كل تبويب === */
+@keyframes tab-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.home-tabs [role="tab"] {
+  position: relative;
+  isolation: isolate;
+}
+.tab-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.9;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 0.75px currentColor);
+}
+.tab-ring::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, currentColor 38%, transparent) 0deg,
+    color-mix(in srgb, currentColor 45%, transparent) 90deg,
+    color-mix(in srgb, currentColor 55%, transparent) 180deg,
+    color-mix(in srgb, currentColor 75%, transparent) 270deg,
+    currentColor 330deg,
+    color-mix(in srgb, currentColor 38%, transparent) 360deg
+  );
+  animation: tab-spin 4.5s linear infinite;
+}
+.home-tabs [role="tab"]:hover .tab-ring {
+  opacity: 1;
+}
+.home-tabs [role="tab"]:hover .tab-ring::before {
+  animation-duration: 2.8s;
+}
+.home-tabs [role="tab"][data-state="active"] .tab-ring {
+  opacity: 1;
+  padding: 2.5px;
+  filter: drop-shadow(0 0 1px currentColor);
+}
+.home-tabs [role="tab"][data-state="active"] .tab-ring::before {
+  animation-duration: 2.2s;
+}
+.home-tabs [role="tab"][data-state="active"] {
+  box-shadow: 0 0 10px -7px currentColor;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-ring::before {
+    animation: none;
+  }
+}
+
 /* ===== كشوف الرواتب الخارجية — مستند طباعة A4 عرضي ===== */
 .extpayroll-print-document { display: none; }
 
