@@ -12,6 +12,7 @@ import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
 import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
 import CustodyRequestDialog from "@/components/CustodyRequestDialog";
 import SammanDashboard from "@/components/dashboard/SammanDashboard";
+import { ManagerStamp } from "@/components/ManagerStamp";
 import { useEffect, useState } from "react";
 
 const Dashboard = () => {
@@ -107,7 +108,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
       <main className="container mx-auto px-4 py-12">
-        <div className="mb-8 text-center">
+        <div className="relative mb-8 text-center">
+          <ManagerStamp className="pointer-events-none absolute left-0 top-1/2 hidden -translate-y-1/2 md:inline-flex print:hidden" />
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
             نظام الإدارة المتكامل
           </h1>
