@@ -666,14 +666,14 @@ All colors MUST be HSL.
   position: absolute;
   left: 0;
   top: 0;
-  width: 62px;
-  height: 62px;
-  margin: -31px 0 0 -31px;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
   border-radius: 9999px;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, currentColor 55%, transparent) 0%,
-    color-mix(in srgb, currentColor 22%, transparent) 45%,
+    color-mix(in srgb, white 70%, transparent) 0%,
+    color-mix(in srgb, currentColor 28%, transparent) 42%,
     transparent 72%
   );
   animation: burst-flash 520ms ease-out forwards;
