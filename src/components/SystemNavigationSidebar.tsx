@@ -529,9 +529,11 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   const hiddenGroupKeys = ["fleet", "accounting", "loads", "hr"];
   const visibleGroups = useMemo(
     () => navigationGroups.filter((group) => {
-      if (hiddenGroupKeys.includes(group.key)) return false;
       // حساب مخصص لبرنامج الصمان: لا تظهر له أي مجموعة أخرى
       if (isSammanOnly) return group.key === "samman";
+      if (hiddenGroupKeys.includes(group.key)) return false;
+      // برنامج الصمان والكسارة انتقلت إلى تبويب «برنامج الصمان» في الرئيسية
+      if (["samman", "crusher", "crusher-pro"].includes(group.key)) return false;
       return !group.module || hasPermission(group.module, "view");
     }),
     [hasPermission, isSammanOnly],
