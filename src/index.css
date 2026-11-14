@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+.home-tabs [role="tab"].home-tab-group-app {
+  background: hsl(var(--group-app-tab-soft));
+  color: hsl(var(--group-app-tab-ink));
+}
+.home-tabs [role="tab"].home-tab-group-app[data-state="active"] {
+  background: hsl(var(--group-app-tab));
+  color: hsl(var(--group-app-tab-on));
+}
+.group-app-workspace {
+  height: max(640px, calc(100dvh - 300px));
+  width: 100%;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -37,6 +50,10 @@ All colors MUST be HSL.
     --ring: 217 91% 60%;
 
     --radius: 0.5rem;
+    --group-app-tab: 350 78% 46%;
+    --group-app-tab-soft: 350 85% 95%;
+    --group-app-tab-ink: 350 75% 28%;
+    --group-app-tab-on: 0 0% 100%;
 
     /* HR module accent (bold teal) */
     --hr-accent: 173 80% 36%;
@@ -112,6 +129,9 @@ All colors MUST be HSL.
   }
 
   .dark {
+    --group-app-tab: 350 74% 44%;
+    --group-app-tab-soft: 350 40% 16%;
+    --group-app-tab-ink: 350 85% 85%;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
