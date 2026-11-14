@@ -653,7 +653,7 @@ All colors MUST be HSL.
   pointer-events: none;
 }
 .home-tabs [role="tab"] > svg,
-.home-tabs [role="tab"] > span:not(.tab-burst-layer) {
+.home-tabs [role="tab"] > span:not(.tab-burst-layer):not(.tab-ring) {
   position: relative;
   z-index: 1;
 }
