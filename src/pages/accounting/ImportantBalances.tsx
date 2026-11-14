@@ -1058,23 +1058,15 @@ const ImportantBalances = () => {
         </TabsContent>
         <TabsContent value="noMovement" className="mt-0" dir="rtl">
           <div className="container mx-auto px-4 py-4 space-y-4" dir="rtl">
-            {/* Controls: account select + month nav */}
+            {/* Controls: fixed account + month nav */}
             <div className="flex flex-wrap items-center gap-3 bg-card border rounded-lg p-3">
               <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">الحساب:</span>
-                <Select value={monthlyAccountId} onValueChange={setMonthlyAccountId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="اختر حساباً" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[400px]">
-                    {allAccountsList.map(a => (
-                      <SelectItem key={a.id} value={a.id}>
-                        <span className="font-mono text-xs ml-2">{a.code}</span>
-                        {a.name_ar}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Landmark className="h-4 w-4 text-primary/70" />
+                <span className="text-sm font-bold">
+                  {noMovementAccount
+                    ? `${noMovementAccount.code} ${noMovementAccount.name_ar}`
+                    : 'بنك الرياض شركة الرمال'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1093,10 +1085,10 @@ const ImportantBalances = () => {
               </div>
             </div>
 
-            {renderQuickPickers()}
+            {renderQuickPickers(false)}
 
             {!monthlyAccountId ? (
-              <div className="text-center py-20 text-muted-foreground">يرجى اختيار حساب</div>
+              <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : monthlyLoading ? (
               <div className="text-center py-20 text-muted-foreground">جاري التحميل...</div>
             ) : (
