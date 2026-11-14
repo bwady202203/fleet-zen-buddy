@@ -580,6 +580,62 @@ All colors MUST be HSL.
   }
 }
 
+/* === تبويبات الرئيسية: خط متوهج يدور حول كل تبويب === */
+@property --tab-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes tab-orbit {
+  from { --tab-angle: 0deg; }
+  to   { --tab-angle: 360deg; }
+}
+.home-tabs [role="tab"] {
+  position: relative;
+}
+.home-tabs [role="tab"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--tab-angle),
+    transparent 0deg,
+    transparent 235deg,
+    color-mix(in srgb, currentColor 35%, transparent) 305deg,
+    currentColor 348deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.6;
+  filter: drop-shadow(0 0 3px currentColor);
+  animation: tab-orbit 5s linear infinite;
+}
+.home-tabs [role="tab"]:hover::before {
+  opacity: 0.9;
+  animation-duration: 3s;
+}
+.home-tabs [role="tab"][data-state="active"]::before {
+  opacity: 1;
+  padding: 2px;
+  animation-duration: 2.4s;
+  filter: drop-shadow(0 0 5px currentColor);
+}
+.home-tabs [role="tab"][data-state="active"] {
+  box-shadow: 0 0 16px -4px currentColor;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-tabs [role="tab"]::before {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
 /* ===== كشوف الرواتب الخارجية — مستند طباعة A4 عرضي ===== */
 .extpayroll-print-document { display: none; }
 
