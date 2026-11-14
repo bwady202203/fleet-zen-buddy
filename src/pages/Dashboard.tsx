@@ -114,7 +114,7 @@ const Dashboard = () => {
         </div>
 
         
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" dir="rtl">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full home-tabs" dir="rtl">
           <div className="mx-auto mb-3 flex w-full max-w-5xl items-center gap-3">
             <Button
               onClick={() => setCustodyRequestOpen(true)}
