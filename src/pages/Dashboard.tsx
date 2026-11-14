@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock, Hash, Building2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -115,7 +115,7 @@ const Dashboard = () => {
 
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" dir="rtl">
-          <div className="mx-auto mb-8 flex w-full max-w-5xl items-center gap-3">
+          <div className="mx-auto mb-3 flex w-full max-w-5xl items-center gap-3">
             <Button
               onClick={() => setCustodyRequestOpen(true)}
               className="shrink-0 gap-2 bg-teal-600 hover:bg-teal-700 text-white shadow-md"
