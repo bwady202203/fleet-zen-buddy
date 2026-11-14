@@ -16,4 +16,4 @@
 - [x] Add empty paste-target document cards and reorder controls; verify paste, saving and retained order.
 - [x] Add monthly daily debit/credit comparison tab in Important Balances with bank statement import.
 - [x] Test date aggregation and differences; verify authenticated import comparison and mobile layout.
-- [ ] Move Group App beside Crusher Data, embed its existing screens, and verify authenticated desktop/mobile navigation.
+- [x] Move Group App beside Crusher Data, embed its existing screens, and verify authenticated desktop/mobile navigation to its existing access-code screen.
