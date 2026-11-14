@@ -602,7 +602,7 @@ All colors MUST be HSL.
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  filter: drop-shadow(0 0 1.5px currentColor);
+  filter: drop-shadow(0 0 1px currentColor);
 }
 .tab-ring::before {
   content: "";
@@ -631,13 +631,13 @@ All colors MUST be HSL.
 .home-tabs [role="tab"][data-state="active"] .tab-ring {
   opacity: 1;
   padding: 2.5px;
-  filter: drop-shadow(0 0 2px currentColor);
+  filter: drop-shadow(0 0 1.5px currentColor);
 }
 .home-tabs [role="tab"][data-state="active"] .tab-ring::before {
   animation-duration: 2.2s;
 }
 .home-tabs [role="tab"][data-state="active"] {
-  box-shadow: 0 0 16px -5px currentColor;
+  box-shadow: 0 0 12px -6px currentColor;
 }
 @media (prefers-reduced-motion: reduce) {
   .tab-ring::before {

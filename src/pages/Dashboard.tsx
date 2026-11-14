@@ -123,7 +123,7 @@ const Dashboard = () => {
               <Wallet className="h-4 w-4" />
               طلب عهدة
             </Button>
-            <TabsList className="flex w-full flex-wrap justify-center">
+            <TabsList className="flex w-full flex-wrap justify-center gap-1.5">
             <TabsTrigger value="overview" className="flex-1 data-[state=inactive]:bg-blue-100 data-[state=inactive]:text-blue-900 data-[state=inactive]:hover:bg-blue-200 dark:data-[state=inactive]:bg-blue-950/60 dark:data-[state=inactive]:text-blue-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-blue-300/60"><span className="tab-ring" aria-hidden="true" />نظرة سريعة</TabsTrigger>
             <TabsTrigger value="accounting" className="flex-1 data-[state=inactive]:bg-emerald-100 data-[state=inactive]:text-emerald-900 data-[state=inactive]:hover:bg-emerald-200 dark:data-[state=inactive]:bg-emerald-950/60 dark:data-[state=inactive]:text-emerald-200 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-emerald-300/60"><span className="tab-ring" aria-hidden="true" />المحاسبة</TabsTrigger>
             <TabsTrigger value="loads" className="flex-1 data-[state=inactive]:bg-orange-100 data-[state=inactive]:text-orange-900 data-[state=inactive]:hover:bg-orange-200 dark:data-[state=inactive]:bg-orange-950/60 dark:data-[state=inactive]:text-orange-200 data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-orange-300/60"><span className="tab-ring" aria-hidden="true" />إدارة الحمولات</TabsTrigger>
