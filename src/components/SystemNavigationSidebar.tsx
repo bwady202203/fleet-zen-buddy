@@ -283,7 +283,11 @@ export const navigationGroups: NavigationGroup[] = [
     title: "الإدارية",
     icon: LayoutGrid,
     module: null,
-    children: [{ title: "الروابط وبطاقات التشغيل", path: "/admin-panel", icon: LayoutGrid }],
+    children: [
+      { title: "الروابط وبطاقات التشغيل", path: "/admin-panel", icon: LayoutGrid },
+      { title: "داتا", path: "/data", icon: Layers },
+      { title: "داتا مستندات", path: "/data-documents", icon: FileImage },
+    ],
   },
   {
     key: "projects",
@@ -351,23 +355,6 @@ export const navigationGroups: NavigationGroup[] = [
     children: [],
     standalonePath: "/accounting/special-invoices",
   },
-  {
-    key: "data-cards",
-    title: "داتا",
-    icon: Layers,
-    module: null,
-    children: [],
-    standalonePath: "/data",
-  },
-  {
-    key: "data-documents",
-    title: "داتا مستندات",
-    icon: FileImage,
-    module: null,
-    children: [],
-    standalonePath: "/data-documents",
-  },
-
   {
     key: "settings",
     title: "الإعدادات",
