@@ -645,6 +645,79 @@ All colors MUST be HSL.
   }
 }
 
+/* === تبويبات الرئيسية: انفجار بسيط + إضاءة خفيفة عند الضغط === */
+.tab-burst-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.home-tabs [role="tab"] > svg,
+.home-tabs [role="tab"] > span:not(.tab-burst-layer) {
+  position: relative;
+  z-index: 1;
+}
+.tab-burst {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.tab-burst-flash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, white 70%, transparent) 0%,
+    color-mix(in srgb, currentColor 28%, transparent) 42%,
+    transparent 72%
+  );
+  animation: burst-flash 520ms ease-out forwards;
+}
+.tab-burst-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, currentColor 40%, white);
+  box-shadow: 0 0 6px color-mix(in srgb, currentColor 45%, white);
+  animation: burst-dot 560ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes burst-flash {
+  from {
+    transform: scale(0.25);
+    opacity: 0.85;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+@keyframes burst-dot {
+  from {
+    transform: translate(calc(var(--tx) * 0.3), calc(var(--ty) * 0.3)) scale(0.9);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--tx), var(--ty)) scale(0.2);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-burst-flash,
+  .tab-burst-dot {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 /* ===== كشوف الرواتب الخارجية — مستند طباعة A4 عرضي ===== */
 .extpayroll-print-document { display: none; }
 

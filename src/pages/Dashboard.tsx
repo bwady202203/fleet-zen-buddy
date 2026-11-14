@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabBurst } from "@/components/ui/tab-burst";
 import { StatsCard } from "@/components/StatsCard";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import FavoriteShortcuts from "@/components/dashboard/FavoriteShortcuts";
@@ -123,26 +124,35 @@ const Dashboard = () => {
               <Wallet className="h-4 w-4" />
               طلب عهدة
             </Button>
-            <TabsList className="flex w-full flex-wrap justify-center gap-1.5">
-            <TabsTrigger value="overview" className="flex-1 data-[state=inactive]:bg-blue-100 data-[state=inactive]:text-blue-900 data-[state=inactive]:hover:bg-blue-200 dark:data-[state=inactive]:bg-blue-950/60 dark:data-[state=inactive]:text-blue-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-blue-300/60"><span className="tab-ring" aria-hidden="true" />نظرة سريعة</TabsTrigger>
-            <TabsTrigger value="accounting" className="flex-1 data-[state=inactive]:bg-emerald-100 data-[state=inactive]:text-emerald-900 data-[state=inactive]:hover:bg-emerald-200 dark:data-[state=inactive]:bg-emerald-950/60 dark:data-[state=inactive]:text-emerald-200 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-emerald-300/60"><span className="tab-ring" aria-hidden="true" />المحاسبة</TabsTrigger>
-            <TabsTrigger value="loads" className="flex-1 data-[state=inactive]:bg-orange-100 data-[state=inactive]:text-orange-900 data-[state=inactive]:hover:bg-orange-200 dark:data-[state=inactive]:bg-orange-950/60 dark:data-[state=inactive]:text-orange-200 data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-orange-300/60"><span className="tab-ring" aria-hidden="true" />إدارة الحمولات</TabsTrigger>
-            <TabsTrigger value="fleet" className="flex-1 data-[state=inactive]:bg-cyan-100 data-[state=inactive]:text-cyan-900 data-[state=inactive]:hover:bg-cyan-200 dark:data-[state=inactive]:bg-cyan-950/60 dark:data-[state=inactive]:text-cyan-200 data-[state=active]:bg-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-cyan-300/60"><span className="tab-ring" aria-hidden="true" />الأسطول</TabsTrigger>
-            <TabsTrigger value="hr" className="flex-1 data-[state=inactive]:bg-rose-100 data-[state=inactive]:text-rose-900 data-[state=inactive]:hover:bg-rose-200 dark:data-[state=inactive]:bg-rose-950/60 dark:data-[state=inactive]:text-rose-200 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-rose-300/60"><span className="tab-ring" aria-hidden="true" />الموارد البشرية</TabsTrigger>
-            <TabsTrigger value="favorites" className="flex-1 data-[state=inactive]:bg-amber-100 data-[state=inactive]:text-amber-900 data-[state=inactive]:hover:bg-amber-200 dark:data-[state=inactive]:bg-amber-950/60 dark:data-[state=inactive]:text-amber-200 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-amber-300/60"><span className="tab-ring" aria-hidden="true" />المفضلة</TabsTrigger>
-            <TabsTrigger value="samman" className="flex-1 data-[state=inactive]:bg-violet-100 data-[state=inactive]:text-violet-900 data-[state=inactive]:hover:bg-violet-200 dark:data-[state=inactive]:bg-violet-950/60 dark:data-[state=inactive]:text-violet-200 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-violet-300/60"><span className="tab-ring" aria-hidden="true" />برنامج الصمان</TabsTrigger>
-            <TabsTrigger value="statistics" className="flex-1 data-[state=inactive]:bg-indigo-100 data-[state=inactive]:text-indigo-900 data-[state=inactive]:hover:bg-indigo-200 dark:data-[state=inactive]:bg-indigo-950/60 dark:data-[state=inactive]:text-indigo-200 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-indigo-300/60"><span className="tab-ring" aria-hidden="true" />الإحصائيات</TabsTrigger>
+            <TabsList className="flex w-full flex-wrap justify-center gap-1.5 overflow-visible">
+            <TabsTrigger value="overview" className="flex-1 data-[state=inactive]:bg-blue-100 data-[state=inactive]:text-blue-900 data-[state=inactive]:hover:bg-blue-200 dark:data-[state=inactive]:bg-blue-950/60 dark:data-[state=inactive]:text-blue-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-blue-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />نظرة سريعة</TabsTrigger>
+            <TabsTrigger value="accounting" className="flex-1 data-[state=inactive]:bg-emerald-100 data-[state=inactive]:text-emerald-900 data-[state=inactive]:hover:bg-emerald-200 dark:data-[state=inactive]:bg-emerald-950/60 dark:data-[state=inactive]:text-emerald-200 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-emerald-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />المحاسبة</TabsTrigger>
+            <TabsTrigger value="loads" className="flex-1 data-[state=inactive]:bg-orange-100 data-[state=inactive]:text-orange-900 data-[state=inactive]:hover:bg-orange-200 dark:data-[state=inactive]:bg-orange-950/60 dark:data-[state=inactive]:text-orange-200 data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-orange-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />إدارة الحمولات</TabsTrigger>
+            <TabsTrigger value="fleet" className="flex-1 data-[state=inactive]:bg-cyan-100 data-[state=inactive]:text-cyan-900 data-[state=inactive]:hover:bg-cyan-200 dark:data-[state=inactive]:bg-cyan-950/60 dark:data-[state=inactive]:text-cyan-200 data-[state=active]:bg-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-cyan-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />الأسطول</TabsTrigger>
+            <TabsTrigger value="hr" className="flex-1 data-[state=inactive]:bg-rose-100 data-[state=inactive]:text-rose-900 data-[state=inactive]:hover:bg-rose-200 dark:data-[state=inactive]:bg-rose-950/60 dark:data-[state=inactive]:text-rose-200 data-[state=active]:bg-rose-600 data-[state=active]:text-white data-[state=active]:shadow-rose-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />الموارد البشرية</TabsTrigger>
+            <TabsTrigger value="favorites" className="flex-1 data-[state=inactive]:bg-amber-100 data-[state=inactive]:text-amber-900 data-[state=inactive]:hover:bg-amber-200 dark:data-[state=inactive]:bg-amber-950/60 dark:data-[state=inactive]:text-amber-200 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-amber-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />المفضلة</TabsTrigger>
+            <TabsTrigger value="samman" className="flex-1 data-[state=inactive]:bg-violet-100 data-[state=inactive]:text-violet-900 data-[state=inactive]:hover:bg-violet-200 dark:data-[state=inactive]:bg-violet-950/60 dark:data-[state=inactive]:text-violet-200 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-violet-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />برنامج الصمان</TabsTrigger>
+            <TabsTrigger value="statistics" className="flex-1 data-[state=inactive]:bg-indigo-100 data-[state=inactive]:text-indigo-900 data-[state=inactive]:hover:bg-indigo-200 dark:data-[state=inactive]:bg-indigo-950/60 dark:data-[state=inactive]:text-indigo-200 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-indigo-300/60"><span className="tab-ring" aria-hidden="true" />
+                <TabBurst />الإحصائيات</TabsTrigger>
             </TabsList>
           </div>
 
           {/* الصف الثاني: تبويبات إضافية */}
           <div className="mx-auto mb-8 flex w-full max-w-5xl justify-center">
-            <TabsList className="inline-flex items-center justify-center border border-border/60">
+            <TabsList className="inline-flex items-center justify-center border border-border/60 overflow-visible">
               <TabsTrigger
                 value="crusherData"
                 className="px-8 data-[state=inactive]:bg-teal-100 data-[state=inactive]:text-teal-900 data-[state=inactive]:hover:bg-teal-200 dark:data-[state=inactive]:bg-teal-950/60 dark:data-[state=inactive]:text-teal-200 data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-teal-300/60"
               >
                 <span className="tab-ring" aria-hidden="true" />
+                <TabBurst />
                 بيانات الكسارة
               </TabsTrigger>
             </TabsList>
