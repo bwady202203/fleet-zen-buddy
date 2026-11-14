@@ -593,7 +593,7 @@ All colors MUST be HSL.
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.75px;
+  padding: 2px;
   overflow: hidden;
   pointer-events: none;
   z-index: -1;
@@ -613,12 +613,12 @@ All colors MUST be HSL.
   aspect-ratio: 1;
   background: conic-gradient(
     from 0deg,
-    color-mix(in srgb, currentColor 10%, transparent) 0deg,
-    color-mix(in srgb, currentColor 16%, transparent) 90deg,
-    color-mix(in srgb, currentColor 26%, transparent) 180deg,
-    color-mix(in srgb, currentColor 55%, transparent) 270deg,
-    currentColor 340deg,
-    color-mix(in srgb, currentColor 10%, transparent) 360deg
+    color-mix(in srgb, currentColor 38%, transparent) 0deg,
+    color-mix(in srgb, currentColor 45%, transparent) 90deg,
+    color-mix(in srgb, currentColor 55%, transparent) 180deg,
+    color-mix(in srgb, currentColor 75%, transparent) 270deg,
+    currentColor 345deg,
+    color-mix(in srgb, currentColor 38%, transparent) 360deg
   );
   animation: tab-spin 4.5s linear infinite;
 }
@@ -630,8 +630,8 @@ All colors MUST be HSL.
 }
 .home-tabs [role="tab"][data-state="active"] .tab-ring {
   opacity: 1;
-  padding: 2.25px;
-  filter: drop-shadow(0 0 2.5px currentColor);
+  padding: 2.5px;
+  filter: drop-shadow(0 0 2px currentColor);
 }
 .home-tabs [role="tab"][data-state="active"] .tab-ring::before {
   animation-duration: 2.2s;
