@@ -889,7 +889,7 @@ All colors MUST be HSL.
   border: 3px solid var(--stamp-blue);
   border-radius: 8px;
   color: var(--stamp-red);
-  rotate: -7deg;
+  rotate: -14deg;
   opacity: 0.93;
   font-family: "Oswald", "Cairo", sans-serif;
   line-height: 1;
