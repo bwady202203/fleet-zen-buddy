@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock, Hash, Building2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -115,7 +115,7 @@ const Dashboard = () => {
 
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full" dir="rtl">
-          <div className="mx-auto mb-8 flex w-full max-w-5xl items-center gap-3">
+          <div className="mx-auto mb-3 flex w-full max-w-5xl items-center gap-3">
             <Button
               onClick={() => setCustodyRequestOpen(true)}
               className="shrink-0 gap-2 bg-teal-600 hover:bg-teal-700 text-white shadow-md"
@@ -132,6 +132,18 @@ const Dashboard = () => {
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
             <TabsTrigger value="samman" className="flex-1">برنامج الصمان</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* الصف الثاني: تبويبات إضافية */}
+          <div className="mx-auto mb-8 flex w-full max-w-5xl justify-center">
+            <TabsList className="inline-flex items-center justify-center border border-border/60">
+              <TabsTrigger
+                value="crusherData"
+                className="px-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              >
+                بيانات الكسارة
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -207,6 +219,32 @@ const Dashboard = () => {
                     <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
                       <div className="rounded-xl bg-amber-100 p-3 text-amber-700">
                         <Truck className="h-7 w-7" />
+                      </div>
+                      <span className="font-semibold">{item.title}</span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="crusherData" dir="rtl">
+            <div className="mb-4 text-center">
+              <h2 className="text-2xl font-bold mb-1">بيانات الكسارة</h2>
+              <p className="text-muted-foreground text-sm">السائقين • السريال نمبر • الشركات • الموردين</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {[
+                { title: "السائقين", path: "/accounting/crusher-data?tab=driver", icon: Users },
+                { title: "السريال نمبر", path: "/accounting/crusher-data?tab=serial", icon: Hash },
+                { title: "الشركات", path: "/accounting/crusher-data?tab=company", icon: Building2 },
+                { title: "الموردين", path: "/accounting/crusher-data?tab=supplier", icon: Truck },
+              ].map((item) => (
+                <Link key={item.path} to={item.path}>
+                  <Card className="h-full transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+                    <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+                      <div className="rounded-xl bg-cyan-100 p-3 text-cyan-700">
+                        <item.icon className="h-7 w-7" />
                       </div>
                       <span className="font-semibold">{item.title}</span>
                     </CardContent>
