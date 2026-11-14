@@ -137,8 +137,13 @@ const Dashboard = () => {
 
           {/* الصف الثاني: تبويبات إضافية */}
           <div className="mx-auto mb-8 flex w-full max-w-5xl justify-center">
-            <TabsList className="inline-flex items-center justify-center">
-              <TabsTrigger value="crusherData" className="px-6">بيانات الكسارة</TabsTrigger>
+            <TabsList className="inline-flex items-center justify-center border border-border/60">
+              <TabsTrigger
+                value="crusherData"
+                className="px-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              >
+                بيانات الكسارة
+              </TabsTrigger>
             </TabsList>
           </div>
 
