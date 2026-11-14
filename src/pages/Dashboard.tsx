@@ -130,6 +130,7 @@ const Dashboard = () => {
             <TabsTrigger value="fleet" className="flex-1">الأسطول</TabsTrigger>
             <TabsTrigger value="hr" className="flex-1">الموارد البشرية</TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1">المفضلة</TabsTrigger>
+            <TabsTrigger value="samman" className="flex-1">برنامج الصمان</TabsTrigger>
             <TabsTrigger value="statistics" className="flex-1">الإحصائيات</TabsTrigger>
             </TabsList>
           </div>
@@ -187,6 +188,32 @@ const Dashboard = () => {
 
           <TabsContent value="favorites" dir="rtl">
             <FavoriteShortcuts />
+          </TabsContent>
+
+          <TabsContent value="samman" dir="rtl">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {[
+                { title: "شحنة جديدة", path: "/samman/new" },
+                { title: "عرض الشحنات", path: "/samman/shipments" },
+                { title: "السائقين", path: "/samman/data?tab=driver" },
+                { title: "السريال نمبر", path: "/samman/data?tab=serial" },
+                { title: "الشركات", path: "/samman/data?tab=company" },
+                { title: "الموردين", path: "/samman/data?tab=supplier" },
+                { title: "برنامج كسارة مطور", path: "/accounting/crusher-pro" },
+                { title: "برنامج الكسارة", path: "/accounting/crusher" },
+              ].map((item) => (
+                <Link key={item.path} to={item.path}>
+                  <Card className="h-full transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+                    <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+                      <div className="rounded-xl bg-amber-100 p-3 text-amber-700">
+                        <Truck className="h-7 w-7" />
+                      </div>
+                      <span className="font-semibold">{item.title}</span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </TabsContent>
 
           <TabsContent value="modules" dir="rtl">
