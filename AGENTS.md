@@ -17,3 +17,4 @@ Data Documents empty cards are unsaved paste targets; persist display order by s
 Automatic bank-statement account matching uses word-to-account rules declared in one testable lib module so they stay covered by tests and cannot drift per screen.
 Important Balances bank comparison uses a separate tab with deterministic batched month-only journal reads and a pure date/amount aggregation module; imported statements remain comparison-only and never write journal entries.
 Standard and premium load registration validate arrow-marked fields through shared Zod schemas and security-invoker registration RPCs; preserve pricing calculations and RLS while rejecting incomplete registrations on both sides.
+The home Group App tab reuses the existing iframe page in embedded mode and lazy-loads it only when selected, preserving all external screens and the legacy standalone route without duplicating navigation.

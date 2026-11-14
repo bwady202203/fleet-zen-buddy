@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock, Hash, Building2 } from "lucide-react";
+import { Calculator, Users, Package, Truck, LogOut, Sparkles, Wallet, FileText, DollarSign, TrendingUp, BarChart3, PieChart, Activity, Shield, ShieldCheck, Receipt, Crown, Lock, Hash, Building2, Layers } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -13,7 +13,9 @@ import GroupShortcuts from "@/components/dashboard/GroupShortcuts";
 import CustodyRequestDialog from "@/components/CustodyRequestDialog";
 import SammanDashboard from "@/components/dashboard/SammanDashboard";
 import { ManagerStamp } from "@/components/ManagerStamp";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+
+const GroupApp = lazy(() => import("@/pages/accounting/GroupApp"));
 
 const Dashboard = () => {
   const { signOut, user, userRole } = useAuth();
@@ -126,7 +128,7 @@ const Dashboard = () => {
               <Wallet className="h-4 w-4" />
               طلب عهدة
             </Button>
-            <TabsList className="flex w-full flex-wrap justify-center gap-1.5 overflow-visible">
+            <TabsList className="flex h-auto w-full flex-wrap justify-center gap-1.5 overflow-visible">
             <TabsTrigger value="overview" className="flex-1 data-[state=inactive]:bg-blue-100 data-[state=inactive]:text-blue-900 data-[state=inactive]:hover:bg-blue-200 dark:data-[state=inactive]:bg-blue-950/60 dark:data-[state=inactive]:text-blue-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-blue-300/60"><span className="tab-ring" aria-hidden="true" />
                 <TabBurst />نظرة سريعة</TabsTrigger>
             <TabsTrigger value="accounting" className="flex-1 data-[state=inactive]:bg-emerald-100 data-[state=inactive]:text-emerald-900 data-[state=inactive]:hover:bg-emerald-200 dark:data-[state=inactive]:bg-emerald-950/60 dark:data-[state=inactive]:text-emerald-200 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-emerald-300/60"><span className="tab-ring" aria-hidden="true" />
@@ -148,7 +150,7 @@ const Dashboard = () => {
 
           {/* الصف الثاني: تبويبات إضافية */}
           <div className="mx-auto mb-8 flex w-full max-w-5xl justify-center">
-            <TabsList className="inline-flex items-center justify-center border border-border/60 overflow-visible">
+            <TabsList className="inline-flex h-auto flex-wrap gap-1.5 items-center justify-center border border-border/60 overflow-visible">
               <TabsTrigger
                 value="crusherData"
                 className="px-8 data-[state=inactive]:bg-teal-100 data-[state=inactive]:text-teal-900 data-[state=inactive]:hover:bg-teal-200 dark:data-[state=inactive]:bg-teal-950/60 dark:data-[state=inactive]:text-teal-200 data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-teal-300/60"
@@ -156,6 +158,12 @@ const Dashboard = () => {
                 <span className="tab-ring" aria-hidden="true" />
                 <TabBurst />
                 بيانات الكسارة
+              </TabsTrigger>
+              <TabsTrigger value="groupApp" className="home-tab-group-app gap-2 px-8">
+                <span className="tab-ring" aria-hidden="true" />
+                <TabBurst />
+                <Layers className="h-4 w-4" />
+                برنامج المجمعة
               </TabsTrigger>
             </TabsList>
           </div>
@@ -239,6 +247,12 @@ const Dashboard = () => {
                 </Link>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="groupApp" dir="rtl">
+            <Suspense fallback={<div className="group-app-workspace bg-muted animate-pulse" />}>
+              <GroupApp embedded />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="crusherData" dir="rtl">

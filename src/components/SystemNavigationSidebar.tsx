@@ -513,7 +513,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
   const collapsed = !isMobile && state === "collapsed";
 
   // المجموعات المعروضة في القائمة الجانبية: الأسطول والمحاسبة والحمولات تُعرض كتبويبات في الشاشة الرئيسية
-  const hiddenGroupKeys = ["fleet", "accounting", "loads", "hr"];
+  const hiddenGroupKeys = ["fleet", "accounting", "loads", "hr", "group-app"];
   const visibleGroups = useMemo(
     () => navigationGroups.filter((group) => {
       // حساب مخصص لبرنامج الصمان: لا تظهر له أي مجموعة أخرى
