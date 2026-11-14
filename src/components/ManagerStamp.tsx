@@ -14,12 +14,12 @@ export function ManagerStamp({ className }: ManagerStampProps) {
       className={cn(className)}
       dir="ltr"
       role="img"
-      aria-label="BY OMAR M KHEDR — DEV BUSINESS"
+      aria-label="BY OMAR M KHEDR — BUSINESS .DEV 2026"
     >
       <div className="manager-stamp">
         <span className="manager-stamp-top">BY OMAR M KHEDR</span>
         <span className="manager-stamp-bar" aria-hidden="true" />
-        <span className="manager-stamp-bottom">DEV BUSINESS</span>
+        <span className="manager-stamp-bottom">BUSINESS .DEV 2026</span>
       </div>
     </div>
   );
