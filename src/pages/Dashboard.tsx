@@ -142,7 +142,9 @@ const Dashboard = () => {
                 value="crusherData"
                 className="px-8 data-[state=inactive]:bg-teal-100 data-[state=inactive]:text-teal-900 data-[state=inactive]:hover:bg-teal-200 dark:data-[state=inactive]:bg-teal-950/60 dark:data-[state=inactive]:text-teal-200 data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-teal-300/60"
               >
+                <span className="tab-ring" aria-hidden="true" />
                 بيانات الكسارة
+              </TabsTrigger>
             </TabsList>
           </div>
 
