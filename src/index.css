@@ -686,8 +686,8 @@ All colors MUST be HSL.
   height: 4px;
   margin: -2px 0 0 -2px;
   border-radius: 9999px;
-  background: currentColor;
-  box-shadow: 0 0 6px currentColor;
+  background: color-mix(in srgb, currentColor 40%, white);
+  box-shadow: 0 0 6px color-mix(in srgb, currentColor 45%, white);
   animation: burst-dot 560ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
 @keyframes burst-flash {
@@ -702,7 +702,7 @@ All colors MUST be HSL.
 }
 @keyframes burst-dot {
   from {
-    transform: translate(0, 0) scale(1);
+    transform: translate(calc(var(--tx) * 0.3), calc(var(--ty) * 0.3)) scale(0.9);
     opacity: 1;
   }
   to {
