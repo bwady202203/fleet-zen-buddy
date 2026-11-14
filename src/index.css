@@ -581,59 +581,66 @@ All colors MUST be HSL.
 }
 
 /* === تبويبات الرئيسية: خط متوهج يدور حول كل تبويب === */
-@property --tab-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-@keyframes tab-orbit {
-  from { --tab-angle: 0deg; }
-  to   { --tab-angle: 360deg; }
+@keyframes tab-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 .home-tabs [role="tab"] {
   position: relative;
+  isolation: isolate;
 }
-.home-tabs [role="tab"]::before {
-  content: "";
+.tab-ring {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--tab-angle),
-    color-mix(in srgb, currentColor 14%, transparent) 0deg,
-    color-mix(in srgb, currentColor 26%, transparent) 120deg,
-    color-mix(in srgb, currentColor 55%, transparent) 250deg,
-    currentColor 345deg,
-    color-mix(in srgb, currentColor 14%, transparent) 360deg
-  );
+  padding: 1.75px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.7;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0.85;
-  padding: 2px;
   filter: drop-shadow(0 0 2.5px currentColor);
-  animation: tab-orbit 5s linear infinite;
 }
-.home-tabs [role="tab"]:hover::before {
-  opacity: 1;
-  animation-duration: 3s;
+.tab-ring::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 180deg,
+    color-mix(in srgb, currentColor 30%, transparent) 280deg,
+    currentColor 350deg,
+    transparent 360deg
+  );
+  animation: tab-spin 4.5s linear infinite;
 }
-.home-tabs [role="tab"][data-state="active"]::before {
+.home-tabs [role="tab"]:hover .tab-ring {
+  opacity: 0.95;
+}
+.home-tabs [role="tab"]:hover .tab-ring::before {
+  animation-duration: 2.8s;
+}
+.home-tabs [role="tab"][data-state="active"] .tab-ring {
   opacity: 1;
-  padding: 2.5px;
-  animation-duration: 2.4s;
+  padding: 2.25px;
   filter: drop-shadow(0 0 4px currentColor);
 }
+.home-tabs [role="tab"][data-state="active"] .tab-ring::before {
+  animation-duration: 2.2s;
+}
 .home-tabs [role="tab"][data-state="active"] {
-  box-shadow: 0 0 16px -4px currentColor;
+  box-shadow: 0 0 16px -5px currentColor;
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-tabs [role="tab"]::before {
+  .tab-ring::before {
     animation: none;
-    opacity: 0.35;
   }
 }
 
