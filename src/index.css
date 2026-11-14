@@ -625,6 +625,11 @@ All colors MUST be HSL.
 .home-tabs [role="tab"]:hover .tab-ring {
   opacity: 1;
 }
+.home-tabs [role="tab"][data-state="inactive"] .tab-ring {
+  opacity: 1;
+  padding: 2.5px;
+  filter: drop-shadow(0 0 1.25px currentColor);
+}
 .home-tabs [role="tab"]:hover .tab-ring::before {
   animation-duration: 2.8s;
 }
@@ -653,7 +658,7 @@ All colors MUST be HSL.
   pointer-events: none;
 }
 .home-tabs [role="tab"] > svg,
-.home-tabs [role="tab"] > span:not(.tab-burst-layer) {
+.home-tabs [role="tab"] > span:not(.tab-burst-layer):not(.tab-ring) {
   position: relative;
   z-index: 1;
 }
