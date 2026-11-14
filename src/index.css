@@ -874,3 +874,54 @@ All colors MUST be HSL.
   border-radius: 10px;
   box-shadow: var(--field-shadow);
 }
+
+/* ===== ختم المدير: مربع أزرق بحافة مزدوجة وداخله نص أحمر ===== */
+.manager-stamp {
+  --stamp-blue: #1d4ed8;
+  --stamp-red: #dc2626;
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 16px 11px;
+  border: 3px solid var(--stamp-blue);
+  border-radius: 8px;
+  color: var(--stamp-red);
+  rotate: -7deg;
+  opacity: 0.93;
+  font-family: "Oswald", "Cairo", sans-serif;
+  line-height: 1;
+  background: hsl(var(--background) / 0.45);
+}
+.manager-stamp::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1.5px solid var(--stamp-blue);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.manager-stamp-top {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.manager-stamp-bar {
+  width: 100%;
+  height: 1.5px;
+  background: var(--stamp-red);
+  opacity: 0.8;
+}
+.manager-stamp-bottom {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+}
+.dark .manager-stamp {
+  --stamp-blue: #60a5fa;
+  --stamp-red: #f87171;
+}
