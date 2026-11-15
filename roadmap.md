@@ -19,3 +19,5 @@
 - [x] Move Group App beside Crusher Data, embed its existing screens, and verify authenticated desktop/mobile navigation to its existing access-code screen.
 - [x] Add transport load registration with the eight pictured fields and organization-scoped saving.
 - [x] Verify navigation, saving and reading transport loads back on desktop/mobile.
+- [ ] Center transport registration with white fields and supplier/driver search and addition.
+- [ ] Add side tabs for contacts and loads, and verify saved-load A4 preview and printing.
