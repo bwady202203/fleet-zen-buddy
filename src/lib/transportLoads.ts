@@ -7,6 +7,8 @@ const amount = z.string().trim().min(1, "هذا الحقل مطلوب")
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "أدخل التاريخ")
   .refine((value) => !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value, "التاريخ غير صحيح");
 
+const optionalText = z.string().trim().transform(value => value === "" ? null : value).pipe(z.string().nullable());
+
 export const transportLoadSchema = z.object({
   supplier_name: requiredText,
   commission: amount.pipe(z.number().min(0, "العمولة لا تكون سالبة")),
@@ -16,6 +18,8 @@ export const transportLoadSchema = z.object({
   invoice_number: requiredText,
   delivery_date: date,
   loading_date: date,
+  from_location: optionalText,
+  to_location: optionalText,
 });
 
 export const transportLoadFields = [
@@ -27,10 +31,13 @@ export const transportLoadFields = [
   { key: "invoice_number", label: "رقم الفاتورة", type: "text" },
   { key: "delivery_date", label: "تاريخ التسليم", type: "date" },
   { key: "loading_date", label: "تاريخ التحميل", type: "date" },
+  { key: "from_location", label: "من موقع", type: "text" },
+  { key: "to_location", label: "إلى موقع", type: "text" },
 ] as const;
 
 export type TransportLoadForm = Record<(typeof transportLoadFields)[number]["key"], string>;
 export const emptyTransportLoad: TransportLoadForm = {
   supplier_name: "", commission: "", delivery_weight: "", driver_name: "",
   vehicle_number: "", invoice_number: "", delivery_date: "", loading_date: "",
+  from_location: "", to_location: "",
 };
