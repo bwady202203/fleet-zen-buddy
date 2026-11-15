@@ -127,6 +127,13 @@
       "when": 1794756908535,
       "tag": "0017_transport_route_commission",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794757053170,
+      "tag": "0018_transport_contacts_location_kind",
+      "breakpoints": true
     }
   ]
 }
