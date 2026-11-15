@@ -41,7 +41,7 @@ export default function TransportLoadsRegister() {
   const canCreate = hasPermission("loads", "create");
   const enabled = canView && !permissionsLoading;
   const rules = useTransportCommissionRules(currentOrganizationId, enabled);
-  const calculatedCommission = rules.isError || rules.isLoading ? null : calculateTransportCommission(form.delivery_weight, rules.data ?? []);
+  const calculatedCommission = rules.isError || rules.isLoading ? null : calculateTransportCommission(form.delivery_weight, rules.data ?? [], form.from_location, form.to_location);
   const contacts = useTransportContacts(currentOrganizationId, enabled);
   const company = useQuery({ queryKey: ["transport-company", currentOrganizationId], enabled: Boolean(currentOrganizationId && enabled), queryFn: async () => {
     if (!currentOrganizationId) return "";
@@ -88,7 +88,8 @@ export default function TransportLoadsRegister() {
       const { data: saved, error } = await supabase.from("transport_loads").insert({
         supplier_name: parsed.data.supplier_name, commission: parsed.data.commission, delivery_weight: parsed.data.delivery_weight,
         driver_name: parsed.data.driver_name, vehicle_number: parsed.data.vehicle_number, invoice_number: parsed.data.invoice_number,
-        delivery_date: parsed.data.delivery_date, loading_date: parsed.data.loading_date, organization_id: currentOrganizationId, created_by: user.id,
+        delivery_date: parsed.data.delivery_date, loading_date: parsed.data.loading_date,
+        from_location: parsed.data.from_location, to_location: parsed.data.to_location, organization_id: currentOrganizationId, created_by: user.id,
       }).select("*").single();
       if (error) throw error;
       setSavedLoad(saved);
@@ -113,7 +114,7 @@ export default function TransportLoadsRegister() {
         <section className="transport-workspace-content min-w-0 py-5 sm:py-6">
           {view === "register" && <form onSubmit={save} noValidate className="space-y-6"><div className="transport-section-heading flex items-center gap-3 border-b pb-4"><Truck className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">تسجيل حمولة نقل</h2></div>
             {[
-              { title: "بيانات المورد والسائق", keys: ["supplier_name", "driver_name", "vehicle_number", "invoice_number"] },
+              { title: "بيانات المورد والسائق", keys: ["supplier_name", "driver_name", "vehicle_number", "invoice_number", "from_location", "to_location"] },
               { title: "الوزن والتواريخ والعمولة", keys: ["delivery_weight", "loading_date", "delivery_date", "commission"] },
             ].map(group => <fieldset key={group.title} className="rounded-md border border-primary/20 p-4 sm:p-5"><legend className="px-2 font-bold text-primary">{group.title}</legend><div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">{group.keys.map(key => {
               const field = transportLoadFields.find(item => item.key === key);
