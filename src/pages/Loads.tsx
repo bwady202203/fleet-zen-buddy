@@ -27,6 +27,15 @@ const Loads = () => {
       color: "from-blue-500 to-blue-600"
     },
     {
+      title: "تسجيل حمولة نقل",
+      titleEn: "Transport Load Registration",
+      description: "",
+      descriptionEn: "",
+      icon: Truck,
+      link: "/loads/transport-register",
+      color: "from-primary to-primary/80"
+    },
+    {
       title: "تسجيل الحمولات المميز",
       titleEn: "Premium Loads Registration",
       description: "نموذج مميز بحقول التوصيل والعمولات",
