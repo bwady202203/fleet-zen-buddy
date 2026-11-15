@@ -4624,28 +4624,34 @@ export type Database = {
           amount: number
           created_at: string
           created_by: string
+          from_location: string | null
           id: string
           max_weight: number | null
           min_weight: number
           organization_id: string
+          to_location: string | null
         }
         Insert: {
           amount: number
           created_at?: string
           created_by?: string
+          from_location?: string | null
           id?: string
           max_weight?: number | null
           min_weight: number
           organization_id: string
+          to_location?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
           created_by?: string
+          from_location?: string | null
           id?: string
           max_weight?: number | null
           min_weight?: number
           organization_id?: string
+          to_location?: string | null
         }
         Relationships: [
           {
@@ -4700,11 +4706,13 @@ export type Database = {
           delivery_date: string
           delivery_weight: number
           driver_name: string
+          from_location: string | null
           id: string
           invoice_number: string
           loading_date: string
           organization_id: string
           supplier_name: string
+          to_location: string | null
           vehicle_number: string
         }
         Insert: {
@@ -4714,11 +4722,13 @@ export type Database = {
           delivery_date: string
           delivery_weight: number
           driver_name: string
+          from_location?: string | null
           id?: string
           invoice_number: string
           loading_date: string
           organization_id: string
           supplier_name: string
+          to_location?: string | null
           vehicle_number: string
         }
         Update: {
@@ -4728,11 +4738,13 @@ export type Database = {
           delivery_date?: string
           delivery_weight?: number
           driver_name?: string
+          from_location?: string | null
           id?: string
           invoice_number?: string
           loading_date?: string
           organization_id?: string
           supplier_name?: string
+          to_location?: string | null
           vehicle_number?: string
         }
         Relationships: [

@@ -120,6 +120,13 @@
       "when": 1794756358914,
       "tag": "0016_transport_commission_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794756908535,
+      "tag": "0017_transport_route_commission",
+      "breakpoints": true
     }
   ]
 }
