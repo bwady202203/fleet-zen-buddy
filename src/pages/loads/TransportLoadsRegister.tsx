@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Loader2, Save, Truck, Plus, UsersRound, Building2, ClipboardList, Eye, Printer, Search } from "lucide-react";
+import { ArrowRight, Loader2, Save, Truck, Plus, UsersRound, Building2, ClipboardList, Eye, Printer, Search, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +16,11 @@ import { emptyTransportLoad, transportLoadFields, transportLoadSchema, type Tran
 import { TransportContactDialog, useTransportContacts, type ContactKind } from "@/components/loads/TransportContacts";
 import { TransportLoadPreview, TransportLoadPrintPortal, type TransportLoad } from "@/components/loads/TransportLoadDocument";
 
-type View = "register" | "driver" | "supplier" | "loads";
-const views = [{ key: "register", label: "تسجيل حمولة نقل", icon: Truck }, { key: "driver", label: "السائقين", icon: UsersRound }, { key: "supplier", label: "الموردين", icon: Building2 }, { key: "loads", label: "سجل الحمولات", icon: ClipboardList }] as const;
+import TransportCommissionRules, { useTransportCommissionRules } from "@/components/loads/TransportCommissionRules";
+import { calculateTransportCommission } from "@/lib/transportCommission";
+
+type View = "register" | "driver" | "supplier" | "loads" | "rules";
+const views = [{ key: "register", label: "تسجيل حمولة نقل", icon: Truck }, { key: "driver", label: "السائقين", icon: UsersRound }, { key: "supplier", label: "الموردين", icon: Building2 }, { key: "loads", label: "سجل الحمولات", icon: ClipboardList }, { key: "rules", label: "شروط العمولات", icon: Calculator }] as const;
 export default function TransportLoadsRegister() {
   const { user, currentOrganizationId } = useAuth();
   const { hasPermission, loading: permissionsLoading } = usePermissions();
@@ -31,10 +34,13 @@ export default function TransportLoadsRegister() {
   const [kind, setKind] = useState<ContactKind | null>(null);
   const [contactSearch, setContactSearch] = useState("");
   const [preview, setPreview] = useState<TransportLoad | null>(null);
+  const [savedLoad, setSavedLoad] = useState<TransportLoad | null>(null);
   const [printing, setPrinting] = useState<TransportLoad | null>(null);
   const canView = hasPermission("loads", "view");
   const canCreate = hasPermission("loads", "create");
   const enabled = canView && !permissionsLoading;
+  const rules = useTransportCommissionRules(currentOrganizationId, enabled);
+  const calculatedCommission = rules.isError || rules.isLoading ? null : calculateTransportCommission(form.delivery_weight, rules.data ?? []);
   const contacts = useTransportContacts(currentOrganizationId, enabled);
   const company = useQuery({ queryKey: ["transport-company", currentOrganizationId], enabled: Boolean(currentOrganizationId && enabled), queryFn: async () => {
     if (!currentOrganizationId) return "";
@@ -67,7 +73,8 @@ export default function TransportLoadsRegister() {
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (saving || !user || !currentOrganizationId || !canCreate) return;
-    const parsed = transportLoadSchema.safeParse(form);
+    if (calculatedCommission === null) { setErrors({ commission: "لا يوجد شرط عمولة يغطي هذا الوزن؛ راجع شروط العمولات" }); return; }
+    const parsed = transportLoadSchema.safeParse({ ...form, commission: String(calculatedCommission) });
     if (!parsed.success) {
       const nextErrors: Record<string, string> = {};
       for (const issue of parsed.error.issues) nextErrors[String(issue.path[0])] = issue.message;
@@ -77,12 +84,13 @@ export default function TransportLoadsRegister() {
     }
     setSaving(true); setErrors({});
     try {
-      const { error } = await supabase.from("transport_loads").insert({
+      const { data: saved, error } = await supabase.from("transport_loads").insert({
         supplier_name: parsed.data.supplier_name, commission: parsed.data.commission, delivery_weight: parsed.data.delivery_weight,
         driver_name: parsed.data.driver_name, vehicle_number: parsed.data.vehicle_number, invoice_number: parsed.data.invoice_number,
         delivery_date: parsed.data.delivery_date, loading_date: parsed.data.loading_date, organization_id: currentOrganizationId, created_by: user.id,
-      });
+      }).select("*").single();
       if (error) throw error;
+      setSavedLoad(saved);
       setForm({ ...emptyTransportLoad }); setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["transport-loads"] });
       setView("loads"); toast({ title: "تم حفظ حمولة النقل" });
@@ -96,18 +104,29 @@ export default function TransportLoadsRegister() {
       <Truck className="h-6 w-6 text-primary" /><div><h1 className="text-xl font-bold sm:text-2xl">حمولات النقل</h1><p className="mt-1 text-sm text-muted-foreground">{company.data}</p></div>
     </div></header>
     <main className="w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+      {savedLoad && <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 p-4"><span className="font-semibold">تم حفظ حمولة {savedLoad.invoice_number}</span><div className="flex gap-2"><Button variant="outline" size="icon" title="معاينة الحمولة المحفوظة" aria-label="معاينة الحمولة المحفوظة" onClick={() => setPreview(savedLoad)}><Eye className="h-5 w-5" /></Button><Button variant="outline" size="icon" title="طباعة الحمولة المحفوظة" aria-label="طباعة الحمولة المحفوظة" onClick={() => print(savedLoad)}><Printer className="h-5 w-5" /></Button></div></div> }
       {permissionsLoading ? <p className="text-center">جاري التحميل…</p> : !canView ? <p className="text-destructive">لا تملك صلاحية عرض الحمولات</p> : <Tabs dir="rtl" value={view} onValueChange={value => { setView(value as View); setContactSearch(""); }} className="w-full min-w-0">
-        <TabsList aria-label="تبويبات حمولات النقل" className="transport-top-tabs grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">{views.map(item => <TabsTrigger key={item.key} value={item.key} className="transport-top-tab min-h-14 min-w-0 gap-2 rounded-md border px-2 py-3 sm:px-4"><item.icon className="h-5 w-5 shrink-0" /><span className="whitespace-normal text-center leading-5">{item.label}</span></TabsTrigger>)}</TabsList>
+        <TabsList aria-label="تبويبات حمولات النقل" className="transport-top-tabs grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 lg:grid-cols-5">{views.map(item => <TabsTrigger key={item.key} value={item.key} className="transport-top-tab min-h-14 min-w-0 gap-2 rounded-md border px-2 py-3 sm:px-4"><item.icon className="h-5 w-5 shrink-0" /><span className="whitespace-normal text-center leading-5">{item.label}</span></TabsTrigger>)}</TabsList>
         <TabsContent value={view} className="mt-7 min-w-0">
         <section className="transport-workspace-content min-w-0 py-5 sm:py-6">
           {view === "register" && <form onSubmit={save} noValidate className="space-y-6"><div className="transport-section-heading flex items-center gap-3 border-b pb-4"><Truck className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">تسجيل حمولة نقل</h2></div>
-            <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">{transportLoadFields.map(field => <div key={field.key} className="space-y-2">
-              <Label htmlFor={`transport-${field.key}`} className="font-semibold">{field.label}</Label>
-              <div className="flex gap-2"><Input id={`transport-${field.key}`} className="transport-white-field min-w-0" type={field.type === "date" ? "date" : "text"} inputMode={field.type === "decimal" ? "decimal" : undefined} dir={field.type !== "text" ? "ltr" : "rtl"} value={form[field.key]} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "" })); }} />
-              {(field.key === "supplier_name" || field.key === "driver_name") && <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${field.label}`} aria-label={`بحث أو إضافة ${field.label}`} disabled={saving || !canCreate} onClick={() => setKind(field.key === "supplier_name" ? "supplier" : "driver")}><Plus className="h-5 w-5" /></Button>}</div>
-              {errors[field.key] && <p role="alert" className="text-sm text-destructive">{errors[field.key]}</p>}
-            </div>)}</div><div className="flex justify-end border-t pt-5"><Button type="submit" className="h-11 gap-2 px-6" disabled={saving || !currentOrganizationId || !canCreate}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving ? "جاري الحفظ" : "حفظ حمولة النقل"}</Button></div>
+            {[
+              { title: "بيانات المورد والسائق", keys: ["supplier_name", "driver_name", "vehicle_number", "invoice_number"] },
+              { title: "الوزن والعمولة والتواريخ", keys: ["delivery_weight", "commission", "loading_date", "delivery_date"] },
+            ].map(group => <fieldset key={group.title} className="rounded-md border border-primary/20 p-4 sm:p-5"><legend className="px-2 font-bold text-primary">{group.title}</legend><div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">{group.keys.map(key => {
+              const field = transportLoadFields.find(item => item.key === key);
+              if (!field) return null;
+              return <div key={field.key} className="space-y-2">
+                <Label htmlFor={`transport-${field.key}`} className="font-semibold">{field.key === "delivery_weight" ? "وزن التسليم (طن)" : field.key === "commission" ? "عمولة السائق (ريال)" : field.label}</Label>
+                <div className="flex gap-2"><Input id={`transport-${field.key}`} className="transport-white-field min-w-0" type={field.type === "date" ? "date" : "text"} inputMode={field.type === "decimal" ? "decimal" : undefined} dir={field.type !== "text" ? "ltr" : "rtl"} value={field.key === "commission" ? calculatedCommission === null ? "" : String(calculatedCommission) : form[field.key]} readOnly={field.key === "commission"} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "", commission: "" })); }} />
+                {(field.key === "supplier_name" || field.key === "driver_name") && <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${field.label}`} aria-label={`بحث أو إضافة ${field.label}`} disabled={saving || !canCreate} onClick={() => setKind(field.key === "supplier_name" ? "supplier" : "driver")}><Plus className="h-5 w-5" /></Button>}</div>
+                {errors[field.key] && <p role="alert" className="text-sm text-destructive">{errors[field.key]}</p>}
+                {field.key === "commission" && form.delivery_weight && calculatedCommission === null && !errors.commission && <p className="text-sm text-destructive">{rules.isLoading ? "جاري تحميل شروط العمولة…" : rules.isError ? "تعذر تحميل شروط العمولة" : "لا يوجد شرط يغطي هذا الوزن"}</p>}
+              </div>;
+            })}</div></fieldset>)}
+            <div className="flex justify-end border-t pt-5"><Button type="submit" className="h-11 gap-2 px-6" disabled={saving || !currentOrganizationId || !canCreate || calculatedCommission === null}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving ? "جاري الحفظ" : "حفظ حمولة النقل"}</Button></div>
           </form>}
+          {view === "rules" && <TransportCommissionRules organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} />}
           {(view === "driver" || view === "supplier") && <div className="space-y-5"><div className="flex items-center justify-between border-b pb-4"><h2 className="text-xl font-bold">{view === "driver" ? "السائقين" : "الموردين"}</h2><Button className="gap-2" disabled={!canCreate} onClick={() => setKind(view)}><Plus className="h-4 w-4" />إضافة</Button></div><div className="relative"><Search className="absolute right-3 top-4 h-4 w-4 text-muted-foreground" /><Input aria-label="بحث في الأسماء" placeholder="البحث بالاسم" className="transport-white-field pr-9" value={contactSearch} onChange={e => setContactSearch(e.target.value)} /></div>
             {contacts.isLoading ? <p>جاري التحميل…</p> : contacts.isError ? <Button variant="outline" onClick={() => contacts.refetch()}>إعادة المحاولة</Button> : directory.length ? <ul className="divide-y border-y">{directory.map(row => <li key={row.id} className="flex items-center gap-3 py-4">{view === "driver" ? <UsersRound className="h-5 w-5 text-primary" /> : <Building2 className="h-5 w-5 text-primary" />}<span className="break-words font-semibold">{row.name}</span></li>)}</ul> : <p className="py-10 text-center text-muted-foreground">لا توجد أسماء مسجلة مطابقة</p>}
           </div>}
