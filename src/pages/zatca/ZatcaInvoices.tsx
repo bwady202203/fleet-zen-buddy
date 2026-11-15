@@ -51,7 +51,6 @@ import ZATCAQRCode from "@/components/ZATCAQRCode";
 import {
   generateZATCAQRBase64,
   formatAmount,
-  getISOTimestamp,
 } from "@/lib/zatcaQR";
 
 interface InvoiceItem {
