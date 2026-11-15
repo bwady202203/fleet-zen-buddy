@@ -1,6 +1,6 @@
 import React from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { generateZATCAQRBase64, ZATCAQRData, formatAmount, getISOTimestamp } from "@/lib/zatcaQR";
+import { generateZATCAQRBase64, ZATCAQRData, formatAmount, validateZATCAQRData } from "@/lib/zatcaQR";
 
 interface ZATCAQRCodeProps {
   sellerName: string;
@@ -23,9 +23,7 @@ const ZATCAQRCode: React.FC<ZATCAQRCodeProps> = ({
   invoiceDate,
   size = 120,
 }) => {
-  const timestamp = invoiceDate 
-    ? (typeof invoiceDate === 'string' ? new Date(invoiceDate).toISOString() : invoiceDate.toISOString())
-    : getISOTimestamp();
+  const timestamp = invoiceDate instanceof Date ? (isNaN(invoiceDate.getTime()) ? "" : invoiceDate.toISOString()) : (invoiceDate ?? "");
 
   const qrData: ZATCAQRData = {
     sellerName,
@@ -35,6 +33,14 @@ const ZATCAQRCode: React.FC<ZATCAQRCodeProps> = ({
     vatAmount: formatAmount(vatAmount),
   };
 
+  const missing = validateZATCAQRData(qrData);
+  if (missing.length) {
+    return (
+      <div className="text-center text-xs text-destructive border border-destructive rounded p-2" style={{ width: size }}>
+        لا يمكن إنشاء رمز QR — بيانات ناقصة: {missing.join("، ")}
+      </div>
+    );
+  }
   const qrValue = generateZATCAQRBase64(qrData);
 
   return (

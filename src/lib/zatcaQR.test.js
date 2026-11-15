@@ -21,8 +21,17 @@ describe("ZATCA QR", () => {
     }));
     expect(t[1]).toBe("مؤسسة رمال");
     expect(t[2]).toBe("300123456700003");
-    expect(t[3]).toBe("2025-03-01T00:00:00Z");
+    expect(t[3]).toBe("2025-03-01T00:00:00+03:00");
     expect(t[4]).toBe("1150.00");
     expect(t[5]).toBe("150.00");
+  });
+  it("converts UTC times to Saudi time", () => {
+    const t = decode(generateZATCAQRBase64({ sellerName: "رمال", vatNumber: "300123456700003",
+      timestamp: "2025-03-01T22:30:00Z", totalAmount: "1.15", vatAmount: "0.15" }));
+    expect(t[3]).toBe("2025-03-02T01:30:00+03:00");
+  });
+  it("refuses to build a QR with missing data", () => {
+    expect(() => generateZATCAQRBase64({ sellerName: "", vatNumber: "123",
+      timestamp: "2025-03-01", totalAmount: "1.00", vatAmount: "0.00" })).toThrow();
   });
 });
