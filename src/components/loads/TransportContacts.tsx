@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, UserRound, Building2, Loader2 } from "lucide-react";
+import { Plus, Search, UserRound, Building2, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
-export type ContactKind = "supplier" | "driver";
-export const contactLabel = (kind: ContactKind) => kind === "supplier" ? "المورد" : "السائق";
+export type ContactKind = "supplier" | "driver" | "location";
+export const contactLabel = (kind: ContactKind) => kind === "supplier" ? "المورد" : kind === "driver" ? "السائق" : "الموقع";
 export function useTransportContacts(organizationId: string | null, enabled: boolean) {
   return useQuery({ queryKey: ["transport-contacts", organizationId], enabled: Boolean(organizationId && enabled), queryFn: async () => {
     if (!organizationId) throw new Error("لم يتم تحديد الشركة");
@@ -51,7 +51,7 @@ export function TransportContactDialog({ kind, onClose, onSelect, organizationId
   return <Dialog open={Boolean(kind)} onOpenChange={open => { if (!open) onClose(); }}><DialogContent dir="rtl" className="max-w-lg w-[calc(100%-2rem)]" aria-describedby={undefined}>
     <DialogTitle className="pl-6 text-right">{kind ? `اختيار أو إضافة ${contactLabel(kind)}` : ""}</DialogTitle>
     <div className="relative"><Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="البحث بالاسم" placeholder="البحث بالاسم" className="pr-9 transport-white-field" value={search} onChange={e => setSearch(e.target.value)} /></div>
-    <div className="max-h-60 space-y-1 overflow-y-auto">{contacts.isLoading ? <p className="py-4 text-center">جاري التحميل…</p> : contacts.isError ? <Button variant="outline" onClick={() => contacts.refetch()}>إعادة المحاولة</Button> : rows.length ? rows.map(row => <Button key={row.id} type="button" variant="ghost" className="w-full justify-start gap-2" onClick={() => { if (onSelect && kind) { onSelect(row.name, kind); onClose(); } else { setName(row.name); } }}>{row.kind === "driver" ? <UserRound className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}{row.name}</Button>) : <p className="py-4 text-center text-muted-foreground">لا توجد أسماء مطابقة</p>}</div>
+    <div className="max-h-60 space-y-1 overflow-y-auto">{contacts.isLoading ? <p className="py-4 text-center">جاري التحميل…</p> : contacts.isError ? <Button variant="outline" onClick={() => contacts.refetch()}>إعادة المحاولة</Button> : rows.length ? rows.map(row => <Button key={row.id} type="button" variant="ghost" className="w-full justify-start gap-2" onClick={() => { if (onSelect && kind) { onSelect(row.name, kind); onClose(); } else { setName(row.name); } }}>{row.kind === "driver" ? <UserRound className="h-4 w-4" /> : row.kind === "location" ? <MapPin className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}{row.name}</Button>) : <p className="py-4 text-center text-muted-foreground">لا توجد أسماء مطابقة</p>}</div>
     {canCreate && <form onSubmit={add} className="space-y-3 border-t pt-4"><Label htmlFor="transport-contact-name">{kind ? `اسم ${contactLabel(kind)} الجديد` : "الاسم"}</Label><Input id="transport-contact-name" className="transport-white-field" value={name} onChange={e => setName(e.target.value)} required /><Button className="gap-2" disabled={saving || !name.trim()}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}إضافة</Button></form>}
   </DialogContent></Dialog>;
 }

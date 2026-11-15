@@ -1,0 +1,2 @@
+ALTER TABLE public.transport_load_contacts DROP CONSTRAINT transport_load_contacts_kind_check;
+ALTER TABLE public.transport_load_contacts ADD CONSTRAINT transport_load_contacts_kind_check CHECK (kind IN ('supplier','driver','location'));
