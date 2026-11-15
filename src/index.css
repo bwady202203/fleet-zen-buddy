@@ -15,6 +15,36 @@
   width: 100%;
 }
 
+.transport-white-field { background: hsl(var(--statement-paper)); color: hsl(var(--statement-ink)); border-color: hsl(var(--statement-line)); height: 46px; }
+.transport-preview { width: 100%; overflow: hidden; background: hsl(var(--muted)); padding: 8px; }
+.transport-load-print { display: none; }
+.transport-load-paper { width: 210mm; height: 297mm; padding: 15mm; box-sizing: border-box; background: hsl(var(--statement-paper)); color: hsl(var(--statement-ink)); font-family: Cairo, sans-serif; display: flex; flex-direction: column; font-size: 15px; }
+.transport-paper-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 3px solid hsl(var(--statement-accent)); padding-bottom: 7mm; }
+.transport-paper-header h2 { font-size: 22px; font-weight: 800; max-width: 120mm; overflow-wrap: anywhere; }
+.transport-paper-header p { color: hsl(var(--statement-muted)); margin-top: 6px; }
+.transport-paper-reference { text-align: center; flex-shrink: 0; }
+.transport-paper-reference strong { display: block; font-size: 20px; margin-top: 8px; max-width: 45mm; overflow-wrap: anywhere; }
+.transport-load-paper h1 { font-size: 28px; font-weight: 800; text-align: center; padding: 10mm 0 7mm; }
+.transport-paper-dates { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8mm; font-size: 14px; }
+.transport-load-paper table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.transport-load-paper th, .transport-load-paper td { border: 2px solid hsl(var(--statement-line)); padding: 4mm; overflow-wrap: anywhere; text-align: right; }
+.transport-load-paper th { width: 33%; font-weight: 700; background: hsl(var(--statement-soft)); }
+.transport-load-paper thead th { background: hsl(var(--statement-accent)); color: hsl(var(--statement-paper)); }
+.transport-paper-signatures { display: flex; justify-content: space-between; margin-top: auto; padding-top: 12mm; gap: 8mm; text-align: center; }
+.transport-paper-signatures div { flex: 1; }
+.transport-paper-signatures span { display: block; border-top: 1px dashed hsl(var(--statement-line)); margin-top: 12mm; padding-top: 3mm; color: hsl(var(--statement-muted)); font-size: 12px; }
+.transport-load-paper footer { display: flex; justify-content: space-between; border-top: 1px solid hsl(var(--statement-line)); margin-top: 9mm; padding-top: 3mm; font-size: 11px; color: hsl(var(--statement-muted)); }
+@page transport-load { size: A4 portrait; margin: 15mm; }
+@media print {
+  body:has(> .transport-load-print) > *:not(.transport-load-print) { display: none !important; }
+  html:has(.transport-load-print), body:has(> .transport-load-print) { margin: 0 !important; padding: 0 !important; min-height: 0 !important; height: auto !important; overflow: visible !important; }
+  .transport-load-print { display: block !important; page: transport-load; }
+  .transport-load-print .transport-load-paper { width: 180mm; height: 267mm; padding: 0; }
+  .transport-load-print, .transport-load-print * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .transport-load-print tr { break-inside: avoid; }
+  .transport-load-print thead { display: table-header-group; }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
