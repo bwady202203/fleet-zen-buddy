@@ -5,6 +5,7 @@ import { ArrowRight, Loader2, Save, Truck, Plus, UsersRound, Building2, Clipboar
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,16 +91,17 @@ export default function TransportLoadsRegister() {
   }
   const directory = contacts.data?.filter(row => row.kind === view && row.name.includes(contactSearch.trim())) ?? [];
   return <div className="min-h-screen bg-background" dir="rtl">
-    <header className="border-b bg-card"><div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-5">
+    <header className="transport-workspace-header border-b bg-card"><div className="flex w-full items-center gap-3 px-4 py-5 sm:px-6 lg:px-8">
       <Button asChild variant="outline" size="icon"><Link to="/?tab=loads" aria-label="العودة إلى الحمولات"><ArrowRight className="h-5 w-5" /></Link></Button>
       <Truck className="h-6 w-6 text-primary" /><div><h1 className="text-xl font-bold sm:text-2xl">حمولات النقل</h1><p className="mt-1 text-sm text-muted-foreground">{company.data}</p></div>
     </div></header>
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      {permissionsLoading ? <p className="text-center">جاري التحميل…</p> : !canView ? <p className="text-destructive">لا تملك صلاحية عرض الحمولات</p> : <div className="grid min-w-0 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
-        <nav aria-label="تبويبات حمولات النقل" className="flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">{views.map(item => <Button key={item.key} variant={view === item.key ? "default" : "ghost"} className="h-12 shrink-0 justify-start gap-2" aria-current={view === item.key ? "page" : undefined} onClick={() => { setView(item.key); setContactSearch(""); }}><item.icon className="h-4 w-4" />{item.label}</Button>)}</nav>
-        <section className="min-w-0">
-          {view === "register" && <form onSubmit={save} noValidate className="space-y-6"><div className="border-b pb-4"><h2 className="text-xl font-bold">تسجيل حمولة نقل</h2></div>
-            <div className="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2">{transportLoadFields.map(field => <div key={field.key} className="space-y-2">
+    <main className="w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+      {permissionsLoading ? <p className="text-center">جاري التحميل…</p> : !canView ? <p className="text-destructive">لا تملك صلاحية عرض الحمولات</p> : <Tabs dir="rtl" value={view} onValueChange={value => { setView(value as View); setContactSearch(""); }} className="w-full min-w-0">
+        <TabsList aria-label="تبويبات حمولات النقل" className="transport-top-tabs grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">{views.map(item => <TabsTrigger key={item.key} value={item.key} className="transport-top-tab min-h-14 min-w-0 gap-2 rounded-md border px-2 py-3 sm:px-4"><item.icon className="h-5 w-5 shrink-0" /><span className="whitespace-normal text-center leading-5">{item.label}</span></TabsTrigger>)}</TabsList>
+        <TabsContent value={view} className="mt-7 min-w-0">
+        <section className="transport-workspace-content min-w-0 py-5 sm:py-6">
+          {view === "register" && <form onSubmit={save} noValidate className="space-y-6"><div className="transport-section-heading flex items-center gap-3 border-b pb-4"><Truck className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">تسجيل حمولة نقل</h2></div>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">{transportLoadFields.map(field => <div key={field.key} className="space-y-2">
               <Label htmlFor={`transport-${field.key}`} className="font-semibold">{field.label}</Label>
               <div className="flex gap-2"><Input id={`transport-${field.key}`} className="transport-white-field min-w-0" type={field.type === "date" ? "date" : "text"} inputMode={field.type === "decimal" ? "decimal" : undefined} dir={field.type !== "text" ? "ltr" : "rtl"} value={form[field.key]} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "" })); }} />
               {(field.key === "supplier_name" || field.key === "driver_name") && <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${field.label}`} aria-label={`بحث أو إضافة ${field.label}`} disabled={saving || !canCreate} onClick={() => setKind(field.key === "supplier_name" ? "supplier" : "driver")}><Plus className="h-5 w-5" /></Button>}</div>
@@ -116,7 +118,8 @@ export default function TransportLoadsRegister() {
             {(data?.count ?? 0) > 50 && <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page === 0} onClick={() => setPage(prev => prev - 1)}>السابق</Button><span className="text-sm">{page + 1} / {Math.ceil((data?.count ?? 0) / 50)}</span><Button variant="outline" disabled={(page + 1) * 50 >= (data?.count ?? 0)} onClick={() => setPage(prev => prev + 1)}>التالي</Button></div>}
           </div>}
         </section>
-      </div>}
+        </TabsContent>
+      </Tabs>}
     </main>
     {kind && <TransportContactDialog kind={kind} onClose={() => setKind(null)} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} onSelect={view === "register" ? (name, selectedKind) => setForm(prev => ({ ...prev, [selectedKind === "supplier" ? "supplier_name" : "driver_name"]: name })) : undefined} />}
     <Dialog open={Boolean(preview)} onOpenChange={open => { if (!open) setPreview(null); }}><DialogContent className="w-[calc(100%-1rem)] max-w-4xl max-h-[90dvh] overflow-y-auto p-3 sm:p-5" dir="rtl" aria-describedby={undefined}><div className="flex flex-wrap items-center justify-between gap-3 pl-7"><DialogTitle>معاينة حمولة النقل</DialogTitle><Button className="gap-2" disabled={!preview || !company.data} onClick={() => { if (preview) print(preview); }}><Printer className="h-4 w-4" />طباعة A4</Button></div>{preview && <TransportLoadPreview load={preview} company={company.data ?? ""} />}</DialogContent></Dialog>
