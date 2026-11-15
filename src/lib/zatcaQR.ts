@@ -36,9 +36,9 @@ export const generateZATCAQRBase64 = ({
   vatAmount,
 }: ZATCAQRData): string => {
   const tlvData = [
-    encodeTLV(1, sellerName),    // Seller Name (اسم البائع)
-    encodeTLV(2, vatNumber),     // VAT Registration Number (الرقم الضريبي)
-    encodeTLV(3, timestamp),     // Invoice Timestamp (تاريخ ووقت الفاتورة)
+    encodeTLV(1, sellerName.trim()),    // Seller Name (اسم البائع)
+    encodeTLV(2, normalizeVatNumber(vatNumber)),     // VAT Registration Number (الرقم الضريبي)
+    encodeTLV(3, toZatcaTimestamp(timestamp)),     // Invoice Timestamp (تاريخ ووقت الفاتورة)
     encodeTLV(4, totalAmount),   // Invoice Total (المبلغ الإجمالي مع الضريبة)
     encodeTLV(5, vatAmount),     // VAT Amount (مبلغ الضريبة)
   ];
@@ -58,12 +58,24 @@ export const generateZATCAQRBase64 = ({
  * Format amount to 2 decimal places string
  */
 export const formatAmount = (amount: number): string => {
-  return amount.toFixed(2);
+  const n = Number(amount);
+  return (Number.isFinite(n) ? Math.abs(n) : 0).toFixed(2);
+};
+
+/** الرقم الضريبي: أرقام فقط (15 رقمًا حسب الهيئة) */
+export const normalizeVatNumber = (vat: string): string =>
+  String(vat ?? "").replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/\D/g, "");
+
+/** طابع زمني ISO 8601 بدون أجزاء الثانية: YYYY-MM-DDTHH:mm:ssZ */
+export const toZatcaTimestamp = (value: string | Date): string => {
+  const d = value instanceof Date ? value : new Date(value);
+  const safe = isNaN(d.getTime()) ? new Date() : d;
+  return safe.toISOString().replace(/\.\d{3}Z$/, "Z");
 };
 
 /**
  * Get current ISO timestamp
  */
 export const getISOTimestamp = (date?: Date): string => {
-  return (date || new Date()).toISOString();
+  return toZatcaTimestamp(date || new Date());
 };
