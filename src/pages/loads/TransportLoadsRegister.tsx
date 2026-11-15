@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Loader2, Save, Truck } from "lucide-react";
+import { ArrowRight, Loader2, Save, Truck, Plus, UsersRound, Building2, ClipboardList, Eye, Printer, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { emptyTransportLoad, transportLoadFields, transportLoadSchema, type TransportLoadForm } from "@/lib/transportLoads";
+import { TransportContactDialog, useTransportContacts, type ContactKind } from "@/components/loads/TransportContacts";
+import { TransportLoadPreview, TransportLoadPrintPortal, type TransportLoad } from "@/components/loads/TransportLoadDocument";
 
+type View = "register" | "driver" | "supplier" | "loads";
+const views = [{ key: "register", label: "تسجيل حمولة نقل", icon: Truck }, { key: "driver", label: "السائقين", icon: UsersRound }, { key: "supplier", label: "الموردين", icon: Building2 }, { key: "loads", label: "سجل الحمولات", icon: ClipboardList }] as const;
 export default function TransportLoadsRegister() {
   const { user, currentOrganizationId } = useAuth();
   const { hasPermission, loading: permissionsLoading } = usePermissions();
@@ -21,23 +26,43 @@ export default function TransportLoadsRegister() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(0);
+  const [view, setView] = useState<View>("register");
+  const [kind, setKind] = useState<ContactKind | null>(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const [preview, setPreview] = useState<TransportLoad | null>(null);
+  const [printing, setPrinting] = useState<TransportLoad | null>(null);
   const canView = hasPermission("loads", "view");
   const canCreate = hasPermission("loads", "create");
-  const queryKey = ["transport-loads", currentOrganizationId, user?.id, page];
+  const enabled = canView && !permissionsLoading;
+  const contacts = useTransportContacts(currentOrganizationId, enabled);
+  const company = useQuery({ queryKey: ["transport-company", currentOrganizationId], enabled: Boolean(currentOrganizationId && enabled), queryFn: async () => {
+    if (!currentOrganizationId) return "";
+    const result = await supabase.from("organizations").select("name").eq("id", currentOrganizationId).single();
+    if (result.error) throw result.error;
+    return result.data.name;
+  } });
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey,
-    enabled: Boolean(currentOrganizationId && canView && !permissionsLoading),
+    queryKey: ["transport-loads", currentOrganizationId, user?.id, page],
+    enabled: Boolean(currentOrganizationId && enabled),
     queryFn: async () => {
       if (!currentOrganizationId) throw new Error("لم يتم تحديد الشركة");
-      const result = await supabase.from("transport_loads").select("*", { count: "exact" })
-        .eq("organization_id", currentOrganizationId)
-        .order("created_at", { ascending: false }).order("id", { ascending: false })
-        .range(page * 50, page * 50 + 49);
+      const result = await supabase.from("transport_loads").select("*", { count: "exact" }).eq("organization_id", currentOrganizationId).order("created_at", { ascending: false }).order("id", { ascending: false }).range(page * 50, page * 50 + 49);
       if (result.error) throw result.error;
       return { rows: result.data, count: result.count ?? 0 };
     },
   });
-
+  useEffect(() => {
+    if (!printing) return;
+    let cancelled = false;
+    const cleanup = () => setPrinting(null);
+    window.addEventListener("afterprint", cleanup);
+    document.fonts.ready.then(() => requestAnimationFrame(() => requestAnimationFrame(() => { if (!cancelled) window.print(); })));
+    return () => { cancelled = true; window.removeEventListener("afterprint", cleanup); };
+  }, [printing]);
+  function print(load: TransportLoad) {
+    if (!company.data) { toast({ title: "انتظر تحميل بيانات الشركة ثم أعد المحاولة", variant: "destructive" }); return; }
+    setPrinting(load);
+  }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (saving || !user || !currentOrganizationId || !canCreate) return;
@@ -49,83 +74,52 @@ export default function TransportLoadsRegister() {
       document.getElementById(`transport-${parsed.error.issues[0]?.path[0]}`)?.focus();
       return;
     }
-    setSaving(true);
-    setErrors({});
+    setSaving(true); setErrors({});
     try {
       const { error } = await supabase.from("transport_loads").insert({
-        supplier_name: parsed.data.supplier_name,
-        commission: parsed.data.commission,
-        delivery_weight: parsed.data.delivery_weight,
-        driver_name: parsed.data.driver_name,
-        vehicle_number: parsed.data.vehicle_number,
-        invoice_number: parsed.data.invoice_number,
-        delivery_date: parsed.data.delivery_date,
-        loading_date: parsed.data.loading_date,
-        organization_id: currentOrganizationId, created_by: user.id,
+        supplier_name: parsed.data.supplier_name, commission: parsed.data.commission, delivery_weight: parsed.data.delivery_weight,
+        driver_name: parsed.data.driver_name, vehicle_number: parsed.data.vehicle_number, invoice_number: parsed.data.invoice_number,
+        delivery_date: parsed.data.delivery_date, loading_date: parsed.data.loading_date, organization_id: currentOrganizationId, created_by: user.id,
       });
       if (error) throw error;
-      setForm({ ...emptyTransportLoad });
-      setPage(0);
+      setForm({ ...emptyTransportLoad }); setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["transport-loads"] });
-      toast({ title: "تم حفظ حمولة النقل" });
-    } catch {
-      toast({ title: "تعذر حفظ حمولة النقل", description: "لم يتم حفظ البيانات؛ يرجى المحاولة مرة أخرى.", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
+      setView("loads"); toast({ title: "تم حفظ حمولة النقل" });
+    } catch { toast({ title: "تعذر حفظ حمولة النقل", description: "لم يتم حفظ البيانات؛ يرجى المحاولة مرة أخرى.", variant: "destructive" }); }
+    finally { setSaving(false); }
   }
-
-  return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <header className="border-b bg-card">
-        <div className="container flex items-center gap-3 px-4 py-6">
-          <Button asChild variant="outline" size="icon"><Link to="/?tab=loads" aria-label="العودة إلى الحمولات"><ArrowRight className="h-5 w-5" /></Link></Button>
-          <Truck className="hidden h-7 w-7 text-primary sm:block" />
-          <h1 className="text-xl font-bold sm:text-3xl">تسجيل حمولة نقل</h1>
-        </div>
-      </header>
-      <main className="container space-y-8 px-4 py-6">
-        {!permissionsLoading && !canView ? <p className="text-destructive">لا تملك صلاحية عرض الحمولات</p> : <>
-          <form onSubmit={save} noValidate className="space-y-5 border-b pb-8">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {transportLoadFields.map((field) => (
-                <div key={field.key} className="space-y-2">
-                  <Label htmlFor={`transport-${field.key}`}>{field.label}</Label>
-                  <Input id={`transport-${field.key}`} type={field.type === "date" ? "date" : "text"}
-                    inputMode={field.type === "decimal" ? "decimal" : undefined}
-                    dir={field.type === "date" || field.type === "decimal" ? "ltr" : "rtl"}
-                    value={form[field.key]} disabled={saving || !canCreate}
-                    aria-invalid={Boolean(errors[field.key])} aria-describedby={errors[field.key] ? `error-${field.key}` : undefined}
-                    onChange={(event) => { setForm((prev) => ({ ...prev, [field.key]: event.target.value })); setErrors((prev) => ({ ...prev, [field.key]: "" })); }} />
-                  {errors[field.key] && <p id={`error-${field.key}`} role="alert" className="text-sm text-destructive">{errors[field.key]}</p>}
-                </div>
-              ))}
-            </div>
-            <Button type="submit" className="gap-2" disabled={saving || !currentOrganizationId || !canCreate}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? "جاري الحفظ" : "حفظ حمولة النقل"}
-            </Button>
-          </form>
-          <section className="min-w-0 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg font-bold">سجل حمولات النقل</h2>
-              <span className="text-sm text-muted-foreground">{data?.count ?? 0} حمولة</span>
-            </div>
-            <div className="overflow-hidden rounded-md border">
-              <Table className="min-w-[1000px]">
-                <TableHeader><TableRow className="bg-muted">{transportLoadFields.map((field) => <TableHead key={field.key} className="text-right font-bold text-foreground">{field.label}</TableHead>)}</TableRow></TableHeader>
-                <TableBody>
-                  {isLoading ? <TableRow><TableCell colSpan={8} className="h-24 text-center">جاري تحميل السجل…</TableCell></TableRow>
-                    : isError ? <TableRow><TableCell colSpan={8} className="h-24 text-center"><p className="mb-2 text-destructive">تعذر تحميل السجل</p><Button variant="outline" onClick={() => refetch()}>إعادة المحاولة</Button></TableCell></TableRow>
-                    : !data?.rows.length ? <TableRow><TableCell colSpan={8} className="h-24 text-center text-muted-foreground">لا توجد حمولات نقل مسجلة</TableCell></TableRow>
-                    : data.rows.map((row) => <TableRow key={row.id} className="even:bg-primary/5">{transportLoadFields.map((field) => <TableCell key={field.key} className="text-right tabular-nums"><span dir={field.type === "date" || field.type === "decimal" ? "ltr" : undefined}>{field.type === "date" ? String(row[field.key]).split("-").reverse().join("/") : row[field.key]}</span></TableCell>)}</TableRow>)}
-                </TableBody>
-              </Table>
-            </div>
-            {(data?.count ?? 0) > 50 && <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page === 0} onClick={() => setPage((prev) => prev - 1)}>السابق</Button><span className="text-sm">{page + 1} / {Math.ceil((data?.count ?? 0) / 50)}</span><Button variant="outline" disabled={(page + 1) * 50 >= (data?.count ?? 0)} onClick={() => setPage((prev) => prev + 1)}>التالي</Button></div>}
-          </section>
-        </>}
-      </main>
-    </div>
-  );
+  const directory = contacts.data?.filter(row => row.kind === view && row.name.includes(contactSearch.trim())) ?? [];
+  return <div className="min-h-screen bg-background" dir="rtl">
+    <header className="border-b bg-card"><div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-5">
+      <Button asChild variant="outline" size="icon"><Link to="/?tab=loads" aria-label="العودة إلى الحمولات"><ArrowRight className="h-5 w-5" /></Link></Button>
+      <Truck className="h-6 w-6 text-primary" /><div><h1 className="text-xl font-bold sm:text-2xl">حمولات النقل</h1><p className="mt-1 text-sm text-muted-foreground">{company.data}</p></div>
+    </div></header>
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      {permissionsLoading ? <p className="text-center">جاري التحميل…</p> : !canView ? <p className="text-destructive">لا تملك صلاحية عرض الحمولات</p> : <div className="grid min-w-0 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
+        <nav aria-label="تبويبات حمولات النقل" className="flex gap-2 overflow-x-auto md:flex-col md:overflow-visible">{views.map(item => <Button key={item.key} variant={view === item.key ? "default" : "ghost"} className="h-12 shrink-0 justify-start gap-2" aria-current={view === item.key ? "page" : undefined} onClick={() => { setView(item.key); setContactSearch(""); }}><item.icon className="h-4 w-4" />{item.label}</Button>)}</nav>
+        <section className="min-w-0">
+          {view === "register" && <form onSubmit={save} noValidate className="space-y-6"><div className="border-b pb-4"><h2 className="text-xl font-bold">تسجيل حمولة نقل</h2></div>
+            <div className="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2">{transportLoadFields.map(field => <div key={field.key} className="space-y-2">
+              <Label htmlFor={`transport-${field.key}`} className="font-semibold">{field.label}</Label>
+              <div className="flex gap-2"><Input id={`transport-${field.key}`} className="transport-white-field min-w-0" type={field.type === "date" ? "date" : "text"} inputMode={field.type === "decimal" ? "decimal" : undefined} dir={field.type !== "text" ? "ltr" : "rtl"} value={form[field.key]} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "" })); }} />
+              {(field.key === "supplier_name" || field.key === "driver_name") && <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${field.label}`} aria-label={`بحث أو إضافة ${field.label}`} disabled={saving || !canCreate} onClick={() => setKind(field.key === "supplier_name" ? "supplier" : "driver")}><Plus className="h-5 w-5" /></Button>}</div>
+              {errors[field.key] && <p role="alert" className="text-sm text-destructive">{errors[field.key]}</p>}
+            </div>)}</div><div className="flex justify-end border-t pt-5"><Button type="submit" className="h-11 gap-2 px-6" disabled={saving || !currentOrganizationId || !canCreate}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving ? "جاري الحفظ" : "حفظ حمولة النقل"}</Button></div>
+          </form>}
+          {(view === "driver" || view === "supplier") && <div className="space-y-5"><div className="flex items-center justify-between border-b pb-4"><h2 className="text-xl font-bold">{view === "driver" ? "السائقين" : "الموردين"}</h2><Button className="gap-2" disabled={!canCreate} onClick={() => setKind(view)}><Plus className="h-4 w-4" />إضافة</Button></div><div className="relative"><Search className="absolute right-3 top-4 h-4 w-4 text-muted-foreground" /><Input aria-label="بحث في الأسماء" placeholder="البحث بالاسم" className="transport-white-field pr-9" value={contactSearch} onChange={e => setContactSearch(e.target.value)} /></div>
+            {contacts.isLoading ? <p>جاري التحميل…</p> : contacts.isError ? <Button variant="outline" onClick={() => contacts.refetch()}>إعادة المحاولة</Button> : directory.length ? <ul className="divide-y border-y">{directory.map(row => <li key={row.id} className="flex items-center gap-3 py-4">{view === "driver" ? <UsersRound className="h-5 w-5 text-primary" /> : <Building2 className="h-5 w-5 text-primary" />}<span className="break-words font-semibold">{row.name}</span></li>)}</ul> : <p className="py-10 text-center text-muted-foreground">لا توجد أسماء مسجلة مطابقة</p>}
+          </div>}
+          {view === "loads" && <div className="space-y-4"><div className="flex justify-between border-b pb-4"><h2 className="text-xl font-bold">سجل الحمولات</h2><span className="text-sm text-muted-foreground">{data?.count ?? 0} حمولة</span></div>
+            <div className="overflow-hidden rounded-md border"><Table className="min-w-[1050px]"><TableHeader><TableRow className="bg-muted">{transportLoadFields.map(field => <TableHead key={field.key} className="text-right font-bold text-foreground">{field.label}</TableHead>)}<TableHead className="text-center">المستند</TableHead></TableRow></TableHeader><TableBody>
+              {isLoading ? <TableRow><TableCell colSpan={9} className="h-24 text-center">جاري تحميل السجل…</TableCell></TableRow> : isError ? <TableRow><TableCell colSpan={9} className="h-24 text-center"><Button variant="outline" onClick={() => refetch()}>إعادة المحاولة</Button></TableCell></TableRow> : !data?.rows.length ? <TableRow><TableCell colSpan={9} className="h-24 text-center text-muted-foreground">لا توجد حمولات نقل مسجلة</TableCell></TableRow> : data.rows.map(row => <TableRow key={row.id}>{transportLoadFields.map(field => <TableCell key={field.key} className="text-right tabular-nums"><span dir={field.type !== "text" ? "ltr" : undefined}>{field.type === "date" ? String(row[field.key]).split("-").reverse().join("/") : row[field.key]}</span></TableCell>)}<TableCell><div className="flex gap-1"><Button size="icon" variant="ghost" title="معاينة الحمولة" aria-label={`معاينة حمولة ${row.invoice_number}`} onClick={() => setPreview(row)}><Eye className="h-4 w-4" /></Button><Button size="icon" variant="ghost" title="طباعة الحمولة" aria-label={`طباعة حمولة ${row.invoice_number}`} onClick={() => print(row)}><Printer className="h-4 w-4" /></Button></div></TableCell></TableRow>)}
+            </TableBody></Table></div>
+            {(data?.count ?? 0) > 50 && <div className="flex items-center justify-end gap-3"><Button variant="outline" disabled={page === 0} onClick={() => setPage(prev => prev - 1)}>السابق</Button><span className="text-sm">{page + 1} / {Math.ceil((data?.count ?? 0) / 50)}</span><Button variant="outline" disabled={(page + 1) * 50 >= (data?.count ?? 0)} onClick={() => setPage(prev => prev + 1)}>التالي</Button></div>}
+          </div>}
+        </section>
+      </div>}
+    </main>
+    {kind && <TransportContactDialog kind={kind} onClose={() => setKind(null)} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} onSelect={view === "register" ? (name, selectedKind) => setForm(prev => ({ ...prev, [selectedKind === "supplier" ? "supplier_name" : "driver_name"]: name })) : undefined} />}
+    <Dialog open={Boolean(preview)} onOpenChange={open => { if (!open) setPreview(null); }}><DialogContent className="w-[calc(100%-1rem)] max-w-4xl max-h-[90dvh] overflow-y-auto p-3 sm:p-5" dir="rtl" aria-describedby={undefined}><div className="flex flex-wrap items-center justify-between gap-3 pl-7"><DialogTitle>معاينة حمولة النقل</DialogTitle><Button className="gap-2" disabled={!preview || !company.data} onClick={() => { if (preview) print(preview); }}><Printer className="h-4 w-4" />طباعة A4</Button></div>{preview && <TransportLoadPreview load={preview} company={company.data ?? ""} />}</DialogContent></Dialog>
+    {printing && <TransportLoadPrintPortal load={printing} company={company.data ?? ""} />}
+  </div>;
 }
