@@ -150,7 +150,7 @@ export default function TransportLoadsRegister() {
         </TabsContent>
       </Tabs>}
     </main>
-    {kind && <TransportContactDialog kind={kind} onClose={() => setKind(null)} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} onSelect={view === "register" ? (name, selectedKind) => setForm(prev => ({ ...prev, [selectedKind === "supplier" ? "supplier_name" : "driver_name"]: name })) : undefined} />}
+    {kind && <TransportContactDialog kind={kind} onClose={() => { setKind(null); setLocationTarget(null); }} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} onSelect={view === "register" ? (name, selectedKind) => setForm(prev => ({ ...prev, [selectedKind === "supplier" ? "supplier_name" : selectedKind === "driver" ? "driver_name" : locationTarget ?? "from_location"]: name })) : undefined} />}
     <Dialog open={Boolean(preview)} onOpenChange={open => { if (!open) setPreview(null); }}><DialogContent className="w-[calc(100%-1rem)] max-w-4xl max-h-[90dvh] overflow-y-auto p-3 sm:p-5" dir="rtl" aria-describedby={undefined}><div className="flex flex-wrap items-center justify-between gap-3 pl-7"><DialogTitle>معاينة حمولة النقل</DialogTitle><Button className="gap-2" disabled={!preview || !company.data} onClick={() => { if (preview) print(preview); }}><Printer className="h-4 w-4" />طباعة A4</Button></div>{preview && <TransportLoadPreview load={preview} company={company.data ?? ""} />}</DialogContent></Dialog>
     {printing && <TransportLoadPrintPortal load={printing} company={company.data ?? ""} />}
   </div>;
