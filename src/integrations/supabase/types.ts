@@ -4619,6 +4619,59 @@ export type Database = {
           },
         ]
       }
+      transport_loads: {
+        Row: {
+          commission: number
+          created_at: string
+          created_by: string
+          delivery_date: string
+          delivery_weight: number
+          driver_name: string
+          id: string
+          invoice_number: string
+          loading_date: string
+          organization_id: string
+          supplier_name: string
+          vehicle_number: string
+        }
+        Insert: {
+          commission: number
+          created_at?: string
+          created_by?: string
+          delivery_date: string
+          delivery_weight: number
+          driver_name: string
+          id?: string
+          invoice_number: string
+          loading_date: string
+          organization_id: string
+          supplier_name: string
+          vehicle_number: string
+        }
+        Update: {
+          commission?: number
+          created_at?: string
+          created_by?: string
+          delivery_date?: string
+          delivery_weight?: number
+          driver_name?: string
+          id?: string
+          invoice_number?: string
+          loading_date?: string
+          organization_id?: string
+          supplier_name?: string
+          vehicle_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_loads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trial_balance_entries: {
         Row: {
           account_id: string

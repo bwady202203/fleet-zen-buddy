@@ -219,6 +219,7 @@ export const navigationGroups: NavigationGroup[] = [
     children: [
       { title: "نظرة عامة", path: "/loads", icon: LayoutGrid },
       { title: "تسجيل الحمولات", path: "/loads/register", icon: Package },
+      { title: "تسجيل حمولة نقل", path: "/loads/transport-register", icon: Truck },
       { title: "تسجيل الحمولات المميز", path: "/loads/premium-register", icon: Package },
       { title: "تقرير الحمولات المميز", path: "/loads/premium-report", icon: BarChart3 },
       { title: "أسعار المواد لكل عميل", path: "/loads/company-material-prices", icon: BarChart3 },

@@ -82,6 +82,7 @@ const Vouchers = lazy(() => import("./pages/Vouchers"));
 const HR = lazy(() => import("./pages/HR"));
 const Loads = lazy(() => import("./pages/Loads"));
 const LoadsRegister = lazy(() => import("./pages/loads/LoadsRegister"));
+const TransportLoadsRegister = lazy(() => import("./pages/loads/TransportLoadsRegister"));
 const PremiumLoadsRegister = lazy(() => import("./pages/loads/PremiumLoadsRegister"));
 const PremiumLoadsReport = lazy(() => import("./pages/loads/PremiumLoadsReport"));
 const CompanyMaterialPrices = lazy(() => import("./pages/loads/CompanyMaterialPrices"));
@@ -247,6 +248,7 @@ const App = () => {
                   <Route path="/hr/bulk-employees" element={<BulkEmployees />} />
                                   <Route path="/loads" element={<Loads />} />
                                   <Route path="/loads/register" element={<LoadsRegister />} />
+                                  <Route path="/loads/transport-register" element={<TransportLoadsRegister />} />
                                   <Route path="/loads/premium-register" element={<PremiumLoadsRegister />} />
                                   <Route path="/loads/premium-report" element={<PremiumLoadsReport />} />
                                   <Route path="/loads/company-material-prices" element={<CompanyMaterialPrices />} />
