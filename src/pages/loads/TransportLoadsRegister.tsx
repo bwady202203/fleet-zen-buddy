@@ -18,9 +18,10 @@ import { TransportLoadPreview, TransportLoadPrintPortal, type TransportLoad } fr
 
 import TransportCommissionRules, { useTransportCommissionRules } from "@/components/loads/TransportCommissionRules";
 import { calculateTransportCommission } from "@/lib/transportCommission";
+import TransportDriverReport from "@/components/loads/TransportDriverReport";
 
-type View = "register" | "driver" | "supplier" | "loads" | "rules";
-const views = [{ key: "register", label: "تسجيل حمولة نقل", icon: Truck }, { key: "driver", label: "السائقين", icon: UsersRound }, { key: "supplier", label: "الموردين", icon: Building2 }, { key: "loads", label: "سجل الحمولات", icon: ClipboardList }, { key: "rules", label: "شروط العمولات", icon: Calculator }] as const;
+type View = "register" | "driver" | "supplier" | "loads" | "rules" | "report";
+const views = [{ key: "register", label: "تسجيل حمولة نقل", icon: Truck }, { key: "driver", label: "السائقين", icon: UsersRound }, { key: "supplier", label: "الموردين", icon: Building2 }, { key: "loads", label: "سجل الحمولات", icon: ClipboardList }, { key: "rules", label: "شروط العمولات", icon: Calculator }, { key: "report", label: "تقرير السائقين", icon: ClipboardList }] as const;
 export default function TransportLoadsRegister() {
   const { user, currentOrganizationId } = useAuth();
   const { hasPermission, loading: permissionsLoading } = usePermissions();
@@ -93,6 +94,7 @@ export default function TransportLoadsRegister() {
       setSavedLoad(saved);
       setForm({ ...emptyTransportLoad }); setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["transport-loads"] });
+      await queryClient.invalidateQueries({ queryKey: ["transport-driver-report"] });
       setView("loads"); toast({ title: "تم حفظ حمولة النقل" });
     } catch { toast({ title: "تعذر حفظ حمولة النقل", description: "لم يتم حفظ البيانات؛ يرجى المحاولة مرة أخرى.", variant: "destructive" }); }
     finally { setSaving(false); }
@@ -106,13 +108,13 @@ export default function TransportLoadsRegister() {
     <main className="w-full min-w-0 px-4 py-6 sm:px-6 lg:px-8">
       {savedLoad && <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 p-4"><span className="font-semibold">تم حفظ حمولة {savedLoad.invoice_number}</span><div className="flex gap-2"><Button variant="outline" size="icon" title="معاينة الحمولة المحفوظة" aria-label="معاينة الحمولة المحفوظة" onClick={() => setPreview(savedLoad)}><Eye className="h-5 w-5" /></Button><Button variant="outline" size="icon" title="طباعة الحمولة المحفوظة" aria-label="طباعة الحمولة المحفوظة" onClick={() => print(savedLoad)}><Printer className="h-5 w-5" /></Button></div></div> }
       {permissionsLoading ? <p className="text-center">جاري التحميل…</p> : !canView ? <p className="text-destructive">لا تملك صلاحية عرض الحمولات</p> : <Tabs dir="rtl" value={view} onValueChange={value => { setView(value as View); setContactSearch(""); }} className="w-full min-w-0">
-        <TabsList aria-label="تبويبات حمولات النقل" className="transport-top-tabs grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 lg:grid-cols-5">{views.map(item => <TabsTrigger key={item.key} value={item.key} className="transport-top-tab min-h-14 min-w-0 gap-2 rounded-md border px-2 py-3 sm:px-4"><item.icon className="h-5 w-5 shrink-0" /><span className="whitespace-normal text-center leading-5">{item.label}</span></TabsTrigger>)}</TabsList>
+        <TabsList aria-label="تبويبات حمولات النقل" className="transport-top-tabs grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-3 xl:grid-cols-6">{views.map(item => <TabsTrigger key={item.key} value={item.key} className="transport-top-tab min-h-14 min-w-0 gap-2 rounded-md border px-2 py-3 sm:px-4"><item.icon className="h-5 w-5 shrink-0" /><span className="whitespace-normal text-center leading-5">{item.label}</span></TabsTrigger>)}</TabsList>
         <TabsContent value={view} className="mt-7 min-w-0">
         <section className="transport-workspace-content min-w-0 py-5 sm:py-6">
           {view === "register" && <form onSubmit={save} noValidate className="space-y-6"><div className="transport-section-heading flex items-center gap-3 border-b pb-4"><Truck className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">تسجيل حمولة نقل</h2></div>
             {[
               { title: "بيانات المورد والسائق", keys: ["supplier_name", "driver_name", "vehicle_number", "invoice_number"] },
-              { title: "الوزن والعمولة والتواريخ", keys: ["delivery_weight", "commission", "loading_date", "delivery_date"] },
+              { title: "الوزن والتواريخ والعمولة", keys: ["delivery_weight", "loading_date", "delivery_date", "commission"] },
             ].map(group => <fieldset key={group.title} className="rounded-md border border-primary/20 p-4 sm:p-5"><legend className="px-2 font-bold text-primary">{group.title}</legend><div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">{group.keys.map(key => {
               const field = transportLoadFields.find(item => item.key === key);
               if (!field) return null;
@@ -127,6 +129,7 @@ export default function TransportLoadsRegister() {
             <div className="flex justify-end border-t pt-5"><Button type="submit" className="h-11 gap-2 px-6" disabled={saving || !currentOrganizationId || !canCreate || calculatedCommission === null}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving ? "جاري الحفظ" : "حفظ حمولة النقل"}</Button></div>
           </form>}
           {view === "rules" && <TransportCommissionRules organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} />}
+          {view === "report" && <TransportDriverReport organizationId={currentOrganizationId} />}
           {(view === "driver" || view === "supplier") && <div className="space-y-5"><div className="flex items-center justify-between border-b pb-4"><h2 className="text-xl font-bold">{view === "driver" ? "السائقين" : "الموردين"}</h2><Button className="gap-2" disabled={!canCreate} onClick={() => setKind(view)}><Plus className="h-4 w-4" />إضافة</Button></div><div className="relative"><Search className="absolute right-3 top-4 h-4 w-4 text-muted-foreground" /><Input aria-label="بحث في الأسماء" placeholder="البحث بالاسم" className="transport-white-field pr-9" value={contactSearch} onChange={e => setContactSearch(e.target.value)} /></div>
             {contacts.isLoading ? <p>جاري التحميل…</p> : contacts.isError ? <Button variant="outline" onClick={() => contacts.refetch()}>إعادة المحاولة</Button> : directory.length ? <ul className="divide-y border-y">{directory.map(row => <li key={row.id} className="flex items-center gap-3 py-4">{view === "driver" ? <UsersRound className="h-5 w-5 text-primary" /> : <Building2 className="h-5 w-5 text-primary" />}<span className="break-words font-semibold">{row.name}</span></li>)}</ul> : <p className="py-10 text-center text-muted-foreground">لا توجد أسماء مسجلة مطابقة</p>}
           </div>}
