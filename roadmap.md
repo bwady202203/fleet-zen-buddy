@@ -17,3 +17,5 @@
 - [x] Add monthly daily debit/credit comparison tab in Important Balances with bank statement import.
 - [x] Test date aggregation and differences; verify authenticated import comparison and mobile layout.
 - [x] Move Group App beside Crusher Data, embed its existing screens, and verify authenticated desktop/mobile navigation to its existing access-code screen.
+- [ ] Add transport load registration with the eight pictured fields and organization-scoped saving.
+- [ ] Verify navigation, saving and reading transport loads back on desktop/mobile.
