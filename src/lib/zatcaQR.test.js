@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { generateZATCAQRBase64 } from "../zatcaQR";
+import { generateZATCAQRBase64 } from "./zatcaQR";
 
-const decode = (b64: string) => {
+const decode = (b64) => {
   const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-  const out: Record<number, string> = {};
+  const out = {};
   let i = 0;
   while (i < bytes.length) {
     const tag = bytes[i], len = bytes[i + 1];
