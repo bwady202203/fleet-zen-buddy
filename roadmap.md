@@ -21,3 +21,5 @@
 - [x] Verify navigation, saving and reading transport loads back on desktop/mobile.
 - [x] Center transport registration with white fields and supplier/driver search and addition.
 - [x] Add side tabs for contacts and loads, and verify saved-load A4 preview and printing.
+- [ ] Add editable weight-based transport commission conditions and automatic calculation.
+- [ ] Organize registration form and show saved-load preview/print actions; verify saving and A4 output.
