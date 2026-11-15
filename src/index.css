@@ -39,7 +39,7 @@
   body:has(> .transport-load-print) > *:not(.transport-load-print) { display: none !important; }
   html:has(.transport-load-print), body:has(> .transport-load-print) { margin: 0 !important; padding: 0 !important; min-height: 0 !important; height: auto !important; overflow: visible !important; }
   .transport-load-print { display: block !important; page: transport-load; }
-  .transport-load-print .transport-load-paper { width: 180mm; height: 267mm; padding: 0; }
+  .transport-load-print .transport-load-paper { width: 180mm; height: 266mm; padding: 0; }
   .transport-load-print, .transport-load-print * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .transport-load-print tr { break-inside: avoid; }
   .transport-load-print thead { display: table-header-group; }
