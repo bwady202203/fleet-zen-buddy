@@ -51,7 +51,6 @@ import ZATCAQRCode from "@/components/ZATCAQRCode";
 import {
   generateZATCAQRBase64,
   formatAmount,
-  getISOTimestamp,
 } from "@/lib/zatcaQR";
 
 interface InvoiceItem {
@@ -238,10 +237,11 @@ const ZatcaInvoices = () => {
       const lastIcv = invoices.length > 0 ? Math.max(...invoices.map((i) => i.icv || 0)) : 0;
       const newIcv = lastIcv + 1;
 
+      const issueTime = new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Riyadh", hour12: false });
       const qr = generateZATCAQRBase64({
         sellerName: zatcaSettings.seller_name_ar,
         vatNumber: zatcaSettings.vat_number,
-        timestamp: getISOTimestamp(new Date(newInv.issue_date)),
+        timestamp: `${newInv.issue_date}T${issueTime}+03:00`,
         totalAmount: formatAmount(totals.total),
         vatAmount: formatAmount(totals.tax),
       });
@@ -251,7 +251,7 @@ const ZatcaInvoices = () => {
         invoice_type: newInv.invoice_type,
         invoice_subtype: newInv.invoice_subtype,
         issue_date: newInv.issue_date,
-        issue_time: new Date().toTimeString().slice(0, 8),
+        issue_time: issueTime,
         seller_name: zatcaSettings.seller_name_ar,
         seller_vat: zatcaSettings.vat_number,
         seller_crn: zatcaSettings.crn,
@@ -800,7 +800,7 @@ const ZatcaInvoices = () => {
                       vatNumber={previewInv.seller_vat}
                       totalAmount={previewInv.total_with_tax}
                       vatAmount={previewInv.tax_amount}
-                      invoiceDate={previewInv.issue_date}
+                      invoiceDate={previewInv.issue_time ? `${previewInv.issue_date}T${String(previewInv.issue_time).slice(0, 8)}+03:00` : previewInv.issue_date}
                       size={140}
                     />
                   </div>

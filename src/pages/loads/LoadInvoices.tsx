@@ -1294,7 +1294,7 @@ const LoadInvoices = () => {
                       <h2 className="text-base font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية</h2>
                       <h3 className="text-xs font-medium mb-2" style={{ color: '#2563eb' }}>Tax Invoice</h3>
                       <ZATCAQRCode
-                        sellerName={selectedSupplier?.name || companySettings?.supplier_name || 'اسم المورد'}
+                        sellerName={selectedSupplier?.name || companySettings?.supplier_name}
                         vatNumber={selectedSupplier?.tax_number || companySettings?.tax_number || ''}
                         totalAmount={selectedInvoice.total_amount || 0}
                         vatAmount={selectedInvoice.tax_amount || 0}
