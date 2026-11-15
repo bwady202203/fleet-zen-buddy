@@ -23,7 +23,7 @@ const ZATCAQRCode: React.FC<ZATCAQRCodeProps> = ({
   invoiceDate,
   size = 120,
 }) => {
-  const timestamp = invoiceDate ?? "";
+  const timestamp = invoiceDate instanceof Date ? (isNaN(invoiceDate.getTime()) ? "" : invoiceDate.toISOString()) : (invoiceDate ?? "");
 
   const qrData: ZATCAQRData = {
     sellerName,
