@@ -33,6 +33,7 @@ export default function TransportLoadsRegister() {
   const [page, setPage] = useState(0);
   const [view, setView] = useState<View>("register");
   const [kind, setKind] = useState<ContactKind | null>(null);
+  const [locationTarget, setLocationTarget] = useState<"from_location" | "to_location" | null>(null);
   const [contactSearch, setContactSearch] = useState("");
   const [preview, setPreview] = useState<TransportLoad | null>(null);
   const [savedLoad, setSavedLoad] = useState<TransportLoad | null>(null);
@@ -43,6 +44,7 @@ export default function TransportLoadsRegister() {
   const rules = useTransportCommissionRules(currentOrganizationId, enabled);
   const calculatedCommission = rules.isError || rules.isLoading ? null : calculateTransportCommission(form.delivery_weight, rules.data ?? [], form.from_location, form.to_location);
   const contacts = useTransportContacts(currentOrganizationId, enabled);
+  const locations = contacts.data?.filter(row => row.kind === "location") ?? [];
   const company = useQuery({ queryKey: ["transport-company", currentOrganizationId], enabled: Boolean(currentOrganizationId && enabled), queryFn: async () => {
     if (!currentOrganizationId) return "";
     const result = await supabase.from("organizations").select("name").eq("id", currentOrganizationId).single();
