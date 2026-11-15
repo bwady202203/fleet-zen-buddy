@@ -23,3 +23,5 @@
 - [x] Add side tabs for contacts and loads, and verify saved-load A4 preview and printing.
 - [x] Add editable weight-based transport commission conditions and automatic calculation.
 - [x] Organize registration form and show saved-load preview/print actions; verify saving and A4 output.
+- [ ] Make repeated commission-condition entry explicit and move automatic commission to the final field.
+- [ ] Add per-driver transport earned commission report and verify totals and date filters.
