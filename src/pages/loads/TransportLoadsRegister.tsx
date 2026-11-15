@@ -53,7 +53,15 @@ export default function TransportLoadsRegister() {
     setErrors({});
     try {
       const { error } = await supabase.from("transport_loads").insert({
-        ...parsed.data, organization_id: currentOrganizationId, created_by: user.id,
+        supplier_name: parsed.data.supplier_name,
+        commission: parsed.data.commission,
+        delivery_weight: parsed.data.delivery_weight,
+        driver_name: parsed.data.driver_name,
+        vehicle_number: parsed.data.vehicle_number,
+        invoice_number: parsed.data.invoice_number,
+        delivery_date: parsed.data.delivery_date,
+        loading_date: parsed.data.loading_date,
+        organization_id: currentOrganizationId, created_by: user.id,
       });
       if (error) throw error;
       setForm({ ...emptyTransportLoad });
