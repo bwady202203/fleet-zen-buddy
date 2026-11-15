@@ -4619,6 +4619,44 @@ export type Database = {
           },
         ]
       }
+      transport_commission_rules: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          max_weight: number | null
+          min_weight: number
+          organization_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          max_weight?: number | null
+          min_weight: number
+          organization_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          max_weight?: number | null
+          min_weight?: number
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_commission_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transport_load_contacts: {
         Row: {
           created_at: string
