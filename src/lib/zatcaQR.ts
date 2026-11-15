@@ -9,6 +9,7 @@
 const encodeTLV = (tag: number, value: string): Uint8Array => {
   const textEncoder = new TextEncoder();
   const valueBytes = textEncoder.encode(value);
+  if (valueBytes.length > 255) throw new Error(`قيمة الحقل ${tag} أطول من 255 بايت`);
   return new Uint8Array([
     tag,
     valueBytes.length,
@@ -35,6 +36,8 @@ export const generateZATCAQRBase64 = ({
   totalAmount,
   vatAmount,
 }: ZATCAQRData): string => {
+  const missing = validateZATCAQRData({ sellerName, vatNumber, timestamp, totalAmount, vatAmount });
+  if (missing.length) throw new Error("بيانات QR ناقصة: " + missing.join("، "));
   const tlvData = [
     encodeTLV(1, sellerName.trim()),    // Seller Name (اسم البائع)
     encodeTLV(2, normalizeVatNumber(vatNumber)),     // VAT Registration Number (الرقم الضريبي)
@@ -66,11 +69,31 @@ export const formatAmount = (amount: number): string => {
 export const normalizeVatNumber = (vat: string): string =>
   String(vat ?? "").replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/\D/g, "");
 
-/** طابع زمني ISO 8601 بدون أجزاء الثانية: YYYY-MM-DDTHH:mm:ssZ */
+/** يحوّل التاريخ إلى Date؛ التاريخ بدون وقت يُعتبر منتصف الليل بتوقيت الرياض */
+const parseInvoiceDate = (value: string | Date): Date => {
+  if (value instanceof Date) return value;
+  const v = String(value ?? "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(`${v}T00:00:00+03:00`);
+  return new Date(v);
+};
+
+/** طابع زمني ISO 8601 بتوقيت السعودية: YYYY-MM-DDTHH:mm:ss+03:00 */
 export const toZatcaTimestamp = (value: string | Date): string => {
-  const d = value instanceof Date ? value : new Date(value);
-  const safe = isNaN(d.getTime()) ? new Date() : d;
-  return safe.toISOString().replace(/\.\d{3}Z$/, "Z");
+  const d = parseInvoiceDate(value);
+  if (isNaN(d.getTime())) throw new Error("تاريخ الفاتورة غير صالح");
+  const r = new Date(d.getTime() + 3 * 3600 * 1000);
+  return r.toISOString().replace(/\.\d{3}Z$/, "+03:00");
+};
+
+/** يرجع أسماء الحقول الناقصة أو غير الصالحة */
+export const validateZATCAQRData = (d: ZATCAQRData): string[] => {
+  const m: string[] = [];
+  if (!String(d.sellerName ?? "").trim()) m.push("اسم المورد");
+  if (normalizeVatNumber(d.vatNumber).length !== 15) m.push("الرقم الضريبي (15 رقمًا)");
+  if (!d.timestamp || isNaN(parseInvoiceDate(d.timestamp).getTime())) m.push("تاريخ الفاتورة");
+  if (!/^\d+\.\d{2}$/.test(String(d.totalAmount ?? ""))) m.push("إجمالي الفاتورة");
+  if (!/^\d+\.\d{2}$/.test(String(d.vatAmount ?? ""))) m.push("مبلغ الضريبة");
+  return m;
 };
 
 /**
