@@ -1,4 +1,3 @@
-import managerStampAsset from "@/assets/manager-stamp-2026.png.asset.json";
 import { cn } from "@/lib/utils";
 
 interface ManagerStampProps {
@@ -6,17 +5,22 @@ interface ManagerStampProps {
 }
 
 /**
- * ختم المدير المصوّر؛ الطبقة الخارجية بلا تنسيق حتى يتحكم المستدعي بموضعها.
+ * ختم المدير: مربع أزرق بحافة مزدوجة وداخله نص أحمر.
+ * الطبقة الخارجية (shell) لا تحمل أي تنسيق حتى يتحكم المستدعي بموضعها.
  */
 export function ManagerStamp({ className }: ManagerStampProps) {
   return (
-    <div className={cn(className)}>
-      <img
-        className="manager-stamp"
-        src={managerStampAsset.url}
-        alt="صنع بإتقان — عمر محمد خضران — 2026"
-        draggable={false}
-      />
+    <div
+      className={cn(className)}
+      dir="ltr"
+      role="img"
+      aria-label="BY OMAR M KHEDR — BUSINESS .DEV 2026"
+    >
+      <div className="manager-stamp">
+        <span className="manager-stamp-top">BY OMAR M KHEDR</span>
+        <span className="manager-stamp-bar" aria-hidden="true" />
+        <span className="manager-stamp-bottom">BUSINESS .DEV 2026</span>
+      </div>
     </div>
   );
 }
