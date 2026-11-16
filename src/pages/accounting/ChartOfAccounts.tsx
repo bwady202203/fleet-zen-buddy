@@ -1071,7 +1071,7 @@ const ChartOfAccounts = () => {
             <AccountingPageHeader title={<>شجرة الحسابات</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                   إدارة الدليل المحاسبي - 4 مستويات
                 </p>} />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={handleRefreshLedger} variant="outline" className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 تحديث الترحيل
@@ -1415,7 +1415,7 @@ const ChartOfAccounts = () => {
                   <Plus className="h-4 w-4 ml-2" />
                   إضافة صف / Add Row
                 </Button>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" onClick={() => setBulkDialogOpen(false)}>
                     إلغاء / Cancel
                   </Button>
