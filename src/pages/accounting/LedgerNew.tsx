@@ -628,7 +628,7 @@ export default function LedgerNew() {
       </div>
 
       {/* Date Range Bar - Hidden during print */}
-      <div className="flex items-center gap-3 mb-4 print:hidden bg-muted/30 p-3 rounded-lg">
+      <div className="flex flex-wrap items-center gap-3 mb-4 print:hidden bg-muted/30 p-3 rounded-lg">
         <Calendar className="h-5 w-5 text-muted-foreground" />
         <span className="text-sm font-medium">الفترة:</span>
         <div className="flex items-center gap-2">

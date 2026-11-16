@@ -808,7 +808,7 @@ const TrialBalance = () => {
             <AccountingPageHeader title={<>ميزان المراجعة</>} titleClassName="text-3xl font-bold" description={<p className="text-muted-foreground mt-1">
                   عرض أرصدة الحسابات والتحقق من التوازن
                 </p>} />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
                 <DialogTrigger asChild>
                   <Button variant="destructive">
