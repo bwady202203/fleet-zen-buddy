@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import ZATCAQRCode from "@/components/ZATCAQRCode";
+import LoadInvoiceQRCode from "@/components/loads/LoadInvoiceQRCode";
 import { CompanySettingsDialog } from "@/components/CompanySettingsDialog";
 import { CompanyPricesDialog } from "@/components/CompanyPricesDialog";
 import jsPDF from "jspdf";
@@ -496,6 +496,7 @@ const LoadInvoices = () => {
 
   const handleViewInvoice = async (invoice: any) => {
     setSelectedInvoice(invoice);
+    setSelectedSupplier(null);
     
     // Load supplier if exists
     if (invoice.supplier_id) {
@@ -1293,11 +1294,11 @@ const LoadInvoices = () => {
                     <div className="mx-auto text-center md:mx-0">
                       <h2 className="text-base font-bold mb-2" style={{ color: '#2563eb' }}>فاتورة ضريبية</h2>
                       <h3 className="text-xs font-medium mb-2" style={{ color: '#2563eb' }}>Tax Invoice</h3>
-                      <ZATCAQRCode
+                      <LoadInvoiceQRCode
                         sellerName={selectedSupplier?.name || companySettings?.supplier_name}
                         vatNumber={selectedSupplier?.tax_number || companySettings?.tax_number || ''}
-                        totalAmount={selectedInvoice.total_amount || 0}
-                        vatAmount={selectedInvoice.tax_amount || 0}
+                        totalAmount={selectedInvoice.total_amount}
+                        vatAmount={selectedInvoice.tax_amount}
                         invoiceDate={selectedInvoice.date}
                         size={112}
                       />

@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import * as HijriDate from "hijri-converter";
 import { supabase } from "@/integrations/supabase/client";
 import { getHomePathForPath } from "@/lib/homeTab";
 import { toast } from "sonner";
@@ -144,12 +143,10 @@ export const SystemIconsBar = () => {
     }
   };
 
-  const hijriDate = HijriDate.toHijri(
-    currentTime.getFullYear(),
-    currentTime.getMonth() + 1,
-    currentTime.getDate()
-  );
-  const hijriDateStr = `${hijriDate.hy}/${hijriDate.hm}/${hijriDate.hd}`;
+  const hijriDateParts = new Intl.DateTimeFormat("en-US-u-ca-islamic-umalqura", {
+    year: "numeric", month: "numeric", day: "numeric",
+  }).formatToParts(currentTime);
+  const hijriDateStr = ["year", "month", "day"].map(type => hijriDateParts.find(part => part.type === type)?.value ?? "").join("/");
   const gregorianDateStr = format(currentTime, "yyyy/MM/dd", { locale: ar });
   const timeStr = format(currentTime, "HH:mm:ss", { locale: ar });
 
