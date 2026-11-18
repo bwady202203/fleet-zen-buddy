@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Invoice paper keeps print contrast independent of the surrounding theme. */
+.load-invoice-preview {
+  --card: var(--statement-paper);
+  --card-foreground: var(--statement-ink);
+  --foreground: var(--statement-ink);
+  --border: var(--statement-line);
+  background: hsl(var(--statement-paper));
+  color: hsl(var(--statement-ink));
+}
+
 .home-tabs [role="tab"].home-tab-group-app {
   background: hsl(var(--group-app-tab-soft));
   color: hsl(var(--group-app-tab-ink));
