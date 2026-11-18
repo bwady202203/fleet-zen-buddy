@@ -13,7 +13,7 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { emptyTransportLoad, transportLoadFields, transportLoadSchema, type TransportLoadForm } from "@/lib/transportLoads";
-import { TransportContactDialog, useTransportContacts, type ContactKind } from "@/components/loads/TransportContacts";
+import { TransportContactDialog, TransportLocationSelect, useTransportContacts, type ContactKind } from "@/components/loads/TransportContacts";
 import { TransportLoadPreview, TransportLoadPrintPortal, type TransportLoad } from "@/components/loads/TransportLoadDocument";
 
 import TransportCommissionRules, { useTransportCommissionRules } from "@/components/loads/TransportCommissionRules";
@@ -33,7 +33,6 @@ export default function TransportLoadsRegister() {
   const [page, setPage] = useState(0);
   const [view, setView] = useState<View>("register");
   const [kind, setKind] = useState<ContactKind | null>(null);
-  const [locationTarget, setLocationTarget] = useState<"from_location" | "to_location" | null>(null);
   const [contactSearch, setContactSearch] = useState("");
   const [preview, setPreview] = useState<TransportLoad | null>(null);
   const [savedLoad, setSavedLoad] = useState<TransportLoad | null>(null);
@@ -44,7 +43,6 @@ export default function TransportLoadsRegister() {
   const rules = useTransportCommissionRules(currentOrganizationId, enabled);
   const calculatedCommission = rules.isError || rules.isLoading ? null : calculateTransportCommission(form.delivery_weight, rules.data ?? [], form.from_location, form.to_location);
   const contacts = useTransportContacts(currentOrganizationId, enabled);
-  const locations = contacts.data?.filter(row => row.kind === "location") ?? [];
   const company = useQuery({ queryKey: ["transport-company", currentOrganizationId], enabled: Boolean(currentOrganizationId && enabled), queryFn: async () => {
     if (!currentOrganizationId) return "";
     const result = await supabase.from("organizations").select("name").eq("id", currentOrganizationId).single();
@@ -123,12 +121,8 @@ export default function TransportLoadsRegister() {
               if (!field) return null;
               return <div key={field.key} className="space-y-2">
                 <Label htmlFor={`transport-${field.key}`} className="font-semibold">{field.key === "delivery_weight" ? "وزن التسليم (طن)" : field.key === "commission" ? "عمولة السائق (ريال)" : field.label}</Label>
-                <div className="flex gap-2">{(field.key === "from_location" || field.key === "to_location") ? <select id={`transport-${field.key}`} className="transport-white-field min-w-0 w-full rounded-md border bg-background px-3 text-sm" dir="rtl" value={form[field.key]} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "", commission: "" })); }}>
-                  <option value="">اختر {field.label}</option>
-                  {form[field.key] && !locations.some(row => row.name === form[field.key]) && <option value={form[field.key]}>{form[field.key]}</option>}
-                  {locations.map(row => <option key={row.id} value={row.name}>{row.name}</option>)}
-                </select> : <Input id={`transport-${field.key}`} className="transport-white-field min-w-0" type={field.type === "date" ? "date" : "text"} inputMode={field.type === "decimal" ? "decimal" : undefined} dir={field.type !== "text" ? "ltr" : "rtl"} value={field.key === "commission" ? calculatedCommission === null ? "" : String(calculatedCommission) : form[field.key]} readOnly={field.key === "commission"} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "", commission: "" })); }} />}
-                {(field.key === "supplier_name" || field.key === "driver_name" || field.key === "from_location" || field.key === "to_location") && <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${field.label}`} aria-label={`بحث أو إضافة ${field.label}`} disabled={saving || !canCreate} onClick={() => { if (field.key === "from_location" || field.key === "to_location") { setLocationTarget(field.key); setKind("location"); } else { setKind(field.key === "supplier_name" ? "supplier" : "driver"); } }}><Plus className="h-5 w-5" /></Button>}</div>
+                <div className="flex gap-2">{(field.key === "from_location" || field.key === "to_location") ? <div className="min-w-0 w-full"><TransportLocationSelect id={`transport-${field.key}`} label={field.label} value={form[field.key]} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} disabled={saving} invalid={Boolean(errors[field.key])} onChange={name => { setForm(prev => ({ ...prev, [field.key]: name })); setErrors(prev => ({ ...prev, [field.key]: "", commission: "" })); }} /></div> : <Input id={`transport-${field.key}`} className="transport-white-field min-w-0" type={field.type === "date" ? "date" : "text"} inputMode={field.type === "decimal" ? "decimal" : undefined} dir={field.type !== "text" ? "ltr" : "rtl"} value={field.key === "commission" ? calculatedCommission === null ? "" : String(calculatedCommission) : form[field.key]} readOnly={field.key === "commission"} disabled={saving || !canCreate} aria-invalid={Boolean(errors[field.key])} onChange={event => { setForm(prev => ({ ...prev, [field.key]: event.target.value })); setErrors(prev => ({ ...prev, [field.key]: "", commission: "" })); }} />}
+                {(field.key === "supplier_name" || field.key === "driver_name") && <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${field.label}`} aria-label={`بحث أو إضافة ${field.label}`} disabled={saving || !canCreate} onClick={() => setKind(field.key === "supplier_name" ? "supplier" : "driver")}><Plus className="h-5 w-5" /></Button>}</div>
                 {errors[field.key] && <p role="alert" className="text-sm text-destructive">{errors[field.key]}</p>}
                 {field.key === "commission" && form.delivery_weight && calculatedCommission === null && !errors.commission && <p className="text-sm text-destructive">{rules.isLoading ? "جاري تحميل شروط العمولة…" : rules.isError ? "تعذر تحميل شروط العمولة" : "لا يوجد شرط يغطي هذا الوزن"}</p>}
               </div>;
@@ -150,7 +144,7 @@ export default function TransportLoadsRegister() {
         </TabsContent>
       </Tabs>}
     </main>
-    {kind && <TransportContactDialog kind={kind} onClose={() => { setKind(null); setLocationTarget(null); }} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} onSelect={view === "register" ? (name, selectedKind) => setForm(prev => ({ ...prev, [selectedKind === "supplier" ? "supplier_name" : selectedKind === "driver" ? "driver_name" : locationTarget ?? "from_location"]: name })) : undefined} />}
+    {kind && <TransportContactDialog kind={kind} onClose={() => setKind(null)} organizationId={currentOrganizationId} userId={user?.id} canCreate={canCreate} onSelect={view === "register" ? (name, selectedKind) => setForm(prev => ({ ...prev, [selectedKind === "supplier" ? "supplier_name" : "driver_name"]: name })) : undefined} />}
     <Dialog open={Boolean(preview)} onOpenChange={open => { if (!open) setPreview(null); }}><DialogContent className="w-[calc(100%-1rem)] max-w-4xl max-h-[90dvh] overflow-y-auto p-3 sm:p-5" dir="rtl" aria-describedby={undefined}><div className="flex flex-wrap items-center justify-between gap-3 pl-7"><DialogTitle>معاينة حمولة النقل</DialogTitle><Button className="gap-2" disabled={!preview || !company.data} onClick={() => { if (preview) print(preview); }}><Printer className="h-4 w-4" />طباعة A4</Button></div>{preview && <TransportLoadPreview load={preview} company={company.data ?? ""} />}</DialogContent></Dialog>
     {printing && <TransportLoadPrintPortal load={printing} company={company.data ?? ""} />}
   </div>;

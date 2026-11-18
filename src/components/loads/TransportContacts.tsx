@@ -25,6 +25,21 @@ export function useTransportContacts(organizationId: string | null, enabled: boo
   } });
 }
 
+export function TransportLocationSelect({ id, label, value, onChange, organizationId, userId, canCreate, disabled = false, allLocations = false, invalid = false }: { id: string; label: string; value: string; onChange: (name: string) => void; organizationId: string | null; userId?: string; canCreate: boolean; disabled?: boolean; allLocations?: boolean; invalid?: boolean }) {
+  const contacts = useTransportContacts(organizationId, true);
+  const [open, setOpen] = useState(false);
+  const locations = contacts.data?.filter(row => row.kind === "location") ?? [];
+  return <><div className="flex min-w-0 gap-2">
+    <select id={id} className="transport-white-field min-w-0 w-full rounded-md border bg-background px-3 text-sm" dir="rtl" value={value} disabled={disabled || !canCreate || contacts.isLoading || contacts.isError} aria-invalid={invalid} onChange={event => onChange(event.target.value)}>
+      <option value="">{allLocations ? "كل المواقع" : `اختر ${label}`}</option>
+      {value && !locations.some(row => row.name === value) && <option value={value} disabled>{value} (غير مسجل)</option>}
+      {locations.map(row => <option key={row.id} value={row.name}>{row.name}</option>)}
+    </select>
+    <Button type="button" variant="outline" className="h-[46px] w-[46px] shrink-0" size="icon" title={`بحث أو إضافة ${label}`} aria-label={`بحث أو إضافة ${label}`} disabled={disabled || !canCreate} onClick={() => setOpen(true)}><Plus className="h-5 w-5" /></Button>
+  </div>{contacts.isError && <Button type="button" variant="link" onClick={() => contacts.refetch()}>إعادة تحميل المواقع</Button>}
+  {open && <TransportContactDialog kind="location" organizationId={organizationId} userId={userId} canCreate={canCreate} onClose={() => setOpen(false)} onSelect={name => onChange(name)} />}</>;
+}
+
 export function TransportContactDialog({ kind, onClose, onSelect, organizationId, userId, canCreate }: { kind: ContactKind | null; onClose: () => void; onSelect?: (name: string, kind: ContactKind) => void; organizationId: string | null; userId?: string; canCreate: boolean }) {
   const [search, setSearch] = useState("");
   const [name, setName] = useState("");
