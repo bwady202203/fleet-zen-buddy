@@ -94,6 +94,10 @@ const JournalEntries = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [openingEntryDialogOpen, setOpeningEntryDialogOpen] = useState(false);
   const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
+  const [quickCostCenterOpen, setQuickCostCenterOpen] = useState(false);
+  const [quickCostCenterLineId, setQuickCostCenterLineId] = useState<string | null>(null);
+  const [quickCostCenterForm, setQuickCostCenterForm] = useState({ code: "", name_ar: "", name_en: "" });
+  const [isSavingCostCenter, setIsSavingCostCenter] = useState(false);
   const [openingEntryData, setOpeningEntryData] = useState<{
     entryNumber: string;
     date: string;
@@ -299,6 +303,80 @@ const JournalEntries = () => {
       setCostCenters(data || []);
     } catch (error) {
       console.error('Error fetching cost centers:', error);
+    }
+  };
+
+  const openQuickCostCenter = (lineId: string | null) => {
+    setQuickCostCenterLineId(lineId);
+    setQuickCostCenterForm({ code: "", name_ar: "", name_en: "" });
+    setQuickCostCenterOpen(true);
+  };
+
+  const handleQuickAddCostCenter = async () => {
+    if (!quickCostCenterForm.code.trim() || !quickCostCenterForm.name_ar.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال الرمز والاسم بالعربية",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSavingCostCenter(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let organizationId: string | null = null;
+      if (user) {
+        const { data: orgRow } = await supabase
+          .from('user_organizations')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+        organizationId = orgRow?.organization_id || null;
+      }
+
+      const { data, error } = await supabase
+        .from('cost_centers')
+        .insert({
+          code: quickCostCenterForm.code.trim(),
+          name_ar: quickCostCenterForm.name_ar.trim(),
+          name_en: quickCostCenterForm.name_en.trim() || quickCostCenterForm.name_ar.trim(),
+          is_active: true,
+          organization_id: organizationId,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchCostCenters();
+
+      if (quickCostCenterLineId && data) {
+        updateLine(quickCostCenterLineId, {
+          costCenter: data.code,
+          costCenterId: data.id,
+        });
+        updateSearchState(quickCostCenterLineId, {
+          costCenterSearch: "",
+          showCostCenterSearch: false,
+          selectedCostCenterIndex: -1,
+        });
+      }
+
+      toast({
+        title: "تمت الإضافة بنجاح",
+        description: `تم إضافة مركز التكلفة ${data.name_ar}`,
+      });
+      setQuickCostCenterOpen(false);
+    } catch (error: any) {
+      console.error('Error adding cost center:', error);
+      toast({
+        title: "خطأ",
+        description: error?.code === '23505' ? "هذا الرمز مسجل مسبقاً" : "فشل في إضافة مركز التكلفة",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingCostCenter(false);
     }
   };
 
@@ -1591,7 +1669,8 @@ const JournalEntries = () => {
                                     />
                                   </TableCell>
                                   <TableCell>
-                                    <div className="relative">
+                                    <div className="flex items-center gap-1">
+                                      <div className="relative flex-1">
                                       <Input
                                         value={searchState.costCenterSearch || (line.costCenter ? `${line.costCenter}` : "")}
                                         onChange={(e) => {
@@ -1666,6 +1745,17 @@ const JournalEntries = () => {
                                       {isAccountInvalid && (
                                         <p className="text-xs text-red-500 mt-1">رقم الحساب غير موجود</p>
                                       )}
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 shrink-0"
+                                        title="إضافة مركز تكلفة جديد"
+                                        onClick={() => openQuickCostCenter(line.id)}
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
                                     </div>
                                   </TableCell>
                                   <TableCell>
@@ -1802,6 +1892,51 @@ const JournalEntries = () => {
                   </div>
                 </div>
               </main>
+
+              {/* Quick Add Cost Center Dialog */}
+              <Dialog open={quickCostCenterOpen} onOpenChange={setQuickCostCenterOpen}>
+                <DialogContent className="max-w-md" dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>إضافة مركز تكلفة جديد</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>الرمز</Label>
+                        <Input
+                          value={quickCostCenterForm.code}
+                          onChange={(e) => setQuickCostCenterForm({ ...quickCostCenterForm, code: e.target.value })}
+                          placeholder="مثال: CC001"
+                        />
+                      </div>
+                      <div>
+                        <Label>الاسم بالعربية</Label>
+                        <Input
+                          value={quickCostCenterForm.name_ar}
+                          onChange={(e) => setQuickCostCenterForm({ ...quickCostCenterForm, name_ar: e.target.value })}
+                          placeholder="مثال: قسم المبيعات"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>الاسم بالإنجليزية (اختياري)</Label>
+                      <Input
+                        value={quickCostCenterForm.name_en}
+                        onChange={(e) => setQuickCostCenterForm({ ...quickCostCenterForm, name_en: e.target.value })}
+                        placeholder="Sales Department"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button variant="outline" onClick={() => setQuickCostCenterOpen(false)}>
+                        إلغاء
+                      </Button>
+                      <Button onClick={handleQuickAddCostCenter} disabled={isSavingCostCenter}>
+                        {isSavingCostCenter ? "جارٍ الحفظ..." : "حفظ"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           );
         }
@@ -2421,6 +2556,9 @@ const JournalEntries = () => {
                             الفرع<br/>Branch
                           </th>
                           <th className="border border-gray-400 p-2 text-right text-gray-800 font-semibold text-sm">
+                            مركز التكلفة<br/>Cost Center
+                          </th>
+                          <th className="border border-gray-400 p-2 text-right text-gray-800 font-semibold text-sm">
                             المدين<br/>Debit
                           </th>
                           <th className="border border-gray-400 p-2 text-right text-gray-800 font-semibold text-sm">
@@ -2435,6 +2573,9 @@ const JournalEntries = () => {
                             <td className="border border-gray-300 p-2 text-gray-800 text-sm">{line.accountName}</td>
                             <td className="border border-gray-300 p-2 text-gray-800 text-sm">{line.description}</td>
                             <td className="border border-gray-300 p-2 text-gray-800 text-sm">{line.branchName || '-'}</td>
+                            <td className="border border-gray-300 p-2 text-gray-800 text-sm">
+                              {line.costCenterName ? `${line.costCenterCode ? line.costCenterCode + ' - ' : ''}${line.costCenterName}` : '-'}
+                            </td>
                             <td className="border border-gray-300 p-2 text-red-600 font-bold text-sm">
                               {line.debit > 0 ? line.debit.toLocaleString('ar-SA', { minimumFractionDigits: 2 }) : '-'}
                             </td>
@@ -2446,7 +2587,7 @@ const JournalEntries = () => {
                         
                         {/* مجموع الصفحة */}
                         <tr className="bg-gray-50 font-bold border-t-2 border-gray-400">
-                          <td colSpan={4} className="border border-gray-400 p-2 text-left text-gray-800 text-sm">
+                          <td colSpan={5} className="border border-gray-400 p-2 text-left text-gray-800 text-sm">
                             مجموع الصفحة / Page Total
                           </td>
                           <td className="border border-gray-400 p-2 text-red-600 text-sm">
@@ -2460,7 +2601,7 @@ const JournalEntries = () => {
                         {/* المجموع الكلي في الصفحة الأخيرة فقط */}
                         {pageNum === totalPages - 1 && (
                           <tr className="bg-gray-100 font-bold text-lg border-t-2 border-gray-400">
-                            <td colSpan={4} className="border border-gray-400 p-3 text-left text-gray-800">
+                            <td colSpan={5} className="border border-gray-400 p-3 text-left text-gray-800">
                               الإجمالي الكلي / Grand Total
                             </td>
                             <td className="border border-gray-400 p-3 text-red-600">
