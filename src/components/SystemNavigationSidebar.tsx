@@ -581,7 +581,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
             src={plaqueAsset.url}
             alt="صُنِعَ بِإِتْقَان — عُمَر خَضِر ٢٠٢٦"
             className={cn(
-              "h-auto w-[132px] max-w-none shrink-0 select-none",
+              "h-auto w-[165px] max-w-none shrink-0 select-none",
               collapsed && "origin-bottom-right scale-[0.6]",
             )}
           />
