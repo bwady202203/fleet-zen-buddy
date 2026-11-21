@@ -580,7 +580,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
           <img
             src={plaqueAsset.url}
             alt="صُنِعَ بِإِتْقَان — عُمَر خَضِر ٢٠٢٦"
-            className="h-auto w-[165px] max-w-none shrink-0 select-none"
+            className="h-auto w-[132px] max-w-none shrink-0 select-none"
           />
         </div>
       </SidebarHeader>
