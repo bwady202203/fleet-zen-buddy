@@ -25,3 +25,5 @@
 - [x] Organize registration form and show saved-load preview/print actions; verify saving and A4 output.
 - [x] Make repeated commission-condition entry explicit and move automatic commission to the final field.
 - [x] Add per-driver transport earned commission report and verify totals and date filters.
+- [x] Hide the manager stamp while the side menu is collapsed and verify both states.
+- [x] Replace the loading animation with the «صُنِعَ بِإِتْقَان / عُمَر خَضِر» plaque and verify it appears while a screen loads.

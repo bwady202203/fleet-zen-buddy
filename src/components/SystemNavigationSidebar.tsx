@@ -576,14 +576,11 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
           {!collapsed && <span>طي القائمة</span>}
         </button>
         {/* لوحة «صُنِعَ بِإِتْقَان»: داخل الشريط فوق أيقونة الرئيسية، بمحاذاة عمود الأيقونات */}
-        <div dir="ltr" className={cn("pointer-events-none -mt-1 flex w-full items-end justify-end", !collapsed && "pr-[42px]")}>
+        <div dir="ltr" className={cn("pointer-events-none -mt-1 flex w-full items-end justify-end", collapsed ? "hidden" : "pr-[42px]")}>
           <img
             src={plaqueAsset.url}
             alt="صُنِعَ بِإِتْقَان — عُمَر خَضِر ٢٠٢٦"
-            className={cn(
-              "h-auto w-[165px] max-w-none shrink-0 select-none",
-              collapsed && "origin-bottom-right scale-[0.6]",
-            )}
+            className="h-auto w-[165px] max-w-none shrink-0 select-none"
           />
         </div>
       </SidebarHeader>
