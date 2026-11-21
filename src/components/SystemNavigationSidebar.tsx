@@ -50,6 +50,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import plaqueAsset from "@/assets/manager-plaque.png.asset.json";
 import { cn } from "@/lib/utils";
 import wizerLogo from "@/assets/wizer-logo.png.asset.json";
 
@@ -574,6 +575,17 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
           {collapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
           {!collapsed && <span>طي القائمة</span>}
         </button>
+        {/* لوحة «صُنِعَ بِإِتْقَان»: فوق أيقونة الرئيسية، بمحاذاة الحافة اليمنى */}
+        <div dir="ltr" className="pointer-events-none -mt-1 flex w-full items-end justify-end">
+          <img
+            src={plaqueAsset.url}
+            alt="صُنِعَ بِإِتْقَان — عُمَر خَضِر ٢٠٢٦"
+            className={cn(
+              "h-auto w-[132px] max-w-none shrink-0 select-none",
+              collapsed && "origin-bottom-right scale-[0.6]",
+            )}
+          />
+        </div>
       </SidebarHeader>
 
       <SidebarContent className="py-2">
