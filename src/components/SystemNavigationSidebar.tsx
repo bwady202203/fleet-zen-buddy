@@ -550,7 +550,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
 
   return (
     <Sidebar side="right" collapsible="icon" className="print:hidden">
-      <SidebarHeader className={cn("border-b border-sidebar-border p-3", collapsed && "items-center")}>
+      <SidebarHeader className={cn("p-3 pb-1", collapsed && "items-center")}>
         <NavLink to="/" onClick={closeMobile} className="flex h-12 items-center gap-3 overflow-hidden rounded-md px-1">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary">
             <img src={wizerLogo.url} alt="ويزر" className="h-7 w-7 object-contain" />
@@ -575,8 +575,8 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
           {collapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
           {!collapsed && <span>طي القائمة</span>}
         </button>
-        {/* لوحة «صُنِعَ بِإِتْقَان»: فوق أيقونة الرئيسية، بمحاذاة الحافة اليمنى */}
-        <div dir="ltr" className="pointer-events-none -mt-1 flex w-full items-end justify-end">
+        {/* لوحة «صُنِعَ بِإِتْقَان»: داخل الشريط فوق أيقونة الرئيسية، بمحاذاة عمود الأيقونات */}
+        <div dir="ltr" className={cn("pointer-events-none -mt-1 flex w-full items-end justify-end", !collapsed && "pr-[18px]")}>
           <img
             src={plaqueAsset.url}
             alt="صُنِعَ بِإِتْقَان — عُمَر خَضِر ٢٠٢٦"
