@@ -550,7 +550,7 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
 
   return (
     <Sidebar side="right" collapsible="icon" className="print:hidden">
-      <SidebarHeader className={cn("p-3 pb-1", collapsed && "items-center")}>
+      <SidebarHeader className={cn("gap-1 p-3 pb-0", collapsed && "items-center")}>
         <NavLink to="/" onClick={closeMobile} className="flex h-12 items-center gap-3 overflow-hidden rounded-md px-1">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary">
             <img src={wizerLogo.url} alt="ويزر" className="h-7 w-7 object-contain" />
@@ -585,8 +585,8 @@ export function SystemNavigationSidebar({ onExportFleet }: SystemNavigationSideb
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-2">
-        <SidebarGroup className="p-2">
+      <SidebarContent className="py-0">
+        <SidebarGroup className="px-2 pb-2 pt-0">
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
               {visibleGroups.map((group) => {
