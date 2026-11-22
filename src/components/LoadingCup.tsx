@@ -16,7 +16,7 @@ const LoadingCup = ({ text = 'جاري التحميل...', className }: LoadingC
       <img
         src={plaqueAsset.url}
         alt="صُنِعَ بِإِتْقَان — عُمَر خَضِر ٢٠٢٦"
-        className="h-auto w-[190px] max-w-full select-none animate-pulse"
+        className="h-auto w-[152px] max-w-full select-none animate-pulse"
       />
 
       <p className="text-muted-foreground text-sm font-medium animate-pulse">{text}</p>
