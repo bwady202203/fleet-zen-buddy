@@ -50,7 +50,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import plaqueAsset from "@/assets/manager-plaque-gold-clean.png.asset.json";
+import plaqueAsset from "@/assets/manager-plaque-gold-trimmed.png.asset.json";
 import { cn } from "@/lib/utils";
 import wizerLogo from "@/assets/wizer-logo.png.asset.json";
 
