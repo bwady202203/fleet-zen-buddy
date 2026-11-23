@@ -106,14 +106,14 @@ export default function OmarCustodyQuickEntry() {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="bg-primary print:hidden">
-        <div className="container mx-auto px-4 py-5">
-          <AccountingPageHeader title="قيد سريع — عهدة عمر" titleClassName="text-2xl font-bold"
+        <div className="container mx-auto px-3 py-4 md:px-4 md:py-5">
+          <AccountingPageHeader title="قيد سريع — عهدة عمر" titleClassName="text-xl md:text-2xl font-bold"
             description={<p className="text-sm opacity-90">اكتب المبلغ ثم اختر نوع المصروف: يُنشأ قيد العهدة وقيد الصرف فورًا</p>}
             icon={<HandCoins className="h-9 w-9" />} className="text-primary-foreground" />
         </div>
       </header>
-      <main className="container mx-auto px-4 py-6 space-y-4 print:hidden">
-        <Card className="p-4 grid gap-4 md:grid-cols-3">
+      <main className="container mx-auto px-3 py-4 md:px-4 md:py-6 space-y-4 print:hidden">
+        <Card className="p-3 md:p-4 grid gap-3 md:gap-4 md:grid-cols-3">
           <div>
             <Label>المبلغ</Label>
             <Input autoFocus type="text" inputMode="decimal" value={amount} placeholder="0.00"
@@ -132,7 +132,7 @@ export default function OmarCustodyQuickEntry() {
             <Input placeholder="ابحث عن نوع المصروف بالاسم أو الرمز" value={search} onChange={(e) => setSearch(e.target.value)} />
             {saving && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
           </div>
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((e) => (
               <Button key={e.id} variant="outline" disabled={saving || !(value > 0)} onClick={() => handlePick(e)}
                 className="h-auto py-3 flex flex-col items-start text-right whitespace-normal">
@@ -145,7 +145,7 @@ export default function OmarCustodyQuickEntry() {
       </main>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto print:hidden" dir="rtl">
+        <DialogContent className="max-w-[96vw] md:max-w-5xl max-h-[92vh] overflow-y-auto print:hidden" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between gap-3">
               <span>معاينة القيدين</span>
@@ -153,7 +153,11 @@ export default function OmarCustodyQuickEntry() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {vouchers.map((v) => <div key={v.entryNumber} className="border rounded-lg"><JournalEntryVoucher entry={v} /></div>)}
+            {vouchers.map((v) => (
+              <div key={v.entryNumber} className="border rounded-lg overflow-x-auto">
+                <div className="min-w-[640px]"><JournalEntryVoucher entry={v} /></div>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
