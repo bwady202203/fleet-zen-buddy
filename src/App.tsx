@@ -73,6 +73,7 @@ const RiyadhBankSmartEntries = lazy(() => import("./pages/accounting/RiyadhBankS
 const BankReconciliation = lazy(() => import("./pages/accounting/BankReconciliation"));
 const RiyadhBankPaymentEntries = lazy(() => import("./pages/accounting/RiyadhBankPaymentEntries"));
 const BankDepositsEntries = lazy(() => import("./pages/accounting/BankDepositsEntries"));
+const OmarCustodyQuickEntry = lazy(() => import("./pages/accounting/OmarCustodyQuickEntry"));
 const BankPaymentVoucher = lazy(() => import("./pages/accounting/BankPaymentVoucher"));
 const BankCollectionReceipt = lazy(() => import("./pages/accounting/BankCollectionReceipt"));
 const ImportantBalances = lazy(() => import("./pages/accounting/ImportantBalances"));
@@ -233,6 +234,7 @@ const App = () => {
                                   <Route path="/accounting/riyadh-bank-payment" element={<RiyadhBankPaymentEntries />} />
                                   <Route path="/accounting/bank-deposits" element={<BankDepositsEntries />} />
                                   <Route path="/accounting/bank-payment-voucher" element={<BankPaymentVoucher />} />
+                                  <Route path="/accounting/omar-custody-quick" element={<OmarCustodyQuickEntry />} />
                                  <Route path="/accounting/bank-collection-receipt" element={<BankCollectionReceipt />} />
                                   <Route path="/hr" element={<HR />} />
                                   <Route path="/hr/employees" element={<Employees />} />

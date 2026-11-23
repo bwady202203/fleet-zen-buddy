@@ -166,6 +166,7 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "سند قبض بنكي", path: "/accounting/bank-collection-receipt", icon: Wallet },
       { title: "مطابقة البنوك", path: "/accounting/bank-reconciliation", icon: Landmark },
       { title: "مصروفات العهد", path: "/custody/expenses", icon: FileText },
+      { title: "قيد سريع عهدة عمر", path: "/accounting/omar-custody-quick", icon: Wallet },
     ],
   },
   {
