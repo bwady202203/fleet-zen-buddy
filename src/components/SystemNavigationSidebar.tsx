@@ -125,6 +125,7 @@ export const navigationGroups: NavigationGroup[] = [
       { title: "قيود بنك الرياض الذكية", path: "/accounting/riyadh-bank-smart", icon: Landmark },
       { title: "سندات صرف بنك الرياض", path: "/accounting/riyadh-bank-payment", icon: Receipt },
       { title: "الإيداعات البنكية", path: "/accounting/bank-deposits", icon: Landmark },
+      { title: "قيد سريع عهدة عمر", path: "/accounting/omar-custody-quick", icon: Wallet },
     ],
   },
   {
