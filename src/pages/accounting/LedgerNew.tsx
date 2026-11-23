@@ -38,6 +38,7 @@ import { ArrowRight, Eye, Printer, Search, X, Plus, Star, Calendar } from "lucid
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { toHijri } from "hijri-converter";
+import JournalEntryVoucher, { type JournalVoucherEntry } from "@/components/accounting/JournalEntryVoucher";
 
 // Local storage key for favorite accounts
 const FAVORITE_ACCOUNTS_KEY = "ledger_favorite_accounts";
@@ -138,6 +139,7 @@ interface LedgerEntry {
 interface JournalEntryDetail {
   id: string;
   entry_number: string;
+  universal_serial?: string | null;
   date: string;
   description: string | null;
   lines: {
@@ -149,6 +151,7 @@ interface JournalEntryDetail {
     credit: number;
     branch_name?: string;
     cost_center_name?: string;
+    cost_center_code?: string;
     project_name?: string;
   }[];
 }
@@ -176,6 +179,14 @@ export default function LedgerNew() {
   const [selectedEntryDetail, setSelectedEntryDetail] = useState<JournalEntryDetail | null>(null);
   const [loadingEntry, setLoadingEntry] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [entryPreviewOpen, setEntryPreviewOpen] = useState(false);
+  const [printingEntry, setPrintingEntry] = useState(false);
+
+  useEffect(() => {
+    const reset = () => setPrintingEntry(false);
+    window.addEventListener("afterprint", reset);
+    return () => window.removeEventListener("afterprint", reset);
+  }, []);
   
   // Favorite accounts state
   const [favoriteAccounts, setFavoriteAccounts] = useState<FavoriteAccount[]>([]);
@@ -440,6 +451,7 @@ export default function LedgerNew() {
         .select(`
           id,
           entry_number,
+          universal_serial,
           date,
           description,
           journal_entry_lines (
@@ -449,7 +461,7 @@ export default function LedgerNew() {
             description,
             chart_of_accounts (code, name_ar),
             branches (name_ar),
-            cost_centers (name_ar),
+            cost_centers (code, name_ar),
             projects (name_ar)
           )
         `)
@@ -462,6 +474,7 @@ export default function LedgerNew() {
         const entryDetail: JournalEntryDetail = {
           id: data.id,
           entry_number: data.entry_number,
+          universal_serial: (data as any).universal_serial,
           date: data.date,
           description: data.description,
           lines: data.journal_entry_lines.map((line: any) => ({
@@ -473,6 +486,7 @@ export default function LedgerNew() {
             credit: Number(line.credit) || 0,
             branch_name: line.branches?.name_ar,
             cost_center_name: line.cost_centers?.name_ar,
+            cost_center_code: line.cost_centers?.code,
             project_name: line.projects?.name_ar,
           })),
         };
@@ -484,6 +498,33 @@ export default function LedgerNew() {
     } finally {
       setLoadingEntry(false);
     }
+  };
+
+  const voucherEntry: JournalVoucherEntry | null = selectedEntryDetail
+    ? {
+        universalSerial: selectedEntryDetail.universal_serial,
+        entryNumber: selectedEntryDetail.entry_number,
+        date: selectedEntryDetail.date,
+        description: selectedEntryDetail.description,
+        lines: selectedEntryDetail.lines.map((l) => ({
+          accountCode: l.account_code,
+          accountName: l.account_name,
+          description: l.description || "",
+          branchName: l.branch_name,
+          costCenterCode: l.cost_center_code,
+          costCenterName: l.cost_center_name,
+          debit: l.debit,
+          credit: l.credit,
+        })),
+        totalDebit: selectedEntryDetail.lines.reduce((s, l) => s + l.debit, 0),
+        totalCredit: selectedEntryDetail.lines.reduce((s, l) => s + l.credit, 0),
+      }
+    : null;
+
+  const handlePrintEntry = () => {
+    if (!voucherEntry) return;
+    setPrintingEntry(true);
+    setTimeout(() => window.print(), 150);
   };
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount);
@@ -830,7 +871,10 @@ export default function LedgerNew() {
       {selectedAccount && (
         renderLedgerReport(false)
       )}
-      {selectedAccount && createPortal(
+      {printingEntry && voucherEntry ? createPortal(
+        <div className="ledger-print-document" dir="rtl"><JournalEntryVoucher entry={voucherEntry} /></div>,
+        document.body
+      ) : selectedAccount && createPortal(
         <div className="ledger-print-document" dir="rtl">{renderLedgerReport(true)}</div>,
         document.body
       )}
@@ -862,9 +906,19 @@ export default function LedgerNew() {
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>تفاصيل القيد</span>
-              <Button variant="ghost" size="icon" onClick={() => setEntryDialogOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEntryPreviewOpen(true)} disabled={!voucherEntry}>
+                  <Eye className="ml-2 h-4 w-4" />
+                  معاينة
+                </Button>
+                <Button variant="outline" size="sm" onClick={handlePrintEntry} disabled={!voucherEntry}>
+                  <Printer className="ml-2 h-4 w-4" />
+                  طباعة
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setEntryDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </DialogTitle>
           </DialogHeader>
           {selectedEntryDetail && (
@@ -924,6 +978,26 @@ export default function LedgerNew() {
                   </TableBody>
                 </Table>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Journal Entry Voucher Preview */}
+      <Dialog open={entryPreviewOpen} onOpenChange={setEntryPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto print:hidden" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>معاينة سند القيد — A4</span>
+              <Button variant="outline" size="sm" onClick={handlePrintEntry}>
+                <Printer className="ml-2 h-4 w-4" />
+                طباعة
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          {voucherEntry && (
+            <div className="border rounded-lg">
+              <JournalEntryVoucher entry={voucherEntry} />
             </div>
           )}
         </DialogContent>
