@@ -59,6 +59,7 @@ const SpecialInvoicesApp = lazy(() => import("./pages/accounting/SpecialInvoices
 const DataCards = lazy(() => import("./pages/DataCards"));
 const DataDocuments = lazy(() => import("./pages/DataDocuments"));
 const HrPortalApp = lazy(() => import("./pages/hr/HrPortalApp"));
+const PayrollApp = lazy(() => import("./pages/hr/PayrollApp"));
 const ReportsHub = lazy(() => import("./pages/ReportsHub"));
 
 const PaymentVouchers = lazy(() => import("./pages/accounting/PaymentVouchers"));
@@ -225,6 +226,7 @@ const App = () => {
                                   <Route path="/reports" element={<ReportsHub />} />
 
                                   <Route path="/hr/portal" element={<HrPortalApp />} />
+                                  <Route path="/hr/payroll-app" element={<PayrollApp />} />
                                   <Route path="/accounting/level4-balances" element={<Level4Balances />} />
                                   <Route path="/accounting/smart-journal" element={<SmartJournalEntries />} />
                                   <Route path="/accounting/bank-statement" element={<BankStatementImport />} />

@@ -81,6 +81,14 @@ export const navigationGroups: NavigationGroup[] = [
     children: [{ title: "لوحة النظام", path: "/", icon: LayoutGrid }],
   },
   {
+    key: "payroll-app",
+    title: "برنامج الرواتب",
+    icon: FileSpreadsheet,
+    module: null,
+    children: [],
+    standalonePath: "/hr/payroll-app",
+  },
+  {
     key: "group-app",
     title: "برنامج المجمعة",
     icon: Layers,
